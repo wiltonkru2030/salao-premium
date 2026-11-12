@@ -1,1 +1,1 @@
-export const state={page:'Dashboard',pro:0,date:new Date(),view:'Dia',drawer:null,setting:'Geral',query:'',filter:'Todos',mobileMenu:false,sidebarCollapsed:false,dragId:null,blockedTimes:[]};
+export const state={page:'Dashboard',pro:0,date:new Date(),view:'Dia',drawer:null,setting:'Geral',query:'',filter:'Todos',mobileMenu:false,sidebarCollapsed:false,dragId:null,blockedTimes:[],user:null,organization:null,membership:null};
