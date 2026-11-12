@@ -24,12 +24,16 @@ export function professionalsPage(){
 export async function loadProfessionalsPage(){
  const host=document.querySelector("#professionals-access");
  if(!host||!state.organization?.id)return;
- const [professionalResult,serviceResult,membersResult]=await Promise.all([
+ const [professionalResult,serviceResult,membersResult,assignmentResult]=await Promise.all([
   supabase.from("professionals").select("id,name,phone,email,active,access_enabled,commission_rate,tax_regime,cnpj,legal_name,trade_name,specialty").eq("org_id",state.organization.id).order("name"),
   supabase.from("services").select("id,name,category,active").eq("org_id",state.organization.id).eq("active",true).order("category").order("name").limit(500),
-  supabase.from("org_memberships").select("user_id,role,professional_app_enabled,professional_app_scope").eq("org_id",state.organization.id).eq("status","active").in("role",["owner","admin","receptionist"])
+  supabase.from("org_memberships").select("user_id,role,professional_app_enabled,professional_app_scope").eq("org_id",state.organization.id).eq("status","active").in("role",["owner","admin","receptionist"]),
+  supabase.from("professional_services").select("professional_id,service_id").eq("org_id",state.organization.id)
  ]);
- const {data,error}=professionalResult,{data:services, error:serviceError}=serviceResult,{data:members,error:membersError}=membersResult;
+ const {data,error}=professionalResult,{data:services, error:serviceError}=serviceResult,{data:members,error:membersError}=membersResult,{data:assignments,error:assignmentError}=assignmentResult;
+ const serviceNames=new Map((services||[]).map(s=>[s.id,s.name]));
+ const assignedNames=new Map();
+ (assignments||[]).forEach(link=>{if(!assignedNames.has(link.professional_id))assignedNames.set(link.professional_id,[]);const name=serviceNames.get(link.service_id);if(name)assignedNames.get(link.professional_id).push(name);});
  if(error){host.innerHTML='<div class="empty-state">Não foi possível carregar os profissionais.</div>';return;}
  const targets=(members||[]).filter(m=>m.role==="receptionist"||m.user_id===state.user?.id);
  const targetIds=targets.map(m=>m.user_id);
@@ -43,7 +47,7 @@ export async function loadProfessionalsPage(){
  <div class="list-toolbar"><span class="result-count">${data?.length||0} profissionais</span></div>
  <div class="record-list">${(data||[]).map(p=>`
  <article class="record-card professional-access-card" data-professional-card="${p.id}">
-  <span class="record-main"><b>${esc(p.name)}</b><small>${esc(p.specialty||"Profissional")} · ${p.tax_regime==="mei"?"MEI":"Pessoa física"}</small><small>${esc(p.phone||p.email||"Sem contato")} · ${p.active?"Ativo":"Inativo"} · Comissão: ${Number(p.commission_rate||0)}%</small>
+  <span class="record-main"><b>${esc(p.name)}</b><small>${esc(p.specialty||"Profissional")} · ${p.tax_regime==="mei"?"MEI":"Pessoa física"}</small><small>${esc(p.phone||p.email||"Sem contato")} · ${p.active?"Ativo":"Inativo"} · Comissão: ${Number(p.commission_rate||0)}%</small><small>Serviços: ${esc((assignedNames.get(p.id)||[]).join(", ")||"Nenhum vínculo")}</small>
    ${p.tax_regime==="mei"?'<small>CNPJ: '+esc(p.cnpj||"—")+' · '+esc(p.legal_name||"")+'</small>':''}
    <label class="field">CPF para acesso ao aplicativo<input class="field" data-professional-cpf="${p.id}" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" autocomplete="off"></label>
    <label class="field">Senha temporária<input class="field" type="password" data-initial-password="${p.id}" value="${esc(initialPasswords.get(p.id)||"")}" placeholder="Gerada ao liberar acesso" readonly></label>
@@ -84,7 +88,7 @@ export async function loadProfessionalsPage(){
    <footer class="professional-modal-foot"><button type="button" class="btn secondary" data-close-professional-modal>Cancelar</button><button class="btn primary" type="submit">Salvar profissional</button></footer>
   </form>
  </dialog>`;
- if(serviceError){const box=host.querySelector("#professional-service-choices");if(box)box.innerHTML='<p class="empty-state">Não foi possível carregar os serviços.</p>';}
+ if(serviceError||assignmentError){const box=host.querySelector("#professional-service-choices");if(box)box.innerHTML='<p class="empty-state">Não foi possível carregar os serviços.</p>';}
  host.insertAdjacentHTML("beforeend", `
  <details class="settings-card"><summary><b>Acesso ao App para proprietário e recepção</b></summary>
   <p class="demo-note">O proprietário ou administrador pode liberar o próprio acesso completo. A recepção recebe agenda completa e acesso operacional às comandas.</p>
