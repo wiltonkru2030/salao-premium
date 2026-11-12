@@ -146,7 +146,7 @@ export async function loadProfessionalsPage(){
    staffToggle.disabled=true;
    const {error}=await supabase.rpc("set_professional_app_access",{p_target_user_id:userId,p_enabled:enabled,p_scope:role==="receptionist"?"calendar_all":"all"});
    staffToggle.disabled=false;
-   if(error){toast(error.message||"Não foi possível atualizar o acesso ao App.");staffToggle.checked=!enabled;return;}
+   if(error){reportError(error,{context:"Profissionais > alterar acesso da equipe"});staffToggle.checked=!enabled;return;}
    toast(enabled?"Acesso ao App liberado.":"Acesso ao App revogado.");await loadProfessionalsPage();return;
   }
   const toggle=event.target.closest("[data-professional-toggle]");if(!toggle)return;
@@ -154,14 +154,16 @@ export async function loadProfessionalsPage(){
   if(toggle.checked){const ok=await provision(toggle,"create");if(!ok)toggle.checked=false;}
   else{
    toggle.disabled=true;const {error}=await supabase.rpc("revoke_professional_app_access",{p_professional_id:id});toggle.disabled=false;
-   if(error){toast(error.message||"Não foi possível revogar o acesso.");toggle.checked=true;return;}
+   if(error){reportError(error,{context:"Profissionais > revogar acesso ao App"});toggle.checked=true;return;}
    initialPasswords.delete(id);toast("Acesso ao App Profissional revogado.");await loadProfessionalsPage();
   }
  });
  host.addEventListener("submit",async event=>{
   if(!event.target.matches("#professional-create-form"))return;
   event.preventDefault();
-  const form=event.target,button=form.querySelector('[type="submit"]'),v=new FormData(form);
+  let button;
+  try{
+  const form=event.target;button=form.querySelector('[type="submit"]');const v=new FormData(form);
   const name=String(v.get("name")||"").trim(),cpf=String(v.get("cpf")||"").replace(/\\D/g,""),phone=String(v.get("phone")||"").trim(),email=String(v.get("email")||"").trim(),rate=Number(v.get("commission_rate")||0),taxRegime=String(v.get("tax_regime")||"individual"),cnpj=String(v.get("cnpj")||"").replace(/\\D/g,"");
   const serviceIds=[...form.querySelectorAll('input[name="service_ids"]:checked')].map(input=>input.value);
   if(!name||!validCpf(cpf)||!Number.isFinite(rate)||rate<0||rate>100){toast("Confira nome, CPF e comissão.");return;}
@@ -190,6 +192,7 @@ export async function loadProfessionalsPage(){
   host.querySelector("#professional-service-filter").value="";
   host.querySelector("#professional-create-modal")?.close();button.disabled=false;button.textContent="Salvar profissional";
   toast(appNotice||"Profissional cadastrado e serviços vinculados.");await loadProfessionalsPage();
+  }catch(error){reportError(error,{context:"Profissionais > salvar cadastro"});if(button){button.disabled=false;button.textContent="Salvar profissional";}}
  });
  async function provision(button,action){
   const id=button.dataset.professionalReset||button.dataset.professionalToggle;
