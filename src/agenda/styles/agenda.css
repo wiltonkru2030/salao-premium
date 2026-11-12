@@ -11,7 +11,8 @@
 .calendar-body .time-cell,.calendar-body .schedule-slot,.calendar-body .availability-cell{min-height:52px;height:52px}
 .appointment-block{min-height:46px}
 .agenda-toolbar .btn{white-space:nowrap}
-.blocked-slot{display:flex;align-items:center;justify-content:center;padding:4px;background:repeating-linear-gradient(135deg,#f7f4ee,#f7f4ee 6px,#eee8dc 6px,#eee8dc 12px);color:#8b7654;font-size:9px;overflow:hidden}
-.week-blocked{display:block;height:100%;min-height:45px;padding:5px 2px;background:#f5f1e8;color:#8b7654;font-size:8px;overflow:hidden}
+.blocked-slot{display:flex;align-items:center;justify-content:center;gap:4px;padding:4px;background:repeating-linear-gradient(135deg,#f7f4ee,#f7f4ee 6px,#eee8dc 6px,#eee8dc 12px);color:#8b7654;font-size:9px;overflow:hidden}
+.remove-block,.week-blocked button{border:0;background:transparent;color:#8b7654;font-size:14px;cursor:pointer}
+.week-blocked{display:flex;align-items:center;justify-content:center;gap:2px;min-height:45px;padding:4px 2px;background:#f5f1e8;color:#8b7654;font-size:8px;overflow:hidden}
 @media(max-width:700px){.agenda-toolbar{align-items:flex-start;flex-direction:column}.date-controls{flex-wrap:wrap}.calendar-header,.calendar-body{grid-template-columns:54px minmax(210px,1fr)}.availability-heading,.availability-column{display:none}.month-day,.month-empty{min-width:0}.agenda-filters{align-items:stretch;flex-wrap:wrap}.agenda-search{max-width:none;flex-basis:100%}}
 @media(max-width:420px){.agenda-form-row{grid-template-columns:1fr}}
