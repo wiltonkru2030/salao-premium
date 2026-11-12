@@ -1,3 +1,4 @@
+/** Utilitários visuais e de segurança de interface: seleção DOM, escape HTML, toast e componentes simples. */
 import { state } from './state.js';
 export const $=s=>document.querySelector(s);
 export const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
