@@ -1,3 +1,4 @@
+/** Regras de conflito da Agenda. Responsabilidade: detectar sobreposição e validar duração/horário no cliente. */
 import {timeToMinutes} from './duration.utils.js';
 const releasesSlot=item=>['Cancelado','Falta'].includes(item.status);
 export function findConflict(items,candidate,ignoreId=candidate.id){
