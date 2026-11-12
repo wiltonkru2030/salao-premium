@@ -3,6 +3,7 @@ import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
 import { mountAutocomplete } from "../components/autocomplete.js";
 import { userErrorMessage } from "../utils/errors.js";
+import { parseBRL } from "../utils/input-masks.js";
 
 /** Módulo Comandas: consulta comandas, monta detalhes e executa lançamentos e pagamentos. */
 
@@ -73,7 +74,7 @@ function renderOrderDetails(host,order,data,orgId){
  <button class="btn primary" type="submit">Adicionar produto</button><p class="demo-note">O estoque será baixado ao quitar a comanda.</p></form></section>`:''}
  ${editable&&allowPay?`
  <section class="settings-card"><h3>Receber pagamento</h3><form id="comanda-payment-form">
- <label>Valor recebido (R$)<input name="amount" class="field" type="number" min="0.01" max="${balance.toFixed(2)}" step="0.01" value="${balance.toFixed(2)}" required></label>
+ <label>Valor recebido (R$)<input name="amount" class="field" type="text" inputmode="decimal" data-mask="currency" value="${balance.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}" required></label>
  <label>Forma de pagamento<select name="payment_method" class="field" required><option value="pix">PIX</option><option value="cash">Dinheiro</option><option value="credit_card">Cartão de crédito</option><option value="debit_card">Cartão de débito</option><option value="transfer">Transferência</option><option value="voucher">Voucher</option><option value="other">Outro</option></select></label>
  <button class="btn primary" type="submit" ${balance<=0?"disabled":""}>Registrar pagamento</button><p class="demo-note">Na quitação, o sistema lança a venda, movimenta o caixa e estoque e gera as comissões na mesma transação.</p></form></section>`:''}
  ${editable&&allowEdit?'<section class="settings-card"><button class="btn secondary" data-action="cancel-comanda" data-order-id="'+order.id+'">Cancelar comanda e horários vinculados</button></section>':""}
@@ -109,7 +110,7 @@ function renderOrderDetails(host,order,data,orgId){
  }
  if(editable&&allowPay){
   host.querySelector("#comanda-payment-form").addEventListener("submit",async e=>{
-   e.preventDefault();const v=new FormData(e.target),amount=Number(v.get("amount")),method=String(v.get("payment_method"));
+   e.preventDefault();const v=new FormData(e.target),amount=parseBRL(v.get("amount")),method=String(v.get("payment_method"));
    if(!Number.isFinite(amount)||amount<=0){toast("Informe um valor válido.");return;}
    const {data,error}=await supabase.rpc("register_service_order_payment",{p_order_id:order.id,p_amount:amount,p_payment_method:method});
    if(error){toast(error.message||"Não foi possível registrar o pagamento.");return;}
