@@ -172,15 +172,16 @@ export async function loadProfessionalsPage(){
   button.disabled=true;button.textContent="Salvando…";
   const payload={org_id:state.organization.id,name,phone:phone||null,email:email||null,commission_rate:rate,active:true,tax_regime:taxRegime,cnpj:taxRegime==="mei"?cnpj:null,legal_name:taxRegime==="mei"?String(v.get("legal_name")||"").trim():null,trade_name:taxRegime==="mei"?String(v.get("trade_name")||"").trim()||null:null,specialty:String(v.get("specialty")||"").trim()||null};
   const {data:professional,error:insertError}=await supabase.from("professionals").insert(payload).select("id").single();
-  if(insertError){button.disabled=false;button.textContent="Salvar profissional";toast("Não foi possível cadastrar: "+insertError.message);return;}
+  if(insertError){reportError(insertError,{context:"Profissionais > inserir cadastro"});button.disabled=false;button.textContent="Salvar profissional";return;}
   const links=serviceIds.map(service_id=>({org_id:state.organization.id,professional_id:professional.id,service_id}));
   const {error:linkError}=await supabase.from("professional_services").insert(links);
-  if(linkError){await supabase.from("professionals").delete().eq("org_id",state.organization.id).eq("id",professional.id);button.disabled=false;button.textContent="Salvar profissional";toast("Não foi possível vincular os serviços: "+linkError.message);return;}
+  if(linkError){const rollback=await supabase.from("professionals").delete().eq("org_id",state.organization.id).eq("id",professional.id);if(rollback.error)reportError(rollback.error,{context:"Profissionais > reverter cadastro incompleto"});reportError(linkError,{context:"Profissionais > vincular serviços"});button.disabled=false;button.textContent="Salvar profissional";return;}
   const enableApp=v.get("enable_app")==="on";
   let appNotice="";
   if(enableApp){
    const {data:access,error:accessError}=await supabase.functions.invoke("manage-professional-access",{body:{action:"create",org_id:state.organization.id,professional_id:professional.id,cpf}});
    if(accessError||!access?.success){
+    if(accessError)reportError(accessError,{context:"Profissionais > liberar App durante cadastro"});
     appNotice=access?.error||"Cadastro salvo, mas não foi possível liberar o App. Você pode liberar depois no cartão do profissional.";
    }else if(access.temporary_password){
     initialPasswords.set(professional.id,access.temporary_password);
