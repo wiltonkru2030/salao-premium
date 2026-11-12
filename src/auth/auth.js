@@ -6,6 +6,7 @@ let authNotice = '';
 let authNoticeType = 'info';
 let booted = false;
 
+// Resolve associação, perfil e organização antes de abrir o painel.
 export async function getUserContext(user) {
   const { data: membership, error } = await supabase
     .from('org_memberships')
@@ -34,6 +35,7 @@ function showAuth(mode = 'login', notice = '', type = 'info') {
   document.querySelector('#app').innerHTML = authScreen(authMode, authNotice, authNoticeType);
 }
 
+// Registra sessão, login/cadastro e encaminha o usuário autenticado.
 export function startAuth(onAuthenticated) {
   if (booted) return;
   booted = true;
@@ -107,6 +109,7 @@ export function startAuth(onAuthenticated) {
   });
 }
 
+// Encerra a sessão Supabase e propaga falhas ao chamador.
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
