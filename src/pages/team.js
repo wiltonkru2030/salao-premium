@@ -1,6 +1,7 @@
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
+import { reportError } from "../utils/errors.js";
 
 const roleLabel=role=>({owner:"Proprietário",admin:"Administrador",manager:"Gerente",receptionist:"Recepção",professional:"Profissional",finance:"Financeiro",viewer:"Consulta"})[role]||role;
 export function teamPage(){
@@ -40,17 +41,23 @@ export async function loadTeamPage(){
     const button=event.target.closest("[data-reception-access]");if(!button)return;
     const currentlyEnabled=button.dataset.enabled==="true";
     button.disabled=true;button.textContent="Atualizando…";
-    const {data,error}=await supabase.rpc("set_professional_app_access",{
+    try {
+     const {data,error}=await supabase.rpc("set_professional_app_access",{
       p_target_user_id:button.dataset.receptionAccess,
       p_enabled:!currentlyEnabled,
       p_scope:"calendar_all"
-    });
-    if(error){toast(error.message||"Não foi possível atualizar o acesso.");button.disabled=false;button.textContent=currentlyEnabled?"Revogar acesso":"Liberar agenda completa";return;}
-    toast(data?.enabled?"Agenda completa liberada para a recepção.":"Acesso ao App Profissional revogado.");
-    await loadTeamPage();
+     });
+     if(error)throw error;
+     toast(data?.enabled?"Agenda completa liberada para a recepção.":"Acesso ao App Profissional revogado.");
+     await loadTeamPage();
+    } catch(error) {
+     reportError(error,{context:"Equipe > alterar permissão da recepção"});
+     button.disabled=false;button.textContent=currentlyEnabled?"Revogar acesso":"Liberar agenda completa";
+    }
    });
   }
  }catch(error){
-  host.innerHTML='<div class="empty-state"><b>Não foi possível carregar a equipe.</b><small>'+esc(error.message||"Verifique as permissões do usuário.")+'</small></div>';
+  reportError(error,{context:"Equipe > carregar usuários"});
+  host.innerHTML='<div class="empty-state"><b>Não foi possível carregar a equipe.</b><small>Atualize a página e tente novamente.</small></div>';
  }
 }
