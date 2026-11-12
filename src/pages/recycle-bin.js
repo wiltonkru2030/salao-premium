@@ -1,3 +1,4 @@
+/** Módulo Recuperar. Responsabilidade: consultar snapshots da lixeira e eventos de auditoria, exibir detalhes e solicitar restauração/exclusão segura via RPC. */
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
