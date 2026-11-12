@@ -84,8 +84,9 @@ export async function loadRecycleBinPage(){
    host.addEventListener("click",async event=>{
     const open=event.target.closest("[data-recycle-open]");
     if(open){selectedGroup=open.dataset.recycleOpen;await loadRecycleBinPage();return;}
+    const dialog=host.querySelector("#recycle-details-dialog");
     const close=event.target.closest('[data-action="close-recycle-modal"]');
-    if(close){selectedGroup=null;await loadRecycleBinPage();return;}
+    if(event.target===dialog||close){dialog?.close();return;}
     const restore=event.target.closest("[data-recycle-restore]");
     if(restore){
      const groupId=restore.dataset.recycleRestore;
