@@ -9,6 +9,8 @@ import { head, esc, toast, btn } from "../utils.js";
 import { parseBRL } from "../utils/input-masks.js";
 import { reportError } from "../utils/errors.js";
 
+let modalListenerInstalled = false;
+
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function productsPage() {
@@ -71,15 +73,18 @@ export async function loadProductsPage() {
   host.dataset.bound = "true";
 
   // O botão do cabeçalho fica fora do host; por isso o clique é delegado ao documento.
-  document.addEventListener("click", event => {
-    const dialog = host.querySelector("#product-create-modal");
+  if (!modalListenerInstalled) {
+    modalListenerInstalled = true;
+    document.addEventListener("click", event => {
+    const dialog = document.querySelector("#product-create-modal");
     if (!dialog) return;
     if (event.target.closest('[data-action="open-product-modal"]')) {
       if (!dialog.open) dialog.showModal();
     } else if (event.target.closest("[data-close-product-modal]") || event.target === dialog) {
       if (dialog.open) dialog.close();
     }
-  });
+    });
+  }
 
   host.addEventListener("submit", async event => {
     if (!event.target.matches("#product-create-form")) return;
