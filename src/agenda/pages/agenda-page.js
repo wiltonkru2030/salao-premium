@@ -11,6 +11,7 @@ import { dateKey, startOfWeek, addDays } from '../utils/date.utils.js';
 
 export { dateKey };
 
+// Adapta os estados do banco aos rótulos exibidos no calendário.
 function dbStatus(value) {
   return ({scheduled:'Aguardando',confirmed:'Confirmado',arrived:'Cliente chegou',in_progress:'Em atendimento',completed:'Finalizado',cancelled:'Cancelado',no_show:'Falta'})[value] || value;
 }
@@ -18,6 +19,7 @@ function asLocalDateTime(value) {
   const date=new Date(value);
   return {date:dateKey(date),time:date.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})};
 }
+// Converte uma linha do Supabase no formato esperado pelos componentes visuais.
 function toCalendarAppointment(row,professionalIndex) {
   const start=asLocalDateTime(row.starts_at);
   const duration=Math.max(5,Math.round((new Date(row.ends_at)-new Date(row.starts_at))/60000));
@@ -32,6 +34,7 @@ function toCalendarAppointment(row,professionalIndex) {
     service_order_id:row.service_order_id,arrived_at:row.arrived_at||null
   };
 }
+// Compõe filtros, resumo e calendário sem executar consultas ao banco.
 function buildContent() {
   const host=document.querySelector('#agenda-db-content');
   if(!host)return;
@@ -64,6 +67,7 @@ export function agenda() {
   return head('Agenda','Gerencie horários, atendimentos e disponibilidade dos profissionais.',btn('＋ Novo agendamento','new-appointment','primary'))+
     '<div id="agenda-db-content"><div class="empty-state">Carregando agenda do banco…</div></div>';
 }
+// Consulta profissionais, agendamentos e bloqueios da organização ativa.
 export async function loadAgendaPage() {
   if(!state.user||!state.organization?.id)return;
   const host=document.querySelector('#agenda-db-content');
