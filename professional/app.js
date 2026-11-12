@@ -6,7 +6,7 @@ const state={
  user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,organization:null,
  page:"Agenda",month:new Date(new Date().getFullYear(),new Date().getMonth(),1),
  selectedDate:new Date(),selectedAppointment:null,appointments:[],orders:[],services:[],
- commissions:[],selectedOrder:null,orderItems:[],notice:""
+ commissions:[],commissionPayouts:[],selectedOrder:null,orderItems:[],notice:""
 };
 let disposeAutocomplete=null;
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -101,9 +101,13 @@ function ordersView(){
 function commissionsView(){
  const total=state.commissions.reduce((sum,c)=>sum+Number(c.amount||0),0);
  const paid=state.commissions.filter(c=>c.status==="paid").reduce((sum,c)=>sum+Number(c.amount||0),0);
+ const payoutTotal=state.commissionPayouts.reduce((sum,p)=>sum+Number(p.amount||0),0);
  return '<div class="section-title"><h2>Comissões</h2><span class="muted">Valores, histórico e pagamentos</span></div>'+
  '<section class="detail"><div class="detail-row"><span>Total registrado</span><b>'+money(total)+'</b></div><div class="detail-row"><span>Total pago</span><b>'+money(paid)+'</b></div><div class="detail-row"><span>Em aberto</span><b>'+money(total-paid)+'</b></div></section>'+
- (state.commissions.length?state.commissions.map(c=>'<article class="commission"><strong>'+money(c.amount)+'</strong><div class="meta">Base: '+money(c.base_amount)+' · Taxa: '+Number(c.rate)+'%<br>Registro: '+dateTimeLabel(c.created_at)+(c.paid_at?' · Pagamento: '+dateTimeLabel(c.paid_at):'')+'</div><span class="tag">'+esc(statusLabel(c.status))+'</span></article>').join(""):'<div class="empty">Nenhuma comissão registrada.</div>');
+ '<div class="section-title"><h2>Histórico de comissões</h2></div>'+
+ (state.commissions.length?state.commissions.map(c=>'<article class="commission"><strong>'+money(c.amount)+'</strong><div class="meta">Base: '+money(c.base_amount)+' · Taxa: '+Number(c.rate)+'%<br>Registro: '+dateTimeLabel(c.created_at)+(c.paid_at?' · Pagamento: '+dateTimeLabel(c.paid_at):'')+'</div><span class="tag">'+esc(statusLabel(c.status))+'</span></article>').join(""):'<div class="empty">Nenhuma comissão registrada.</div>')+
+ '<div class="section-title"><h2>Pagamentos recebidos</h2><span class="muted">'+money(payoutTotal)+' em pagamentos</span></div>'+
+ (state.commissionPayouts.length?state.commissionPayouts.map(p=>'<article class="commission"><strong>'+money(p.amount)+'</strong><div class="meta">'+esc(p.payment_method)+' · '+dateTimeLabel(p.paid_at)+(p.notes?' · '+esc(p.notes):'')+'</div><span class="tag success">Pago</span></article>').join(""):'<div class="empty">Nenhum pagamento de comissão registrado.</div>');
 }
 function settingsView(){
  const name=state.profile?.full_name||state.professional?.name||"";
@@ -162,8 +166,16 @@ async function loadServices(){
  if(error)throw error;state.services=data||[];
 }
 async function loadCommissions(){
- const {data,error}=await supabase.from("commissions").select("id,base_amount,rate,amount,status,paid_at,created_at,professional_id").eq("org_id",state.orgId).order("created_at",{ascending:false}).limit(250);
- if(error)throw error;state.commissions=data||[];
+ const [commissionResult,payoutResult]=await Promise.all([
+  supabase.from("commissions").select("id,base_amount,rate,amount,status,paid_at,created_at,professional_id,payout_id")
+   .eq("org_id",state.orgId).order("created_at",{ascending:false}).limit(250),
+  supabase.from("commission_payouts").select("id,professional_id,amount,payment_method,paid_at,notes")
+   .eq("org_id",state.orgId).order("paid_at",{ascending:false}).limit(250)
+ ]);
+ if(commissionResult.error)throw commissionResult.error;
+ if(payoutResult.error)throw payoutResult.error;
+ state.commissions=commissionResult.data||[];
+ state.commissionPayouts=payoutResult.data||[];
 }
 async function loadOrderItems(){
  if(!state.selectedOrder)return;
