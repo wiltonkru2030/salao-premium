@@ -1,3 +1,4 @@
+/** Componente: modal de bloqueio de horário. Responsabilidade: montar os campos e opções para bloquear a disponibilidade de um profissional. */
 import { esc } from '../../utils.js';
 import { timeToMinutes, minutesToTime } from '../utils/duration.utils.js';
 import { state } from '../../state.js';
