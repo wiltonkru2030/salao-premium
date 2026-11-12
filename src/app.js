@@ -390,4 +390,6 @@ startAuth(context=>{
   state.organization=context.organization;
   state.membership=context.membership;
   render();
+  // A tela inicial foi montada; erros posteriores pertencem ao tratamento global da aplicação.
+  window.__SALAO_PREMIUM_BOOTED__=true;
 });
