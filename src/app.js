@@ -1,5 +1,5 @@
 import {state} from './state.js';
-import {pros,appts} from './data/index.js';
+import {appts} from './data/index.js';
 import {$,toast} from './utils.js';
 import {cardList} from './pages/records.js';
 import {changePage,render} from './layout/render.js';
@@ -8,9 +8,8 @@ import {agenda} from './agenda/pages/agenda-page.js';
 import {createAppointment,updateAppointment,changeAppointmentStatus} from './agenda/services/agenda.service.js';
 import {findConflict} from './agenda/utils/conflict.utils.js';
 import {timeToMinutes} from './agenda/utils/duration.utils.js';
-import {dateKey,addDays} from './agenda/utils/date.utils.js';
+import {addDays} from './agenda/utils/date.utils.js';
 
-function refreshAgenda(){render()}
 function dateFromKey(key){const p=String(key).split('-').map(Number);return new Date(p[0],p[1]-1,p[2])}
 function blockedConflict(candidate,ignoreId=null){
  const start=timeToMinutes(candidate.time),end=start+Number(candidate.duration||0);
@@ -76,8 +75,8 @@ document.addEventListener('submit',e=>{
   const fd=new FormData(form),block={id:Date.now(),pro:Number(fd.get('pro')),date:String(fd.get('date')),start:String(fd.get('start')),end:String(fd.get('end')),reason:String(fd.get('reason')||'').trim()};
   const start=timeToMinutes(block.start),end=timeToMinutes(block.end);
   if(!block.date||!block.reason||end<=start){toast('Informe data, motivo e um intervalo válido.');return}
-  if(start<timeToMinutes('07:00')||end>timeToMinutes('20:30')){toast('O bloqueio deve ficar entre 07:00 e 20:30.');return}
-  const occupied=appts.find(a=>a.pro===block.pro&&a.date===block.date&&start<timeToMinutes(a.time)+Number(a.duration)&&end>timeToMinutes(a.time));
+  if(start<timeToMinutes('08:00')||end>timeToMinutes('20:00')){toast('O bloqueio deve ficar entre 08:00 e 20:00.');return}
+  const occupied=appts.find(a=>!['Cancelado','Falta'].includes(a.status)&&a.pro===block.pro&&a.date===block.date&&start<timeToMinutes(a.time)+Number(a.duration)&&end>timeToMinutes(a.time));
   if(occupied){toast('Já existe um atendimento nesse intervalo ('+occupied.name+').');return}
   const overlap=(state.blockedTimes||[]).find(b=>b.pro===block.pro&&b.date===block.date&&start<timeToMinutes(b.end)&&end>timeToMinutes(b.start));
   if(overlap){toast('Este período já está bloqueado.');return}
