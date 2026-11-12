@@ -1,0 +1,2 @@
+import {pros} from '../../data/index.js';
+export function renderProfessionalSelector(selected){return '<div class="professional-strip" role="group" aria-label="Selecionar profissional">'+pros.map((p,i)=>'<button type="button" class="professional-chip '+(selected===i?'selected':'')+'" data-pro="'+i+'" aria-pressed="'+(selected===i)+'"><span class="avatar">'+p[0]+'</span><span><b>'+p[1]+'</b><small>'+p[2]+'</small></span><span class="selection-dot"></span></button>').join('')+'</div>'}
