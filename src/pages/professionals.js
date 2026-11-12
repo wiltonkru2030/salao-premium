@@ -155,17 +155,21 @@ export async function loadProfessionalsPage(){
   const {error:linkError}=await supabase.from("professional_services").insert(links);
   if(linkError){await supabase.from("professionals").delete().eq("org_id",state.organization.id).eq("id",professional.id);button.disabled=false;button.textContent="Salvar profissional";toast("Não foi possível vincular os serviços: "+linkError.message);return;}
   const enableApp=v.get("enable_app")==="on";
+  let appNotice="";
   if(enableApp){
    const {data:access,error:accessError}=await supabase.functions.invoke("manage-professional-access",{body:{action:"create",org_id:state.organization.id,professional_id:professional.id,cpf}});
    if(accessError||!access?.success){
-    toast(access?.error||"Cadastro salvo, mas não foi possível liberar o App. Você pode liberar depois no cartão do profissional.");
+    appNotice=access?.error||"Cadastro salvo, mas não foi possível liberar o App. Você pode liberar depois no cartão do profissional.";
    }else if(access.temporary_password){
     initialPasswords.set(professional.id,access.temporary_password);
     window.alert("Senha temporária de "+(access.professional_name||name)+":\\n"+access.temporary_password+"\\n\\nEntregue ao profissional por um canal seguro. Ela será solicitada apenas neste primeiro acesso.");
    }
   }
-  form.reset();host.querySelector("#professional-create-modal")?.close();button.disabled=false;button.textContent="Salvar profissional";
-  toast("Profissional cadastrado e serviços vinculados.");await loadProfessionalsPage();
+  form.reset();
+  const meiFields=host.querySelector("#professional-mei-fields");if(meiFields){meiFields.hidden=true;meiFields.querySelector('[name="cnpj"]').required=false;meiFields.querySelector('[name="legal_name"]').required=false;}
+  host.querySelector("#professional-service-filter").value="";
+  host.querySelector("#professional-create-modal")?.close();button.disabled=false;button.textContent="Salvar profissional";
+  toast(appNotice||"Profissional cadastrado e serviços vinculados.");await loadProfessionalsPage();
  });
  async function provision(button,action){
   const id=button.dataset.professionalReset||button.dataset.professionalToggle;
