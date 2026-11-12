@@ -1,6 +1,6 @@
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
-import { head, btn, esc, toast } from "../utils.js";
+import { head, esc, toast } from "../utils.js";
 import { mountAutocomplete } from "../components/autocomplete.js";
 
 let cleanup = [];
@@ -12,7 +12,7 @@ const currency = value => Number(value || 0).toLocaleString("pt-BR",{style:"curr
 
 export function comandaPage() {
   selectedOrder = null;
-  return head("Comanda","Abertura e acompanhamento de comandas, serviços e profissionais.",btn("＋ Nova comanda","new-comanda","primary")) +
+  return head("Comanda","Abertura e acompanhamento de comandas, serviços e profissionais.") +
     '<div id="comanda-manager"><div class="empty-state"><b>Carregando comandas…</b></div></div>';
 }
 async function tenant() {
