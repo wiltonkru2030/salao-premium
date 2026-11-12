@@ -44,10 +44,10 @@ Deno.serve(async (req: Request) => {
     const cpfHash = await hmac("cpf:" + cpf, pepper), email = "pro-" + cpfHash.slice(0, 40) + "@login.salaopremium.invalid", password = temporaryPassword();
     let authUserId = professional.profile_id;
     if (authUserId) {
-      const { error } = await admin.auth.admin.updateUserById(authUserId, { email, password, email_confirm: true, user_metadata: { full_name: professional.name, account_type: "professional" } });
+      const { error } = await admin.auth.admin.updateUserById(authUserId, { email, password, email_confirm: true, user_metadata: { full_name: professional.name, account_type: "professional", must_change_password: true } });
       if (error) return json({ error: "Não foi possível atualizar o acesso deste profissional." }, 400);
     } else {
-      const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { full_name: professional.name, account_type: "professional" } });
+      const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { full_name: professional.name, account_type: "professional", must_change_password: true } });
       if (error || !data.user) return json({ error: "Não foi possível criar a conta profissional." }, 400);
       authUserId = data.user.id;
     }
