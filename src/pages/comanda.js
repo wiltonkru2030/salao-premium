@@ -112,7 +112,7 @@ export async function loadComandaPage(orderId=null) {
     host.innerHTML=`
       <div class="list-toolbar"><span class="result-count">${orders?.length||0} comandas</span><button class="btn primary" data-action="new-comanda">＋ Nova comanda</button></div>
       <div class="record-list">${(orders||[]).map(o=>'<button class="record-card" data-open-comanda="'+o.id+'"><span class="record-main"><b>Comanda #'+esc(o.order_number)+'</b><small>'+esc(customerMap.get(o.customer_id)||"Cliente não informado")+'</small><small>'+esc(professionalMap.get(o.assigned_professional_id)||"Sem profissional")+'</small></span><span class="record-trailing"><b>'+currency(o.total)+'</b><small>'+esc(o.status)+'</small></span><span class="record-chevron">›</span></button>').join("")||'<div class="empty-state">Nenhuma comanda cadastrada.</div>'}</div>`;
-    host.addEventListener("click",async event=>{
+    if(host.dataset.bound!=="true"){host.dataset.bound="true";host.addEventListener("click",async event=>{
       const open=event.target.closest("[data-open-comanda]");if(open){selectedOrder=open.dataset.openComanda;await loadComandaPage(selectedOrder);return;}
       if(event.target.closest('[data-action="new-comanda"]')){const [c,p]=await Promise.all([
         supabase.from("customers").select("id,name").eq("org_id",orgId).eq("active",true).order("name").limit(500),
@@ -120,7 +120,7 @@ export async function loadComandaPage(orderId=null) {
       ]);renderCreateForm(host,c.data||[],p.data||[]);}
       if(event.target.closest('[data-action="back-comandas"]')){selectedOrder=null;await loadComandaPage();}
       if(event.target.closest('[data-action="cancel-comanda"]')){selectedOrder=null;await loadComandaPage();}
-    },{once:true});
+    });}
   } catch(error) {
     host.innerHTML='<div class="empty-state">'+esc(error.message||"Não foi possível carregar as comandas.")+'</div>';
   }
