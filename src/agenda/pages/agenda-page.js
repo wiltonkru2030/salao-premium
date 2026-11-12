@@ -1,3 +1,4 @@
+/** Página de Agenda administrativa. Responsabilidade: consultar dados do Supabase e montar filtros, calendário e visão de horários. */
 import { state } from '../../state.js';
 import { supabase } from '../../supabase/client.js';
 import { head, btn, initials } from '../../utils.js';
