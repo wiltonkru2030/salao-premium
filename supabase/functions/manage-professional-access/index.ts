@@ -4,8 +4,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.119.0";
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 function validCpf(input: string) {
-  const cpf = input.replace(/\\D/g, "");
-  if (!/^\\d{11}$/.test(cpf) || /^(\\d)\\1{10}$/.test(cpf)) return null;
+  const cpf = input.replace(/\D/g, "");
+  if (!/^\d{11}$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) return null;
   const digit = (base: string, factor: number) => { let sum = 0; for (const value of base) sum += Number(value) * factor--; const rest = (sum * 10) % 11; return rest === 10 ? 0 : rest; };
   if (digit(cpf.slice(0, 9), 10) !== Number(cpf[9]) || digit(cpf.slice(0, 10), 11) !== Number(cpf[10])) return null;
   return cpf;
@@ -29,7 +29,7 @@ Deno.serve(async (req: Request) => {
       pepper = typeof secretResult.data === "string" ? secretResult.data : null;
     }
     if (!pepper) return json({ error: "A chave privada de autenticação não está disponível." }, 503);
-    const token = (req.headers.get("Authorization") || "").replace(/^Bearer\\s+/i, "");
+    const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
     if (!token) return json({ error: "Acesso administrativo obrigatório." }, 401);
     const callerClient = createClient(url, anonKey, { global: { headers: { Authorization: "Bearer " + token } }, auth: { persistSession: false } });
     const { data: caller, error: callerError } = await callerClient.auth.getUser(token);
