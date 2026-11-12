@@ -26,11 +26,15 @@ export async function loadProductsPage(){
  <div class="list-toolbar"><span class="result-count">${data?.length||0} produtos</span></div>
  <div class="record-list">${(data||[]).map(p=>`<article class="record-card"><span class="record-main"><b>${esc(p.name)}</b><small>${esc(p.sku||"Sem SKU")} · ${esc(p.category||"Sem categoria")}</small><small>Estoque: ${Number(p.stock_quantity)} · Mínimo: ${Number(p.min_stock)}</small></span><span class="record-trailing"><b>${money(p.sale_price)}</b><small>${p.active?"Ativo":"Inativo"}</small></span></article>`).join("")||'<div class="empty-state">Nenhum produto cadastrado.</div>'}</div>`;
  if(host.dataset.bound==="true")return;host.dataset.bound="true";
- host.addEventListener("click",event=>{
+ document.addEventListener("click",event=>{
   if(event.target.closest('[data-action="open-product-modal"]'))host.querySelector("#product-create-modal")?.showModal();
   if(event.target.closest("[data-close-product-modal]"))host.querySelector("#product-create-modal")?.close();
  });
- host.addEventListener("submit",async event=>{
+document.addEventListener("click",event=>{
+  const dialog=host.querySelector("#product-create-modal");
+  if(dialog&&event.target===dialog)dialog.close();
+ });
+  host.addEventListener("submit",async event=>{
   if(!event.target.matches("#product-create-form"))return;event.preventDefault();
   const form=event.target,v=new FormData(form),name=String(v.get("name")||"").trim(),cost=parseBRL(v.get("cost_price")),price=parseBRL(v.get("sale_price")),stock=Number(v.get("stock_quantity")||0),min=Number(v.get("min_stock")||0),submit=form.querySelector('[type="submit"]');
   if(!name||![cost,price,stock,min].every(Number.isFinite)||[cost,price,stock,min].some(n=>n<0)){toast("Confira os dados e os valores do produto.");return;}
