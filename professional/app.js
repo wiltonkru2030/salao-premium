@@ -100,7 +100,7 @@ function bindAutocomplete(){
 }
 root.addEventListener("click",async event=>{
  const page=event.target.closest("[data-page]");if(page){state.page=page.dataset.page;state.selectedOrder=null;state.notice="";render();if(state.page==="Comanda")bindAutocomplete();return;}
- const date=event.target.closest("[data-date]");if(date){state.selectedDate=new Date(date.dataset.date+"T12:00:00");render();return;}
+ const date=event.target.closest("[data-date]");if(date){const nextDate=new Date(date.dataset.date+"T12:00:00");const changed=nextDate.getMonth()!==state.month.getMonth()||nextDate.getFullYear()!==state.month.getFullYear();state.selectedDate=nextDate;if(changed){state.month=new Date(nextDate.getFullYear(),nextDate.getMonth(),1);await loadAppointments();}render();return;}
  const order=event.target.closest("[data-order]");if(order){await chooseOrder(order.dataset.order);bindAutocomplete();return;}
  const action=event.target.closest("[data-action]")?.dataset.action;
  if(action==="prev-month"||action==="next-month"){state.month=new Date(state.month.getFullYear(),state.month.getMonth()+(action==="next-month"?1:-1),1);await loadAppointments();render();}
