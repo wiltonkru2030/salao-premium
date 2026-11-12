@@ -70,7 +70,7 @@ export async function loadProfessionalsPage(){
    <label class="professional-app-toggle"><input type="checkbox" data-professional-toggle="${p.id}" ${p.access_enabled?"checked":""} ${!p.active?"disabled":""}><span class="professional-switch"></span><span>App Profissional</span></label>
    <details class="professional-access-details"><summary>Gerenciar acesso</summary>
     <div class="professional-access-fields">
-     <label>CPF de acesso<input data-professional-cpf="${p.id}" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" autocomplete="off"></label>
+     <label>CPF de acesso<input data-professional-cpf="${p.id}" data-mask="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" autocomplete="off"></label>
      <label>Senha temporária<input type="password" data-initial-password="${p.id}" value="${esc(initialPasswords.get(p.id)||"")}" placeholder="Gerada ao liberar acesso" readonly></label>
      <div><button type="button" class="btn secondary" data-professional-reset="${p.id}" ${!p.access_enabled?"disabled":""}>Redefinir senha</button><button type="button" class="btn secondary" data-professional-copy="${p.id}" ${!initialPasswords.has(p.id)?"disabled":""}>Copiar senha</button></div>
     </div>
@@ -85,8 +85,8 @@ export async function loadProfessionalsPage(){
     <h3>Dados pessoais</h3>
     <div class="professional-form-grid">
      <label>Nome completo<input class="field" name="name" required maxlength="120" placeholder="Nome do profissional"></label>
-     <label>CPF<input class="field" name="cpf" required inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label>
-     <label>Telefone<input class="field" name="phone" type="tel" placeholder="(00) 00000-0000"></label>
+     <label>CPF<input class="field" name="cpf" data-mask="cpf" required inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label>
+     <label>Telefone<input class="field" name="phone" data-mask="phone" type="tel" placeholder="(00) 00000-0000"></label>
      <label>E-mail<input class="field" name="email" type="email" placeholder="profissional@email.com"></label>
      <label>Especialidade / área de atuação<input class="field" name="specialty" maxlength="100" placeholder="Ex.: Manicure, cabeleireiro"></label>
      <label>Comissão padrão (%)<input class="field" name="commission_rate" type="number" min="0" max="100" step="0.01" value="0" required></label>
@@ -94,7 +94,7 @@ export async function loadProfessionalsPage(){
     <h3>Dados fiscais</h3>
     <label>Tipo de cadastro<select class="field" name="tax_regime"><option value="individual">Pessoa física</option><option value="mei">MEI</option></select></label>
     <div id="professional-mei-fields" class="professional-form-grid" hidden>
-     <label>CNPJ<input class="field" name="cnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00"></label>
+     <label>CNPJ<input class="field" name="cnpj" data-mask="cnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00"></label>
      <label>Razão social<input class="field" name="legal_name" maxlength="160" placeholder="Razão social do MEI"></label>
      <label>Nome fantasia (opcional)<input class="field" name="trade_name" maxlength="160" placeholder="Nome fantasia"></label>
     </div>
