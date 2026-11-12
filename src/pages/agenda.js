@@ -1,1 +1,1 @@
-export {agenda,professionals,dateKey} from '../agenda/pages/agenda-page.js';
+export {agenda,dateKey} from '../agenda/pages/agenda-page.js';
