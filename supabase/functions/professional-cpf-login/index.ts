@@ -27,6 +27,7 @@ Deno.serve(async (req: Request) => {
   const url = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   if (!url || !serviceKey || !anonKey) return json({ error: "A autenticação profissional ainda não foi configurada." }, 503);
+  const pepper = serviceKey;
   try {
     const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
     let pepper = Deno.env.get("CPF_LOGIN_PEPPER");
