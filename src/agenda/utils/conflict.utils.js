@@ -1,7 +1,8 @@
 import {timeToMinutes} from './duration.utils.js';
+const releasesSlot=item=>['Cancelado','Falta'].includes(item.status);
 export function findConflict(items,candidate,ignoreId=candidate.id){
  const start=timeToMinutes(candidate.time),end=start+Number(candidate.duration||0);
- return items.find(item=>item.id!==ignoreId&&item.date===candidate.date&&item.pro===candidate.pro&&start<timeToMinutes(item.time)+Number(item.duration||0)&&end>timeToMinutes(item.time))||null;
+ return items.find(item=>item.id!==ignoreId&&!releasesSlot(item)&&item.date===candidate.date&&item.pro===candidate.pro&&start<timeToMinutes(item.time)+Number(item.duration||0)&&end>timeToMinutes(item.time))||null;
 }
 export function validateAppointment(candidate,items,{opening='08:00',closing='20:00',allowOverlap=false}={}){
  const errors=[];
