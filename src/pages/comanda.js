@@ -2,7 +2,7 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
 import { mountAutocomplete } from "../components/autocomplete.js";
-import { userErrorMessage } from "../utils/errors.js";
+import { userErrorMessage, reportError } from "../utils/errors.js";
 import { parseBRL } from "../utils/input-masks.js";
 
 /** Módulo Comandas: consulta comandas, monta detalhes e executa lançamentos e pagamentos. */
@@ -98,14 +98,14 @@ function renderOrderDetails(host,order,data,orgId){
    e.preventDefault();if(!selectedService){toast("Selecione um serviço na lista.");return;}
    const {user}=await tenant(),professionalId=String(new FormData(e.target).get("professional_id")),price=Number(selectedService.price||0);
    const {error}=await supabase.from("service_order_items").insert({org_id:orgId,order_id:order.id,item_type:"service",service_id:selectedService.id,professional_id:professionalId,description:selectedService.name,quantity:1,unit_price:price,total:price,created_by:user.id});
-   if(error){toast(error.message||"Não foi possível adicionar o serviço.");return;}toast("Serviço adicionado.");await loadComandaPage(order.id);
+   if(error){reportError(error,{context:"Comanda > adicionar serviço"});return;}toast("Serviço adicionado.");await loadComandaPage(order.id);
   });
   host.querySelector("#comanda-product-form").addEventListener("submit",async e=>{
    e.preventDefault();if(!selectedProduct){toast("Selecione um produto na lista.");return;}
    const {user}=await tenant(),quantity=Number(new FormData(e.target).get("quantity")||1),price=Number(selectedProduct.sale_price||0);
    if(!Number.isFinite(quantity)||quantity<=0||quantity>Number(selectedProduct.stock_quantity||0)){toast("Quantidade inválida ou maior que o estoque.");return;}
    const {error}=await supabase.from("service_order_items").insert({org_id:orgId,order_id:order.id,item_type:"product",product_id:selectedProduct.id,description:selectedProduct.name,quantity,unit_price:price,total:price*quantity,created_by:user.id});
-   if(error){toast(error.message||"Não foi possível adicionar o produto.");return;}toast("Produto adicionado.");await loadComandaPage(order.id);
+   if(error){reportError(error,{context:"Comanda > adicionar produto"});return;}toast("Produto adicionado.");await loadComandaPage(order.id);
   });
  }
  if(editable&&allowPay){
@@ -113,7 +113,7 @@ function renderOrderDetails(host,order,data,orgId){
    e.preventDefault();const v=new FormData(e.target),amount=parseBRL(v.get("amount")),method=String(v.get("payment_method"));
    if(!Number.isFinite(amount)||amount<=0){toast("Informe um valor válido.");return;}
    const {data,error}=await supabase.rpc("register_service_order_payment",{p_order_id:order.id,p_amount:amount,p_payment_method:method});
-   if(error){toast(error.message||"Não foi possível registrar o pagamento.");return;}
+   if(error){reportError(error,{context:"Comanda > registrar pagamento"});return;}
    toast(data?.closed?"Comanda quitada e finalizada. Estoque, caixa e comissões atualizados.":"Pagamento parcial registrado.");
    await loadComandaPage(order.id);
   });
@@ -148,7 +148,7 @@ export async function loadComandaPage(orderId=null){
     if(e.target.closest('[data-action="cancel-comanda"]')){
      const button=e.target.closest('[data-action="cancel-comanda"]');if(!window.confirm("Cancelar esta comanda? Os agendamentos vinculados também serão cancelados."))return;
      const {error}=await supabase.from("service_orders").update({status:"cancelled"}).eq("org_id",orgId).eq("id",button.dataset.orderId);
-     if(error){toast(error.message||"Não foi possível cancelar a comanda.");return;}toast("Comanda e horários vinculados cancelados.");selectedOrder=null;await loadComandaPage();
+     if(error){reportError(error,{context:"Comanda > cancelar comanda"});return;}toast("Comanda e horários vinculados cancelados.");selectedOrder=null;await loadComandaPage();
     }
    });
    host.addEventListener("input",e=>{
@@ -156,5 +156,5 @@ export async function loadComandaPage(orderId=null){
     host.querySelectorAll("[data-open-comanda]").forEach(card=>card.style.display=card.textContent.toLocaleLowerCase("pt-BR").includes(q)?"":"none");
    });
   }
- }catch(error){host.innerHTML='<div class="empty-state">Não foi possível carregar as comandas. Atualize a página e tente novamente.</div>';throw error;}
+ }catch(error){reportError(error,{context:"Comanda > carregar dados"});host.innerHTML='<div class="empty-state">Não foi possível carregar as comandas. Atualize a página e tente novamente.</div>';}
 }
