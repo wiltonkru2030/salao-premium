@@ -1,6 +1,7 @@
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
+import { reportError } from "../utils/errors.js";
 
 let selectedGroup=null;
 const actionLabel={INSERT:"Criou",UPDATE:"Atualizou",DELETE:"Excluiu",RESTORE:"Restaurou",PERMANENT_DELETE:"Exclusão permanente"};
@@ -104,6 +105,7 @@ export async function loadRecycleBinPage(){
   }
   renderPage(host,groups,events,profiles);
  }catch(error){
-  host.innerHTML='<div class="empty-state"><b>Não foi possível carregar Recuperar.</b><small>'+esc(error.message||"Verifique se você tem permissão de administrador.")+'</small></div>';
+  reportError(error,{context:"Recuperar > carregar lixeira e auditoria"});
+  host.innerHTML='<div class="empty-state"><b>Não foi possível carregar Recuperar.</b><small>Verifique sua permissão e tente novamente.</small></div>';
  }
 }
