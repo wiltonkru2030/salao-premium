@@ -253,7 +253,7 @@ document.addEventListener('click',async event=>{
   const appointmentAction=target.closest('[data-appointment-action]');
   if(appointmentAction) {
     try{await handleAppointmentAction(appointmentAction.dataset.appointmentAction);}
-    catch(error){toast(error.message||'Não foi possível executar esta ação.');}
+    catch(error){reportError(error,{context:'Agenda > executar ação do atendimento'});}
     return;
   }
 
@@ -296,7 +296,7 @@ document.addEventListener('click',async event=>{
 
   const action=target.closest('[data-action]')?.dataset.action;
   if(!action)return;
-  if(action==='sign-out'){signOut().catch(error=>toast(error.message||'Não foi possível sair.'));return;}
+  if(action==='sign-out'){signOut().catch(error=>reportError(error,{context:'Autenticação > encerrar sessão'}));return;}
   if(action==='collapse-menu'){state.sidebarCollapsed=!state.sidebarCollapsed;render();return;}
   if(action==='toggle-menu'){state.mobileMenu=true;render();}
   else if(action==='close-menu'){state.mobileMenu=false;render();}
@@ -324,7 +324,7 @@ document.addEventListener('submit',async event=>{
     const submit=form.querySelector('[type="submit"]');
     if(submit){submit.disabled=true;submit.textContent='Salvando…';}
     try{await saveAppointment(form);}
-    catch(error){toast(error.message||'Não foi possível salvar o agendamento.');}
+    catch(error){reportError(error,{context:'Agenda > salvar agendamento'});}
     finally{if(submit){submit.disabled=false;submit.textContent=state.drawer?.appointment?'Salvar reagendamento':'Criar agendamento';}}
     return;
   }
@@ -333,7 +333,7 @@ document.addEventListener('submit',async event=>{
     const submit=form.querySelector('[type="submit"]');
     if(submit){submit.disabled=true;submit.textContent='Salvando…';}
     try{await saveBlockTime(form);}
-    catch(error){toast(error.message||'Não foi possível criar o bloqueio.');}
+    catch(error){reportError(error,{context:'Agenda > criar bloqueio'});}
     finally{if(submit){submit.disabled=false;submit.textContent='Bloquear horário';}}
   }
 });
