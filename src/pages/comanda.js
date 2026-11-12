@@ -7,7 +7,8 @@ let cleanup = [];
 let selectedOrder = null;
 let selectedCustomer = null;
 let selectedProfessional = null;
-let selectedService = null;\nlet selectedProduct = null;
+let selectedService = null;
+let selectedProduct = null;
 const currency = value => Number(value || 0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
 export function comandaPage() {
