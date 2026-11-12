@@ -21,7 +21,6 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Método não permitido." }, 405);
   const url = Deno.env.get("SUPABASE_URL"), serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   if (!url || !serviceKey || !anonKey) return json({ error: "Configuração administrativa incompleta." }, 503);
-  const pepper = serviceKey;
   try {
     const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
     let pepper = Deno.env.get("CPF_LOGIN_PEPPER");
@@ -42,18 +41,43 @@ Deno.serve(async (req: Request) => {
     const { data: professional, error: professionalError } = await admin.from("professionals").select("id,org_id,name,profile_id,active").eq("id", professionalId).eq("org_id", orgId).maybeSingle();
     if (professionalError || !professional || !professional.active) return json({ error: "Profissional não encontrado ou inativo." }, 404);
     const cpfHash = await hmac("cpf:" + cpf, pepper), email = "pro-" + cpfHash.slice(0, 40) + "@login.salaopremium.invalid", password = temporaryPassword();
-    let authUserId = professional.profile_id;
-    if (authUserId) {
-      const { error } = await admin.auth.admin.updateUserById(authUserId, { email, password, email_confirm: true, user_metadata: { full_name: professional.name, account_type: "professional", must_change_password: true } });
-      if (error) return json({ error: "Não foi possível atualizar o acesso deste profissional." }, 400);
-    } else {
-      const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { full_name: professional.name, account_type: "professional", must_change_password: true } });
+    let authUserId: string | null = null;
+    if (professional.profile_id) {
+      const { data: linkedMembership } = await admin.from("org_memberships")
+        .select("role,status")
+        .eq("org_id", orgId)
+        .eq("user_id", professional.profile_id)
+        .eq("status", "active")
+        .maybeSingle();
+      const { data: linkedProfessional } = await admin.from("professionals")
+        .select("id")
+        .eq("org_id", orgId)
+        .eq("profile_id", professional.profile_id)
+        .neq("id", professionalId)
+        .limit(1)
+        .maybeSingle();
+
+      // Reuse only a profile already dedicated to this professional; never change an owner's or receptionist's login.
+      if (linkedMembership?.role === "professional" && !linkedProfessional) {
+        authUserId = professional.profile_id;
+        const { error } = await admin.auth.admin.updateUserById(authUserId, {
+          email, password, email_confirm: true,
+          user_metadata: { full_name: professional.name, account_type: "professional", must_change_password: true }
+        });
+        if (error) return json({ error: "Não foi possível atualizar o acesso deste profissional." }, 400);
+      }
+    }
+    if (!authUserId) {
+      const { data, error } = await admin.auth.admin.createUser({
+        email, password, email_confirm: true,
+        user_metadata: { full_name: professional.name, account_type: "professional", must_change_password: true }
+      });
       if (error || !data.user) return json({ error: "Não foi possível criar a conta profissional." }, 400);
       authUserId = data.user.id;
     }
     const { error: profileError } = await admin.from("profiles").upsert({ id: authUserId, full_name: professional.name });
     if (profileError) return json({ error: "Conta criada, mas o perfil não pôde ser vinculado. Contate o suporte." }, 500);
-    const { error: membershipError } = await admin.from("org_memberships").upsert({ org_id: orgId, user_id: authUserId, role: "professional", status: "active" }, { onConflict: "org_id,user_id" });
+    const { error: membershipError } = await admin.from("org_memberships").upsert({ org_id: orgId, user_id: authUserId, role: "professional", status: "active", professional_app_enabled: true, professional_app_scope: "self" }, { onConflict: "org_id,user_id" });
     if (membershipError) return json({ error: "Conta criada, mas a permissão não pôde ser vinculada." }, 500);
     const { error: updateError } = await admin.from("professionals").update({ profile_id: authUserId, access_enabled: true }).eq("id", professionalId).eq("org_id", orgId);
     if (updateError) return json({ error: "Conta criada, mas não foi possível ativar o acesso." }, 500);
