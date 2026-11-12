@@ -3,6 +3,7 @@ import {records} from '../data/index.js';
 import {$,esc,field,btn} from '../utils.js';
 import {dateKey} from '../agenda/utils/date.utils.js';
 import {renderAppointmentDrawer} from '../agenda/components/appointment-drawer.js';
+import {mountAppointmentForm} from '../agenda/components/appointment-form.js';
 import {renderBlockTimeFields,renderBlockTimeDrawer} from '../agenda/components/block-time-modal.js';
 
 function openDrawer(data){
@@ -23,5 +24,6 @@ function renderDrawer(){
  else if(d.kind==='block')body=renderBlockTimeDrawer(d)+renderBlockTimeFields({date:d.date||dateKey(state.date),time:d.slot||'09:00',pro:d.pro??state.pro});
  else body='<div class="drawer-kicker">'+esc(d.type||'CADASTRO')+' · PROPRIEDADES</div><h2>'+esc(d.title)+'</h2><p class="drawer-description">Informações deste registro.</p><div class="drawer-section"><h3>Detalhes</h3>'+((d.fields||[]).map(f=>field(f.label,f.value)).join(''))+'</div><p class="demo-note">A edição dos cadastros será conectada ao banco de dados posteriormente.</p>';
  root.innerHTML='<div class="drawer-backdrop" data-action="close-drawer"></div><aside class="detail-drawer" role="dialog" aria-modal="true" aria-label="'+esc(d.title)+'"><div class="drawer-top"><span class="drawer-brand">SALÃO PREMIUM</span><button class="icon-btn close-drawer" data-action="close-drawer" aria-label="Fechar painel">×</button></div><div class="drawer-content">'+body+'</div><div class="drawer-bottom">'+btn('Fechar','close-drawer')+'</div></aside>';
+ if(d.kind==='appointment'&&(d.editing||!d.appointment))mountAppointmentForm();
 }
 export {openDrawer,recordDrawer,appointmentDrawer,renderDrawer};
