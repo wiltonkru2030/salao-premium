@@ -1,3 +1,4 @@
+/** Compositor do painel. Responsabilidade: montar menu, cabeçalho, conteúdo da rota e disparar carregadores de cada módulo. */
 import { groups, glyph } from '../data/index.js';
 
 import { state } from '../state.js';
