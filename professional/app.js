@@ -26,6 +26,23 @@ function appointmentCard(a){
  const source = ({customer:"Cliente",salon:"Salão",professional:"Profissional"})[a.booking_source] || "Salão";
  return `<article class="appointment"><strong>${time} · ${esc(a.customer_name)}</strong><div class="meta">${esc(a.service_name)} · ${endDate.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}<br>${esc(a.customer_phone || "Telefone não informado")} · ${money(a.price)}<br>Profissional: ${esc(professional)} · Duração: ${duration} min</div><span class="tag">${esc(a.status)} · Agendado por: ${source}</span>${a.notes?`<div class="meta">${esc(a.notes)}</div>`:""}</article>`;
 }
+function appointmentDetailView(){
+ const a=state.selectedAppointment;if(!a)return "";
+ const duration=Math.max(0,Math.round((new Date(a.ends_at)-new Date(a.starts_at))/60000));
+ return '<section class="detail"><div class="section-title"><h2>Detalhes do agendamento</h2><button class="secondary" data-action="close-appointment">Fechar</button></div>'+
+ '<div class="detail-row"><span>Cliente</span><b>'+esc(a.customer_name)+'</b></div>'+
+ '<div class="detail-row"><span>Telefone</span><b>'+esc(a.customer_phone||"—")+'</b></div>'+
+ '<div class="detail-row"><span>Serviço</span><b>'+esc(a.service_name)+'</b></div>'+
+ '<div class="detail-row"><span>Profissional</span><b>'+esc(a.professional_name||state.professional?.name||"—")+'</b></div>'+
+ '<div class="detail-row"><span>Data</span><b>'+new Date(a.starts_at).toLocaleDateString("pt-BR")+'</b></div>'+
+ '<div class="detail-row"><span>Horário</span><b>'+formatTime(a.starts_at)+'–'+formatTime(a.ends_at)+'</b></div>'+
+ '<div class="detail-row"><span>Duração</span><b>'+duration+' minutos</b></div>'+
+ '<div class="detail-row"><span>Valor</span><b>'+money(a.price)+'</b></div>'+
+ '<div class="detail-row"><span>Status</span><b>'+esc(statusLabel(a.status))+'</b></div>'+
+ '<div class="detail-row"><span>Origem</span><b>'+esc(sourceLabel(a.booking_source))+'</b></div>'+
+ '<div class="detail-row"><span>Quem criou</span><b>'+esc(a.created_by_name||sourceLabel(a.booking_source))+'</b></div>'+
+ '<div class="detail-row"><span>Observações</span><b>'+esc(a.notes||"—")+'</b></div></section>';
+}
 function agendaView(){
  const year=state.month.getFullYear(),month=state.month.getMonth(),first=new Date(year,month,1),offset=first.getDay(),days=new Date(year,month+1,0).getDate(),prevDays=new Date(year,month,0).getDate();
  const apptDays=new Set(state.appointments.map(a=>dateKey(new Date(a.starts_at))));
