@@ -1,3 +1,4 @@
+/** Componente: calendário mensal. Responsabilidade: montar a grade mensal e indicar dias com agendamentos/bloqueios. */
 import {dateKey} from '../utils/date.utils.js';
 import {esc} from '../../utils.js';
 export function renderMonthCalendar({date,pro,appointments,blockedTimes=[]}){
