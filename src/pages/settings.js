@@ -1,0 +1,4 @@
+import { state } from '../state.js';
+import { config } from '../data/index.js';
+import { head } from '../utils.js';
+export function settings(){const opts=Object.keys(config);let h=head('Configurações','Centralize as preferências, regras e segurança do salão.');h+='<div class="settings-layout"><nav class="settings-nav">'+opts.map(x=>'<button class="'+(state.setting===x?'active':'')+'" data-setting="'+x+'">'+x+'<span>›</span></button>').join('')+'</nav><section class="surface settings-panel"><div class="section-heading"><div><h2>'+state.setting+'</h2><p>Preferências da unidade · conteúdo demonstrativo</p></div></div>'+config[state.setting].map(x=>'<button class="setting-row" data-setting-item="'+esc(x[0])+'"><span>'+esc(x[0])+'</span><b>'+esc(x[1])+'</b><span>›</span></button>').join('')+'<div class="settings-foot">As configurações serão persistidas quando o banco de dados estiver conectado.</div></section></div>';return h}
