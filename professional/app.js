@@ -134,19 +134,25 @@ async function loadBase(){
  ]);
  if(profileResult.error)throw profileResult.error;if(orgResult.error)throw orgResult.error;
  state.profile=profileResult.data;state.organization=orgResult.data;
+ const allowedScopes=["self","calendar_all","all"];
  if(state.role==="professional"){
   const {data:pro,error:proError}=await supabase.from("professionals").select("id,name,profile_id,org_id,active,access_enabled")
    .eq("profile_id",state.user.id).eq("org_id",state.orgId).eq("active",true).eq("access_enabled",true).maybeSingle();
   if(proError||!pro)throw new Error("Seu cadastro profissional não está ativo ou o acesso foi desabilitado.");
   state.professional=pro;state.scope="self";
- }else if(state.role==="owner"||state.role==="admin"){
-  state.scope="all";
- }else if(membership.professional_app_enabled===true&&["self","calendar_all","all"].includes(membership.professional_app_scope)){
-  state.scope=membership.professional_app_scope;
  }else{
-  throw new Error("O administrador ainda não liberou o App Profissional para esta conta.");
+  if(membership.professional_app_enabled!==true||!allowedScopes.includes(membership.professional_app_scope)){
+   throw new Error("O administrador ainda não liberou o App Profissional para esta conta.");
+  }
+  state.scope=membership.professional_app_scope;
+  if(state.scope==="self"){
+   const {data:pro,error:proError}=await supabase.from("professionals")
+    .select("id,name,profile_id,org_id,active,access_enabled")
+    .eq("profile_id",state.user.id).eq("org_id",state.orgId).eq("active",true).eq("access_enabled",true).maybeSingle();
+   if(proError||!pro)throw new Error("O acesso individual exige um cadastro profissional vinculado e ativo.");
+   state.professional=pro;
+  }
  }
- if(state.scope==="self"&&!state.professional)throw new Error("O acesso individual exige um cadastro profissional vinculado.");
  await Promise.all([loadAppointments(),loadOrders(),loadServices(),loadCommissions()]);
  state.notice="";render();
 }
