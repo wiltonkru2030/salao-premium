@@ -43,21 +43,32 @@ export async function loadProfessionalsPage(){
  (services||[]).forEach(s=>{const category=s.category||"Outros";if(!groups.has(category))groups.set(category,[]);groups.get(category).push(s);});
  const serviceChoices=[...groups.entries()].map(([category,items])=>'<section class="professional-service-group"><b>'+esc(category)+'</b><div class="professional-service-options">'+items.map(s=>'<label><input type="checkbox" name="service_ids" value="'+s.id+'"><span>'+esc(s.name)+'</span></label>').join("")+'</div></section>').join("");
  host.innerHTML=`
- <div class="professional-page-toolbar"><div><h3>Equipe profissional</h3><p class="demo-note">Cadastre os dados, defina a área de atuação e vincule os serviços atendidos.</p></div><button class="btn primary" type="button" data-open-professional-modal>＋ Cadastrar profissional</button></div>
- <div class="list-toolbar"><span class="result-count">${data?.length||0} profissionais</span></div>
- <div class="record-list">${(data||[]).map(p=>`
- <article class="record-card professional-access-card" data-professional-card="${p.id}">
-  <span class="record-main"><b>${esc(p.name)}</b><small>${esc(p.specialty||"Profissional")} · ${p.tax_regime==="mei"?"MEI":"Pessoa física"}</small><small>${esc(p.phone||p.email||"Sem contato")} · ${p.active?"Ativo":"Inativo"} · Comissão: ${Number(p.commission_rate||0)}%</small><small>Serviços: ${esc((assignedNames.get(p.id)||[]).join(", ")||"Nenhum vínculo")}</small>
-   ${p.tax_regime==="mei"?'<small>CNPJ: '+esc(p.cnpj||"—")+' · '+esc(p.legal_name||"")+'</small>':''}
-   <label class="field">CPF para acesso ao aplicativo<input class="field" data-professional-cpf="${p.id}" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" autocomplete="off"></label>
-   <label class="field">Senha temporária<input class="field" type="password" data-initial-password="${p.id}" value="${esc(initialPasswords.get(p.id)||"")}" placeholder="Gerada ao liberar acesso" readonly></label>
-  </span>
-  <span class="record-trailing"><label class="access-toggle"><input type="checkbox" data-professional-toggle="${p.id}" ${p.access_enabled?"checked":""} ${!p.active?"disabled":""}><span>App Profissional</span></label>
-   <button type="button" class="btn secondary" data-professional-reset="${p.id}" ${!p.access_enabled?"disabled":""}>Redefinir senha</button>
-   <button type="button" class="btn secondary" data-professional-copy="${p.id}" ${!initialPasswords.has(p.id)?"disabled":""}>Copiar senha</button>
-  </span>
- </article>`).join("")||'<div class="empty-state">Nenhum profissional cadastrado.</div>'}</div>
- <p class="demo-note">O CPF não é armazenado em texto puro. Ao liberar o App, o servidor cria a identificação protegida para login. A senha temporária é exibida uma única vez.</p>
+ <div class="professional-page-toolbar">
+  <div><span class="professional-kicker">GESTÃO DA EQUIPE</span><h2>Profissionais</h2><p>Organize especialidades, serviços e acessos em um só lugar.</p></div>
+  <button class="btn primary professional-add-button" type="button" data-open-professional-modal><span>＋</span> Novo profissional</button>
+ </div>
+ <div class="professional-roster-heading"><div><b>Sua equipe</b><small>Profissionais cadastrados no salão</small></div><span class="professional-count">${data?.length||0} <small>PROFISSIONAIS</small></span></div>
+ <div class="professional-roster">${(data||[]).map(p=>`
+ <article class="professional-person-card" data-professional-card="${p.id}">
+  <div class="professional-person-top">
+   <div class="professional-avatar">${esc((p.name||"P").trim().split(/\\s+/).slice(0,2).map(part=>part[0]).join("").toUpperCase())}</div>
+   <div class="professional-person-identity"><h3>${esc(p.name)}</h3><p>${esc(p.specialty||"Profissional")} <span>·</span> ${p.tax_regime==="mei"?"MEI":"Pessoa física"}</p></div>
+   <span class="professional-status ${p.active?"is-active":"is-inactive"}"><i></i>${p.active?"Ativo":"Inativo"}</span>
+  </div>
+  <div class="professional-person-meta"><span>${esc(p.phone||p.email||"Contato não informado")}</span><span>Comissão <b>${Number(p.commission_rate||0)}%</b></span>${p.tax_regime==="mei"?'<span>CNPJ '+esc(p.cnpj||"—")+'</span>':''}</div>
+  <div class="professional-assigned-services"><small>SERVIÇOS HABILITADOS</small><div>${(assignedNames.get(p.id)||[]).length?(assignedNames.get(p.id)||[]).map(name=>'<span>'+esc(name)+'</span>').join(""):'<em>Nenhum serviço vinculado</em>'}</div></div>
+  <div class="professional-person-footer">
+   <label class="professional-app-toggle"><input type="checkbox" data-professional-toggle="${p.id}" ${p.access_enabled?"checked":""} ${!p.active?"disabled":""}><span class="professional-switch"></span><span>App Profissional</span></label>
+   <details class="professional-access-details"><summary>Gerenciar acesso</summary>
+    <div class="professional-access-fields">
+     <label>CPF de acesso<input data-professional-cpf="${p.id}" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" autocomplete="off"></label>
+     <label>Senha temporária<input type="password" data-initial-password="${p.id}" value="${esc(initialPasswords.get(p.id)||"")}" placeholder="Gerada ao liberar acesso" readonly></label>
+     <div><button type="button" class="btn secondary" data-professional-reset="${p.id}" ${!p.access_enabled?"disabled":""}>Redefinir senha</button><button type="button" class="btn secondary" data-professional-copy="${p.id}" ${!initialPasswords.has(p.id)?"disabled":""}>Copiar senha</button></div>
+    </div>
+   </details>
+  </div>
+ </article>`).join("")||'<div class="professional-empty"><span>—</span><b>Sua equipe começa aqui</b><p>Cadastre o primeiro profissional e vincule os serviços que ele realiza.</p><button class="btn primary" type="button" data-open-professional-modal>Novo profissional</button></div>'}</div>
+ <p class="professional-security-note">Os dados de acesso são protegidos. A senha temporária é apresentada somente no momento da criação ou redefinição.</p>
  <dialog class="professional-modal" id="professional-create-modal">
   <form id="professional-create-form" class="professional-modal-form">
    <header class="professional-modal-head"><div><h2>Novo profissional</h2><p>Preencha os dados e selecione os serviços que ele atende.</p></div><button type="button" class="professional-modal-close" data-close-professional-modal aria-label="Fechar">×</button></header>
