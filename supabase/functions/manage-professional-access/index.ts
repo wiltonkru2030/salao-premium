@@ -21,6 +21,7 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Método não permitido." }, 405);
   const url = Deno.env.get("SUPABASE_URL"), serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   if (!url || !serviceKey || !anonKey) return json({ error: "Configuração administrativa incompleta." }, 503);
+  const pepper = serviceKey;
   try {
     const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
     let pepper = Deno.env.get("CPF_LOGIN_PEPPER");
