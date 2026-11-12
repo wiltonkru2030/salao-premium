@@ -1,0 +1,2 @@
+import {esc} from '../../utils.js';
+export function renderAppointmentCard(a,compact=false){return '<button type="button" class="'+(compact?'week-appointment':'appointment-block')+' '+(a.status==='Em atendimento'?'in-progress':'')+'" draggable="true" data-appointment="'+a.id+'" aria-label="'+esc(a.name)+', '+a.time+', '+esc(a.service)+'"><span class="appointment-time">'+a.time+' · '+a.duration+' min</span><b>'+esc(a.name)+'</b><small>'+esc(a.service)+'</small><span class="appointment-status">'+esc(a.status)+'</span></button>'}
