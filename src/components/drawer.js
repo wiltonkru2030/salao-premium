@@ -14,7 +14,7 @@ function recordDrawer(type,index){
  const r=(records[type]||[])[index];if(!r)return;
  openDrawer({kind:'record',title:r[0],type,fields:r.slice(2).map((v,i)=>({label:(['Informação','Detalhes','Valor / situação'][i]||'Detalhe'),value:v}))});
 }
-function appointmentDrawer(a){const selectedProfessional=(state.agendaProfessionals||[])[state.pro];openDrawer({kind:'appointment',appointment:a?{...a}:null,title:a?'Propriedades do agendamento':'Novo agendamento',slot:a?.time||'',pro:a?.professional_id||selectedProfessional?.[3]||'',editing:!a})}
+function appointmentDrawer(a,options={}){const selectedProfessional=(state.agendaProfessionals||[])[state.pro];openDrawer({kind:'appointment',appointment:a?{...a}:null,title:a?'Propriedades do agendamento':'Novo agendamento',slot:a?.time||options.slot||'',pro:a?.professional_id||selectedProfessional?.[3]||'',editing:!a})}
 function renderDrawer(){
  const root=$('#drawer-root');if(!root)return;
  if(!state.drawer){root.innerHTML='';return}
