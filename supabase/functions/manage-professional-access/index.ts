@@ -38,7 +38,7 @@ Deno.serve(async (req: Request) => {
     const body = await req.json(), orgId = String(body?.org_id || ""), professionalId = String(body?.professional_id || ""), cpf = validCpf(String(body?.cpf || "")), action = String(body?.action || "create");
     if (!orgId || !professionalId || !cpf || !["create", "reset"].includes(action)) return json({ error: "Dados inválidos." }, 400);
     const { data: membership } = await callerClient.from("org_memberships").select("role,status").eq("org_id", orgId).eq("user_id", caller.user.id).eq("status", "active").maybeSingle();
-    if (!membership || !["owner", "admin", "manager"].includes(membership.role)) return json({ error: "Somente administrador do salão pode gerenciar acessos." }, 403);
+    if (!membership || !["owner", "admin"].includes(membership.role)) return json({ error: "Somente administrador do salão pode gerenciar acessos." }, 403);
     const { data: professional, error: professionalError } = await admin.from("professionals").select("id,org_id,name,profile_id,active").eq("id", professionalId).eq("org_id", orgId).maybeSingle();
     if (professionalError || !professional || !professional.active) return json({ error: "Profissional não encontrado ou inativo." }, 404);
     const cpfHash = await hmac("cpf:" + cpf, pepper), email = "pro-" + cpfHash.slice(0, 40) + "@login.salaopremium.invalid", password = temporaryPassword();
