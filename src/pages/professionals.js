@@ -78,10 +78,10 @@ export async function loadProfessionalsPage(){
   </div>
  </article>`).join("")||'<div class="professional-empty"><span>—</span><b>Sua equipe começa aqui</b><p>Cadastre o primeiro profissional e vincule os serviços que ele realiza.</p><button class="btn primary" type="button" data-open-professional-modal>Novo profissional</button></div>'}</div>
  <p class="professional-security-note">Os dados de acesso são protegidos. A senha temporária é apresentada somente no momento da criação ou redefinição.</p>
- <dialog class="professional-modal" id="professional-create-modal">
-  <form id="professional-create-form" class="professional-modal-form">
-   <header class="professional-modal-head"><div><h2>Novo profissional</h2><p>Preencha os dados e selecione os serviços que ele atende.</p></div><button type="button" class="professional-modal-close" data-close-professional-modal aria-label="Fechar">×</button></header>
-   <div class="professional-modal-body">
+ <dialog class="professional-modal sp-modal" id="professional-create-modal" aria-labelledby="professional-modal-title">
+  <form id="professional-create-form" class="professional-modal-form sp-modal-shell">
+   <header class="professional-modal-head sp-modal-head"><div><h2 id="professional-modal-title">Novo profissional</h2><p>Preencha os dados e selecione os serviços que ele atende.</p></div><button type="button" class="professional-modal-close" data-close-professional-modal aria-label="Fechar">×</button></header>
+   <div class="professional-modal-body sp-modal-body">
     <h3>Dados pessoais</h3>
     <div class="professional-form-grid">
      <label>Nome completo<input class="field" name="name" required maxlength="120" placeholder="Nome do profissional"></label>
@@ -105,7 +105,7 @@ export async function loadProfessionalsPage(){
     <h3>Acesso ao App Profissional</h3>
     <label class="professional-app-option"><input type="checkbox" name="enable_app"><span><b>Liberar acesso ao App Profissional agora</b><small>O profissional entrará usando CPF e senha temporária. Ao liberar o App, o CPF é protegido pelo servidor; se deixar desmarcado, o CPF não será gravado e precisará ser informado novamente ao liberar o acesso.</small></span></label>
    </div>
-   <footer class="professional-modal-foot"><button type="button" class="btn secondary" data-close-professional-modal>Cancelar</button><button class="btn primary" type="submit">Salvar profissional</button></footer>
+   <footer class="professional-modal-foot sp-modal-foot"><button type="button" class="btn secondary" data-close-professional-modal>Cancelar</button><button class="btn primary" type="submit">Salvar profissional</button></footer>
   </form>
  </dialog>`;
  if(serviceError||assignmentError){const box=host.querySelector("#professional-service-choices");if(box)box.innerHTML='<p class="empty-state">Não foi possível carregar os serviços.</p>';}
@@ -123,8 +123,8 @@ export async function loadProfessionalsPage(){
  if(host.dataset.bound==="true")return;
  host.dataset.bound="true";
  host.addEventListener("click",async event=>{
-  if(event.target.closest("[data-open-professional-modal]")){host.querySelector("#professional-create-modal")?.showModal();return;}
-  if(event.target.closest("[data-close-professional-modal]")){host.querySelector("#professional-create-modal")?.close();return;}
+  if(event.target.closest("[data-open-professional-modal]")){const modal=host.querySelector("#professional-create-modal");if(modal&&!modal.open){modal.showModal();modal.querySelector('[name="name"]')?.focus();}return;}
+  if(event.target===host.querySelector("#professional-create-modal")||event.target.closest("[data-close-professional-modal]")){host.querySelector("#professional-create-modal")?.close();return;}
   const reset=event.target.closest("[data-professional-reset]");
   if(reset){if(!window.confirm("Gerar uma nova senha temporária para este profissional?"))return;await provision(reset,"reset");return;}
   const copy=event.target.closest("[data-professional-copy]");
