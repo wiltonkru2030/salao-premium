@@ -24,17 +24,20 @@ const sourceLabel=v=>({customer:"Cliente",salon:"Salão",professional:"Profissio
 const statusLabel=v=>({scheduled:"Agendado",confirmed:"Confirmado",arrived:"Cliente chegou",in_progress:"Em atendimento",completed:"Finalizado",cancelled:"Cancelado",no_show:"Falta",open:"Aberta",awaiting_payment:"Aguardando pagamento",partially_paid:"Pagamento parcial",closed:"Finalizada"})[v]||v||"—";
 function showNotice(message){state.notice=message;render();}
 function clearAutocomplete(){disposeAutocomplete?.();disposeAutocomplete=null;}
+// Renderiza a tela de autenticação do profissional.
 function loginView(){
  clearAutocomplete();
  root.innerHTML='<main class="login"><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Bem-vindo(a)</h1><p>Profissionais entram com CPF e senha. Proprietários e usuários autorizados podem usar o e-mail.</p>'+
  (state.notice?'<div class="notice">'+esc(state.notice)+'</div>':'')+
  '<form id="professional-login"><label class="field">CPF ou e-mail<input name="login" autocomplete="username" placeholder="000.000.000-00 ou e-mail" required></label><label class="field">Senha<input name="password" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Entrar</button></form><p class="muted">A recuperação de senha é feita somente pelo administrador do salão.</p></main>';
 }
+// Renderiza a troca obrigatória de senha temporária.
 function changePasswordView(){
  root.innerHTML='<main class="login"><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Crie sua nova senha</h1><p>Altere a senha temporária para proteger seu acesso.</p>'+
  (state.notice?'<div class="notice">'+esc(state.notice)+'</div>':'')+
  '<form id="professional-password-change"><label class="field">Nova senha<input name="password" type="password" minlength="10" autocomplete="new-password" required></label><label class="field">Confirmar senha<input name="confirm" type="password" minlength="10" autocomplete="new-password" required></label><button class="primary" type="submit">Salvar nova senha</button></form></main>';
 }
+// Monta cabeçalho, conteúdo e navegação principal do PWA.
 function shell(content){
  const links=[["Agenda","▦"],["Comandas","▤"],["Comissões","％"],["Configurações","⚙"]];
  const greeting=state.professional?.name||state.profile?.full_name||"Equipe";
@@ -71,6 +74,7 @@ function appointmentDetails(){
  '<div class="detail-row"><span>Quem criou</span><b>'+esc(a.created_by_name||sourceLabel(a.booking_source))+'</b></div>'+
  '<div class="detail-row"><span>Observações</span><b>'+esc(a.notes||"—")+'</b></div></section>';
 }
+// Apresenta calendário mensal e lista de agendamentos do profissional.
 function agendaView(){
  const year=state.month.getFullYear(),month=state.month.getMonth(),first=new Date(year,month,1),offset=first.getDay(),days=new Date(year,month+1,0).getDate(),prevDays=new Date(year,month,0).getDate();
  const marks=new Set(state.appointments.map(a=>dateKey(new Date(a.starts_at))));
@@ -90,6 +94,7 @@ function agendaView(){
  '<div class="section-title" style="margin-top:24px"><h2>'+esc(dateLabel(state.selectedDate))+'</h2><span class="muted">'+selected.length+' agendamento(s)</span></div>'+
  (selected.length?selected.map(appointmentCard).join(""):'<div class="empty">Nenhum agendamento neste dia.</div>')+appointmentDetails();
 }
+// Apresenta comandas autorizadas e seus detalhes.
 function ordersView(){
  if(state.selectedOrder){
   const order=state.selectedOrder,canRegister=state.role==="professional"&&!!state.professional&&["open","in_progress","partially_paid"].includes(order.status);
@@ -102,6 +107,7 @@ function ordersView(){
  return '<div class="section-title"><h2>Comandas</h2><span class="muted">Atendimentos vinculados ao seu acesso</span></div>'+
  (state.orders.length?state.orders.map(o=>'<button class="order" data-order="'+esc(o.id)+'"><strong>Comanda #'+esc(o.order_number)+'</strong><div class="meta">Status: '+esc(statusLabel(o.status))+' · '+money(o.total)+'</div></button>').join(""):'<div class="empty">Nenhuma comanda disponível.</div>');
 }
+// Apresenta valores e histórico de comissões do profissional.
 function commissionsView(){
  const total=state.commissions.reduce((sum,c)=>sum+Number(c.amount||0),0);
  const paid=state.commissions.filter(c=>c.status==="paid").reduce((sum,c)=>sum+Number(c.amount||0),0);
@@ -113,6 +119,7 @@ function commissionsView(){
  '<div class="section-title"><h2>Pagamentos recebidos</h2><span class="muted">'+money(payoutTotal)+' em pagamentos</span></div>'+
  (state.commissionPayouts.length?state.commissionPayouts.map(p=>'<article class="commission"><strong>'+money(p.amount)+'</strong><div class="meta">'+esc(p.payment_method)+' · '+dateTimeLabel(p.paid_at)+(p.notes?' · '+esc(p.notes):'')+'</div><span class="tag success">Pago</span></article>').join(""):'<div class="empty">Nenhum pagamento de comissão registrado.</div>');
 }
+// Apresenta dados de perfil e segurança da conta.
 function settingsView(){
  const name=state.profile?.full_name||state.professional?.name||"";
  return '<div class="section-title"><h2>Configurações</h2><span class="muted">Perfil, senha e preferências</span></div>'+
@@ -127,6 +134,7 @@ function render(){
  shell(content);
  if(state.page==="Comandas"&&state.selectedOrder&&state.role==="professional"&&state.professional)bindAutocomplete();
 }
+// Resolve vínculo, escopo e permissões antes de liberar os módulos.
 async function loadBase(){
  const {data:membership,error}=await supabase.from("org_memberships").select("org_id,role,status,professional_app_enabled,professional_app_scope")
   .eq("user_id",state.user.id).eq("status","active").limit(1).maybeSingle();
@@ -160,6 +168,7 @@ async function loadBase(){
  await Promise.all([loadAppointments(),loadOrders(),loadServices(),loadCommissions()]);
  state.notice="";render();
 }
+// Carrega somente agendamentos permitidos pelo escopo profissional.
 async function loadAppointments(){
  const start=new Date(state.month.getFullYear(),state.month.getMonth(),1),end=new Date(state.month.getFullYear(),state.month.getMonth()+1,1);
  const {data,error}=await supabase.from("appointments")
@@ -167,6 +176,7 @@ async function loadAppointments(){
   .eq("org_id",state.orgId).gte("starts_at",start.toISOString()).lt("starts_at",end.toISOString()).order("starts_at").limit(1000);
  if(error)throw error;state.appointments=data||[];
 }
+// Carrega comandas visíveis ao usuário autenticado.
 async function loadOrders(){
  const {data,error}=await supabase.from("service_orders").select("id,order_number,status,total,assigned_professional_id,customer_id").eq("org_id",state.orgId).order("created_at",{ascending:false}).limit(100);
  if(error)throw error;state.orders=data||[];
@@ -183,6 +193,7 @@ async function loadServices(){
  const {data,error}=await query;
  if(error)throw error;state.services=data||[];
 }
+// Carrega comissões e pagamentos do profissional autenticado.
 async function loadCommissions(){
  const [commissionResult,payoutResult]=await Promise.all([
   supabase.from("commissions").select("id,base_amount,rate,amount,status,paid_at,created_at,professional_id,payout_id")
@@ -292,6 +303,7 @@ root.addEventListener("submit",async event=>{
  }catch(error){state.notice=error.message||"Não foi possível entrar.";loginView();}
  finally{if(button){button.disabled=false;button.textContent="Entrar";}}
 });
+// Inicialização do PWA: sessão existente ou tela de login.
 async function boot(){
  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
  const {data,error}=await supabase.auth.getSession();
