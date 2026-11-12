@@ -62,8 +62,15 @@ export function mountAppointmentForm(){
   }));
   cleanups.push(mountAutocomplete(professionalInput,{
     search:async term=>{
-      const {data,error}=await supabase.from('professionals').select('id,name')
-        .eq('org_id',orgId).eq('active',true).ilike('name','%'+term+'%').order('name').limit(8);
+      let query=supabase.from('professionals').select('id,name').eq('org_id',orgId).eq('active',true).ilike('name','%'+term+'%').order('name').limit(8);
+      if(selectedServiceId){
+        const {data:links,error:linkError}=await supabase.from('professional_services').select('professional_id').eq('org_id',orgId).eq('service_id',selectedServiceId);
+        if(linkError)throw linkError;
+        const ids=[...new Set((links||[]).map(link=>link.professional_id))];
+        if(!ids.length)return [];
+        query=query.in('id',ids);
+      }
+      const {data,error}=await query;
       if(error)throw error;return data||[];
     },
     getLabel:item=>item.name,
