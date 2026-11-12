@@ -19,9 +19,12 @@ function shell(content){
  root.innerHTML=`<div class="app-shell"><header class="top"><div><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Olá, ${esc(state.professional?.name?.split(" ")[0] || "profissional")}</h1></div><button class="icon-button" data-action="logout" aria-label="Sair">↪</button></header><main class="content">${state.notice?`<div class="notice">${esc(state.notice)}</div>`:""}${content}</main><nav class="nav">${[["Agenda","▦"],["Serviços","✧"],["Comanda","▤"],["Comissões","％"],["Configurações","⚙"]].map(([label,icon])=>`<button data-page="${label}" class="${state.page===label?"active":""}"><span>${icon}</span>${label}</button>`).join("")}</nav></div>`;
 }
 function appointmentCard(a){
- const time = new Date(a.starts_at).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+ const startDate=new Date(a.starts_at),endDate=new Date(a.ends_at);
+ const time = startDate.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+ const duration=Math.max(0,Math.round((endDate-startDate)/60000));
+ const professional=a.professional_name||state.professional?.name||"—";
  const source = ({customer:"Cliente",salon:"Salão",professional:"Profissional"})[a.booking_source] || "Salão";
- return `<article class="appointment"><strong>${time} · ${esc(a.customer_name)}</strong><div class="meta">${esc(a.service_name)} · ${new Date(a.ends_at).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}<br>${esc(a.customer_phone || "Telefone não informado")} · ${money(a.price)}</div><span class="tag">${esc(a.status)} · Agendado por: ${source}</span>${a.notes?`<div class="meta">${esc(a.notes)}</div>`:""}</article>`;
+ return `<article class="appointment"><strong>${time} · ${esc(a.customer_name)}</strong><div class="meta">${esc(a.service_name)} · ${endDate.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}<br>${esc(a.customer_phone || "Telefone não informado")} · ${money(a.price)}<br>Profissional: ${esc(professional)} · Duração: ${duration} min</div><span class="tag">${esc(a.status)} · Agendado por: ${source}</span>${a.notes?`<div class="meta">${esc(a.notes)}</div>`:""}</article>`;
 }
 function agendaView(){
  const year=state.month.getFullYear(),month=state.month.getMonth(),first=new Date(year,month,1),offset=first.getDay(),days=new Date(year,month+1,0).getDate(),prevDays=new Date(year,month,0).getDate();
