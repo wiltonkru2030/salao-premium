@@ -1,3 +1,4 @@
+/** Testes unitários: operações do repositório local legado da Agenda, isoladas dos dados do salão. */
 import {appts} from '../../data/index.js';
 import {createAppointment,updateAppointment,changeAppointmentStatus} from '../services/agenda.service.js';
 export function runAgendaServiceChecks(){
