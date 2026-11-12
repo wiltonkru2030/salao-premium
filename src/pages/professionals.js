@@ -140,8 +140,8 @@ export async function loadProfessionalsPage(){
   const form=event.target,button=form.querySelector('[type="submit"]'),v=new FormData(form);
   const name=String(v.get("name")||"").trim(),cpf=String(v.get("cpf")||"").replace(/\\D/g,""),phone=String(v.get("phone")||"").trim(),email=String(v.get("email")||"").trim(),rate=Number(v.get("commission_rate")||0),taxRegime=String(v.get("tax_regime")||"individual"),cnpj=String(v.get("cnpj")||"").replace(/\\D/g,"");
   const serviceIds=[...form.querySelectorAll('input[name="service_ids"]:checked')].map(input=>input.value);
-  if(!name||cpf.length!==11||!Number.isFinite(rate)||rate<0||rate>100){toast("Confira nome, CPF e comissão.");return;}
-  if(taxRegime==="mei"&&(cnpj.length!==14||!String(v.get("legal_name")||"").trim())){toast("Para MEI, informe CNPJ válido e razão social.");return;}
+  if(!name||!validCpf(cpf)||!Number.isFinite(rate)||rate<0||rate>100){toast("Confira nome, CPF e comissão.");return;}
+  if(taxRegime==="mei"&&(!validCnpj(cnpj)||!String(v.get("legal_name")||"").trim())){toast("Para MEI, informe CNPJ válido e razão social.");return;}
   if(!serviceIds.length){toast("Selecione ao menos um serviço que o profissional atende.");return;}
   button.disabled=true;button.textContent="Salvando…";
   const payload={org_id:state.organization.id,name,phone:phone||null,email:email||null,commission_rate:rate,active:true,tax_regime:taxRegime,cnpj:taxRegime==="mei"?cnpj:null,legal_name:taxRegime==="mei"?String(v.get("legal_name")||"").trim():null,trade_name:taxRegime==="mei"?String(v.get("trade_name")||"").trim()||null:null,specialty:String(v.get("specialty")||"").trim()||null};
