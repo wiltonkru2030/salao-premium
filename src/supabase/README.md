@@ -57,3 +57,8 @@ O Dashboard também contém indicadores e compromissos demonstrativos. Não util
 - Ainda existem módulos que consultam Supabase diretamente, sem passar pelo serviço genérico `data-service.js`; o padrão de acesso a dados precisa ser uniformizado gradualmente.
 - Os testes automatizados atuais verificam sintaxe/build, utilitários de máscara e regras/componentes da Agenda. Eles não equivalem a testes E2E de autenticação, RLS, pagamentos ou interface em navegador.
 - O estado real das políticas e dos dados deve ser confirmado no projeto Supabase conectado antes de qualquer publicação ou migração.
+
+
+## Auditoria do projeto conectado
+
+Consulte [docs/AUDITORIA-SUPABASE.md](../../docs/AUDITORIA-SUPABASE.md) antes de alterar políticas, funções ou migrações. O documento registra o estado observado do banco e a divergência atual entre o histórico remoto e os arquivos SQL do repositório.
