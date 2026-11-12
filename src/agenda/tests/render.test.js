@@ -1,16 +1,26 @@
-import {state} from '../../state.js';
-import {agenda} from '../pages/agenda-page.js';
+import { renderDayCalendar } from "../components/day-calendar.js";
+import { renderWeekCalendar } from "../components/week-calendar.js";
+import { renderMonthCalendar } from "../components/month-calendar.js";
+import { renderProfessionalSelector } from "../components/professional-selector.js";
+
 export function runAgendaRenderChecks(){
- const old={...state};
- const checks=[];
- try{
-  state.page='Agenda';state.date=new Date(2026,10,12);state.pro=0;state.view='Dia';state.query='';state.filter='Todos';state.blockedTimes=[];
-  const day=agenda();
-  checks.push(['renderiza agenda diária',day.includes('Gerencie horários')&&day.includes('calendar')]);
-  checks.push(['renderiza seletor de profissionais',day.includes('Mariana Costa')&&day.includes('Ana Lima')]);
-  state.view='Semana';const week=agenda();checks.push(['renderiza agenda semanal',week.includes('week-calendar')]);
-  state.view='Mês';const month=agenda();checks.push(['renderiza agenda mensal',month.includes('month-calendar')]);
- }catch(error){checks.push(['renderiza agenda sem exceções: '+error.message,false])}
- Object.assign(state,old);
- return {passed:checks.filter(x=>x[1]).length,total:checks.length,checks};
+  const date=new Date(2026,10,12);
+  const professionals=[["MC","Mariana Costa","Cabeleireira","pro-1"],["AL","Ana Lima","Manicure","pro-2"]];
+  const appointments=[
+    {id:"a1",date:"2026-11-12",time:"09:00",name:"Camila Rodrigues",service:"Corte",pro:0,duration:60,status:"Confirmado"},
+    {id:"a2",date:"2026-11-13",time:"10:00",name:"Fernanda Alves",service:"Escova",pro:0,duration:45,status:"Em atendimento"}
+  ];
+  const props={date,pro:0,professional:professionals[0],appointments,blockedTimes:[]};
+  const checks=[];
+  try{
+    const day=renderDayCalendar(props);
+    checks.push(["renderiza agenda diária",day.includes("calendar surface")&&day.includes("Mariana Costa")]);
+    checks.push(["mostra atendimento do dia",day.includes("Camila Rodrigues")]);
+    checks.push(["renderiza agenda semanal",renderWeekCalendar(props).includes("week-calendar")]);
+    checks.push(["renderiza agenda mensal",renderMonthCalendar(props).includes("month-calendar")]);
+    checks.push(["seletor exibe profissionais dinâmicos",renderProfessionalSelector(1,professionals).includes("Ana Lima")]);
+  }catch(error){
+    checks.push(["renderização sem exceções: "+error.message,false]);
+  }
+  return {passed:checks.filter(item=>item[1]).length,total:checks.length,checks};
 }
