@@ -10,3 +10,4 @@
 @import url('./src/agenda/styles/agenda.css');
 
 @import url('./src/auth/auth.css?v=supabase-auth-20261112');
+\n@import url('./src/styles/components.css');\n
