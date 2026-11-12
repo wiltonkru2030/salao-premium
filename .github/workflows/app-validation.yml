@@ -14,27 +14,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Syntax · shared autocomplete
-        run: node --check src/components/autocomplete.js
-      - name: Syntax · comanda
-        run: node --check src/pages/comanda.js
-      - name: Syntax · professionals
-        run: node --check src/pages/professionals.js
-      - name: Syntax · customers
-        run: node --check src/pages/customers.js
-      - name: Syntax · services
-        run: node --check src/pages/services.js
-      - name: Syntax · products
-        run: node --check src/pages/products.js
-      - name: Syntax · layout
-        run: node --check src/layout/render.js
-      - name: Syntax · data service
-        run: node --check src/supabase/data-service.js
-      - name: Syntax · main application
-        run: node --check src/app.js
-      - name: Syntax · agenda page
-        run: node --check src/agenda/pages/agenda-page.js
-      - name: Syntax · professional PWA
-        run: node --check professional/app.js
+      - name: Check syntax of every JavaScript file
+        run: |
+          find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
+      - name: Build production application and validate module imports
+        run: npm run build
       - name: Run agenda regression tests
         run: npm run test:agenda
