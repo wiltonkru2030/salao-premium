@@ -11,13 +11,14 @@ export function renderAppointmentForm({appointment=null,date='',time='',pro=null
   const selectedDate=a.date||date;
   const selectedTime=a.time||time||'09:00';
   const professionalId=a.professional_id||pro||'';
+  const selectedProfessionalName=a.professionalName||(state.agendaProfessionals||[]).find(item=>item[3]===professionalId)?.[1]||'';
   return '<form class="agenda-form" data-agenda-form>'+
     '<label class="form-field"><span>Cliente</span><input id="appointment-customer-search" value="'+esc(a.name||'')+'" placeholder="Digite para buscar o cliente" autocomplete="off" required></label>'+
     '<input type="hidden" name="customer_id" value="'+esc(a.customer_id||'')+'">'+
     '<label class="form-field"><span>Telefone</span><input name="phone" type="tel" value="'+esc(a.phone||'')+'" placeholder="(00) 00000-0000"></label>'+
     '<label class="form-field"><span>Serviço</span><input id="appointment-service-search" value="'+esc(a.service||'')+'" placeholder="Digite para buscar o serviço" autocomplete="off" required></label>'+
     '<input type="hidden" name="service_id" value="'+esc(a.service_id||'')+'">'+
-    '<label class="form-field"><span>Profissional</span><input id="appointment-professional-search" value="'+esc(a.professionalName||'')+'" placeholder="Digite para buscar o profissional" autocomplete="off" required></label>'+
+    '<label class="form-field"><span>Profissional</span><input id="appointment-professional-search" value="'+esc(selectedProfessionalName)+'" placeholder="Digite para buscar o profissional" autocomplete="off" required></label>'+
     '<input type="hidden" name="professional_id" value="'+esc(professionalId)+'">'+
     '<div class="agenda-form-row"><label class="form-field"><span>Data</span><input name="date" type="date" value="'+esc(selectedDate)+'" required></label><label class="form-field"><span>Horário</span><input name="time" type="time" step="300" value="'+esc(selectedTime)+'" required></label></div>'+
     '<div class="agenda-form-row"><label class="form-field"><span>Duração (minutos)</span><input name="duration" type="number" min="5" max="720" step="5" value="'+esc(a.duration||60)+'" required></label><label class="form-field"><span>Valor previsto (R$)</span><input name="price" type="number" min="0" step="0.01" value="'+esc(a.price??'')+'" placeholder="0,00" required></label></div>'+
