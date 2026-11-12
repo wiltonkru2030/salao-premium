@@ -100,3 +100,47 @@ Também foi observado que `must_change_password` é gravado em `user_metadata` e
 As tabelas do schema `private` não concedem privilégios de tabela a `anon` nem a `authenticated`. O schema `private` também não concede `USAGE` a `anon`; concede a `authenticated` para permitir o uso interno das funções auxiliares em políticas RLS. A configuração explícita de schemas expostos pelo PostgREST não foi encontrada na configuração consultada; confirmar no painel antes de adicionar schemas à Data API.
 
 As tabelas de `public` mantêm grants de tabela para `anon`, mas as políticas analisadas são destinadas a `authenticated`. Isso não equivale a acesso irrestrito enquanto RLS estiver ativo e sem políticas para `anon`; mesmo assim, recomenda-se reduzir os grants anônimos ao mínimo depois de testar os fluxos públicos de autenticação.
+
+
+### Manifesto do histórico remoto observado
+
+Versões retornadas pelo Supabase em 12/11/2026:
+
+```text
+20261112161153 initial_salao_premium_schema
+20261112161333 refine_role_based_access_and_indexes
+20261112162027 professional_app_and_service_orders
+20261112162105 secure_professional_cpf_auth
+20261112162115 professional_login_provisioning_rpc
+20261112162202 service_order_total_recalculation
+20261112162406 fix_service_order_totals_trigger
+20261112162610 tighten_professional_data_access
+20261112162757 restrict_professional_module_permissions
+20261112162841 enforce_professional_comanda_limits
+20261112163107 vault_professional_cpf_pepper_access
+20261112163653 allow_professional_read_own_order_items
+20261112165404 audit_history_and_recovery_bin
+20261112165526 professional_app_access_and_comanda_workflow
+20261112170155 appointment_checkin_payment_and_commission_workflow
+20261112170218 secure_professional_cpf_pepper_lookup
+20261112170347 recycle_bin_retention_and_documentation
+20261112170907 appointment_creator_snapshot
+20261112171759 app_scope_reception_and_audit_completion
+20261112171813 reception_calendar_all_rls
+20261112171935 reception_command_operational_access
+20261112172256 professional_access_revocation_and_comanda_strategy
+20261112172630 fix_comanda_sale_status_on_payment
+20261112173203 payment_safe_cancellation_and_security_cleanup
+20261112173311 commission_payout_schema_and_history
+20261112173328 commission_payout_rpc_and_sales_cash_link
+20261112173534 professional_auth_bootstrap_without_tenant_creation
+20261112182318 professional_app_scope_hardening
+20261112182427 professional_app_scope_role_guard
+20261112182626 professional_order_rls_no_recursion
+20261112182739 professional_app_owner_and_reception_access
+20261112182809 reception_app_scope_safe_until_separate_identity
+20261112202823 professional_fiscal_profile_and_service_assignments
+20261112202951 enforce_professional_service_assignments
+20261112203122 professional_services_policy_optimization
+20261112203202 preserve_legacy_appointments_service_links
+```
