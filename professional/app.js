@@ -168,8 +168,12 @@ async function loadOrders(){
  if(error)throw error;state.orders=data||[];
 }
 async function loadServices(){
- const {data,error}=await supabase.from("services").select("id,name,category,duration_minutes,price").eq("org_id",state.orgId).eq("active",true).order("name").limit(250);
- if(error)throw error;state.services=data||[];
+ const {data,error}=await supabase.from("professional_services").select("service_id").eq("org_id",state.orgId).eq("professional_id",state.professional?.id);
+ if(error)throw error;
+ const ids=[...new Set((data||[]).map(row=>row.service_id))];
+ if(!ids.length){state.services=[];return;}
+ const {data:services,error:serviceError}=await supabase.from("services").select("id,name,category,duration_minutes,price").eq("org_id",state.orgId).eq("active",true).in("id",ids).order("name").limit(250);
+ if(serviceError)throw serviceError;state.services=services||[];
 }
 async function loadCommissions(){
  const [commissionResult,payoutResult]=await Promise.all([
