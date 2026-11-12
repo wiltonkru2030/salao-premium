@@ -2,7 +2,7 @@ import { supabase } from "../src/supabase/client.js";
 import { mountAutocomplete } from "../src/components/autocomplete.js";
 
 const root = document.querySelector("#professional-app");
-const state = { user:null, orgId:null, professional:null, profile:null, page:"Agenda", month:new Date(new Date().getFullYear(),new Date().getMonth(),1), selectedDate:new Date(), appointments:[], orders:[], services:[], commissions:[], selectedOrder:null, selectedService:null, notice:"" };
+const state = { user:null, orgId:null, role:null, scope:"none", professional:null, profile:null, organization:null, page:"Agenda", month:new Date(new Date().getFullYear(),new Date().getMonth(),1), selectedDate:new Date(), selectedAppointment:null, appointments:[], orders:[], services:[], commissions:[], selectedOrder:null, selectedService:null, notice:"" };
 const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money = value => Number(value || 0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const dateKey = date => [date.getFullYear(),String(date.getMonth()+1).padStart(2,"0"),String(date.getDate()).padStart(2,"0")].join("-");
@@ -13,10 +13,10 @@ function changePasswordView(){
  root.innerHTML=`<main class="login"><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Crie sua nova senha</h1><p>Por segurança, altere a senha temporária antes de continuar.</p>${state.notice?`<div class="notice">${esc(state.notice)}</div>`:""}<form id="professional-password-change"><label class="field">Nova senha<input name="password" type="password" minlength="10" autocomplete="new-password" placeholder="Mínimo de 10 caracteres" required></label><label class="field">Confirmar senha<input name="confirm" type="password" minlength="10" autocomplete="new-password" placeholder="Digite novamente" required></label><button class="primary" type="submit">Salvar nova senha</button></form><p class="muted">A alteração é obrigatória para proteger seu acesso.</p></main>`;
 }
 function loginView(){
- root.innerHTML=`<main class="login"><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Bem-vindo(a)</h1><p>Entre com seu CPF e senha fornecidos pelo administrador do salão.</p>${state.notice?`<div class="notice">${esc(state.notice)}</div>`:""}<form id="professional-login"><label class="field">CPF<input name="cpf" inputmode="numeric" autocomplete="username" placeholder="000.000.000-00" maxlength="14" required></label><label class="field">Senha<input name="password" type="password" autocomplete="current-password" placeholder="Sua senha" required></label><button class="primary" type="submit">Entrar</button></form><p class="muted">Esqueceu a senha? Solicite a redefinição ao administrador do salão.</p></main>`;
+ root.innerHTML=`<main class="login"><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Bem-vindo(a)</h1><p>Profissionais entram com CPF e senha. Proprietários e pessoas autorizadas podem usar o e-mail.</p>${state.notice?`<div class="notice">${esc(state.notice)}</div>`:""}<form id="professional-login"><label class="field">CPF ou e-mail<input name="login" inputmode="text" autocomplete="username" placeholder="000.000.000-00 ou seu e-mail" required></label><label class="field">Senha<input name="password" type="password" autocomplete="current-password" placeholder="Sua senha" required></label><button class="primary" type="submit">Entrar</button></form><p class="muted">Esqueceu a senha? Solicite a redefinição ao administrador do salão.</p></main>`;
 }
 function shell(content){
- root.innerHTML=`<div class="app-shell"><header class="top"><div><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Olá, ${esc(state.professional?.name?.split(" ")[0] || "profissional")}</h1></div><button class="icon-button" data-action="logout" aria-label="Sair">↪</button></header><main class="content">${state.notice?`<div class="notice">${esc(state.notice)}</div>`:""}${content}</main><nav class="nav">${[["Agenda","▦"],["Serviços","✧"],["Comanda","▤"],["Comissões","％"],["Configurações","⚙"]].map(([label,icon])=>`<button data-page="${label}" class="${state.page===label?"active":""}"><span>${icon}</span>${label}</button>`).join("")}</nav></div>`;
+ root.innerHTML=`<div class="app-shell"><header class="top"><div><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Olá, ${esc(state.professional?.name?.split(" ")[0] || "profissional")}</h1></div><button class="icon-button" data-action="logout" aria-label="Sair">↪</button></header><main class="content">${state.notice?`<div class="notice">${esc(state.notice)}</div>`:""}${content}</main><nav class="nav">${[["Agenda","▦"],["Comandas","▤"],["Comissões","％"],["Configurações","⚙"]].map(([label,icon])=>`<button data-page="${label}" class="${state.page===label?"active":""}"><span>${icon}</span>${label}</button>`).join("")}</nav></div>`;
 }
 function appointmentCard(a){
  const startDate=new Date(a.starts_at),endDate=new Date(a.ends_at);
@@ -36,7 +36,7 @@ function agendaView(){
  const selected=state.appointments.filter(a=>dateKey(new Date(a.starts_at))===dateKey(state.selectedDate)).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at));
  return `<div class="section-title"><h2>Agenda mensal</h2><span class="muted">Somente sua agenda</span></div><div class="calendar-head"><button data-action="prev-month">‹</button><strong>${esc(monthLabel(state.month))}</strong><button data-action="next-month">›</button></div><div class="calendar">${["D","S","T","Q","Q","S","S"].map(d=>`<div class="weekday">${d}</div>`).join("")}${cells.join("")}</div><div class="section-title" style="margin-top:24px"><h2>${esc(dateLabel(state.selectedDate))}</h2><span class="muted">${selected.length} agendamento(s)</span></div>${selected.length?selected.map(appointmentCard).join(""):'<div class="empty">Nenhum agendamento neste dia.</div>'}`;
 }
-function servicesView(){return `<div class="section-title"><h2>Serviços</h2><span class="muted">Catálogo do salão</span></div>${state.services.length?state.services.map(s=>`<article class="service"><strong>${esc(s.name)}</strong><div class="meta">${esc(s.category||"Serviço")} · ${Number(s.duration_minutes)} min</div><span class="tag">${money(s.price)}</span></article>`).join(""):'<div class="empty">Nenhum serviço disponível.</div>'}`;}
+
 function ordersView(){
  if(state.selectedOrder){const order=state.selectedOrder;return `<button class="secondary" data-action="back-orders">← Voltar às comandas</button><div class="detail"><strong>Comanda #${esc(order.order_number)}</strong><div class="detail-row"><span>Status</span><b>${esc(order.status)}</b></div><div class="detail-row"><span>Total</span><b>${money(order.total)}</b></div></div><div class="section-title"><h2>Serviços registrados</h2></div><div id="order-items"><div class="empty">Carregando itens…</div></div><div class="detail"><strong>Registrar serviço realizado</strong><label class="field service-search">Buscar serviço<input id="service-search" placeholder="Digite o nome do serviço" autocomplete="off"><div id="service-suggestions" class="suggestions"></div></label><button class="primary" id="add-service" disabled>Registrar serviço</button><p class="muted">O registro fica vinculado ao seu perfil. Você não pode alterar valores, produtos ou finalizar pagamentos.</p></div>`; }
  return `<div class="section-title"><h2>Minhas comandas</h2><span class="muted">Acesso restrito</span></div>${state.orders.length?state.orders.map(o=>`<button class="order" style="display:block;width:100%;text-align:left" data-order="${o.id}"><strong>Comanda #${esc(o.order_number)}</strong><div class="meta">Status: ${esc(o.status)} · ${money(o.total)}</div></button>`).join(""):'<div class="empty">Nenhuma comanda vinculada à sua agenda no momento.</div>'}`;
@@ -44,28 +44,45 @@ function ordersView(){
 function commissionsView(){return `<div class="section-title"><h2>Minhas comissões</h2><span class="muted">Somente seus lançamentos</span></div>${state.commissions.length?state.commissions.map(c=>`<article class="commission"><strong>${money(c.amount)}</strong><div class="meta">Base: ${money(c.base_amount)} · Taxa: ${Number(c.rate)}%</div><span class="tag">${esc(c.status)}</span></article>`).join(""):'<div class="empty">Nenhuma comissão registrada.</div>'}`;}
 function settingsView(){return `<div class="section-title"><h2>Configurações</h2></div><div class="detail"><div class="detail-row"><span>Profissional</span><b>${esc(state.professional?.name)}</b></div><div class="detail-row"><span>Salão</span><b>${esc(state.profile?.organizationName||"Conta vinculada")}</b></div><div class="detail-row"><span>Login</span><b>CPF</b></div><div class="detail-row"><span>Senha</span><b>Redefinição pelo administrador</b></div></div><button class="secondary" data-action="logout">Sair da conta</button>`;}
 function render(){
- const content=state.page==="Agenda"?agendaView():state.page==="Serviços"?servicesView():state.page==="Comanda"?ordersView():state.page==="Comissões"?commissionsView():settingsView();
+ const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView():state.page==="Comissões"?commissionsView():settingsView();
  shell(content);
 }
 async function loadBase(){
- const {data:membership,error:mError}=await supabase.from("org_memberships").select("org_id,role").eq("user_id",state.user.id).eq("role","professional").eq("status","active").maybeSingle();
- if(mError||!membership) throw new Error("Acesso profissional não encontrado. Peça ao administrador para conferir seu cadastro.");
- state.orgId=membership.org_id;
- const {data:pro,error:pError}=await supabase.from("professionals").select("id,name,profile_id,org_id").eq("profile_id",state.user.id).eq("org_id",state.orgId).eq("active",true).maybeSingle();
- if(pError||!pro) throw new Error("Seu cadastro profissional não está ativo.");
- state.professional=pro;
- const {data:profile}=await supabase.from("profiles").select("full_name").eq("id",state.user.id).maybeSingle();
- state.profile=profile;
+ const {data:membership,error:mError}=await supabase.from("org_memberships")
+  .select("org_id,role,status,professional_app_enabled,professional_app_scope")
+  .eq("user_id",state.user.id).eq("status","active").limit(1).maybeSingle();
+ if(mError||!membership)throw new Error("Esta conta não está vinculada a um salão ativo.");
+ state.orgId=membership.org_id;state.role=membership.role;state.professional=null;
+ const [profileResult,orgResult]=await Promise.all([
+  supabase.from("profiles").select("full_name,phone").eq("id",state.user.id).maybeSingle(),
+  supabase.from("organizations").select("id,name,timezone,currency").eq("id",state.orgId).maybeSingle()
+ ]);
+ if(profileResult.error)throw profileResult.error;
+ if(orgResult.error)throw orgResult.error;
+ state.profile=profileResult.data;state.organization=orgResult.data;
+ if(state.role==="professional"){
+  const {data:pro,error}=await supabase.from("professionals").select("id,name,profile_id,org_id,active,access_enabled")
+   .eq("profile_id",state.user.id).eq("org_id",state.orgId).eq("active",true).eq("access_enabled",true).maybeSingle();
+  if(error||!pro)throw new Error("Seu cadastro profissional não está ativo ou o acesso foi desabilitado.");
+  state.professional=pro;state.scope="self";
+ } else if(state.role==="owner"||state.role==="admin"){
+  state.scope="all";
+ } else if(membership.professional_app_enabled===true&&["all","self"].includes(membership.professional_app_scope)){
+  state.scope=membership.professional_app_scope;
+ } else {
+  throw new Error("O administrador ainda não liberou o App Profissional para esta conta.");
+ }
+ if(state.scope==="self"&&!state.professional)throw new Error("O acesso individual exige um cadastro profissional vinculado.");
  await Promise.all([loadAppointments(),loadOrders(),loadServices(),loadCommissions()]);
  render();
 }
 async function loadAppointments(){
  const start=new Date(state.month.getFullYear(),state.month.getMonth(),1),end=new Date(state.month.getFullYear(),state.month.getMonth()+1,1);
- const {data,error}=await supabase.from("appointments").select("id,starts_at,ends_at,customer_name,customer_phone,service_name,professional_name,status,price,booking_source,notes").eq("org_id",state.orgId).eq("professional_id",state.professional.id).gte("starts_at",start.toISOString()).lt("starts_at",end.toISOString()).order("starts_at");
+ const {data,error}=await supabase.from("appointments").select("id,starts_at,ends_at,customer_name,customer_phone,service_name,professional_name,status,price,booking_source,notes").eq("org_id",state.orgId).gte("starts_at",start.toISOString()).lt("starts_at",end.toISOString()).order("starts_at");
  if(error) throw error; state.appointments=data||[];
 }
 async function loadOrders(){
- const {data,error}=await supabase.from("service_orders").select("id,order_number,status,total,assigned_professional_id,customer_id").eq("org_id",state.orgId).eq("assigned_professional_id",state.professional.id).order("created_at",{ascending:false}).limit(50);
+ const {data,error}=await supabase.from("service_orders").select("id,order_number,status,total,assigned_professional_id,customer_id").eq("org_id",state.orgId).order("created_at",{ascending:false}).limit(50);
  if(error) throw error; state.orders=data||[];
 }
 async function loadServices(){
@@ -73,7 +90,7 @@ async function loadServices(){
  if(error) throw error; state.services=data||[];
 }
 async function loadCommissions(){
- const {data,error}=await supabase.from("commissions").select("id,base_amount,rate,amount,status,created_at").eq("org_id",state.orgId).eq("professional_id",state.professional.id).order("created_at",{ascending:false}).limit(100);
+ const {data,error}=await supabase.from("commissions").select("id,base_amount,rate,amount,status,created_at").eq("org_id",state.orgId).order("created_at",{ascending:false}).limit(100);
  if(error) throw error; state.commissions=data||[];
 }
 async function loadOrderItems(){
@@ -105,12 +122,14 @@ function bindAutocomplete(){
  });
 }
 root.addEventListener("click",async event=>{
- const page=event.target.closest("[data-page]");if(page){state.page=page.dataset.page;state.selectedOrder=null;state.notice="";render();if(state.page==="Comanda")bindAutocomplete();return;}
+ const page=event.target.closest("[data-page]");if(page){state.page=page.dataset.page;state.selectedOrder=null;state.selectedAppointment=null;state.notice="";render();if(state.page==="Comandas")bindAutocomplete();return;}
  const date=event.target.closest("[data-date]");if(date){const nextDate=new Date(date.dataset.date+"T12:00:00");const changed=nextDate.getMonth()!==state.month.getMonth()||nextDate.getFullYear()!==state.month.getFullYear();state.selectedDate=nextDate;if(changed){state.month=new Date(nextDate.getFullYear(),nextDate.getMonth(),1);await loadAppointments();}render();return;}
  const order=event.target.closest("[data-order]");if(order){await chooseOrder(order.dataset.order);return;}
+ const appt=event.target.closest("[data-appointment]");if(appt){state.selectedAppointment=state.appointments.find(a=>a.id===appt.dataset.appointment)||null;render();return;}
  const action=event.target.closest("[data-action]")?.dataset.action;
  if(action==="prev-month"||action==="next-month"){state.month=new Date(state.month.getFullYear(),state.month.getMonth()+(action==="next-month"?1:-1),1);await loadAppointments();render();}
  if(action==="back-orders"){state.selectedOrder=null;render();}
+ if(action==="close-appointment"){state.selectedAppointment=null;render();}
  if(action==="logout"){await supabase.auth.signOut();state.user=null;state.professional=null;loginView();}
 });
 root.addEventListener("submit",async event=>{
@@ -126,15 +145,23 @@ root.addEventListener("submit",async event=>{
   return;
  }
  if(!event.target.matches("#professional-login"))return;
- event.preventDefault();const fd=new FormData(event.target),cpf=String(fd.get("cpf")||""),password=String(fd.get("password")||"");
+ event.preventDefault();const fd=new FormData(event.target),login=String(fd.get("login")||"").trim(),password=String(fd.get("password")||"");
  const button=event.target.querySelector("button[type=submit]");button.disabled=true;button.textContent="Validando…";
  try{
-  const {data,error}=await supabase.functions.invoke("professional-cpf-login",{body:{cpf,password}});
-  if(error||!data?.access_token||!data?.refresh_token)throw new Error(data?.error||"CPF ou senha inválidos.");
-  const {error:sessionError}=await supabase.auth.setSession({access_token:data.access_token,refresh_token:data.refresh_token});
-  if(sessionError)throw sessionError;
-  const {data:userData,error:userError}=await supabase.auth.getUser();if(userError||!userData.user)throw new Error("Não foi possível iniciar sua sessão.");
-  state.user=userData.user;state.notice="";if(state.user.user_metadata?.must_change_password){changePasswordView();return;}await loadBase();
+  if(login.includes("@")){
+   const {error}=await supabase.auth.signInWithPassword({email:login.toLowerCase(),password});
+   if(error)throw new Error("E-mail ou senha inválidos.");
+   const {data:userData,error:userError}=await supabase.auth.getUser();if(userError||!userData.user)throw new Error("Não foi possível iniciar sua sessão.");
+   state.user=userData.user;
+  } else {
+   const {data,error}=await supabase.functions.invoke("professional-cpf-login",{body:{cpf:login,password}});
+   if(error||!data?.access_token||!data?.refresh_token)throw new Error(data?.error||"CPF ou senha inválidos.");
+   const {error:sessionError}=await supabase.auth.setSession({access_token:data.access_token,refresh_token:data.refresh_token});
+   if(sessionError)throw sessionError;
+   const {data:userData,error:userError}=await supabase.auth.getUser();if(userError||!userData.user)throw new Error("Não foi possível iniciar sua sessão.");
+   state.user=userData.user;
+  }
+  state.notice="";if(state.user.user_metadata?.must_change_password){changePasswordView();return;}await loadBase();
  }catch(error){state.notice=error.message||"Não foi possível entrar.";loginView();}
  finally{if(button){button.disabled=false;button.textContent="Entrar";}}
 });
