@@ -2,6 +2,8 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, toast, esc } from "../utils.js";
 
+/** Módulo Profissionais: cadastro fiscal, vínculo de serviços e controle de acesso ao App Profissional. */
+
 const initialPasswords=new Map();
 const onlyDigits=value=>String(value||"").replace(/\D/g,"");
 function validCpf(value){
