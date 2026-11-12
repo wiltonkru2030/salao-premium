@@ -2,6 +2,7 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
 import { mountAutocomplete } from "../components/autocomplete.js";
+import { reportError } from "../utils/errors.js";
 
 let cleanupSearch=null;
 let selectedProfessionalFilter=null;
@@ -87,15 +88,22 @@ export async function loadCommissionsPage(){
     const amount=visible.filter(c=>ids.includes(c.id)).reduce((sum,c)=>sum+Number(c.amount||0),0);
     if(!window.confirm("Confirmar pagamento de "+money(amount)+" para "+name+"? O lançamento será registrado como saída no Caixa."))return;
     button.disabled=true;button.textContent="Registrando…";
-    const {data,error}=await supabase.rpc("pay_professional_commissions",{
-     p_org_id:orgId,p_professional_id:professionalId,p_commission_ids:ids,
-     p_payment_method:method,p_notes:"Pagamento de comissões"
-    });
-    if(error){toast(error.message||"Não foi possível registrar o pagamento.");button.disabled=false;button.textContent="Pagar selecionadas";return;}
-    toast(money(data?.amount)+" pago. Caixa e histórico atualizados.");await loadCommissionsPage();
+    let payment;
+    try {
+     payment=await supabase.rpc("pay_professional_commissions",{
+      p_org_id:orgId,p_professional_id:professionalId,p_commission_ids:ids,
+      p_payment_method:method,p_notes:"Pagamento de comissões"
+     });
+     if(payment.error)throw payment.error;
+    } catch(error) {
+     reportError(error,{context:"Comissões > registrar pagamento"});
+     button.disabled=false;button.textContent="Pagar selecionadas";return;
+    }
+    toast(money(payment.data?.amount)+" pago. Caixa e histórico atualizados.");await loadCommissionsPage();
    });
   }
  }catch(error){
-  host.innerHTML='<div class="empty-state"><b>Não foi possível carregar as comissões.</b><small>'+esc(error.message||"Verifique sua conexão e permissões.")+'</small></div>';
+  reportError(error,{context:"Comissões > carregar dados"});
+  host.innerHTML='<div class="empty-state"><b>Não foi possível carregar as comissões.</b><small>Atualize a página e tente novamente.</small></div>';
  }
 }
