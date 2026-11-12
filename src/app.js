@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { installGlobalMasks, parseBRL } from './utils/input-masks.js';
-import { installGlobalErrorHandlers } from './utils/errors.js';
+import { installGlobalErrorHandlers, reportError } from './utils/errors.js';
 
 // Inicializa recursos globais compartilhados antes de conectar os eventos da interface.
 installGlobalMasks();
