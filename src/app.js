@@ -1,4 +1,7 @@
 import { state } from './state.js';
+import { installGlobalMasks } from './utils/input-masks.js';
+
+installGlobalMasks();
 import { $, toast } from './utils.js';
 import { changePage, render } from './layout/render.js';
 import { recordDrawer, appointmentDrawer, renderDrawer, openDrawer } from './components/drawer.js';
