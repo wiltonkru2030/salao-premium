@@ -83,3 +83,20 @@ A documentação/changelog do Supabase informa que, a partir de 30/10/2026, nova
 ## 8. Limites desta auditoria
 
 A leitura de metadados e funções não substitui testes com sessões reais de cada papel. Não foram executados pagamentos, restaurações, exclusões permanentes, resets, migrações nem alterações de configuração Auth nesta auditoria.
+
+
+## 9. Metadados de autenticação usados como sinal de fluxo
+
+A função de trigger `private.bootstrap_new_user()` consulta `raw_user_meta_data.account_type` para decidir se deve criar uma nova organização ou somente um perfil interno. O fluxo administrativo de provisionamento define esse valor pela Edge Function, mas `user_metadata` é editável pelo próprio usuário.
+
+O valor não concede uma role nem cria uma associação por si só, portanto não foi identificado aqui um caminho direto de escalada de privilégios. Ainda assim, um cadastro público pode tentar enviar `account_type=professional` e desviar a criação normal da organização, deixando uma conta sem o fluxo esperado de proprietário.
+
+Também foi observado que `must_change_password` é gravado em `user_metadata` e lido pelo App Profissional para exigir a troca da senha temporária. Como esse metadado é editável pelo usuário, essa exigência não deve ser tratada como barreira de autorização ou garantia de segurança.
+
+**Correção recomendada:** mover sinais de provisionamento e a política de troca obrigatória para metadados controlados pelo servidor (`app_metadata`) ou para uma tabela privada de provisionamento. A mudança exige atualizar em conjunto o trigger, a Edge Function e o App Profissional; validar a API Admin atual; e testar cadastro normal, provisionamento profissional, reset de senha e tentativa de alteração dos metadados pelo próprio usuário. Não foi alterado nesta rodada para evitar inconsistência entre o banco e o histórico de migrações ainda não reconciliado.
+
+## 10. Privilégios e schema privado
+
+As tabelas do schema `private` não concedem privilégios de tabela a `anon` nem a `authenticated`. O schema `private` também não concede `USAGE` a `anon`; concede a `authenticated` para permitir o uso interno das funções auxiliares em políticas RLS. A configuração explícita de schemas expostos pelo PostgREST não foi encontrada na configuração consultada; confirmar no painel antes de adicionar schemas à Data API.
+
+As tabelas de `public` mantêm grants de tabela para `anon`, mas as políticas analisadas são destinadas a `authenticated`. Isso não equivale a acesso irrestrito enquanto RLS estiver ativo e sem políticas para `anon`; mesmo assim, recomenda-se reduzir os grants anônimos ao mínimo depois de testar os fluxos públicos de autenticação.
