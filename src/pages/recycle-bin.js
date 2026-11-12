@@ -70,7 +70,8 @@ export async function loadRecycleBinPage(){
   let profiles=new Map();
   if(ids.length){
    const result=await supabase.from("profiles").select("id,full_name").in("id",ids);
-   if(!result.error)profiles=new Map((result.data||[]).map(p=>[p.id,p.full_name]));
+   if(result.error)throw result.error;
+   profiles=new Map((result.data||[]).map(p=>[p.id,p.full_name]));
   }
   const grouped=new Map();
   for(const row of rows){
@@ -90,7 +91,7 @@ export async function loadRecycleBinPage(){
      const groupId=restore.dataset.recycleRestore;
      if(!window.confirm("Restaurar todos os registros desta operação?"))return;
      const {data,error}=await supabase.rpc("restore_recycle_bin_group",{p_group_id:groupId});
-     if(error){toast(error.message||"Não foi possível restaurar os registros.");return;}
+     if(error){reportError(error,{context:"Recuperar > restaurar registros"});return;}
      selectedGroup=null;toast(Number(data||0)+" registro(s) restaurado(s).");await loadRecycleBinPage();return;
     }
     const remove=event.target.closest("[data-recycle-delete]");
@@ -98,7 +99,7 @@ export async function loadRecycleBinPage(){
      const groupId=remove.dataset.recycleDelete;
      if(!window.confirm("Excluir permanentemente os snapshots desta operação? Esta ação não pode ser desfeita."))return;
      const {data,error}=await supabase.rpc("permanently_delete_recycle_bin_group",{p_group_id:groupId});
-     if(error){toast(error.message||"Não foi possível excluir permanentemente.");return;}
+     if(error){reportError(error,{context:"Recuperar > excluir snapshots permanentemente"});return;}
      selectedGroup=null;toast(Number(data||0)+" snapshot(s) removido(s) permanentemente.");await loadRecycleBinPage();
     }
    });
