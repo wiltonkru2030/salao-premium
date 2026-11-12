@@ -181,3 +181,6 @@ Os workflows validam sintaxe JavaScript, build de produção, testes de máscara
 3. Remover estilos inline e consolidar seletores repetidos com comparação visual.
 4. Extrair os fluxos de Comanda e Profissional para serviços e controladores menores.
 5. Criar testes de integração para autenticação, escopos de profissional, RLS e pagamentos.
+
+
+**Auditoria do banco conectado:** consulte [docs/AUDITORIA-SUPABASE.md](./AUDITORIA-SUPABASE.md) para o estado real de RLS, RPCs SECURITY DEFINER, Edge Functions, advisors e divergência entre migrações remotas e arquivos versionados.
