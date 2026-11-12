@@ -1,6 +1,6 @@
 import { supabase } from "../src/supabase/client.js";
 import { mountAutocomplete } from "../src/components/autocomplete.js";
-import { installGlobalErrorHandlers } from "../src/utils/errors.js";
+import { installGlobalErrorHandlers, reportError } from "../src/utils/errors.js";
 import { installGlobalMasks } from "../src/utils/input-masks.js";
 
 // Aplicação PWA do profissional: autenticação, navegação, Agenda, Comandas e Comissões.
@@ -240,6 +240,7 @@ function bindAutocomplete(){
  });
 }
 root.addEventListener("click",async event=>{
+ try{
  const page=event.target.closest("[data-page]");
  if(page){state.page=page.dataset.page;state.selectedOrder=null;state.selectedAppointment=null;state.notice="";render();return;}
  const date=event.target.closest("[data-date]");
@@ -270,8 +271,10 @@ root.addEventListener("click",async event=>{
   if(error){showNotice(error.message||"Não foi possível alterar a senha.");return;}
   showNotice("Senha atualizada.");
  }
+ }catch(error){reportError(error,{context:"App Profissional > ação de tela"});}
 });
 root.addEventListener("submit",async event=>{
+ try{
  if(event.target.matches("#professional-password-change")){
   event.preventDefault();const values=new FormData(event.target),password=String(values.get("password")||""),confirm=String(values.get("confirm")||"");
   if(password.length<10||password!==confirm){state.notice="As senhas devem ser iguais e ter pelo menos 10 caracteres.";changePasswordView();return;}
@@ -304,6 +307,7 @@ root.addEventListener("submit",async event=>{
   await loadBase();
  }catch(error){state.notice=error.message||"Não foi possível entrar.";loginView();}
  finally{if(button){button.disabled=false;button.textContent="Entrar";}}
+ }catch(error){reportError(error,{context:"App Profissional > envio de formulário"});}
 });
 // Inicialização do PWA: sessão existente ou tela de login.
 async function boot(){
