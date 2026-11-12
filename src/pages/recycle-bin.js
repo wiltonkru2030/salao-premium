@@ -43,7 +43,7 @@ function renderPage(host,groups,events,profiles){
   return '<button class="record-card" data-recycle-open="'+group.id+'"><span class="record-main"><b>'+esc(group.entries.length+' registro(s) · '+names)+'</b><small>'+esc(first.description)+'</small><small>Excluído por '+esc(actorName(first.deleted_by,profiles))+' · '+dateTime(first.deleted_at)+'</small></span><span class="record-trailing"><small>Expira em</small><b>'+new Date(first.expires_at).toLocaleDateString("pt-BR")+'</b></span><span class="record-chevron">›</span></button>';
  }).join("")||'<div class="empty-state">A lixeira está vazia.</div>'}
  </div>
- <div class="section-title" style="margin-top:28px"><h2>Histórico de operações</h2><span class="result-count">Últimas 100 ações</span></div>
+ <div class="section-title section-title--spaced"><h2>Histórico de operações</h2><span class="result-count">Últimas 100 ações</span></div>
  <div class="record-list">
  ${events.map(event=>'<article class="record-card"><span class="record-main"><b>'+esc(actionLabel[event.action]||event.action)+' · '+esc(event.table_name)+'</b><small>'+esc(event.description)+'</small><small>'+esc(actorName(event.actor_id,profiles))+' · '+dateTime(event.occurred_at)+'</small></span><span class="record-trailing"><small>'+esc(event.actor_role||"Sistema")+'</small><small>'+esc(event.record_id||"—")+'</small></span></article>').join("")||'<div class="empty-state">Nenhuma operação registrada.</div>'}
  </div>
