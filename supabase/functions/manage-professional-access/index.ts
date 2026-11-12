@@ -19,9 +19,16 @@ function temporaryPassword() { const bytes = crypto.getRandomValues(new Uint8Arr
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "Método não permitido." }, 405);
-  const url = Deno.env.get("SUPABASE_URL"), serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), anonKey = Deno.env.get("SUPABASE_ANON_KEY"), pepper = Deno.env.get("CPF_LOGIN_PEPPER");
-  if (!url || !serviceKey || !anonKey || !pepper) return json({ error: "Configuração administrativa incompleta." }, 503);
+  const url = Deno.env.get("SUPABASE_URL"), serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  if (!url || !serviceKey || !anonKey) return json({ error: "Configuração administrativa incompleta." }, 503);
   try {
+    const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+    let pepper = Deno.env.get("CPF_LOGIN_PEPPER");
+    if (!pepper) {
+      const secretResult = await admin.rpc("get_professional_cpf_login_pepper");
+      pepper = typeof secretResult.data === "string" ? secretResult.data : null;
+    }
+    if (!pepper) return json({ error: "A chave privada de autenticação não está disponível." }, 503);
     const token = (req.headers.get("Authorization") || "").replace(/^Bearer\\s+/i, "");
     if (!token) return json({ error: "Acesso administrativo obrigatório." }, 401);
     const callerClient = createClient(url, anonKey, { global: { headers: { Authorization: "Bearer " + token } }, auth: { persistSession: false } });
@@ -31,7 +38,6 @@ Deno.serve(async (req: Request) => {
     if (!orgId || !professionalId || !cpf || !["create", "reset"].includes(action)) return json({ error: "Dados inválidos." }, 400);
     const { data: membership } = await callerClient.from("org_memberships").select("role,status").eq("org_id", orgId).eq("user_id", caller.user.id).eq("status", "active").maybeSingle();
     if (!membership || !["owner", "admin", "manager"].includes(membership.role)) return json({ error: "Somente administrador do salão pode gerenciar acessos." }, 403);
-    const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
     const { data: professional, error: professionalError } = await admin.from("professionals").select("id,org_id,name,profile_id,active").eq("id", professionalId).eq("org_id", orgId).maybeSingle();
     if (professionalError || !professional || !professional.active) return json({ error: "Profissional não encontrado ou inativo." }, 404);
     const cpfHash = await hmac("cpf:" + cpf, pepper), email = "pro-" + cpfHash.slice(0, 40) + "@login.salaopremium.invalid", password = temporaryPassword();
