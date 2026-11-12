@@ -27,7 +27,7 @@ button,input,select,textarea{font-family:inherit}
 .btn.primary{background:#242320;border-color:#242320;color:white}
 .btn.primary:hover{background:#39362f;border-color:#39362f}
 .btn:not(.primary){border-color:#e4e1da;color:#494741}
-.field,input.field,select.field,textarea.field{min-height:40px;border:1px solid #e4e2dc;border-radius:7px;background:#fff;color:#292824;font-size:11px;padding:9px 12px}
+input.field,select.field,textarea.field{min-height:40px;border:1px solid #e4e2dc;border-radius:7px;background:#fff;color:#292824;font-size:11px;padding:9px 12px}
 .field:focus,input.field:focus,select.field:focus,textarea.field:focus{outline:0;border-color:#b29a70;box-shadow:0 0 0 3px #b29a7018}
 .metric-card,.surface,.record-card{border-color:var(--sp-line);border-radius:9px;box-shadow:none}
 .metric-card{padding:20px}
@@ -67,3 +67,102 @@ dialog::backdrop{background:rgba(25,24,21,.48);backdrop-filter:blur(3px)}
  .professional-person-card{padding:15px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+
+
+/* Componentes compartilhados: cadastros, filtros e formulários */
+.settings-card{
+  margin:0 0 18px;
+  overflow:hidden;
+  border:1px solid var(--sp-line);
+  border-radius:10px;
+  background:#fff;
+}
+.settings-card>summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:58px;
+  padding:16px 19px;
+  color:#292824;
+  cursor:pointer;
+  list-style:none;
+  font-size:12px;
+  font-weight:600;
+}
+.settings-card>summary::-webkit-details-marker{display:none}
+.settings-card>summary::after{
+  content:"＋";
+  color:var(--sp-gold);
+  font-size:17px;
+  font-weight:400;
+}
+.settings-card[open]>summary::after{content:"−"}
+.settings-card>summary+*{border-top:1px solid #f0eee9}
+.settings-form{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px 16px;
+  padding:19px;
+}
+.settings-form>label{
+  display:grid;
+  align-content:start;
+  gap:7px;
+  min-width:0;
+  color:#66645f;
+  font-size:10px;
+  font-weight:500;
+}
+.settings-form input:not([type=checkbox]):not([type=radio]),
+.settings-form select,
+.settings-form textarea,
+.form-field input,
+.form-field select,
+.form-field textarea{
+  width:100%;
+  min-width:0;
+  min-height:40px;
+  border:1px solid #e5e2db;
+  border-radius:7px;
+  padding:9px 11px;
+  background:#fff;
+  color:#292824;
+  font:inherit;
+  font-size:11px;
+}
+.settings-form textarea{min-height:76px;resize:vertical}
+.settings-form input:focus,.settings-form select:focus,.settings-form textarea:focus,
+.form-field input:focus,.form-field select:focus,.form-field textarea:focus{
+  outline:0;border-color:#b29a70;box-shadow:0 0 0 3px #b29a7018
+}
+.settings-form>button{grid-column:1/-1;justify-self:start;min-width:150px}
+.settings-card>.demo-note{padding:0 19px 15px;margin:0}
+.empty-state{background:#fff;border-color:#e8e6e0;color:#888}
+.empty-state b{color:#333}
+.list-toolbar{min-height:40px;margin:15px 0 12px}
+.search-box,.agenda-search{background:#fff;border-color:#e5e2db;border-radius:7px}
+.search-box:focus-within,.agenda-search:focus-within{border-color:#b29a70;box-shadow:0 0 0 3px #b29a7018}
+.search-box input{font:inherit;font-size:11px;color:#292824}
+.record-list{gap:9px}
+.record-card{border-radius:8px;border-color:var(--sp-line);box-shadow:none}
+.record-card:hover{border-color:#cbb993;background:#fdfcf9}
+.record-main b{font-size:11px;color:#292824}
+.record-main small{font-size:10px;line-height:1.45;color:#888}
+.record-trailing small{font-size:9px;color:#888}
+.result-count{font-size:10px;color:#888}
+.status{font-size:9px;border-radius:5px}
+.btn.secondary{background:#fff;color:#494741;border-color:#e4e1da}
+.btn.secondary:hover{background:#f8f7f4;border-color:#d4c6aa}
+button:focus-visible,a:focus-visible,summary:focus-visible,
+input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid #b29a70;outline-offset:2px
+}
+input[type=checkbox],input[type=radio]{accent-color:#9e8559}
+hr{border:0;border-top:1px solid var(--sp-line)}
+@media(max-width:700px){
+  .settings-form{grid-template-columns:1fr;padding:15px;gap:12px}
+  .settings-form>button{width:100%}
+  .settings-card>summary{min-height:53px;padding:14px}
+  .record-card{min-height:70px}
+}
