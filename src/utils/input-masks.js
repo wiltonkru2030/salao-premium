@@ -24,8 +24,8 @@ export function formatCurrency(value){
  return (Number(d)/100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 export function parseBRL(value){
- const raw=String(value??"").replace(/\\s/g,"").replace(/R\\$/gi,"");
- const normalized=raw.includes(",")?raw.replace(/\\./g,"").replace(",",".").replace(/[^\\d.-]/g,""):raw.replace(/[^\\d.-]/g,"");
+ const raw=String(value??"").replace(/\s/g,"").replace(/R\$/gi,"");
+ const normalized=raw.includes(",")?raw.replace(/\./g,"").replace(",",".").replace(/[^\d.-]/g,""):raw.replace(/[^\d.-]/g,"");
  const parsed=Number(normalized);
  return Number.isFinite(parsed)?parsed:0;
 }
