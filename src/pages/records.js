@@ -1,3 +1,4 @@
+/** Páginas genéricas demonstrativas. Não representam módulos com persistência real. */
 import { state } from '../state.js';
 import { records } from '../data/index.js';
 import { head, btn, esc, status, initials } from '../utils.js';
