@@ -116,4 +116,4 @@ document.addEventListener('drop',e=>{
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'){if(state.drawer){state.drawer=null;renderDrawer()}if(state.mobileMenu){state.mobileMenu=false;render()}}
 });
-startAuth(context=>{state.user=context.user;state.organization=context.organization;state.membership=context.membership;render()});
+startAuth(context=>{state.user=context.user;state.profile=context.profile;state.organization=context.organization;state.membership=context.membership;render()});
