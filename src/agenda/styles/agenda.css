@@ -7,6 +7,7 @@
 .agenda-form textarea{width:100%;resize:vertical;border:1px solid var(--line);border-radius:7px;padding:9px;font-size:10px}
 .month-day{overflow:hidden}
 .month-day small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.month-day .month-blocked{color:#987b49}
 .calendar-body .time-cell,.calendar-body .schedule-slot,.calendar-body .availability-cell{min-height:52px;height:52px}
 .appointment-block{min-height:46px}
 .agenda-toolbar .btn{white-space:nowrap}
