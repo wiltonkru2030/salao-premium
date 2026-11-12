@@ -97,7 +97,11 @@ async function saveAppointment(form) {
 
   if(existing?.id) {
     if(existing.dbStatus==='in_progress'||existing.dbStatus==='completed')throw new Error('Um atendimento iniciado ou concluído não pode ser reagendado por este formulário.');
-    if(existing.service_order_id && existing.customer_id!==customerId)throw new Error('Este agendamento já está vinculado a uma comanda. Não é permitido trocar o cliente.');
+    if(existing.service_order_id && (
+      existing.customer_id!==customerId ||
+      existing.service_id!==serviceId ||
+      existing.professional_id!==professionalId
+    )) throw new Error('Este horário já está vinculado a uma comanda. Para manter o histórico correto, altere somente data, horário e observações.');
     payload.status=existing.dbStatus||'scheduled';
     payload.service_order_id=existing.customer_id===customerId?existing.service_order_id:null;
     payload.comanda_strategy=payload.service_order_id?'reuse_open':'new_on_arrival';
