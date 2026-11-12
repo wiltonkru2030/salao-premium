@@ -1,3 +1,4 @@
+/** Módulo Comissões. Responsabilidade: consultar comissões, registrar pagamentos autorizados e exibir histórico. */
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
