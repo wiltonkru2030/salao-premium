@@ -1,6 +1,7 @@
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, toast, esc } from "../utils.js";
+import { reportError } from "../utils/errors.js";
 
 /** Módulo Profissionais: cadastro fiscal, vínculo de serviços e controle de acesso ao App Profissional. */
 
@@ -36,10 +37,16 @@ export async function loadProfessionalsPage(){
  const serviceNames=new Map((services||[]).map(s=>[s.id,s.name]));
  const assignedNames=new Map();
  (assignments||[]).forEach(link=>{if(!assignedNames.has(link.professional_id))assignedNames.set(link.professional_id,[]);const name=serviceNames.get(link.service_id);if(name)assignedNames.get(link.professional_id).push(name);});
- if(error){host.innerHTML='<div class="empty-state">Não foi possível carregar os profissionais.</div>';return;}
+ if(error||serviceError||membersError||assignmentError){
+  const failure=error||serviceError||membersError||assignmentError;
+  reportError(failure,{context:"Profissionais > carregar cadastros"});
+  host.innerHTML='<div class="empty-state">Não foi possível carregar os dados da equipe. Atualize a página e tente novamente.</div>';return;
+ }
  const targets=(members||[]).filter(m=>m.role==="receptionist"||m.user_id===state.user?.id);
  const targetIds=targets.map(m=>m.user_id);
- const {data:profiles}=targetIds.length?await supabase.from("profiles").select("id,full_name").in("id",targetIds):{data:[]};
+ const profileResult=targetIds.length?await supabase.from("profiles").select("id,full_name").in("id",targetIds):{data:[],error:null};
+  if(profileResult.error){reportError(profileResult.error,{context:"Profissionais > carregar perfis"});host.innerHTML='<div class="empty-state">Não foi possível carregar os perfis de acesso.</div>';return;}
+  const profiles=profileResult.data;
  const profileNames=new Map((profiles||[]).map(p=>[p.id,p.full_name]));
  const groups=new Map();
  (services||[]).forEach(s=>{const category=s.category||"Outros";if(!groups.has(category))groups.set(category,[]);groups.get(category).push(s);});
