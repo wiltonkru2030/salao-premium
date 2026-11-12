@@ -24,8 +24,6 @@ document.addEventListener('click',e=>{
  if(monthDay){state.date=dateFromKey(monthDay.dataset.selectDate);state.view='Dia';render();return}
  const newSlot=target.closest('[data-new-slot]');
  if(newSlot){if(newSlot.dataset.newDate)state.date=dateFromKey(newSlot.dataset.newDate);state.drawer=null;appointmentDrawer(null);return}
- const page=target.closest('[data-page]');
- if(page){changePage(page.dataset.page);return}
  const pro=target.closest('[data-pro]');
  if(pro){state.pro=Number(pro.dataset.pro);render();return}
  const ap=target.closest('[data-appointment]');
