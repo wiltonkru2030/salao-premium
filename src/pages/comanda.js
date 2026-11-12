@@ -1,3 +1,4 @@
+/** Módulo Comanda. Responsabilidade: apresentar comandas, itens, pagamentos e cancelamentos; regras financeiras finais são executadas por RPCs transacionais no Supabase. */
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
