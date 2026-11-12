@@ -2,6 +2,7 @@ import { esc } from '../../utils.js';
 import { mountAutocomplete } from '../../components/autocomplete.js';
 import { supabase } from '../../supabase/client.js';
 import { state } from '../../state.js';
+import { parseBRL } from '../../utils/input-masks.js';
 
 let cleanups=[];
 function clearAppointmentAutocomplete(){cleanups.forEach(fn=>fn());cleanups=[];}
@@ -21,7 +22,7 @@ export function renderAppointmentForm({appointment=null,date='',time='',pro=null
     '<label class="form-field"><span>Profissional</span><input id="appointment-professional-search" value="'+esc(selectedProfessionalName)+'" placeholder="Digite para buscar o profissional" autocomplete="off" required></label>'+
     '<input type="hidden" name="professional_id" value="'+esc(professionalId)+'">'+
     '<div class="agenda-form-row"><label class="form-field"><span>Data</span><input name="date" type="date" value="'+esc(selectedDate)+'" required></label><label class="form-field"><span>Horário</span><input name="time" type="time" step="300" value="'+esc(selectedTime)+'" required></label></div>'+
-    '<div class="agenda-form-row"><label class="form-field"><span>Duração (minutos)</span><input name="duration" type="number" min="5" max="720" step="5" value="'+esc(a.duration||60)+'" required></label><label class="form-field"><span>Valor previsto (R$)</span><input name="price" type="number" min="0" step="0.01" value="'+esc(a.price??'')+'" placeholder="0,00" required></label></div>'+
+    '<div class="agenda-form-row"><label class="form-field"><span>Duração (minutos)</span><input name="duration" type="number" min="5" max="720" step="5" value="'+esc(a.duration||60)+'" required></label><label class="form-field"><span>Valor previsto (R$)</span><input name="price" type="number" min="0" step="0.01" value="'+esc(Number(a.price??0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}))+'" data-mask="currency" inputmode="decimal" placeholder="0,00" required></label></div>'+
     '<label class="form-field"><span>Observações</span><textarea name="notes" rows="2" placeholder="Informações adicionais">'+esc(a.notes||'')+'</textarea></label>'+
     '<button class="btn primary full-width" type="submit">'+(a.id?'Salvar reagendamento':'Criar agendamento')+'</button>'+
     '<p class="demo-note">A comanda não é aberta no agendamento. Ela será criada quando o cliente chegar e o atendimento for iniciado.</p></form>';
@@ -59,7 +60,7 @@ export function mountAppointmentForm(){
       if(error)throw error;return data||[];
     },
     getLabel:item=>item.name+' · '+Number(item.duration_minutes)+' min · '+Number(item.price).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),
-    onSelect:item=>{selectedServiceId=item?.id||null;serviceId.value=selectedServiceId||'';professionalId.value='';professionalInput.value='';if(item){duration.value=String(item.duration_minutes);price.value=Number(item.price||0).toFixed(2);}}
+    onSelect:item=>{selectedServiceId=item?.id||null;serviceId.value=selectedServiceId||'';professionalId.value='';professionalInput.value='';if(item){duration.value=String(item.duration_minutes);price.value=Number(item.price||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}}
   }));
   cleanups.push(mountAutocomplete(professionalInput,{
     search:async term=>{
