@@ -22,12 +22,12 @@ function renderDetailsModal(group,profiles){
   return '<section class="recycle-item-detail"><h3>'+esc(entry.description)+'</h3><div class="recycle-detail-meta"><span>'+esc(entry.entity_table)+'</span><span>ID: '+esc(entry.entity_id)+'</span></div>'+
    '<dl>'+pairs.map(([key,value])=>'<div><dt>'+esc(key)+'</dt><dd>'+esc(typeof value==="object"&&value!==null?JSON.stringify(value):String(value??"—"))+'</dd></div>').join("")+'</dl></section>';
  }).join("");
- return '<div class="recycle-modal-backdrop" data-action="close-recycle-modal"></div><section class="recycle-modal" role="dialog" aria-modal="true" aria-label="Detalhes dos dados excluídos">'+
-  '<header><div><small>RECUPERAR · DETALHES</small><h2>Dados excluídos</h2></div><button type="button" class="icon-btn" data-action="close-recycle-modal" aria-label="Fechar">×</button></header>'+
+ return '<dialog class="sp-modal recycle-dialog" id="recycle-details-dialog" aria-labelledby="recycle-details-title"><section class="recycle-modal">'+
+  '<header><div><small>RECUPERAR · DETALHES</small><h2 id="recycle-details-title">Dados excluídos</h2></div><button type="button" class="icon-btn" data-action="close-recycle-modal" aria-label="Fechar">×</button></header>'+
   '<div class="recycle-modal-meta"><div><span>Excluído por</span><b>'+esc(actorName(first.deleted_by,profiles))+'</b></div><div><span>Data e hora</span><b>'+dateTime(first.deleted_at)+'</b></div><div><span>Disponível até</span><b>'+dateTime(first.expires_at)+'</b></div><div><span>Registros nesta operação</span><b>'+group.entries.length+'</b></div></div>'+
   '<div class="recycle-modal-content">'+details+'</div>'+
   '<footer><button type="button" class="btn secondary" data-action="close-recycle-modal">Fechar</button><button type="button" class="btn secondary" data-recycle-delete="'+group.id+'">Excluir permanentemente</button><button type="button" class="btn primary" data-recycle-restore="'+group.id+'">Restaurar dados</button></footer>'+
-  '</section>';
+  '</section></dialog>';
 }
 function renderPage(host,groups,events,profiles){
  const deletedCount=groups.reduce((sum,g)=>sum+g.entries.length,0);
@@ -105,6 +105,11 @@ export async function loadRecycleBinPage(){
    });
   }
   renderPage(host,groups,events,profiles);
+  const detailsDialog=host.querySelector("#recycle-details-dialog");
+  if(detailsDialog&&!detailsDialog.open){
+   detailsDialog.addEventListener("close",()=>{selectedGroup=null;if(host.isConnected)void loadRecycleBinPage();},{once:true});
+   detailsDialog.showModal();
+  }
  }catch(error){
   reportError(error,{context:"Recuperar > carregar lixeira e auditoria"});
   host.innerHTML='<div class="empty-state"><b>Não foi possível carregar Recuperar.</b><small>Verifique sua permissão e tente novamente.</small></div>';
