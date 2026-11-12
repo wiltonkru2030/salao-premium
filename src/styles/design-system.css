@@ -389,3 +389,9 @@ dialog.sp-modal::backdrop{background:rgba(25,23,19,.48);backdrop-filter:blur(2px
 
 /* Espaçamento reutilizável entre blocos de histórico e resumo. */
 .section-title--spaced{margin-top:28px}
+
+/* O cadastro de profissional usa a mesma estrutura global dos demais modais. */
+.professional-modal.sp-modal{padding:0;overflow:hidden}
+.professional-modal-form.sp-modal-shell{width:100%;max-height:min(88dvh,860px);min-height:0}
+.professional-modal-body.sp-modal-body{display:flex;flex-direction:column;gap:13px;overflow:auto;min-height:0}
+.professional-modal-body.sp-modal-body h3{margin:7px 0 0}
