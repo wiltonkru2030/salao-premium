@@ -1,3 +1,4 @@
+/** Componente: cartão de agendamento. Responsabilidade: exibir cliente, serviço, duração e status em uma faixa do calendário. */
 import {esc} from '../../utils.js';
 export function renderAppointmentCard(a,compact=false){
  const unit=compact?64:52,height=Math.max(44,Math.round(Number(a.duration||30)/30*unit-8));
