@@ -7,7 +7,7 @@ import { renderDayCalendar } from '../components/day-calendar.js';
 import { renderWeekCalendar } from '../components/week-calendar.js';
 import { renderMonthCalendar } from '../components/month-calendar.js';
 import { renderAgendaFilters } from '../components/agenda-filters.js';
-import { dateKey } from '../utils/date.utils.js';
+import { dateKey, startOfWeek, addDays } from '../utils/date.utils.js';
 
 export { dateKey };
 
@@ -70,8 +70,17 @@ export async function loadAgendaPage() {
   if(!host)return;
   host.innerHTML='<div class="empty-state">Carregando agenda…</div>';
   try{
-    const start=new Date(state.date.getFullYear(),state.date.getMonth(),1);
-    const end=new Date(state.date.getFullYear(),state.date.getMonth()+1,1);
+    let start,end;
+    if(state.view==='Dia'){
+      start=new Date(state.date.getFullYear(),state.date.getMonth(),state.date.getDate());
+      end=addDays(start,1);
+    }else if(state.view==='Semana'){
+      start=startOfWeek(state.date);
+      end=addDays(start,7);
+    }else{
+      start=new Date(state.date.getFullYear(),state.date.getMonth(),1);
+      end=new Date(state.date.getFullYear(),state.date.getMonth()+1,1);
+    }
     const [proResult,appointmentResult,blockResult]=await Promise.all([
       supabase.from('professionals').select('id,name,color,active').eq('org_id',state.organization.id).eq('active',true).order('name'),
       supabase.from('appointments').select('id,customer_id,professional_id,customer_name,customer_phone,service_id,service_name,professional_name,starts_at,ends_at,status,price,booking_source,created_by_name,notes,service_order_id,arrived_at').eq('org_id',state.organization.id).gte('starts_at',start.toISOString()).lt('starts_at',end.toISOString()).order('starts_at').limit(1000),
