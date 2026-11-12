@@ -43,5 +43,5 @@ A autenticação e o cliente Supabase estão conectados ao shell do sistema. O s
 - `appointments.booking_source` registra `customer`, `salon` ou `professional`.
 - `service_orders` e `service_order_items` armazenam comandas e itens; o total é recalculado no banco quando itens mudam.
 - `private.professional_login_identities` guarda somente HMAC do CPF, nunca CPF em texto. As Edge Functions resolvem o CPF no servidor; a função administrativa permite criar ou redefinir senha temporária apenas para owner/admin/manager.
-- **Pendência de ativação:** publicar as Edge Functions em `supabase/functions/` e cadastrar `CPF_LOGIN_PEPPER` em Edge Function Secrets (segredo aleatório longo, nunca no navegador). Sem isso, login por CPF e gestão de acessos ainda não funcionam.
+- **Pendência de ativação:** as Edge Functions `professional-cpf-login` e `manage-professional-access` já estão publicadas. Falta cadastrar `CPF_LOGIN_PEPPER` em Edge Function Secrets no painel Supabase. Use um valor aleatório forte (mínimo 32 bytes), nunca reutilizado e nunca coloque no Git ou no navegador. Depois de salvar, não é necessário publicar as funções novamente.
 - A senha temporária é exibida uma única vez ao administrador e deve ser entregue por canal seguro. A recuperação é exclusiva do administrador.
