@@ -83,7 +83,7 @@ export async function loadProfessionalsPage(){
     <input class="field" id="professional-service-filter" type="search" placeholder="Buscar serviço..." autocomplete="off">
     <div id="professional-service-choices">${serviceChoices||'<p class="empty-state">Cadastre serviços antes de vincular um profissional.</p>'}</div>
     <h3>Acesso ao App Profissional</h3>
-    <label class="professional-app-option"><input type="checkbox" name="enable_app"><span><b>Liberar acesso ao App Profissional agora</b><small>O profissional entrará usando CPF e senha temporária. O CPF será protegido pelo servidor, não salvo em texto puro.</small></span></label>
+    <label class="professional-app-option"><input type="checkbox" name="enable_app"><span><b>Liberar acesso ao App Profissional agora</b><small>O profissional entrará usando CPF e senha temporária. Ao liberar o App, o CPF é protegido pelo servidor; se deixar desmarcado, o CPF não será gravado e precisará ser informado novamente ao liberar o acesso.</small></span></label>
    </div>
    <footer class="professional-modal-foot"><button type="button" class="btn secondary" data-close-professional-modal>Cancelar</button><button class="btn primary" type="submit">Salvar profissional</button></footer>
   </form>
