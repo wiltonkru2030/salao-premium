@@ -236,7 +236,7 @@ function bindAutocomplete(){
    professional_id:state.professional.id,description:selected.name,quantity:1,unit_price:price,total:price,
    performed_at:new Date().toISOString(),created_by:state.user.id
   });
-  if(error){showNotice(error.message||"Não foi possível registrar o serviço.");return;}
+  if(error){reportError(error,{context:"App Profissional > registrar serviço realizado"});button.disabled=false;button.textContent="Registrar serviço";showNotice("Não foi possível registrar o serviço. Tente novamente.");return;}
   await loadOrders();await chooseOrder(state.selectedOrder.id);showNotice("Serviço registrado na comanda.");
  });
 }
@@ -262,14 +262,14 @@ root.addEventListener("click",async event=>{
   const name=String(document.querySelector("#profile-name")?.value||"").trim(),phone=String(document.querySelector("#profile-phone")?.value||"").trim();
   if(!name){showNotice("Informe seu nome.");return;}
   const {error}=await supabase.from("profiles").update({full_name:name,phone}).eq("id",state.user.id);
-  if(error){showNotice(error.message||"Não foi possível salvar o perfil.");return;}
+  if(error){reportError(error,{context:"App Profissional > salvar perfil"});showNotice("Não foi possível salvar o perfil. Tente novamente.");return;}
   state.profile={...state.profile,full_name:name,phone};showNotice("Perfil atualizado.");
  }
  if(action==="change-password"){
   const password=String(document.querySelector("#settings-password")?.value||"");
   if(password.length<10){showNotice("A senha deve ter pelo menos 10 caracteres.");return;}
   const {error}=await supabase.auth.updateUser({password});
-  if(error){showNotice(error.message||"Não foi possível alterar a senha.");return;}
+  if(error){reportError(error,{context:"App Profissional > alterar senha"});showNotice("Não foi possível alterar a senha. Confira os requisitos e tente novamente.");return;}
   showNotice("Senha atualizada.");
  }
  }catch(error){reportError(error,{context:"App Profissional > ação de tela"});}
@@ -281,11 +281,11 @@ root.addEventListener("submit",async event=>{
   if(password.length<10||password!==confirm){state.notice="As senhas devem ser iguais e ter pelo menos 10 caracteres.";changePasswordView();return;}
   const button=event.target.querySelector("button[type=submit]");button.disabled=true;button.textContent="Salvando…";
   const {error}=await supabase.auth.updateUser({password});
-  if(error){state.notice=error.message||"Não foi possível alterar a senha.";changePasswordView();return;}
+  if(error){reportError(error,{context:"App Profissional > troca obrigatória de senha"});state.notice="Não foi possível alterar a senha. Confira os requisitos e tente novamente.";changePasswordView();return;}
   const {error:metaError}=await supabase.auth.updateUser({data:{must_change_password:false}});
-  if(metaError){state.notice="Senha alterada. Saia e entre novamente para concluir.";changePasswordView();return;}
+  if(metaError){reportError(metaError,{context:"App Profissional > concluir troca obrigatória de senha"});state.notice="Senha alterada, mas não foi possível concluir a atualização do acesso. Entre novamente.";changePasswordView();return;}
   const {data:userData,error:userError}=await supabase.auth.getUser();
-  if(userError||!userData.user){state.notice="Entre novamente para continuar.";await supabase.auth.signOut();loginView();return;}
+  if(userError||!userData.user){if(userError)reportError(userError,{context:"App Profissional > confirmar sessão após troca de senha"});state.notice="Entre novamente para continuar.";await supabase.auth.signOut();loginView();return;}
   state.user=userData.user;await loadBase();return;
  }
  if(!event.target.matches("#professional-login"))return;
@@ -314,11 +314,11 @@ root.addEventListener("submit",async event=>{
 async function boot(){
  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
  const {data,error}=await supabase.auth.getSession();
- if(error){state.notice="Não foi possível recuperar sua sessão.";loginView();return;}
+ if(error){reportError(error,{context:"App Profissional > recuperar sessão"});state.notice="Não foi possível recuperar sua sessão.";loginView();return;}
  if(data.session?.user){
   state.user=data.session.user;
   if(state.user.user_metadata?.must_change_password){changePasswordView();return;}
-  try{await loadBase();}catch(error){state.notice=error.message;await supabase.auth.signOut();loginView();}
+  try{await loadBase();}catch(error){reportError(error,{context:"App Profissional > inicializar dados da sessão"});state.notice="Não foi possível carregar seus dados. Entre novamente ou contate o administrador.";await supabase.auth.signOut();loginView();}
  }else loginView();
 }
 boot();
