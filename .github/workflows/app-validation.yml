@@ -30,6 +30,10 @@ jobs:
         run: node --check src/layout/render.js
       - name: Syntax · data service
         run: node --check src/supabase/data-service.js
+      - name: Syntax · main application
+        run: node --check src/app.js
+      - name: Syntax · agenda page
+        run: node --check src/agenda/pages/agenda-page.js
       - name: Syntax · professional PWA
         run: node --check professional/app.js
       - name: Run agenda regression tests
