@@ -333,3 +333,55 @@ hr{border:0;border-top:1px solid var(--sp-line)}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
+
+
+/* Acabamento dos fluxos operacionais: comanda, comissões, equipe e histórico */
+.settings-card>h3{
+  margin:0;padding:15px 18px;border-bottom:1px solid #efede8;
+  color:#34322d;font-size:12px;font-weight:600;line-height:1.45
+}
+.settings-card>form{display:grid;gap:13px;padding:17px 18px}
+.settings-card>form>label{display:grid;gap:7px;color:#66635d;font-size:10px;font-weight:500}
+.settings-card>.setting-row{padding:12px 18px}
+.settings-card>.demo-note{padding:0 18px 14px}
+.commission-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:19px}
+.commission-summary>div{min-width:0;padding:2px 12px;border-right:1px solid #efede8}
+.commission-summary>div:first-child{padding-left:0}
+.commission-summary>div:last-child{padding-right:0;border-right:0}
+.commission-summary h2{margin:7px 0 0;color:#292824;font-family:'Body Grotesque Fit','Poppins',sans-serif;font-size:25px;font-weight:500;letter-spacing:-.4px}
+.commission-group{margin:0 0 12px;overflow:hidden}
+.commission-group>.section-title{padding:15px 18px;margin:0;border-bottom:1px solid #efede8}
+.commission-group>.section-title h3{margin:0;color:#34322d;font-size:12px;font-weight:600}
+.commission-group>.section-title .muted{font-size:9px}
+.commission-row{min-height:58px;padding:10px 17px}
+.commission-row>label{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.commission-row>label>span:last-child{display:grid;gap:4px;min-width:0}
+.commission-row>label b{font-size:11px;color:#34322d}
+.commission-row>label small{font-size:9px;color:#89867f}
+.commission-select{cursor:pointer}
+.commission-select input{accent-color:#9e8559}
+.commission-select-spacer{width:16px;flex:0 0 16px}
+.commission-payout-controls{display:flex;align-items:center;justify-content:flex-end;gap:9px;padding:14px 17px;border-top:1px solid #efede8;background:#fdfcf9}
+.commission-payout-controls select{width:min(220px,45%)}
+.access-toggle{display:inline-flex;align-items:center;gap:8px;color:#6f6b63;font-size:9px;cursor:pointer}
+.access-toggle input{accent-color:#9e8559}
+.recycle-summary{gap:18px;align-items:center;justify-content:space-between;padding:20px}
+.recycle-summary h2{margin:5px 0;color:#292824;font-size:19px;font-weight:500}
+.recycle-summary p{margin:4px 0 0;color:#89867f;font-size:10px;line-height:1.55}
+.recycle-modal-meta{background:#faf9f6}
+.recycle-item-detail{border-bottom-color:#efede8}
+@media(max-width:700px){
+  .settings-card>h3{padding:13px 14px}
+  .settings-card>form{padding:14px}
+  .settings-card>.setting-row{padding:11px 14px}
+  .commission-summary{gap:7px;padding:13px}
+  .commission-summary>div{padding:0 7px}
+  .commission-summary h2{font-size:19px}
+  .commission-summary .eyebrow{font-size:7px;letter-spacing:1px}
+  .commission-group>.section-title{padding:13px 14px}
+  .commission-row{padding:10px 13px;gap:8px}
+  .commission-payout-controls{align-items:stretch;flex-direction:column;padding:12px}
+  .commission-payout-controls select{width:100%}
+  .commission-payout-controls .btn{width:100%}
+  .recycle-summary{align-items:flex-start;flex-direction:column;padding:15px}
+}
