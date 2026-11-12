@@ -17,11 +17,14 @@ export async function getUserContext(user) {
 
   if (error) throw error;
   if (!membership) throw new Error('Sua conta ainda não está vinculada a um salão ativo.');
-  const [{ data: profile }, { data: organization }] = await Promise.all([
+  const [profileResult, organizationResult] = await Promise.all([
     supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle(),
     supabase.from('organizations').select('id,name,timezone,currency').eq('id', membership.org_id).maybeSingle()
   ]);
-  return { user, membership, profile, organization };
+  if (profileResult.error) throw profileResult.error;
+  if (organizationResult.error) throw organizationResult.error;
+  if (!organizationResult.data) throw new Error('Não foi possível localizar o salão desta conta.');
+  return { user, membership, profile: profileResult.data, organization: organizationResult.data };
 }
 
 function showAuth(mode = 'login', notice = '', type = 'info') {
@@ -83,7 +86,7 @@ export function startAuth(onAuthenticated) {
         if (password.length < 8) throw new Error('A senha deve ter pelo menos 8 caracteres.');
         const { data, error } = await supabase.auth.signUp({
           email, password,
-          options: { data: { full_name: fullName, organization_name: organizationName } }
+          options: { data: { full_name: fullName, organization_name: organizationName }, emailRedirectTo: window.location.origin + window.location.pathname }
         });
         if (error) throw error;
         if (data.session) return;
