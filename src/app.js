@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { installGlobalMasks } from './utils/input-masks.js';
+import { installGlobalMasks, parseBRL } from './utils/input-masks.js';
 
 installGlobalMasks();
 import { $, toast } from './utils.js';
@@ -65,7 +65,7 @@ async function saveAppointment(form) {
   const date=String(values.get('date')||'');
   const time=String(values.get('time')||'');
   const duration=Number(values.get('duration'));
-  const price=Number(values.get('price'));
+  const price=parseBRL(values.get('price'));
   const notes=String(values.get('notes')||'').trim();
   if(!customerId||!serviceId||!professionalId)throw new Error('Escolha o cliente, serviço e profissional nas sugestões.');
   if(!date||!time||!Number.isFinite(duration)||duration<5||!Number.isFinite(price)||price<0)throw new Error('Confira data, horário, duração e valor.');
