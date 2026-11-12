@@ -39,7 +39,7 @@ document.addEventListener('click',e=>{
  }
  const action=target.closest('[data-action]')?.dataset.action;
  if(!action)return;
- if(action==='collapse-menu'){state.sidebarCollapsed=!state.sidebarCollapsed;render()}\n if(action==='toggle-menu'){state.mobileMenu=true;render()}
+ if(action==='collapse-menu'){state.sidebarCollapsed=!state.sidebarCollapsed;render();return}\n if(action==='toggle-menu'){state.mobileMenu=true;render()}
  else if(action==='close-menu'){state.mobileMenu=false;render()}
  else if(action==='close-drawer'){state.drawer=null;renderDrawer()}
  else if(action==='edit-appointment'&&state.drawer?.appointment){state.drawer.editing=true;state.drawerLoading=false;renderDrawer()}
