@@ -12,4 +12,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm run test:agenda
+      - name: Syntax checks · application modules
+        run: |
+          node --check src/app.js
+          node --check src/agenda/pages/agenda-page.js
+          node --check src/agenda/components/appointment-form.js
+          node --check src/pages/comanda.js
+          node --check professional/app.js
+      - name: Unit and component tests
+        run: npm run test:agenda
