@@ -1,7 +1,12 @@
 import { state } from './state.js';
 import { installGlobalMasks, parseBRL } from './utils/input-masks.js';
+import { installGlobalErrorHandlers } from './utils/errors.js';
 
+// Inicializa recursos globais compartilhados antes de conectar os eventos da interface.
 installGlobalMasks();
+installGlobalErrorHandlers();
+
+// A partir daqui ficam os fluxos de Agenda e os eventos globais do painel.
 import { $, toast } from './utils.js';
 import { changePage, render } from './layout/render.js';
 import { recordDrawer, appointmentDrawer, renderDrawer, openDrawer } from './components/drawer.js';
