@@ -1,0 +1,11 @@
+{
+  "name": "salao-premium",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:agenda": "node src/agenda/tests/run.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
