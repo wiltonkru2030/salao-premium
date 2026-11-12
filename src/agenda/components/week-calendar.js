@@ -3,7 +3,7 @@ import {timeToMinutes} from '../utils/duration.utils.js';
 import {renderAppointmentCard} from './appointment-card.js';
 import {esc} from '../../utils.js';
 export function renderWeekCalendar({date,pro,appointments,blockedTimes=[],includeReleased=false}){
- const first=startOfWeek(date),times=Array.from({length:25},(_,i)=>String(Math.floor(i/2)+8).padStart(2,'0')+':'+(i%2?'30':'00'));
+ const first=startOfWeek(date),times=Array.from({length:24},(_,i)=>String(Math.floor(i/2)+8).padStart(2,'0')+':'+(i%2?'30':'00'));
  return '<section class="week-calendar surface"><div class="week-grid">'+Array.from({length:7},(_,i)=>{
  const d=addDays(first,i),key=dateKey(d);
  return '<div class="week-day"><div class="week-day-head"><b>'+esc(d.toLocaleDateString('pt-BR',{weekday:'short'}))+'</b><small>'+d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+'</small></div>'+times.map(t=>{
