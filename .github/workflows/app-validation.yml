@@ -1,0 +1,26 @@
+name: App validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check JavaScript syntax
+        run: |
+          node --check src/components/autocomplete.js
+          node --check src/pages/comanda.js
+          node --check src/pages/professionals.js
+          node --check src/layout/render.js
+          node --check src/supabase/data-service.js
+          node --check professional/app.js
+      - name: Run agenda regression tests
+        run: npm run test:agenda
