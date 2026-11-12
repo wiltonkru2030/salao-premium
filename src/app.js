@@ -9,6 +9,7 @@ import {createAppointment,updateAppointment,changeAppointmentStatus} from './age
 import {findConflict} from './agenda/utils/conflict.utils.js';
 import {timeToMinutes} from './agenda/utils/duration.utils.js';
 import {addDays} from './agenda/utils/date.utils.js';
+import {startAuth,signOut} from './auth/auth.js';
 
 function dateFromKey(key){const p=String(key).split('-').map(Number);return new Date(p[0],p[1]-1,p[2])}
 function blockedConflict(candidate,ignoreId=null){
@@ -39,6 +40,7 @@ document.addEventListener('click',e=>{
  }
  const action=target.closest('[data-action]')?.dataset.action;
  if(!action)return;
+ if(action==='sign-out'){signOut().catch(error=>toast(error.message||'Não foi possível sair.'));return}
  if(action==='collapse-menu'){state.sidebarCollapsed=!state.sidebarCollapsed;render();return}
  if(action==='toggle-menu'){state.mobileMenu=true;render()}
  else if(action==='close-menu'){state.mobileMenu=false;render()}
@@ -114,4 +116,4 @@ document.addEventListener('drop',e=>{
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'){if(state.drawer){state.drawer=null;renderDrawer()}if(state.mobileMenu){state.mobileMenu=false;render()}}
 });
-render();
+startAuth(context=>{state.user=context.user;state.organization=context.organization;state.membership=context.membership;render()});
