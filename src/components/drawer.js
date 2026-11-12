@@ -1,12 +1,42 @@
-import { state } from '../state.js';
+import {state} from '../state.js';
+import {pros,records} from '../data/index.js';
+import { $,esc,status,initials,btn,field } from '../utils.js';
+import {renderAppointmentForm} from '../agenda/components/appointment-form.js';
+import {renderBlockTimeFields} from '../agenda/components/block-time-modal.js';
+import {dateKey} from '../agenda/utils/date.utils.js';
 
-import { pros, records } from '../data/index.js';
-
-import { $, esc, status, initials, btn, field } from '../utils.js';
-
-function openDrawer(data){state.drawer=data;state.drawerLoading=true;renderDrawer();setTimeout(()=>{if(state.drawer===data){state.drawerLoading=false;renderDrawer()}},180)}
-function recordDrawer(type,index){const r=(records[type]||[])[index];if(!r)return;openDrawer({kind:'record',title:r[0],type,fields:r.slice(2).map((v,i)=>({label:(['Informação','Detalhes','Valor / situação'][i]||'Detalhe'),value:v}))})}
-function appointmentDrawer(a){openDrawer({kind:'appointment',appointment:a,title:a?'Propriedades do agendamento':'Novo agendamento',slot:a?.time||'',pro:a?.pro??state.pro})}
-function renderDrawer(){let root=$('#drawer-root');if(!root)return;if(!state.drawer){root.innerHTML='';return}if(state.drawerLoading){root.innerHTML='<div class="drawer-backdrop"></div><aside class="detail-drawer loading-drawer"><div class="drawer-loading"><span class="loading-spinner"></span><small>Carregando informações…</small></div></aside>';return}const d=state.drawer;let body='';if(d.mode){const isAppointment=d.kind==='appointment';const mode=d.mode;const formFields=isAppointment?[['Cliente',d.appointment?.name||'Selecionar cliente'],['Serviço',d.appointment?.service||'Selecionar serviço'],['Profissional',pros[d.appointment?.pro??state.pro][1]],['Data',state.date.toLocaleDateString('pt-BR')],['Horário',d.appointment?.time||d.slot||'Selecionar horário'],['Duração','Calculada automaticamente'],['Valor','Calculado pelo serviço']]:d.fields.map(f=>[f.label,f.value]);body='<div class="drawer-kicker">'+(isAppointment?'AGENDA':'CADASTRO')+' · '+esc(mode.toUpperCase())+'</div><h2>'+esc(mode)+'</h2><p class="drawer-description">Esta tela já está preparada para receber os dados reais. Os campos estão em modo de demonstração até a conexão com o banco de dados.</p><div class="drawer-section"><h3>'+(mode==='Reagendar'?'Novo horário':mode==='Editar cadastro'?'Dados para edição':'Informações')+'</h3>'+formFields.map(f=>'<label class="form-field"><span>'+esc(f[0])+'</span><input disabled value="'+esc(f[1])+'"></label>').join('')+'</div><div class="drawer-section"><h3>Disponibilidade e validação</h3><div class="readonly-box">A validação de horários, permissões e conflitos será feita pela API quando o backend estiver conectado.</div></div><button class="btn primary full-width" disabled>Salvar — aguardando banco de dados</button><p class="demo-note">Nenhuma informação será alterada nesta demonstração.</p>';}else if(d.kind==='appointment'){const a=d.appointment;body='<div class="drawer-kicker">AGENDA · PROPRIEDADES</div><h2>'+ (a?'Agendamento':'Novo agendamento')+'</h2><p class="drawer-description">'+(a?'Consulte os detalhes ou visualize as opções deste atendimento.':'Preencha os dados para visualizar o fluxo de criação.')+'</p>'+(a?'<div class="drawer-client"><span class="avatar">'+initials(a.name)+'</span><div><b>'+esc(a.name)+'</b><small>'+esc(a.phone)+'</small></div>'+status(a.status)+'</div>':'')+'<div class="drawer-section"><h3>Detalhes do atendimento</h3>'+field('Cliente',a?.name||'Selecionar cliente')+field('Serviço',a?.service||'Selecionar serviço')+field('Profissional',pros[a?.pro??state.pro][1])+field('Data',state.date.toLocaleDateString('pt-BR'))+field('Horário',a?.time||d.slot||'Selecionar horário')+field('Duração',(a?.duration ? a.duration+' minutos' : 'Calculada pelo serviço'))+field('Valor previsto',a?.price||'Calculado pelo serviço')+'</div><div class="drawer-section"><h3>Observações</h3><div class="readonly-box">Campo preparado para observações do atendimento.</div></div><div class="drawer-section"><h3>Opções do atendimento</h3><div class="action-grid">'+['Editar informações','Reagendar','Trocar profissional','Trocar serviço','Confirmar atendimento','Iniciar atendimento','Finalizar atendimento','Registrar pagamento','Cancelar agendamento','Registrar falta','Consultar histórico'].map(x=>'<button class="drawer-action" data-demo-action="'+x+'">'+x+' <span>›</span></button>').join('')+'</div></div><p class="demo-note">Modo de demonstração. Nenhuma alteração será gravada, enviada ou excluída.</p>';}else{body='<div class="drawer-kicker">'+esc(d.type||'CADASTRO')+' · PROPRIEDADES</div><h2>'+esc(d.title)+'</h2><p class="drawer-description">Visualize as informações e conheça as opções disponíveis para este registro.</p><div class="drawer-section"><h3>Informações do registro</h3>'+d.fields.map(f=>field(f.label,f.value)).join('')+'</div><div class="drawer-section"><h3>Opções</h3><div class="action-grid">'+['Visualizar cadastro completo','Editar cadastro','Consultar histórico','Ver atividades relacionadas'].map(x=>'<button class="drawer-action" data-demo-action="'+x+'">'+x+' <span>›</span></button>').join('')+'</div></div><p class="demo-note">A edição será habilitada após a integração com o banco de dados.</p>'}root.innerHTML='<div class="drawer-backdrop" data-action="close-drawer"></div><aside class="detail-drawer" role="dialog" aria-modal="true" aria-label="'+esc(d.title)+'"><div class="drawer-top"><span class="drawer-brand">SALÃO PREMIUM</span><button class="icon-btn close-drawer" data-action="close-drawer" aria-label="Fechar painel">×</button></div><div class="drawer-content">'+body+'</div><div class="drawer-bottom">'+btn('Fechar','close-drawer')+'</div></aside>'}
-
-export { openDrawer, recordDrawer, appointmentDrawer, renderDrawer };
+function openDrawer(data){
+ state.drawer={...data};state.drawerLoading=true;renderDrawer();
+ setTimeout(()=>{if(state.drawer&&state.drawer.title===data.title){state.drawerLoading=false;renderDrawer()}},120);
+}
+function recordDrawer(type,index){
+ const r=(records[type]||[])[index];if(!r)return;
+ openDrawer({kind:'record',title:r[0],type,fields:r.slice(2).map((v,i)=>({label:(['Informação','Detalhes','Valor / situação'][i]||'Detalhe'),value:v}))});
+}
+function appointmentDrawer(a){
+ openDrawer({kind:'appointment',appointment:a?{...a}:null,title:a?'Propriedades do agendamento':'Novo agendamento',slot:a?.time||'',pro:a?.pro??state.pro,editing:!a});
+}
+function renderDrawer(){
+ const root=$('#drawer-root');if(!root)return;
+ if(!state.drawer){root.innerHTML='';return}
+ if(state.drawerLoading){root.innerHTML='<div class="drawer-backdrop"></div><aside class="detail-drawer loading-drawer"><div class="drawer-loading"><span class="loading-spinner"></span><small>Carregando informações…</small></div></aside>';return}
+ const d=state.drawer;let body='';
+ if(d.kind==='appointment'){
+  const a=d.appointment;
+  if(d.editing||!a){
+   body='<div class="drawer-kicker">AGENDA · '+(a?'EDIÇÃO':'NOVO')+'</div><h2>'+(a?'Editar agendamento':'Novo agendamento')+'</h2><p class="drawer-description">Informe os dados do atendimento. Os conflitos de horário são verificados antes da atualização local.</p>'+renderAppointmentForm({appointment:a,date:dateKey(state.date),time:d.slot,pro:d.pro});
+  }else{
+   body='<div class="drawer-kicker">AGENDA · PROPRIEDADES</div><h2>Detalhes do agendamento</h2><div class="drawer-client"><span class="avatar">'+initials(a.name||'?')+'</span><div><b>'+esc(a.name)+'</b><small>'+esc(a.phone||'Telefone não informado')+'</small></div>'+status(a.status)+'</div>'+
+   '<div class="drawer-section"><h3>Atendimento</h3>'+field('Serviço',a.service)+field('Profissional',pros[a.pro]?.[1]||'—')+field('Data',new Date(a.date+'T12:00:00').toLocaleDateString('pt-BR'))+field('Horário',a.time)+field('Duração',(a.duration||0)+' minutos')+field('Valor',a.price||'Não informado')+field('Observações',a.notes||'—')+'</div>'+
+   '<div class="drawer-section"><h3>Ações rápidas</h3><div class="action-grid"><button class="drawer-action" data-action="edit-appointment">Editar informações <span>›</span></button>'+
+   ['Confirmado','Em atendimento','Finalizado','Cancelado','Falta'].map(s=>'<button class="drawer-action" data-appointment-status="'+s+'">'+({'Confirmado':'Confirmar','Em atendimento':'Iniciar atendimento','Finalizado':'Finalizar atendimento','Cancelado':'Cancelar agendamento','Falta':'Registrar falta'}[s])+' <span>›</span></button>').join('')+
+   '</div></div><p class="demo-note">As alterações são temporárias e permanecem apenas nesta sessão.</p>';
+  }
+ }else if(d.kind==='block'){
+  body='<div class="drawer-kicker">AGENDA · DISPONIBILIDADE</div><h2>Bloquear horário</h2><p class="drawer-description">Reserve um período para intervalo, compromisso ou indisponibilidade do profissional.</p>'+renderBlockTimeFields({date:dateKey(state.date),time:d.slot||'09:00',pro:d.pro??state.pro});
+ }else{
+  body='<div class="drawer-kicker">'+esc(d.type||'CADASTRO')+' · PROPRIEDADES</div><h2>'+esc(d.title)+'</h2><p class="drawer-description">Informações deste registro.</p><div class="drawer-section"><h3>Detalhes</h3>'+((d.fields||[]).map(f=>field(f.label,f.value)).join(''))+'</div><p class="demo-note">A edição dos cadastros será conectada ao banco de dados posteriormente.</p>';
+ }
+ root.innerHTML='<div class="drawer-backdrop" data-action="close-drawer"></div><aside class="detail-drawer" role="dialog" aria-modal="true" aria-label="'+esc(d.title)+'"><div class="drawer-top"><span class="drawer-brand">SALÃO PREMIUM</span><button class="icon-btn close-drawer" data-action="close-drawer" aria-label="Fechar painel">×</button></div><div class="drawer-content">'+body+'</div><div class="drawer-bottom">'+btn('Fechar','close-drawer')+'</div></aside>';
+}
+export {openDrawer,recordDrawer,appointmentDrawer,renderDrawer};
