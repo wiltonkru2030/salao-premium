@@ -36,7 +36,7 @@
  });
  setTimeout(function(){
   var a=document.getElementById('app');
-  if(!shown&&a&&a.textContent.indexOf('Carregando SALÃO PREMIUM')!==-1)
+  if(!shown&&!window.__SALAO_PREMIUM_BOOTED__&&a&&a.textContent.indexOf('Carregando SALÃO PREMIUM')!==-1)
    show('O aplicativo não terminou de carregar após 12 segundos.','Possível falha ao buscar um módulo. Confira a conexão e envie esta captura.');
  },12000);
 })();
