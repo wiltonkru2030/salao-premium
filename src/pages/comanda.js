@@ -7,7 +7,7 @@ let cleanup = [];
 let selectedOrder = null;
 let selectedCustomer = null;
 let selectedProfessional = null;
-let selectedService = null;
+let selectedService = null;\nlet selectedProduct = null;
 const currency = value => Number(value || 0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
 export function comandaPage() {
@@ -56,9 +56,10 @@ function renderCreateForm(host, customers, professionals) {
   });
 }
 async function renderOrderDetails(host, order, orgId) {
-  const [{data:items,error},{data:services}] = await Promise.all([
+  const [{data:items,error},{data:services},{data:products}] = await Promise.all([
     supabase.from("service_order_items").select("id,item_type,description,quantity,unit_price,total,professional_id").eq("org_id",orgId).eq("order_id",order.id).order("created_at"),
-    supabase.from("services").select("id,name,price,duration_minutes").eq("org_id",orgId).eq("active",true).order("name").limit(200)
+    supabase.from("services").select("id,name,price,duration_minutes").eq("org_id",orgId).eq("active",true).order("name").limit(200),
+    supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).eq("active",true).order("name").limit(300)
   ]);
   if(error)throw error;
   host.innerHTML = `
@@ -71,8 +72,14 @@ async function renderOrderDetails(host, order, orgId) {
       <label>Serviço<input id="comanda-service" class="field" placeholder="Digite para buscar" autocomplete="off" required></label>
       <label>Profissional<select name="professional_id" class="field" required>${(await supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("active",true).order("name")).data?.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("")||""}</select></label>
       <button class="btn primary" type="submit">Adicionar serviço</button>
+    </form></section>
+    <section class="settings-card"><h3>Adicionar produto</h3><form id="comanda-product-form">
+      <label>Produto<input id="comanda-product" class="field" placeholder="Digite para buscar" autocomplete="off" required></label>
+      <label>Quantidade<input name="quantity" class="field" type="number" min="1" step="1" value="1" required></label>
+      <button class="btn primary" type="submit">Adicionar produto</button>
+      <p class="demo-note">O produto entra na comanda; a baixa de estoque será feita na etapa de fechamento.</p>
     </form></section>`;
-  selectedService=null;
+  selectedService=null;selectedProduct=null;
   cleanup.push(mountAutocomplete(host.querySelector("#comanda-service"),{
     search:async term=>(services||[]).filter(s=>s.name.toLocaleLowerCase("pt-BR").includes(term.toLocaleLowerCase("pt-BR"))).slice(0,8),
     getLabel:item=>item.name+" · "+currency(item.price),onSelect:item=>selectedService=item
@@ -88,6 +95,22 @@ async function renderOrderDetails(host, order, orgId) {
     });
     if(error){toast("Não foi possível adicionar o serviço: "+error.message);return;}
     toast("Serviço adicionado.");await loadComandaPage(order.id);
+  });
+  cleanup.push(mountAutocomplete(host.querySelector("#comanda-product"),{
+    search:async term=>(products||[]).filter(p=>p.name.toLocaleLowerCase("pt-BR").includes(term.toLocaleLowerCase("pt-BR"))).slice(0,8),
+    getLabel:item=>item.name+" · "+currency(item.sale_price)+" · Estoque: "+Number(item.stock_quantity||0),
+    onSelect:item=>selectedProduct=item
+  }));
+  host.querySelector("#comanda-product-form").addEventListener("submit",async event=>{
+    event.preventDefault();if(!selectedProduct){toast("Selecione um produto na lista de sugestões.");return;}
+    const {user}=await tenant(),quantity=Number(new FormData(event.target).get("quantity")||1),price=Number(selectedProduct.sale_price||0);
+    if(!Number.isFinite(quantity)||quantity<=0){toast("Informe uma quantidade válida.");return;}
+    const {error}=await supabase.from("service_order_items").insert({
+      org_id:orgId,order_id:order.id,item_type:"product",product_id:selectedProduct.id,
+      description:selectedProduct.name,quantity,unit_price:price,total:price*quantity,created_by:user.id
+    });
+    if(error){toast("Não foi possível adicionar o produto: "+error.message);return;}
+    toast("Produto adicionado à comanda.");await loadComandaPage(order.id);
   });
 }
 export async function loadComandaPage(orderId=null) {
