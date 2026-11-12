@@ -2,6 +2,7 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
 import { mountAutocomplete } from "../components/autocomplete.js";
+import { userErrorMessage } from "../utils/errors.js";
 
 /** Módulo Comandas: consulta comandas, monta detalhes e executa lançamentos e pagamentos. */
 
@@ -37,7 +38,9 @@ async function queryDetails(order,orgId){
   supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).eq("active",true).order("name").limit(250),
   supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("active",true).order("name").limit(200)
  ]);
- for(const r of [items,payments,customer,professional,services,products,professionals]) if(r.error && r.error.code!=="42501") throw r.error;
+ for(const [label,result] of [["itens",items],["pagamentos",payments],["cliente",customer],["profissional",professional],["serviços",services],["produtos",products],["equipe",professionals]]) {
+  if(result.error) throw new Error("Falha ao carregar "+label+": "+userErrorMessage(result.error));
+ }
  return {items:items.data||[],payments:payments.data||[],customer:customer.data,professional:professional.data,services:services.data||[],products:products.data||[],professionals:professionals.data||[]};
 }
 function renderOrderDetails(host,order,data,orgId){
@@ -148,5 +151,5 @@ export async function loadComandaPage(orderId=null){
     host.querySelectorAll("[data-open-comanda]").forEach(card=>card.style.display=card.textContent.toLocaleLowerCase("pt-BR").includes(q)?"":"none");
    });
   }
- }catch(error){host.innerHTML='<div class="empty-state">'+esc(error.message||"Não foi possível carregar as comandas.")+'</div>';}
+ }catch(error){host.innerHTML='<div class="empty-state">Não foi possível carregar as comandas. Atualize a página e tente novamente.</div>';throw error;}
 }
