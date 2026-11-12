@@ -184,3 +184,45 @@ Os workflows validam sintaxe JavaScript, build de produção, testes de máscara
 
 
 **Auditoria do banco conectado:** consulte [docs/AUDITORIA-SUPABASE.md](./AUDITORIA-SUPABASE.md) para o estado real de RLS, RPCs SECURITY DEFINER, Edge Functions, advisors e divergência entre migrações remotas e arquivos versionados.
+
+
+## 11. Segunda rodada de auditoria de formulários, modais e estilos — 12/11/2026
+
+### Inventário da árvore
+
+Na leitura desta rodada, o repositório contém 152 arquivos rastreados: 59 JavaScript, 14 CSS, 9 SQL e 2 HTML. A quantidade de arquivos não indica modularidade por si só; o principal gargalo arquitetural continua sendo a concentração de fluxo em `src/app.js`, `professional/app.js` e `src/layout/render.js`.
+
+### Cadastro e formulários
+
+- Clientes: cadastro em `dialog` e estilo global.
+- Produtos: cadastro em `dialog` e estilo global.
+- Serviços: cadastro em `dialog` e estilo global.
+- Profissionais: cadastro em `dialog`; nesta rodada foi alinhado ao contrato global `sp-modal`, com foco inicial e fechamento pelo botão ou clique no backdrop.
+- Recuperar: o detalhe de uma operação da lixeira foi migrado para `dialog.sp-modal`, com backdrop nativo, foco gerenciado pelo navegador e fechamento por Escape.
+- Comanda: os formulários para adicionar serviço, adicionar produto e receber pagamento permanecem embutidos na tela de detalhes. São ações operacionais de uma comanda, não cadastros mestres. A decisão de mantê-los na tela evita abrir modais em sequência durante o atendimento; devem continuar com estados de envio e erro claros.
+- App Profissional: login, alteração de senha e edição de perfil são formulários funcionais, não cadastros de novos registros.
+- Equipe e Configurações: não há fluxo de convite/cadastro de membro ou formulário persistente de configurações nesta versão.
+
+### Máscaras aplicadas nesta rodada
+
+Os campos do cadastro profissional agora declaram explicitamente `data-mask="cpf"`, `data-mask="cnpj"` e `data-mask="phone"`; o CPF de acesso e o telefone do perfil no PWA também usam as máscaras globais. O login CPF ou e-mail permanece sem máscara automática para não destruir endereços de e-mail.
+
+### CSS e HTML
+
+- O gráfico demonstrativo do Dashboard deixou de gerar atributo `style` inline; suas alturas agora são classes CSS explícitas.
+- A imagem de ícone do menu deixou de usar atributo HTML `onerror`; o listener de erro é ligado pelo compositor depois de montar o menu.
+- Os modais de Profissionais e Recuperar usam a estrutura visual global, mas ainda há estilos locais de compatibilidade e regras antigas para o modal da lixeira. A consolidação final deve remover essas regras somente depois de comparar a renderização em desktop e mobile.
+- A cascata continua dividida entre `styles.css`, arquivos de `src/styles/`, estilos da Agenda e `professional/styles.css`. Ainda há seletores repetidos; a próxima etapa deve consolidar por componente, não apagar regras apenas porque têm nomes parecidos.
+
+### Pendências de arquitetura e produto
+
+1. Extrair o fluxo de criação/edição de Profissionais para controlador e serviço de dados, mantendo o componente visual separado.
+2. Extrair as operações de Comanda (adicionar item, receber, cancelar) para um serviço transacional e deixar a página responsável pela interface.
+3. Separar autenticação, navegação, Agenda e ações do PWA em módulos menores.
+4. Transformar Dashboard e páginas de Vendas, Caixa, Financeiro, Relatórios e Unidades em consultas reais antes de remover seus rótulos de demonstração.
+5. Criar testes de interface para abrir/fechar modais, foco, Escape, validação e falha de rede.
+6. Executar teste real com contas de proprietário e profissional; build e testes unitários não cobrem permissões de ponta a ponta.
+
+### Estado de conclusão
+
+Esta rodada corrige problemas concretos de máscaras, padronização de modais, tratamento de erros e estilos inline. Não é uma certificação de todas as páginas: ainda faltam teste visual em navegador, E2E, reconciliação de migrações e implementação dos módulos demonstrativos.
