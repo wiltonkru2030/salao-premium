@@ -4,7 +4,7 @@ const TABLES = new Set([
   'branches','customers','professionals','services','products','inventory_movements',
   'appointments','appointment_blocks','sales','sale_items','cash_registers',
   'cash_movements','expenses','commission_rules','commissions','app_settings',
-  'notifications','audit_logs'
+  'notifications','audit_logs','service_orders','service_order_items'
 ]);
 
 async function tenant() {
