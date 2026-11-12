@@ -68,7 +68,7 @@ Não adicionar 48 índices automaticamente: avaliar as consultas reais, cardinal
 
 ## 6. Mudança recente do Data API
 
-A documentação/changelog do Supabase informa que, a partir de 30/10/2026, novas tabelas não são automaticamente expostas à Data API por padrão. Para novas tabelas, confirmar a exposição e conceder apenas os privilégios necessários, sempre junto com RLS e políticas específicas.
+A documentação/changelog do Supabase informa que, a partir de 30/10/2026, novas tabelas não são automaticamente expostas à Data API por padrão ([aviso oficial](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically)). Para novas tabelas, confirmar a exposição e conceder apenas os privilégios necessários, sempre junto com RLS e políticas específicas.
 
 ## 7. Plano de ação recomendado
 
