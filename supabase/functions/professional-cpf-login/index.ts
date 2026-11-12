@@ -32,11 +32,15 @@ Deno.serve(async (req: Request) => {
     if (!cpf || password.length < 8 || password.length > 128) return json({ error: "CPF ou senha inválidos." }, 400);
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
-    const ipHash = await hmac("professional-login:" + ip, pepper);
-    const rate = await admin.rpc("consume_professional_login_attempt", { p_attempt_key: "\\\\x" + ipHash });
-    if (rate.error || rate.data !== true) return json({ error: "Muitas tentativas. Aguarde 15 minutos e tente novamente." }, 429);
+    const ipHash = await hmac("professional-login-ip:" + ip, pepper);
     const cpfHash = await hmac("cpf:" + cpf, pepper);
-    const resolved = await admin.rpc("resolve_professional_login", { p_cpf_hmac: "\\\\x" + cpfHash });
+    const cpfAttemptHash = await hmac("professional-login-cpf:" + cpfHash, pepper);
+    const [ipRate, cpfRate] = await Promise.all([
+      admin.rpc("consume_professional_login_attempt", { p_attempt_key: "\\x" + ipHash }),
+      admin.rpc("consume_professional_login_attempt", { p_attempt_key: "\\x" + cpfAttemptHash })
+    ]);
+    if (ipRate.error || cpfRate.error || ipRate.data !== true || cpfRate.data !== true) return json({ error: "Muitas tentativas. Aguarde 15 minutos e tente novamente." }, 429);
+    const resolved = await admin.rpc("resolve_professional_login", { p_cpf_hmac: "\\x" + cpfHash });
     const identity = Array.isArray(resolved.data) ? resolved.data[0] : resolved.data;
     if (resolved.error || !identity?.auth_user_id) return json({ error: "CPF ou senha inválidos." }, 401);
     const { data: authUser, error: userError } = await admin.auth.admin.getUserById(identity.auth_user_id);
