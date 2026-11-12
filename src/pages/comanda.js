@@ -3,6 +3,8 @@ import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
 import { mountAutocomplete } from "../components/autocomplete.js";
 
+/** Módulo Comandas: consulta comandas, monta detalhes e executa lançamentos e pagamentos. */
+
 let cleanup=[];
 let selectedOrder=null;
 let selectedService=null;
