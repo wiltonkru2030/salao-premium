@@ -8,7 +8,7 @@ const money = value => Number(value || 0).toLocaleString("pt-BR",{style:"currenc
 const dateKey = date => [date.getFullYear(),String(date.getMonth()+1).padStart(2,"0"),String(date.getDate()).padStart(2,"0")].join("-");
 const monthLabel = date => date.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
 const dateLabel = date => date.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"});
-function showNotice(message){state.notice=message;render();}
+function showNotice(message){state.notice=message;render();if(state.page==="Comanda"&&state.selectedOrder)bindAutocomplete();}
 function loginView(){
  root.innerHTML=`<main class="login"><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Bem-vindo(a)</h1><p>Entre com seu CPF e senha fornecidos pelo administrador do salão.</p>${state.notice?`<div class="notice">${esc(state.notice)}</div>`:""}<form id="professional-login"><label class="field">CPF<input name="cpf" inputmode="numeric" autocomplete="username" placeholder="000.000.000-00" maxlength="14" required></label><label class="field">Senha<input name="password" type="password" autocomplete="current-password" placeholder="Sua senha" required></label><button class="primary" type="submit">Entrar</button></form><p class="muted">Esqueceu a senha? Solicite a redefinição ao administrador do salão.</p></main>`;
 }
@@ -101,7 +101,7 @@ function bindAutocomplete(){
 root.addEventListener("click",async event=>{
  const page=event.target.closest("[data-page]");if(page){state.page=page.dataset.page;state.selectedOrder=null;state.notice="";render();if(state.page==="Comanda")bindAutocomplete();return;}
  const date=event.target.closest("[data-date]");if(date){const nextDate=new Date(date.dataset.date+"T12:00:00");const changed=nextDate.getMonth()!==state.month.getMonth()||nextDate.getFullYear()!==state.month.getFullYear();state.selectedDate=nextDate;if(changed){state.month=new Date(nextDate.getFullYear(),nextDate.getMonth(),1);await loadAppointments();}render();return;}
- const order=event.target.closest("[data-order]");if(order){await chooseOrder(order.dataset.order);bindAutocomplete();return;}
+ const order=event.target.closest("[data-order]");if(order){await chooseOrder(order.dataset.order);return;}
  const action=event.target.closest("[data-action]")?.dataset.action;
  if(action==="prev-month"||action==="next-month"){state.month=new Date(state.month.getFullYear(),state.month.getMonth()+(action==="next-month"?1:-1),1);await loadAppointments();render();}
  if(action==="back-orders"){state.selectedOrder=null;render();}
