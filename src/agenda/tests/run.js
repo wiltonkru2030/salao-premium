@@ -1,3 +1,4 @@
+/** Executor dos testes automatizados da Agenda; reúne verificações de regras, serviços e renderização. */
 import {runAgendaUnitChecks} from './agenda.test.js';
 import {runConflictUnitChecks} from './conflicts.test.js';
 import {runAgendaServiceChecks} from './services.test.js';
