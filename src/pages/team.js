@@ -1,3 +1,4 @@
+/** Módulo Equipe e permissões. Responsabilidade: consultar membros e administrar papéis/acessos da organização. */
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
