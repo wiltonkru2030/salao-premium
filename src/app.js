@@ -1,3 +1,4 @@
+/** Painel administrativo: inicializa sessão, organização, rotas e eventos globais; coordena os módulos sem substituir os serviços de domínio. */
 import { state } from './state.js';
 import { installGlobalMasks, parseBRL } from './utils/input-masks.js';
 import { installGlobalErrorHandlers, reportError } from './utils/errors.js';
