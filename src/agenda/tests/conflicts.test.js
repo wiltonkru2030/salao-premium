@@ -1,3 +1,4 @@
+/** Testes unitários: detecção de sobreposição e validação de conflitos entre agendamentos. */
 import {findConflict,validateAppointment} from '../utils/conflict.utils.js';
 export function runConflictUnitChecks(){
  const items=[{id:1,date:'2026-11-12',time:'09:00',duration:60,pro:0,name:'Cliente A',service:'Corte'}];
