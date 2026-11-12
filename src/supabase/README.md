@@ -11,7 +11,7 @@
 A chave publicada no navegador é a **publishable key**. Nunca colocar uma `service_role` ou secret key no frontend.
 
 ## Tabelas criadas
-`organizations`, `profiles`, `org_memberships`, `branches`, `customers`, `professionals`, `services`, `products`, `inventory_movements`, `appointments`, `appointment_blocks`, `sales`, `sale_items`, `cash_registers`, `cash_movements`, `expenses`, `commission_rules`, `commissions`, `app_settings`, `notifications`, `audit_logs`.
+`organizations`, `profiles`, `org_memberships`, `branches`, `customers`, `professionals`, `services`, `products`, `inventory_movements`, `appointments`, `appointment_blocks`, `sales`, `sale_items`, `cash_registers`, `cash_movements`, `expenses`, `commission_rules`, `commissions`, `app_settings`, `notifications`, `audit_logs`, `service_orders`, `service_order_items`.
 
 Todas as 21 tabelas estão com RLS habilitado. As políticas isolam registros por `org_id`; a criação de uma conta gera automaticamente organização, perfil, associação de proprietário e unidade matriz através de trigger no banco. As permissões de gravação variam por função.
 
@@ -35,3 +35,13 @@ A autenticação e o cliente Supabase estão conectados ao shell do sistema. O s
 - Associação de organização criada no servidor pelo trigger de Auth.
 - A função de bootstrap fica no schema privado.
 - A execução pública da função legada `public.rls_auto_enable()` foi revogada após alerta do advisor.
+
+
+## App Profissional e Comandas
+- App mobile-first/PWA: `professional/` (agenda mensal, serviços, comandas atribuídas, comissões e configurações).
+- O profissional consulta somente os próprios agendamentos, comandas atribuídas e comissões; na comanda pode registrar apenas serviços realizados, sem alterar valores, produtos ou pagamentos.
+- `appointments.booking_source` registra `customer`, `salon` ou `professional`.
+- `service_orders` e `service_order_items` armazenam comandas e itens; o total é recalculado no banco quando itens mudam.
+- `private.professional_login_identities` guarda somente HMAC do CPF, nunca CPF em texto. As Edge Functions resolvem o CPF no servidor; a função administrativa permite criar ou redefinir senha temporária apenas para owner/admin/manager.
+- **Pendência de ativação:** publicar as Edge Functions em `supabase/functions/` e cadastrar `CPF_LOGIN_PEPPER` em Edge Function Secrets (segredo aleatório longo, nunca no navegador). Sem isso, login por CPF e gestão de acessos ainda não funcionam.
+- A senha temporária é exibida uma única vez ao administrador e deve ser entregue por canal seguro. A recuperação é exclusiva do administrador.
