@@ -120,6 +120,8 @@ async function saveAppointment(form) {
     if(choice.orderId) {
       payload.service_order_id=choice.orderId;
       payload.comanda_strategy='reuse_open';
+    } else if(choice.forceNew) {
+      payload.comanda_strategy='force_new_on_arrival';
     }
   }
   const {error}=await supabase.from('appointments').insert(payload);
@@ -144,8 +146,8 @@ async function openAppointmentOrder(appointment) {
     throw new Error('Este agendamento não pode abrir uma comanda.');
   }
   let existingId=appointment.service_order_id||null;
-  let forceNew=false;
-  if(!existingId) {
+  let forceNew=appointment.comanda_strategy==='force_new_on_arrival';
+  if(!existingId&&!forceNew) {
     const orders=await findOpenCustomerOrders(appointment.customer_id);
     const choice=await selectExistingOrder(orders);
     if(choice===null)return;
