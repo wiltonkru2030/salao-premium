@@ -2,7 +2,7 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, toast, esc } from "../utils.js";
 export function professionalsPage() {
-  return head("Profissionais","Gerencie sua equipe e libere o acesso individual ao App Profissional.") +
+  return head("Profissionais","Gerencie sua equipe e libere o acesso individual ao App Profissional.") + '<p class="demo-note"><a href="../professional/index.html" target="_blank" rel="noopener">Abrir App Profissional ↗</a></p>' +
     '<div id="professionals-access"><div class="empty-state">Carregando profissionais…</div></div>';
 }
 export async function loadProfessionalsPage() {
