@@ -4,6 +4,7 @@ import {$,toast} from './utils.js';
 import {cardList} from './pages/records.js';
 import {changePage,render} from './layout/render.js';
 import {recordDrawer,appointmentDrawer,renderDrawer,openDrawer} from './components/drawer.js';
+import {agenda} from './agenda/pages/agenda-page.js';
 import {createAppointment,updateAppointment,changeAppointmentStatus} from './agenda/services/agenda.service.js';
 import {findConflict} from './agenda/utils/conflict.utils.js';
 import {timeToMinutes} from './agenda/utils/duration.utils.js';
@@ -83,12 +84,9 @@ document.addEventListener('submit',e=>{
 });
 
 document.addEventListener('input',e=>{
- if(e.target.matches('[data-agenda-search]')){state.query=e.target.value;const pos=e.target.selectionStart;const page=state.page;const content=page==='Agenda'? (awaitAgendaRender()) : cardList(page);$('.page-content').innerHTML=content;const input=$('[data-agenda-search]');if(input){input.focus();input.setSelectionRange(pos,pos)}}
+ if(e.target.matches('[data-agenda-search]')){state.query=e.target.value;const pos=e.target.selectionStart;$('.page-content').innerHTML=agenda();const input=$('[data-agenda-search]');if(input){input.focus();input.setSelectionRange(pos,pos)}}
  if(e.target.id==='record-search'){state.query=e.target.value;const pos=e.target.selectionStart;const page=state.page;$('.page-content').innerHTML=cardList(page);const input=$('#record-search');if(input){input.focus();input.setSelectionRange(pos,pos)}}
 });
-function awaitAgendaRender(){return document.querySelector('.page-content')&&state.page==='Agenda'?renderAgendaContent():''}
-function renderAgendaContent(){const page=document.querySelector('.page-content');if(!page)return '';const app=document.querySelector('#app');const previous=state.page;return app?(()=>{const old=page.innerHTML;render();const next=document.querySelector('.page-content')?.innerHTML||'';return next})():''}
-
 document.addEventListener('change',e=>{
  if(e.target.matches('[data-view]')){state.view=e.target.value;render()}
  if(e.target.matches('[data-agenda-filter]')){state.filter=e.target.value;render()}
