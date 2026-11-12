@@ -1,0 +1,1 @@
+export function renderTimeSlot(time,date,pro,appointment=null){return '<div class="schedule-slot" data-slot="'+time+'" data-date="'+date+'" data-pro="'+pro+'">'+(appointment?appointment:'<button type="button" class="empty-slot" data-new-slot="'+time+'" data-new-date="'+date+'" aria-label="Criar agendamento às '+time+'"><span>＋</span></button>')+'</div>'}
