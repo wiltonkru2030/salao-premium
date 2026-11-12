@@ -226,3 +226,18 @@ Os campos do cadastro profissional agora declaram explicitamente `data-mask="cpf
 ### Estado de conclusão
 
 Esta rodada corrige problemas concretos de máscaras, padronização de modais, tratamento de erros e estilos inline. Não é uma certificação de todas as páginas: ainda faltam teste visual em navegador, E2E, reconciliação de migrações e implementação dos módulos demonstrativos.
+
+
+## 12. Validação posterior e nova leitura da cascata CSS
+
+- No último commit desta rodada (`53f2603b75c4de90007e2e1cb5ea9f60918c8122)), os workflows **App validation** e **Agenda tests** concluíram com sucesso.
+- A validação de App executou a checagem de sintaxe de todos os arquivos JavaScript, build/imports de produção e testes de regressão configurados.
+- A validação da Agenda concluiu os testes automatizados existentes.
+- Ações assíncronas globais de clique, alteração de visualização e arrastar/soltar na Agenda agora têm captura contextual de exceções; erros de remoção de bloqueio e movimentação são encaminhados ao serviço compartilhado.
+- As páginas genéricas demonstrativas deixaram de oferecer um botão “Novo registro” que abria um drawer genérico sem persistência. Isso evita apresentar uma ação fictícia como cadastro funcional.
+
+### Sobre seletores repetidos
+
+Uma varredura estática dos 14 arquivos CSS encontrou 151 seletores com o mesmo nome presentes em mais de um arquivo. Esse número inclui sobreposições intencionais (regras base, responsivas e ajustes do design system) e não significa 151 defeitos. Os grupos mais sensíveis são Agenda (`src/agenda/styles/agenda.css` e `src/styles/agenda.css`), shell (design system e shell), além dos estilos antigos de Profissionais/Recuperar em `components.css` que recebem overrides do design system.
+
+Não foi feita remoção em massa porque a cascata e a ordem de importação afetam a aparência. A consolidação correta requer comparar cada componente em desktop e mobile antes de apagar regras antigas.
