@@ -1,3 +1,4 @@
+/** Utilitários de duração. Responsabilidade: validar, converter e somar horários no formato HH:mm. */
 export function timeToMinutes(value){if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(value||''))throw new Error('Horário inválido.');const [h,m]=value.split(':').map(Number);return h*60+m}
 export function minutesToTime(value){const m=((value%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
 export function addDuration(time,duration){return minutesToTime(timeToMinutes(time)+Number(duration))}
