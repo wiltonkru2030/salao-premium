@@ -57,7 +57,7 @@ Deno.serve(async (req: Request) => {
     if (membershipError) return json({ error: "Conta criada, mas a permissão não pôde ser vinculada." }, 500);
     const { error: updateError } = await admin.from("professionals").update({ profile_id: authUserId, access_enabled: true }).eq("id", professionalId).eq("org_id", orgId);
     if (updateError) return json({ error: "Conta criada, mas não foi possível ativar o acesso." }, 500);
-    const { error: identityError } = await admin.rpc("register_professional_login", { p_org_id: orgId, p_professional_id: professionalId, p_auth_user_id: authUserId, p_cpf_hmac: "\\\x" + cpfHash, p_enabled: true });
+    const { error: identityError } = await admin.rpc("register_professional_login", { p_org_id: orgId, p_professional_id: professionalId, p_auth_user_id: authUserId, p_cpf_hmac: "\\x" + cpfHash, p_enabled: true });
     if (identityError) return json({ error: "Conta criada, mas não foi possível registrar o CPF com segurança." }, 500);
     return json({ success: true, professional_name: professional.name, temporary_password: password, message: action === "reset" ? "Senha temporária redefinida. Ela será exibida somente agora." : "Acesso criado. Entregue a senha temporária por um canal seguro." });
   } catch (_error) { return json({ error: "Não foi possível gerenciar este acesso. Tente novamente." }, 400); }
