@@ -1,28 +1,25 @@
-# Organização do frontend SALÃO PREMIUM
+# Código-fonte do SALÃO PREMIUM
 
-O frontend usa JavaScript ES Modules. O arquivo `/app.js` é somente o ponto de entrada; não concentra a aplicação.
+O código está organizado em módulos, mas ainda existem arquivos concentradores em processo de refatoração. Consulte o [Guia técnico e mapa do código](../docs/GUIA-DO-CODIGO.md) para entender a responsabilidade de cada pasta, os pontos de concentração, o padrão de comentários e o tratamento de erros.
 
-## Estrutura
+## Entradas
+- `/app.js`: entrada mínima do painel administrativo.
+- `/src/app.js`: inicialização e orquestração do painel.
+- `/professional/app.js`: entrada da aplicação PWA do profissional.
 
-- `src/app.js`: inicialização e eventos globais.
-- `src/state.js`: estado compartilhado da interface.
-- `src/data/index.js`: dados demonstrativos e configurações.
-- `src/utils.js`: utilitários compartilhados.
-- `src/layout/render.js`: estrutura do painel, navegação e roteamento.
-- `src/components/drawer.js`: painéis de propriedades, detalhes e edição.
-- `src/pages/dashboard.js`: dashboard.
-- `src/pages/agenda.js`: agenda e visualizações dia/semana/mês.
-- `src/pages/settings.js`: configurações.
-- `src/pages/records.js`: componente reutilizável para listas de registros.
-- `src/pages/customers.js`, `professionals.js`, `services.js`, `products.js`, `sales.js`, `cash.js`, `finance.js`, `commissions.js`, `reports.js`, `branches.js`, `team.js`: entradas independentes de cada módulo de negócio.
-- `src/styles/`: estilos separados por base, estrutura, agenda, listas, configurações, painéis, efeitos e responsividade.
+## Diretórios
+- `auth/`: autenticação e sessão.
+- `layout/`: shell, menu e roteamento.
+- `pages/`: módulos de negócio.
+- `components/`: componentes compartilhados.
+- `agenda/`: módulo Agenda.
+- `supabase/`: cliente e camada de dados.
+- `utils/`: máscaras, mensagens e utilitários.
+- `styles/`: estilos globais do painel.
 
-## Como funciona
-
-O navegador carrega `index.html`, que importa o pequeno ponto de entrada `app.js` como módulo ES. O ponto de entrada importa `src/app.js`, que conecta os módulos. Cada página tem seu próprio arquivo e pode evoluir sem transformar o arquivo principal em um monólito.
-
-`styles.css` é apenas o agregador dos arquivos CSS em `src/styles/`.
-
-## Observação
-
-Os módulos de páginas já estão separados. A persistência, autenticação, API e banco de dados continuam sendo etapas próprias de implementação; os dados atuais permanecem demonstrativos.
+## Manutenção
+- Cada arquivo novo deve ter cabeçalho explicando sua responsabilidade.
+- Funções exportadas devem documentar entradas, saídas e efeitos colaterais.
+- Operações assíncronas devem tratar erros com `reportError` ou um tratamento local equivalente.
+- Não ignorar erros de consultas auxiliares.
+- Alterar uma funcionalidade por vez e executar build/testes antes de seguir.
