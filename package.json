@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "npx --yes vite@6 --host 0.0.0.0",
     "build": "npx --yes vite@6 build",
-    "test:agenda": "node src/agenda/tests/run.js"
+    "test:agenda": "node src/agenda/tests/run.js",
+    "test:utils": "node src/utils/input-masks.test.js"
   },
   "engines": {
     "node": ">=20"
