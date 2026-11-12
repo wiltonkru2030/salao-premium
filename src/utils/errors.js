@@ -3,7 +3,7 @@
  * Responsabilidade: converter erros técnicos em mensagens seguras, registrar contexto
  * para diagnóstico e impedir rejeições assíncronas sem tratamento.
  */
-import { toast } from "./utils.js";
+import { toast } from "../utils.js";
 
 let sequence = 0;
 let installed = false;
