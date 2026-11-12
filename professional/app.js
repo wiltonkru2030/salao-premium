@@ -9,6 +9,9 @@ const dateKey = date => [date.getFullYear(),String(date.getMonth()+1).padStart(2
 const monthLabel = date => date.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
 const dateLabel = date => date.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"});
 function showNotice(message){state.notice=message;render();if(state.page==="Comanda"&&state.selectedOrder)bindAutocomplete();}
+function changePasswordView(){
+ root.innerHTML=`<main class="login"><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Crie sua nova senha</h1><p>Por segurança, altere a senha temporária antes de continuar.</p>${state.notice?`<div class="notice">${esc(state.notice)}</div>`:""}<form id="professional-password-change"><label class="field">Nova senha<input name="password" type="password" minlength="10" autocomplete="new-password" placeholder="Mínimo de 10 caracteres" required></label><label class="field">Confirmar senha<input name="confirm" type="password" minlength="10" autocomplete="new-password" placeholder="Digite novamente" required></label><button class="primary" type="submit">Salvar nova senha</button></form><p class="muted">A alteração é obrigatória para proteger seu acesso.</p></main>`;
+}
 function loginView(){
  root.innerHTML=`<main class="login"><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Bem-vindo(a)</h1><p>Entre com seu CPF e senha fornecidos pelo administrador do salão.</p>${state.notice?`<div class="notice">${esc(state.notice)}</div>`:""}<form id="professional-login"><label class="field">CPF<input name="cpf" inputmode="numeric" autocomplete="username" placeholder="000.000.000-00" maxlength="14" required></label><label class="field">Senha<input name="password" type="password" autocomplete="current-password" placeholder="Sua senha" required></label><button class="primary" type="submit">Entrar</button></form><p class="muted">Esqueceu a senha? Solicite a redefinição ao administrador do salão.</p></main>`;
 }
@@ -108,6 +111,17 @@ root.addEventListener("click",async event=>{
  if(action==="logout"){await supabase.auth.signOut();state.user=null;state.professional=null;loginView();}
 });
 root.addEventListener("submit",async event=>{
+ if(event.target.matches("#professional-password-change")){
+  event.preventDefault();
+  const values=new FormData(event.target),password=String(values.get("password")||""),confirm=String(values.get("confirm")||"");
+  if(password.length<10||password!==confirm){state.notice="As senhas devem ser iguais e ter pelo menos 10 caracteres.";changePasswordView();return;}
+  const button=event.target.querySelector("button[type=submit]");button.disabled=true;button.textContent="Salvando…";
+  const {error}=await supabase.auth.updateUser({password,data:{must_change_password:false}});
+  if(error){state.notice=error.message||"Não foi possível alterar a senha.";changePasswordView();return;}
+  const {data:userData,error:userError}=await supabase.auth.getUser();if(userError||!userData.user){state.notice="Entre novamente para continuar.";await supabase.auth.signOut();loginView();return;}
+  state.user=userData.user;state.notice="Senha atualizada.";try{await loadBase();}catch(loadError){state.notice=loadError.message;loginView();}
+  return;
+ }
  if(!event.target.matches("#professional-login"))return;
  event.preventDefault();const fd=new FormData(event.target),cpf=String(fd.get("cpf")||""),password=String(fd.get("password")||"");
  const button=event.target.querySelector("button[type=submit]");button.disabled=true;button.textContent="Validando…";
@@ -117,7 +131,7 @@ root.addEventListener("submit",async event=>{
   const {error:sessionError}=await supabase.auth.setSession({access_token:data.access_token,refresh_token:data.refresh_token});
   if(sessionError)throw sessionError;
   const {data:userData,error:userError}=await supabase.auth.getUser();if(userError||!userData.user)throw new Error("Não foi possível iniciar sua sessão.");
-  state.user=userData.user;state.notice="";await loadBase();
+  state.user=userData.user;state.notice="";if(state.user.user_metadata?.must_change_password){changePasswordView();return;}await loadBase();
  }catch(error){state.notice=error.message||"Não foi possível entrar.";loginView();}
  finally{if(button){button.disabled=false;button.textContent="Entrar";}}
 });
@@ -125,7 +139,7 @@ async function boot(){
  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
  const {data,error}=await supabase.auth.getSession();
  if(error){state.notice="Não foi possível recuperar sua sessão.";loginView();return;}
- if(data.session?.user){state.user=data.session.user;try{await loadBase();}catch(error){state.notice=error.message;await supabase.auth.signOut();loginView();}}
+ if(data.session?.user){state.user=data.session.user;if(state.user.user_metadata?.must_change_password){changePasswordView();return;}try{await loadBase();}catch(error){state.notice=error.message;await supabase.auth.signOut();loginView();}}
  else loginView();
 }
 boot();
