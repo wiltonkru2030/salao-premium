@@ -78,7 +78,7 @@ async function loadCommissions(){
 }
 async function loadOrderItems(){
  const host=document.querySelector("#order-items");if(!host||!state.selectedOrder)return;
- const {data,error}=await supabase.from("service_order_items").select("id,description,quantity,unit_price,total,performed_at").eq("org_id",state.orgId).eq("order_id",state.selectedOrder.id).eq("professional_id",state.professional.id).order("created_at");
+ const {data,error}=await supabase.from("service_order_items").select("id,description,quantity,unit_price,total,performed_at").eq("org_id",state.orgId).eq("order_id",state.selectedOrder.id).order("created_at");
  if(error){host.innerHTML='<div class="empty">Não foi possível carregar os itens.</div>';return;}
  host.innerHTML=data?.length?data.map(i=>`<article class="service"><strong>${esc(i.description)}</strong><div class="meta">${Number(i.quantity)} × ${money(i.unit_price)} · ${money(i.total)}</div></article>`).join(""):'<div class="empty">Nenhum serviço registrado por você nesta comanda.</div>';
 }
