@@ -19,6 +19,8 @@ function blockedConflict(candidate,ignoreId=null){
 
 document.addEventListener('click',e=>{
  const target=e.target;
+ const removeBlock=target.closest('[data-remove-block]');
+ if(removeBlock){state.blockedTimes=(state.blockedTimes||[]).filter(b=>String(b.id)!==removeBlock.dataset.removeBlock);render();toast('Bloqueio removido nesta sessão.');return}
  const monthDay=target.closest('[data-select-date]');
  if(monthDay){state.date=dateFromKey(monthDay.dataset.selectDate);state.view='Dia';render();return}
  const newSlot=target.closest('[data-new-slot]');
