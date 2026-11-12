@@ -1,3 +1,4 @@
+/** Componente compartilhado de autocomplete. Responsabilidade: buscar, exibir, selecionar e limpar sugestões de campos. */
 export function mountAutocomplete(input, { search, onSelect, getLabel = item => item?.name || "", minChars = 2, placeholder = "Nenhum resultado encontrado" } = {}) {
   if (!input || typeof search !== "function" || typeof onSelect !== "function") return () => {};
   const parent = input.parentElement;
