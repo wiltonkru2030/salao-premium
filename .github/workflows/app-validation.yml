@@ -19,5 +19,7 @@ jobs:
           find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
       - name: Build production application and validate module imports
         run: npm run build
+      - name: Run utility regression tests
+        run: npm run test:utils
       - name: Run agenda regression tests
         run: npm run test:agenda
