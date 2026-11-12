@@ -9,9 +9,38 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="./styles.css?v=professional-comanda-20261112">
+<style>
+#startup-error{display:none;margin:18px;padding:18px;border:1px solid #d9a441;border-radius:12px;background:#fffaf0;color:#302719;font:14px/1.5 system-ui,sans-serif;overflow-wrap:anywhere}
+#startup-error h2{font-size:17px;margin:0 0 8px}
+#startup-error pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;background:#fff;padding:10px;border-radius:8px}
+</style>
 </head>
 <body>
 <div id="app"><main style="padding:30px;font:13px Poppins,sans-serif">Carregando SALÃO PREMIUM…</main></div>
+<div id="startup-error" role="alert"><h2>Não foi possível iniciar o SALÃO PREMIUM</h2><p id="startup-error-message">O aplicativo encontrou um erro ao carregar.</p><pre id="startup-error-details"></pre><p>Envie uma captura desta mensagem.</p></div>
+<script>
+(function(){
+ var shown=false;
+ function show(message,details){
+  if(shown)return;shown=true;
+  document.getElementById('startup-error-message').textContent=message||'Falha ao iniciar.';
+  document.getElementById('startup-error-details').textContent=details||'Sem detalhes adicionais.';
+  document.getElementById('startup-error').style.display='block';
+  document.getElementById('app').style.display='none';
+ }
+ window.addEventListener('error',function(e){
+  show(e.message||'Falha ao carregar arquivo.',[e.filename||'',e.lineno?'Linha: '+e.lineno:'',e.error&&e.error.stack||''].filter(Boolean).join('\n'));
+ });
+ window.addEventListener('unhandledrejection',function(e){
+  var x=e.reason;show('Falha durante a inicialização.',x&&(x.stack||x.message)||String(x||'Erro desconhecido'));
+ });
+ setTimeout(function(){
+  var a=document.getElementById('app');
+  if(!shown&&a&&a.textContent.indexOf('Carregando SALÃO PREMIUM')!==-1)
+   show('O aplicativo não terminou de carregar após 12 segundos.','Possível falha ao buscar um módulo. Confira a conexão e envie esta captura.');
+ },12000);
+})();
+</script>
 <script type="module" src="./app.js?v=professional-comanda-20261112"></script>
 </body>
 </html>
