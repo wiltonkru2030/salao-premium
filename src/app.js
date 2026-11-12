@@ -250,6 +250,7 @@ async function saveBlockTime(form) {
 
 // Delegação global de cliques: menu, navegação, Agenda, drawers e ações.
 document.addEventListener('click',async event=>{
+ try{
   const target=event.target;
   const appointmentAction=target.closest('[data-appointment-action]');
   if(appointmentAction) {
@@ -263,7 +264,7 @@ document.addEventListener('click',async event=>{
     if(!window.confirm('Remover este bloqueio de horário?'))return;
     const {error}=await supabase.from('appointment_blocks').delete()
       .eq('org_id',state.organization.id).eq('id',removeBlock.dataset.removeBlock);
-    if(error){toast(error.message||'Não foi possível remover o bloqueio.');return;}
+    if(error){reportError(error,{context:'Agenda > remover bloqueio'});return;}
     await loadAgendaPage();toast('Bloqueio removido.');
     return;
   }
@@ -315,6 +316,7 @@ document.addEventListener('click',async event=>{
   } else if(action==='new-record'){
     openDrawer({kind:'record',title:'Novo cadastro',type:state.page,fields:[{label:'Cadastro',value:'Use os campos da página para inserir os dados.'}]});
   } else if(action==='notifications'){toast('Nenhuma notificação nova.');}
+ }catch(error){reportError(error,{context:'Painel > ação de clique'});}
 });
 
 // Delegação global de formulários: salvar agendamentos e bloqueios.
@@ -343,9 +345,11 @@ document.addEventListener('input',event=>{
   if(event.target.matches('[data-agenda-search]')){state.query=event.target.value;refreshAgendaContent();}
 });
 document.addEventListener('change',async event=>{
+ try{
   if(event.target.matches('[data-view]')){state.view=event.target.value;await loadAgendaPage();}
   if(event.target.matches('[data-agenda-filter]')){state.filter=event.target.value;refreshAgendaContent();}
   if(event.target.matches('[data-filter]')){const filter=event.target.value.toLocaleLowerCase('pt-BR');document.querySelectorAll('.record-card').forEach(card=>{card.style.display=(!filter||filter==='todos'||card.textContent.toLocaleLowerCase('pt-BR').includes(filter))?'':'none';});}
+ }catch(error){reportError(error,{context:'Agenda > alterar visualização ou filtro'});}
 });
 
 document.addEventListener('dragstart',event=>{
@@ -358,6 +362,7 @@ document.addEventListener('dragover',event=>{
 });
 document.addEventListener('dragleave',event=>event.target.closest('[data-slot],[data-month-date]')?.classList.remove('drop-target'));
 document.addEventListener('drop',async event=>{
+ try{
   const slot=event.target.closest('[data-slot],[data-month-date]');
   if(!slot||!state.dragId)return;
   event.preventDefault();
@@ -375,8 +380,9 @@ document.addEventListener('drop',async event=>{
     professional_name:professional[1],
     starts_at:start.toISOString(),ends_at:end.toISOString()
   }).eq('org_id',state.organization.id).eq('id',id);
-  if(error){toast(error.message||'Não foi possível mover o agendamento.');return;}
+  if(error){reportError(error,{context:'Agenda > mover agendamento'});return;}
   state.date=dateFromKey(newDate);state.pro=proIndex;await loadAgendaPage();toast('Agendamento atualizado no banco.');
+ }catch(error){reportError(error,{context:'Agenda > soltar agendamento no calendário'});}
 });
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'){
