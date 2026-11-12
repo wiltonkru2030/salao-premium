@@ -1,3 +1,4 @@
+/** Componente: calendário diário. Responsabilidade: distribuir horários, agendamentos e bloqueios na grade de um dia. */
 import {dateKey} from '../utils/date.utils.js';
 import {timeToMinutes} from '../utils/duration.utils.js';
 import {renderAppointmentCard} from './appointment-card.js';
