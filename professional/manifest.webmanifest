@@ -1,0 +1,11 @@
+{
+  "name": "SALÃO PREMIUM · App Profissional",
+  "short_name": "Salão Pro",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "lang": "pt-BR",
+  "icons": []
+}
