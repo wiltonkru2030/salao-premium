@@ -1,3 +1,4 @@
+/** Serviço de autenticação administrativa. Responsabilidade: iniciar sessão, cadastro, recuperação e contexto da organização. */
 import { supabase } from '../supabase/client.js';
 import { authScreen } from './auth-screen.js';
 
