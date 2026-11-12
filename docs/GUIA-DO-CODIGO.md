@@ -126,3 +126,58 @@ try {
 7. Adicionar testes de cada fluxo antes de remover código legado.
 
 **Regra:** refatorar uma funcionalidade por vez, preservar contratos e executar build/testes após cada etapa. Não reescrever vários módulos críticos simultaneamente.
+
+
+## 9. Auditoria aprofundada — 12/11/2026
+
+### Estrutura verificada
+
+A árvore atual contém 180 entradas no GitHub, incluindo código, estilos, migrações, workflows e recursos visuais. A separação por pastas existe, mas não significa que a arquitetura esteja totalmente modular:
+
+- `src/app.js` continua concentrando orquestração, listeners globais e operações da Agenda.
+- `professional/app.js` concentra autenticação, shell, consultas e ações das quatro áreas do PWA.
+- `src/pages/comanda.js` reúne consulta, renderização, inclusão de itens, pagamento e cancelamento.
+- `src/pages/professionals.js` reúne cadastro fiscal, atribuição de serviços e permissões de acesso.
+- `src/layout/render.js` importa todos os módulos e faz o despacho dos carregadores. É um ponto central de composição, não um serviço de negócio.
+
+A próxima refatoração deve extrair um módulo por vez, preservando contratos e executando os testes depois de cada extração.
+
+### Formulários e modais
+
+- Clientes, Produtos e Serviços usam elementos nativos `<dialog>` com a classe global `.sp-modal`.
+- Profissionais usa um modal próprio `.professional-modal` e estilos específicos.
+- Recuperar usa um modal montado com `div/section` e backdrop próprios; ainda precisa de revisão de foco, teclado e acessibilidade.
+- Comanda tem três formulários operacionais embutidos na página de detalhes: adicionar serviço, adicionar produto e receber pagamento. Eles não são cadastros mestres, mas ainda não usam modal.
+- Login e troca de senha do App Profissional são formulários de autenticação, não cadastros de registros.
+
+**Pendência visual:** não basta todos os cadastros terem modal; os modais de Profissionais e Recuperar ainda precisam ser harmonizados com o componente global e testados visualmente em desktop e celular.
+
+### CSS e consistência visual
+
+O painel carrega vários arquivos em sequência por `styles.css`, com `design-system.css` por último. O PWA importa o design system primeiro e depois aplica muitas regras locais. A análise estática encontrou seletores repetidos entre `design-system.css`, `components.css`, `shell.css`, `responsive.css`, `agenda.css` e `professional/styles.css`.
+
+Isso não prova que cada repetição seja um defeito visual, pois algumas regras são variações responsivas, mas aumenta a dependência da ordem de importação e da especificidade. Foram encontrados estilos inline em páginas como Dashboard, Comissões e Recuperar. A consolidação deve mover esses estilos para classes nomeadas e eliminar duplicações somente após comparação visual.
+
+### Máscaras — correção realizada
+
+Foi identificado um defeito concreto: o campo de login do App Profissional aceita CPF **ou e-mail**, mas seu placeholder continha o exemplo de CPF. A detecção anterior aplicava máscara de CPF a qualquer texto digitado nesse campo, removendo letras e impedindo login por e-mail.
+
+A detecção agora exige um campo inequivocamente identificado ou um placeholder exatamente igual ao padrão fiscal. Foi criado `src/utils/input-masks.test.js` para impedir regressão em login por e-mail, CPF, CNPJ, telefone, CEP e conversão de moeda. Campos com nomes não padronizados devem declarar explicitamente `data-mask`.
+
+### Tratamento de erros — correção realizada
+
+O HTML de entrada mantinha listeners de erro de inicialização ativos mesmo depois de o painel ter carregado. Um erro JavaScript posterior poderia acionar a tela de falha de inicialização e ocultar o sistema já aberto.
+
+O painel agora marca a conclusão do primeiro render e o diagnóstico do HTML ignora falhas posteriores ao boot. Depois da inicialização, os erros devem ser tratados pelo módulo compartilhado `src/utils/errors.js`.
+
+### Limites dos testes
+
+Os workflows validam sintaxe JavaScript, build de produção, testes de máscaras/conversão e testes unitários da Agenda. Eles não testam visualmente os modais, não executam login real, não validam RLS com usuários separados e não cobrem o ciclo de pagamento em ambiente real. Esses pontos exigem testes E2E e verificação no navegador/Supabase.
+
+### Próximas correções recomendadas
+
+1. Padronizar todos os modais de cadastro em um único contrato visual e de acessibilidade.
+2. Tratar as ações assíncronas de Comanda e do App Profissional com erros locais e contexto específico, em vez de depender somente do listener global.
+3. Remover estilos inline e consolidar seletores repetidos com comparação visual.
+4. Extrair os fluxos de Comanda e Profissional para serviços e controladores menores.
+5. Criar testes de integração para autenticação, escopos de profissional, RLS e pagamentos.
