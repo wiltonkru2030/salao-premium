@@ -1,3 +1,8 @@
+/**
+ * Módulo: máscaras e conversões de campos.
+ * Responsabilidade: formatar CPF, CNPJ, telefone, CEP e moeda em campos de formulário.
+ * Regra importante: campos de login por e-mail nunca devem receber máscara fiscal.
+ */
 const digits=value=>String(value??"").replace(/\D/g,"");
 export function formatPhone(value){
  const d=digits(value).slice(0,11);
@@ -29,19 +34,20 @@ export function parseBRL(value){
  const parsed=Number(normalized);
  return Number.isFinite(parsed)?parsed:0;
 }
-function maskFor(input){
- const declared=(input.dataset.mask||"").toLowerCase();
- const name=(input.name||input.id||"").toLowerCase();
- const hint=(input.placeholder||"").toLowerCase();
+/** Detecta apenas máscaras declaradas ou campos inequivocamente identificados. */
+export function detectInputMask(input){
+ const declared=(input?.dataset?.mask||"").toLowerCase();
+ const name=(input?.name||input?.id||"").toLowerCase();
+ const hint=(input?.placeholder||"").trim();
  if(declared)return declared;
- if(/cpf/.test(name)||hint.includes("000.000.000-00"))return "cpf";
- if(/cnpj/.test(name)||hint.includes("00.000.000/0000-00"))return "cnpj";
- if(/phone|telefone|celular|whatsapp/.test(name)||hint.includes("(00)"))return "phone";
- if(/cep/.test(name)||hint.includes("00000-000"))return "cep";
+ if(/(^|[_-])cpf($|[_-])/.test(name)||hint==="000.000.000-00")return "cpf";
+ if(/(^|[_-])cnpj($|[_-])/.test(name)||hint==="00.000.000/0000-00")return "cnpj";
+ if(/phone|telefone|celular|whatsapp/.test(name)||/^\(00\)\s?00000-0000$/.test(hint))return "phone";
+ if(/(^|[_-])cep($|[_-])/.test(name)||hint==="00000-000")return "cep";
  return "";
 }
 export function applyInputMask(input){
- const mask=maskFor(input);
+ const mask=detectInputMask(input);
  if(!mask)return;
  if(mask==="cpf")input.value=formatCpf(input.value);
  else if(mask==="cnpj")input.value=formatCnpj(input.value);
@@ -55,7 +61,7 @@ export function installGlobalMasks(){
  document.addEventListener("input",event=>{
   const input=event.target;
   if(!(input instanceof HTMLInputElement))return;
-  const mask=maskFor(input);
+  const mask=detectInputMask(input);
   if(!mask)return;
   const start=input.selectionStart;
   const before=input.value;
