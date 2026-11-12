@@ -8,6 +8,8 @@ import { state } from "../state.js";
 import { head, esc, toast, btn } from "../utils.js";
 import { reportError } from "../utils/errors.js";
 
+let modalListenerInstalled = false;
+
 export function customersPage() {
   return head("Clientes", "Cadastre e mantenha os dados dos clientes em um único lugar.",
     btn("＋ Novo cliente", "open-customer-modal", "primary")) +
@@ -66,15 +68,18 @@ export async function loadCustomersPage() {
   host.dataset.bound = "true";
 
   // O botão do cabeçalho fica fora do host; por isso o clique é delegado ao documento.
-  document.addEventListener("click", event => {
-    const dialog = host.querySelector("#customer-create-modal");
+  if (!modalListenerInstalled) {
+    modalListenerInstalled = true;
+    document.addEventListener("click", event => {
+    const dialog = document.querySelector("#customer-create-modal");
     if (!dialog) return;
     if (event.target.closest('[data-action="open-customer-modal"]')) {
       if (!dialog.open) dialog.showModal();
     } else if (event.target.closest("[data-close-customer-modal]") || event.target === dialog) {
       if (dialog.open) dialog.close();
     }
-  });
+    });
+  }
 
   host.addEventListener("submit", async event => {
     if (!event.target.matches("#customer-create-form")) return;
