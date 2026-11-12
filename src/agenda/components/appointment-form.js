@@ -1,3 +1,4 @@
+/** Componente: formulário de agendamento. Responsabilidade: montar campos, sugestões e dados para criação/edição; persistência fica no controlador. */
 import { esc } from '../../utils.js';
 import { mountAutocomplete } from '../../components/autocomplete.js';
 import { supabase } from '../../supabase/client.js';
