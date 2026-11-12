@@ -24,14 +24,20 @@ async function hmac(value: string, secret: string) {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "Método não permitido." }, 405);
-  const pepper = Deno.env.get("CPF_LOGIN_PEPPER"), url = Deno.env.get("SUPABASE_URL");
+  const url = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  if (!pepper || !url || !serviceKey || !anonKey) return json({ error: "A autenticação profissional ainda não foi configurada pelo administrador." }, 503);
+  if (!url || !serviceKey || !anonKey) return json({ error: "A autenticação profissional ainda não foi configurada." }, 503);
   try {
+    const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+    let pepper = Deno.env.get("CPF_LOGIN_PEPPER");
+    if (!pepper) {
+      const secretResult = await admin.rpc("get_professional_cpf_login_pepper");
+      pepper = typeof secretResult.data === "string" ? secretResult.data : null;
+    }
+    if (!pepper) return json({ error: "A chave privada de autenticação não está disponível." }, 503);
     const body = await req.json(), cpf = validCpf(String(body?.cpf || "")), password = String(body?.password || "");
     if (!cpf || password.length < 8 || password.length > 128) return json({ error: "CPF ou senha inválidos." }, 400);
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
     const ipHash = await hmac("professional-login-ip:" + ip, pepper);
     const cpfHash = await hmac("cpf:" + cpf, pepper);
     const cpfAttemptHash = await hmac("professional-login-cpf:" + cpfHash, pepper);
