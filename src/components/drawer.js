@@ -1,3 +1,4 @@
+/** Componente Drawer administrativo. Responsabilidade: renderizar detalhes e formulários contextuais da Agenda e registros. */
 import {state} from '../state.js';
 import {records} from '../data/index.js';
 import {$,esc,field,btn} from '../utils.js';
