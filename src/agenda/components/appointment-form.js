@@ -40,7 +40,7 @@ export function mountAppointmentForm(){
   const phone=form.querySelector('[name="phone"]');
   const duration=form.querySelector('[name="duration"]');
   const price=form.querySelector('[name="price"]');
-  const orgId=state.organization.id;
+  const orgId=state.organization.id;\n  let selectedServiceId=serviceId.value||null;
 
   cleanups.push(mountAutocomplete(customerInput,{
     search:async term=>{
@@ -58,7 +58,7 @@ export function mountAppointmentForm(){
       if(error)throw error;return data||[];
     },
     getLabel:item=>item.name+' · '+Number(item.duration_minutes)+' min · '+Number(item.price).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),
-    onSelect:item=>{serviceId.value=item?.id||'';if(item){duration.value=String(item.duration_minutes);price.value=Number(item.price||0).toFixed(2);}}
+    onSelect:item=>{selectedServiceId=item?.id||null;serviceId.value=selectedServiceId||'';professionalId.value='';professionalInput.value='';if(item){duration.value=String(item.duration_minutes);price.value=Number(item.price||0).toFixed(2);}}
   }));
   cleanups.push(mountAutocomplete(professionalInput,{
     search:async term=>{
