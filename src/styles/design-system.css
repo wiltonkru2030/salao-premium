@@ -367,3 +367,22 @@ dialog.sp-modal::backdrop{background:rgba(25,23,19,.48);backdrop-filter:blur(2px
  .sp-modal-body>label.sp-span{grid-column:auto}
  .sp-modal-foot{padding:12px 15px;display:grid;grid-template-columns:1fr 1fr}
 }
+
+
+/* Formulários de agenda e bloqueios também são modais, não painéis laterais */
+.detail-drawer:has(.agenda-form){
+  inset:50% auto auto 50%;transform:translate(-50%,-50%);
+  width:min(680px,calc(100vw - 28px));height:auto;max-height:min(88dvh,860px);
+  border:1px solid var(--sp-line);border-radius:11px;box-shadow:var(--sp-shadow);
+  animation:modalEnter .16s ease-out
+}
+.detail-drawer:has(.agenda-form) .drawer-content{min-height:0;max-height:calc(88dvh - 130px);overflow:auto}
+.detail-drawer:has(.agenda-form) .drawer-bottom{display:none}
+.detail-drawer:has(.agenda-form) .agenda-form{display:grid;gap:12px}
+.detail-drawer:has(.agenda-form) .agenda-form .form-field{margin:0}
+.detail-drawer:has(.agenda-form) .agenda-form .btn{margin-top:4px}
+@keyframes modalEnter{from{opacity:0;transform:translate(-50%,-48%)}to{opacity:1;transform:translate(-50%,-50%)}}
+@media(max-width:600px){
+ .detail-drawer:has(.agenda-form){width:calc(100vw - 16px);max-height:92dvh;border-radius:10px}
+ .detail-drawer:has(.agenda-form) .drawer-content{max-height:calc(92dvh - 115px);padding:16px}
+}
