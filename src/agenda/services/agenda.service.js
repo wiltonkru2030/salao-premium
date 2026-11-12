@@ -1,3 +1,4 @@
+/** Repositório legado da Agenda. Responsabilidade: listar/criar/atualizar dados em memória para testes e demonstrações; não é persistência real. */
 import {appts} from '../../data/index.js';
 import {checkAvailability} from './availability.service.js';
 
