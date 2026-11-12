@@ -1,3 +1,4 @@
+/** Testes de renderização: estrutura HTML dos calendários e seletor de profissional. */
 import { renderDayCalendar } from "../components/day-calendar.js";
 import { renderWeekCalendar } from "../components/week-calendar.js";
 import { renderMonthCalendar } from "../components/month-calendar.js";
