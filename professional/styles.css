@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
-:root{font-family:'Poppins',sans-serif;color:#242320;background:#fff;font-synthesis:none;--ink:#242320;--muted:#77756f;--line:#e9e7e1;--gold:#a58b5c;--soft:#f7f6f3;--gold-soft:#f5f1e8}
+@import url('../src/styles/design-system.css');
+:root{font-family:'Poppins',sans-serif;color:#242320;background:#fff;font-synthesis:none;--ink:var(--sp-ink);--muted:var(--sp-muted);--line:var(--sp-line);--gold:var(--sp-gold);--soft:var(--sp-soft);--gold-soft:var(--sp-gold-soft)}
 *{box-sizing:border-box}
 html{background:#fff}
 body{margin:0;min-width:320px;background:#fff;color:var(--ink);font-size:13px;-webkit-font-smoothing:antialiased}
