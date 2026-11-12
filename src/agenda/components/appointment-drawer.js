@@ -1,3 +1,4 @@
+/** Componente: drawer de agendamento. Responsabilidade: apresentar detalhes e ações, incluindo o formulário de edição. */
 import { esc, status, initials, field } from '../../utils.js';
 import { renderAppointmentForm } from './appointment-form.js';
 
