@@ -44,14 +44,14 @@ export async function loadProfessionalsPage(){
  const serviceChoices=[...groups.entries()].map(([category,items])=>'<section class="professional-service-group"><b>'+esc(category)+'</b><div class="professional-service-options">'+items.map(s=>'<label><input type="checkbox" name="service_ids" value="'+s.id+'"><span>'+esc(s.name)+'</span></label>').join("")+'</div></section>').join("");
  host.innerHTML=`
  <div class="professional-page-toolbar">
-  <div><span class="professional-kicker">GESTÃO DA EQUIPE</span><h2>Profissionais</h2><p>Organize especialidades, serviços e acessos em um só lugar.</p></div>
+  <div><span class="professional-kicker">GESTÃO DA EQUIPE</span><h2>Sua equipe</h2><p>Organize especialidades, serviços e acessos em um só lugar.</p></div>
   <button class="btn primary professional-add-button" type="button" data-open-professional-modal><span>＋</span> Novo profissional</button>
  </div>
  <div class="professional-roster-heading"><div><b>Sua equipe</b><small>Profissionais cadastrados no salão</small></div><span class="professional-count">${data?.length||0} <small>PROFISSIONAIS</small></span></div>
  <div class="professional-roster">${(data||[]).map(p=>`
  <article class="professional-person-card" data-professional-card="${p.id}">
   <div class="professional-person-top">
-   <div class="professional-avatar">${esc((p.name||"P").trim().split(/\\s+/).slice(0,2).map(part=>part[0]).join("").toUpperCase())}</div>
+   <div class="professional-avatar">${esc((p.name||"P").trim().split(/\s+/).slice(0,2).map(part=>part[0]).join("").toUpperCase())}</div>
    <div class="professional-person-identity"><h3>${esc(p.name)}</h3><p>${esc(p.specialty||"Profissional")} <span>·</span> ${p.tax_regime==="mei"?"MEI":"Pessoa física"}</p></div>
    <span class="professional-status ${p.active?"is-active":"is-inactive"}"><i></i>${p.active?"Ativo":"Inativo"}</span>
   </div>
