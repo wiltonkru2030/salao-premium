@@ -1,3 +1,4 @@
+/** Inicialização do cliente Supabase. Contém apenas URL e chave publicável; nunca adicionar service_role aqui. */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.119.0';
 
 export const SUPABASE_URL = 'https://vlifbvzlyzoncefvfgol.supabase.co';
