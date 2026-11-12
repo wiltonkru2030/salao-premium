@@ -96,27 +96,49 @@ function renderOrderDetails(host,order,data,orgId){
  }
  if(editable&&allowEdit){
   host.querySelector("#comanda-service-form").addEventListener("submit",async e=>{
-   e.preventDefault();if(!selectedService){toast("Selecione um serviço na lista.");return;}
-   const {user}=await tenant(),professionalId=String(new FormData(e.target).get("professional_id")),price=Number(selectedService.price||0);
-   const {error}=await supabase.from("service_order_items").insert({org_id:orgId,order_id:order.id,item_type:"service",service_id:selectedService.id,professional_id:professionalId,description:selectedService.name,quantity:1,unit_price:price,total:price,created_by:user.id});
-   if(error){reportError(error,{context:"Comanda > adicionar serviço"});return;}toast("Serviço adicionado.");await loadComandaPage(order.id);
+   e.preventDefault();const form=e.currentTarget,submit=form.querySelector('[type="submit"]');
+   if(!selectedService){toast("Selecione um serviço na lista.");return;}
+   if(!form.reportValidity())return;
+   submit.disabled=true;submit.textContent="Adicionando…";
+   try{
+    const {user}=await tenant(),professionalId=String(new FormData(form).get("professional_id")||""),price=Number(selectedService.price||0);
+    if(!professionalId)throw new Error("Selecione o profissional responsável pelo serviço.");
+    const {error}=await supabase.from("service_order_items").insert({org_id:orgId,order_id:order.id,item_type:"service",service_id:selectedService.id,professional_id:professionalId,description:selectedService.name,quantity:1,unit_price:price,total:price,created_by:user.id});
+    if(error)throw error;
+    toast("Serviço adicionado.");await loadComandaPage(order.id);
+   }catch(error){reportError(error,{context:"Comanda > adicionar serviço"});}
+   finally{if(submit.isConnected){submit.disabled=false;submit.textContent="Adicionar serviço";}}
   });
   host.querySelector("#comanda-product-form").addEventListener("submit",async e=>{
-   e.preventDefault();if(!selectedProduct){toast("Selecione um produto na lista.");return;}
-   const {user}=await tenant(),quantity=Number(new FormData(e.target).get("quantity")||1),price=Number(selectedProduct.sale_price||0);
+   e.preventDefault();const form=e.currentTarget,submit=form.querySelector('[type="submit"]');
+   if(!selectedProduct){toast("Selecione um produto na lista.");return;}
+   if(!form.reportValidity())return;
+   const values=new FormData(form),quantity=Number(values.get("quantity")||1),price=Number(selectedProduct.sale_price||0);
    if(!Number.isFinite(quantity)||quantity<=0||quantity>Number(selectedProduct.stock_quantity||0)){toast("Quantidade inválida ou maior que o estoque.");return;}
-   const {error}=await supabase.from("service_order_items").insert({org_id:orgId,order_id:order.id,item_type:"product",product_id:selectedProduct.id,description:selectedProduct.name,quantity,unit_price:price,total:price*quantity,created_by:user.id});
-   if(error){reportError(error,{context:"Comanda > adicionar produto"});return;}toast("Produto adicionado.");await loadComandaPage(order.id);
+   submit.disabled=true;submit.textContent="Adicionando…";
+   try{
+    const {user}=await tenant();
+    const {error}=await supabase.from("service_order_items").insert({org_id:orgId,order_id:order.id,item_type:"product",product_id:selectedProduct.id,description:selectedProduct.name,quantity,unit_price:price,total:price*quantity,created_by:user.id});
+    if(error)throw error;
+    toast("Produto adicionado.");await loadComandaPage(order.id);
+   }catch(error){reportError(error,{context:"Comanda > adicionar produto"});}
+   finally{if(submit.isConnected){submit.disabled=false;submit.textContent="Adicionar produto";}}
   });
  }
  if(editable&&allowPay){
   host.querySelector("#comanda-payment-form").addEventListener("submit",async e=>{
-   e.preventDefault();const v=new FormData(e.target),amount=parseBRL(v.get("amount")),method=String(v.get("payment_method"));
+   e.preventDefault();const form=e.currentTarget,submit=form.querySelector('[type="submit"]');
+   if(!form.reportValidity())return;
+   const v=new FormData(form),amount=parseBRL(v.get("amount")),method=String(v.get("payment_method"));
    if(!Number.isFinite(amount)||amount<=0){toast("Informe um valor válido.");return;}
-   const {data,error}=await supabase.rpc("register_service_order_payment",{p_order_id:order.id,p_amount:amount,p_payment_method:method});
-   if(error){reportError(error,{context:"Comanda > registrar pagamento"});return;}
-   toast(data?.closed?"Comanda quitada e finalizada. Estoque, caixa e comissões atualizados.":"Pagamento parcial registrado.");
-   await loadComandaPage(order.id);
+   submit.disabled=true;submit.textContent="Registrando…";
+   try{
+    const {data,error}=await supabase.rpc("register_service_order_payment",{p_order_id:order.id,p_amount:amount,p_payment_method:method});
+    if(error)throw error;
+    toast(data?.closed?"Comanda quitada e finalizada. Estoque, caixa e comissões atualizados.":"Pagamento parcial registrado.");
+    await loadComandaPage(order.id);
+   }catch(error){reportError(error,{context:"Comanda > registrar pagamento"});}
+   finally{if(submit.isConnected){submit.disabled=false;submit.textContent="Registrar pagamento";}}
   });
  }
 }
@@ -138,6 +160,8 @@ export async function loadComandaPage(orderId=null){
    customersIds.length?supabase.from("customers").select("id,name").eq("org_id",orgId).in("id",customersIds):Promise.resolve({data:[]}),
    professionalIds.length?supabase.from("professionals").select("id,name").eq("org_id",orgId).in("id",professionalIds):Promise.resolve({data:[]})
   ]);
+  if(customers.error)throw new Error("Falha ao carregar clientes das comandas: "+userErrorMessage(customers.error));
+  if(professionals.error)throw new Error("Falha ao carregar profissionais das comandas: "+userErrorMessage(professionals.error));
   const customerMap=new Map((customers.data||[]).map(c=>[c.id,c.name])),professionalMap=new Map((professionals.data||[]).map(p=>[p.id,p.name]));
   host.innerHTML='<div class="list-toolbar"><label class="search-box"><span>⌕</span><input id="comanda-search" placeholder="Buscar cliente, profissional ou número"></label><span class="result-count">'+(orders?.length||0)+' comandas</span></div>'+
    '<div class="record-list">'+(orders||[]).map(o=>'<button class="record-card" data-open-comanda="'+o.id+'"><span class="record-main"><b>Comanda #'+esc(o.order_number)+'</b><small>'+esc(customerMap.get(o.customer_id)||"Cliente não informado")+'</small><small>'+esc(professionalMap.get(o.assigned_professional_id)||"Sem profissional")+'</small></span><span class="record-trailing"><b>'+currency(o.total)+'</b><small>'+esc(statusLabel(o.status))+'</small></span><span class="record-chevron">›</span></button>').join("")+(orders?.length?"":'<div class="empty-state">Nenhuma comanda aberta. A comanda é criada quando o cliente chega e o atendimento começa na Agenda.</div>')+'</div>';
