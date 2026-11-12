@@ -20,6 +20,7 @@ export function comandaPage(){
  return head("Comanda","Comandas criadas a partir da chegada do cliente, com serviços, produtos e pagamentos.")+
  '<div id="comanda-manager"><div class="empty-state">Carregando comandas…</div></div>';
 }
+// Confirma sessão e organização ativa antes de consultar comandas.
 async function tenant(){
  const {data:{user},error}=await supabase.auth.getUser();
  if(error)throw error;
@@ -28,6 +29,7 @@ async function tenant(){
 }
 function canManage(){return ["owner","admin","manager","receptionist"].includes(state.membership?.role);}
 function canPay(){return canManage()||state.membership?.professional_app_scope==="all";}
+// Carrega itens, pagamentos, cliente, profissional e catálogo da comanda.
 async function queryDetails(order,orgId){
  const [items,payments,customer,professional,services,products,professionals]=await Promise.all([
   supabase.from("service_order_items").select("id,item_type,description,quantity,unit_price,discount,total,professional_id,created_at").eq("org_id",orgId).eq("order_id",order.id).order("created_at"),
@@ -43,6 +45,7 @@ async function queryDetails(order,orgId){
  }
  return {items:items.data||[],payments:payments.data||[],customer:customer.data,professional:professional.data,services:services.data||[],products:products.data||[],professionals:professionals.data||[]};
 }
+// Desenha detalhes e formulários de serviço, produto e pagamento.
 function renderOrderDetails(host,order,data,orgId){
  const {items,payments,customer,professional,services,products,professionals}=data;
  const paid=payments.filter(p=>p.status==="confirmed").reduce((s,p)=>s+Number(p.amount||0),0);
@@ -115,6 +118,7 @@ function renderOrderDetails(host,order,data,orgId){
   });
  }
 }
+// Controla carregamento da lista ou dos detalhes de uma comanda.
 export async function loadComandaPage(orderId=null){
  const host=document.querySelector("#comanda-manager");if(!host)return;
  clearAutocomplete();
