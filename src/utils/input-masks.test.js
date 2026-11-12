@@ -1,3 +1,4 @@
+/** Testes de regressão das máscaras de CPF/CNPJ, telefone, CEP, moeda e login por e-mail. */
 import assert from "node:assert/strict";
 import { detectInputMask, formatCpf, formatCnpj, formatPhone, formatCep, parseBRL } from "./input-masks.js";
 
