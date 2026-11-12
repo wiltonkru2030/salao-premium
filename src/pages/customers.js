@@ -23,14 +23,18 @@ export async function loadCustomersPage(){
  <div class="list-toolbar"><span class="result-count">${data?.length||0} clientes</span></div>
  <div class="record-list">${(data||[]).map(c=>`<article class="record-card"><span class="record-main"><b>${esc(c.name)}</b><small>${esc(c.phone||"Telefone não informado")}</small><small>${esc(c.email||"")}</small></span><span class="record-trailing"><small>${c.active?"Ativo":"Inativo"}</small></span></article>`).join("")||'<div class="empty-state">Nenhum cliente cadastrado.</div>'}</div>`;
  if(host.dataset.bound==="true")return;host.dataset.bound="true";
- host.addEventListener("click",event=>{
+ document.addEventListener("click",event=>{
   if(event.target.closest('[data-action="open-customer-modal"]'))host.querySelector("#customer-create-modal")?.showModal();
   if(event.target.closest("[data-close-customer-modal]"))host.querySelector("#customer-create-modal")?.close();
  });
  host.addEventListener("click",event=>{
   if(event.target.matches("#customer-create-modal"))host.querySelector("#customer-create-modal")?.close();
  });
- host.addEventListener("submit",async event=>{
+document.addEventListener("click",event=>{
+  const dialog=host.querySelector("#customer-create-modal");
+  if(dialog&&event.target===dialog)dialog.close();
+ });
+  host.addEventListener("submit",async event=>{
   if(!event.target.matches("#customer-create-form"))return;event.preventDefault();
   const form=event.target,submit=form.querySelector('[type="submit"]'),values=new FormData(form),name=String(values.get("name")||"").trim();
   if(!name){toast("Informe o nome do cliente.");return;}
