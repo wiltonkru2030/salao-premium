@@ -15,6 +15,7 @@ import { loadAgendaPage, refreshAgendaContent, findAppointmentView } from './age
 import { dateKey, addDays } from './agenda/utils/date.utils.js';
 import { startAuth, signOut } from './auth/auth.js';
 
+// Conversores de data/horário usados pelos formulários da Agenda.
 function dateFromKey(key) {
   const parts=String(key).split('-').map(Number);
   return new Date(parts[0],parts[1]-1,parts[2]);
@@ -30,6 +31,7 @@ function durationBetween(start,end) {
 function appointmentActionRow() {
   return state.drawer?.appointment || null;
 }
+// Atualiza calendário e painel de detalhes após uma mutação.
 async function refreshAgendaAndDrawer() {
   await loadAgendaPage();
   if(state.drawer?.appointment) {
@@ -38,6 +40,7 @@ async function refreshAgendaAndDrawer() {
     renderDrawer();
   }
 }
+// Busca comandas reutilizáveis e decide o vínculo antes de criar o agendamento.
 async function findOpenCustomerOrders(customerId) {
   const {data,error}=await supabase.from('service_orders')
     .select('id,order_number,status')
@@ -62,6 +65,7 @@ async function selectExistingOrder(orders) {
   if(!chosen){toast('Número de comanda não encontrado.');return null;}
   return {orderId:chosen.id,forceNew:false};
 }
+// Valida e persiste criação/edição de agendamento no Supabase.
 async function saveAppointment(form) {
   const values=new FormData(form);
   const customerId=String(values.get('customer_id')||'');
@@ -142,6 +146,7 @@ async function saveAppointment(form) {
   await loadAgendaPage();
   toast('Agendamento criado. Nenhuma comanda foi aberta.');
 }
+// Atualiza status e timestamps de chegada, cancelamento ou conclusão.
 async function updateAppointmentStatus(appointment,status) {
   const changes={status};
   if(status==='arrived')changes.arrived_at=new Date().toISOString();
@@ -153,6 +158,7 @@ async function updateAppointmentStatus(appointment,status) {
   state.drawer=null;
   await loadAgendaPage();
 }
+// Solicita ao backend a abertura transacional da comanda.
 async function openAppointmentOrder(appointment) {
   if(appointment.dbStatus==='cancelled'||appointment.dbStatus==='completed'||appointment.dbStatus==='no_show') {
     throw new Error('Este agendamento não pode abrir uma comanda.');
@@ -176,6 +182,7 @@ async function openAppointmentOrder(appointment) {
   await loadAgendaPage();
   toast('Comanda #'+data.order_number+' aberta. O horário agora está em atendimento.');
 }
+// Roteia ações do drawer para os fluxos de Agenda correspondentes.
 async function handleAppointmentAction(action) {
   const appointment=appointmentActionRow();
   if(!appointment)return;
@@ -214,6 +221,7 @@ async function handleAppointmentAction(action) {
     toast('Agendamento excluído e enviado para Recuperar.');
   }
 }
+// Valida conflitos e persiste bloqueios de disponibilidade.
 async function saveBlockTime(form) {
   const values=new FormData(form);
   const professionalId=String(values.get('professional_id')||'');
@@ -239,6 +247,7 @@ async function saveBlockTime(form) {
   toast('Bloqueio salvo no banco.');
 }
 
+// Delegação global de cliques: menu, navegação, Agenda, drawers e ações.
 document.addEventListener('click',async event=>{
   const target=event.target;
   const appointmentAction=target.closest('[data-appointment-action]');
@@ -307,6 +316,7 @@ document.addEventListener('click',async event=>{
   } else if(action==='notifications'){toast('Nenhuma notificação nova.');}
 });
 
+// Delegação global de formulários: salvar agendamentos e bloqueios.
 document.addEventListener('submit',async event=>{
   const form=event.target;
   if(form.matches('[data-agenda-form]')) {
