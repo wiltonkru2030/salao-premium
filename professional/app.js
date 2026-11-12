@@ -126,7 +126,7 @@ function settingsView(){
  const name=state.profile?.full_name||state.professional?.name||"";
  return '<div class="section-title"><h2>Configurações</h2><span class="muted">Perfil, senha e preferências</span></div>'+
  '<section class="detail"><div class="detail-row"><span>Salão</span><b>'+esc(state.organization?.name||"Conta vinculada")+'</b></div><div class="detail-row"><span>Permissão</span><b>'+esc(state.scope==="all"?"Acesso completo":state.scope==="calendar_all"?"Agenda completa":"Somente seus dados")+'</b></div>'+
- '<label class="field">Nome<input id="profile-name" value="'+esc(name)+'" maxlength="120"></label><label class="field">Telefone<input id="profile-phone" value="'+esc(state.profile?.phone||"")+'" inputmode="tel"></label><button class="primary" data-action="save-profile">Salvar perfil</button></section>'+
+ '<label class="field">Nome<input id="profile-name" value="'+esc(name)+'" maxlength="120"></label><label class="field">Telefone<input id="profile-phone" data-mask="phone" value="'+esc(state.profile?.phone||"")+'" inputmode="tel"></label><button class="primary" data-action="save-profile">Salvar perfil</button></section>'+
  '<section class="detail"><h3>Senha</h3><label class="field">Nova senha<input id="settings-password" type="password" minlength="10" autocomplete="new-password" placeholder="Mínimo de 10 caracteres"></label><button class="secondary" data-action="change-password">Atualizar senha</button><p class="muted">A redefinição de senha também pode ser feita pelo administrador.</p></section>'+
  '<button class="secondary" data-action="logout">Sair da conta</button>';
 }
