@@ -40,7 +40,8 @@ export function mountAppointmentForm(){
   const phone=form.querySelector('[name="phone"]');
   const duration=form.querySelector('[name="duration"]');
   const price=form.querySelector('[name="price"]');
-  const orgId=state.organization.id;\n  let selectedServiceId=serviceId.value||null;
+  const orgId=state.organization.id;
+  let selectedServiceId=serviceId.value||null;
 
   cleanups.push(mountAutocomplete(customerInput,{
     search:async term=>{
