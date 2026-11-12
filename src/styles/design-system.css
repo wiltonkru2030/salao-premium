@@ -1,0 +1,69 @@
+/* SALÃO PREMIUM — sistema visual unificado */
+:root{
+ --sp-ink:#20201e;--sp-muted:#77756f;--sp-soft:#f7f6f3;--sp-paper:#fff;
+ --sp-line:#e9e7e1;--sp-gold:#a58b5c;--sp-gold-soft:#f5f1e8;
+ --sp-green:#557963;--sp-red:#a45e58;--sp-radius:10px;
+ --sp-shadow:0 18px 55px rgba(25,22,16,.12);
+}
+html,body{background:var(--sp-paper);color:var(--sp-ink);font-family:'Poppins',sans-serif}
+body{font-size:13px;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:inherit}
+::selection{background:#e9dfcb;color:#28251f}
+.page-content{max-width:1560px;padding:34px 38px 56px}
+.page-head{margin-bottom:27px}
+.page-head h1{font-family:'Body Grotesque Fit','Poppins',sans-serif;font-size:30px;letter-spacing:-.8px;font-weight:500;color:#222}
+.page-head p{font-size:12px;color:#898781}
+.eyebrow,.professional-kicker{color:var(--sp-gold);font-size:9px;letter-spacing:1.65px;font-weight:600}
+.sidebar{border-right-color:var(--sp-line);padding-top:25px}
+.brand{padding-bottom:25px}
+.brand b{font-size:11px;letter-spacing:1.45px}
+.nav-item{min-height:43px;border-radius:7px;font-size:11px;color:#66645f}
+.nav-item:hover{background:#f8f7f4}
+.nav-item.active{background:var(--sp-gold-soft);color:#292720}
+.topbar{height:70px;padding-inline:38px;border-bottom-color:var(--sp-line)}
+.breadcrumb{font-size:11px}.unit-indicator{font-size:11px}
+.icon-btn{width:36px;height:36px;border-radius:7px;border-color:var(--sp-line)}
+.btn{min-height:39px;border-radius:7px;padding:10px 16px;font-size:11px;font-weight:500}
+.btn.primary{background:#242320;border-color:#242320;color:white}
+.btn.primary:hover{background:#39362f;border-color:#39362f}
+.btn:not(.primary){border-color:#e4e1da;color:#494741}
+.field,input.field,select.field,textarea.field{min-height:40px;border:1px solid #e4e2dc;border-radius:7px;background:#fff;color:#292824;font-size:11px;padding:9px 12px}
+.field:focus,input.field:focus,select.field:focus,textarea.field:focus{outline:0;border-color:#b29a70;box-shadow:0 0 0 3px #b29a7018}
+.metric-card,.surface,.record-card{border-color:var(--sp-line);border-radius:9px;box-shadow:none}
+.metric-card{padding:20px}
+.metric-card strong{font-family:'Body Grotesque Fit','Poppins',sans-serif;font-size:28px}
+.dashboard-grid{gap:17px}
+.chart-card,.dashboard-grid>.surface,.summary-surface{padding:22px}
+.record-list{gap:9px}
+.record-card{min-height:78px;padding:14px 17px;border-radius:8px}
+.record-card:hover{border-color:#cbb993;background:#fdfcf9}
+.status{border-radius:4px;padding:5px 8px;font-size:9px}
+.professional-page-toolbar{border:0;border-bottom:1px solid var(--sp-line);border-radius:0;padding:0 0 22px;background:transparent;margin:0 0 25px}
+.professional-page-toolbar h2{font-size:28px}
+.professional-roster{gap:15px}
+.professional-person-card{border-radius:8px;border-color:var(--sp-line);padding:19px}
+.professional-person-card:hover{box-shadow:0 8px 24px #211a0d08}
+.professional-avatar{border-radius:8px;background:#f2efe8;color:#796747}
+.professional-person-identity h3{font-size:13px}
+.professional-person-meta{font-size:10px}
+.professional-assigned-services>div>span{border-radius:4px}
+.professional-modal{border-radius:10px;box-shadow:var(--sp-shadow)}
+.professional-modal-head{padding:23px 26px}
+.professional-modal-head h2{font-size:23px}
+.professional-modal-body{padding:22px 26px}
+.professional-modal-body h3{color:#81704f}
+.professional-modal-foot{padding:15px 26px}
+dialog{color:var(--sp-ink)}
+dialog::backdrop{background:rgba(25,24,21,.48);backdrop-filter:blur(3px)}
+.recycle-modal{border-radius:10px;box-shadow:var(--sp-shadow)}
+.detail-drawer{box-shadow:-15px 0 50px #00000012}
+@media(max-width:900px){.page-content{padding:26px 22px 42px}.topbar{padding-inline:22px}}
+@media(max-width:700px){
+ .page-content{padding:22px 15px 36px}
+ .topbar{padding-inline:14px;height:60px}
+ .page-head h1{font-size:25px}
+ .professional-page-toolbar{padding-bottom:18px}
+ .professional-page-toolbar h2{font-size:24px}
+ .professional-person-card{padding:15px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
