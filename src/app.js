@@ -257,7 +257,7 @@ document.addEventListener('click',async event=>{
   if(newSlot){
     if(newSlot.dataset.newDate)state.date=dateFromKey(newSlot.dataset.newDate);
     state.drawer=null;
-    appointmentDrawer(null);
+    appointmentDrawer(null,{slot:newSlot.dataset.newSlot||''});
     return;
   }
 
