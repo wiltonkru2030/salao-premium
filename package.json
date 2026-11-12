@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "npx --yes vite@6 --host 0.0.0.0",
+    "build": "npx --yes vite@6 build",
     "test:agenda": "node src/agenda/tests/run.js"
   },
   "engines": {
