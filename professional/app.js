@@ -1,6 +1,6 @@
 import { supabase } from "../src/supabase/client.js";
 import { mountAutocomplete } from "../src/components/autocomplete.js";
-import { installGlobalErrorHandlers, reportError } from "../src/utils/errors.js";
+import { installGlobalErrorHandlers } from "../src/utils/errors.js";
 
 // Aplicação PWA do profissional: autenticação, navegação, Agenda, Comandas e Comissões.
 installGlobalErrorHandlers();
