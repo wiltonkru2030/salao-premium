@@ -400,3 +400,6 @@ dialog.sp-modal::backdrop{background:rgba(25,23,19,.48);backdrop-filter:blur(2px
 dialog.sp-modal.recycle-dialog{width:min(760px,calc(100vw - 28px));padding:0;overflow:hidden}
 .recycle-dialog .recycle-modal{position:relative;z-index:auto;left:auto;top:auto;transform:none;width:100%;max-height:min(86dvh,900px);border:0;border-radius:0;box-shadow:none}
 @media(max-width:600px){dialog.sp-modal.recycle-dialog{width:calc(100vw - 16px);max-height:92dvh}.recycle-dialog .recycle-modal{max-height:92dvh}}
+
+/* Espaçamento global para títulos de seção no App Profissional. */
+.section-title--tight-spaced{margin-top:24px}
