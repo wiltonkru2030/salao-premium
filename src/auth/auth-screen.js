@@ -1,3 +1,4 @@
+/** Tela de autenticação administrativa. Responsabilidade: renderizar login/cadastro e mensagens de validação. */
 import { esc } from '../utils.js';
 
 export function authScreen(mode = 'login', notice = '', noticeType = 'info') {
