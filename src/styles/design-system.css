@@ -336,3 +336,34 @@ hr{border:0;border-top:1px solid var(--sp-line)}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
+
+
+/* Modal global — usado por todos os cadastros e edições */
+dialog.sp-modal{
+  width:min(680px,calc(100vw - 28px));max-width:none;max-height:min(88dvh,860px);
+  margin:auto;padding:0;border:1px solid var(--sp-line);border-radius:11px;
+  background:var(--sp-paper);color:var(--sp-ink);box-shadow:var(--sp-shadow);overflow:hidden
+}
+dialog.sp-modal::backdrop{background:rgba(25,23,19,.48);backdrop-filter:blur(2px)}
+.sp-modal-shell{display:flex;flex-direction:column;max-height:min(88dvh,860px);min-height:0}
+.sp-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:20px 22px;border-bottom:1px solid var(--sp-line);background:#fff}
+.sp-modal-head h2{margin:0;color:var(--sp-ink);font-size:18px;font-weight:600;letter-spacing:-.25px}
+.sp-modal-head p{margin:5px 0 0;color:var(--sp-muted);font-size:10px;line-height:1.6}
+.sp-modal-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px;padding:20px 22px;overflow:auto}
+.sp-modal-body>label{display:grid;align-content:start;gap:7px;min-width:0;color:#66635d;font-size:10px;font-weight:500}
+.sp-modal-body>label input,.sp-modal-body>label select,.sp-modal-body>label textarea{
+ width:100%;min-width:0;min-height:var(--sp-control-height);padding:10px 12px;
+ border:1px solid var(--sp-line-strong);border-radius:7px;background:#fff;color:var(--sp-ink);
+ font:inherit;font-size:11px;outline:0
+}
+.sp-modal-body>label input:focus,.sp-modal-body>label select:focus,.sp-modal-body>label textarea:focus{border-color:var(--sp-gold);box-shadow:var(--sp-focus)}
+.sp-modal-body>label.sp-span{grid-column:1/-1}
+.sp-modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 22px;border-top:1px solid var(--sp-line);background:#fff}
+.sp-modal-close{width:34px;height:34px;border:1px solid var(--sp-line);border-radius:7px;background:#fff;color:#555;font-size:20px;cursor:pointer}
+@media(max-width:600px){
+ dialog.sp-modal{width:calc(100vw - 16px);max-height:92dvh}
+ .sp-modal-head{padding:16px}
+ .sp-modal-body{grid-template-columns:1fr;padding:15px;gap:12px}
+ .sp-modal-body>label.sp-span{grid-column:auto}
+ .sp-modal-foot{padding:12px 15px;display:grid;grid-template-columns:1fr 1fr}
+}
