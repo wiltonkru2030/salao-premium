@@ -1,5 +1,6 @@
 import { supabase } from './client.js';
 
+/** Camada genérica de persistência com allowlist de tabelas e filtro por organização. */
 const TABLES = new Set([
   'branches','customers','professionals','services','products','inventory_movements',
   'appointments','appointment_blocks','sales','sale_items','cash_registers',
