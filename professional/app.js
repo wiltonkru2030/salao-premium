@@ -1,4 +1,5 @@
 import { supabase } from "../src/supabase/client.js";
+import { mountAutocomplete } from "../src/components/autocomplete.js";
 
 const root = document.querySelector("#professional-app");
 const state = { user:null, orgId:null, professional:null, profile:null, page:"Agenda", month:new Date(new Date().getFullYear(),new Date().getMonth(),1), selectedDate:new Date(), appointments:[], orders:[], services:[], commissions:[], selectedOrder:null, selectedService:null, notice:"" };
@@ -78,19 +79,15 @@ async function loadOrderItems(){
 async function chooseOrder(id){
  state.selectedOrder=state.orders.find(o=>o.id===id)||null;render();await loadOrderItems();
 }
+let cleanupAutocomplete=null;
 function bindAutocomplete(){
- const input=document.querySelector("#service-search"),list=document.querySelector("#service-suggestions"),button=document.querySelector("#add-service");
- if(!input||!list||!button)return;
- input.addEventListener("input",()=>{
-  const term=input.value.trim().toLocaleLowerCase("pt-BR");state.selectedService=null;button.disabled=true;
-  const matches=term.length<2?[]:state.services.filter(s=>s.name.toLocaleLowerCase("pt-BR").includes(term)).slice(0,8);
-  list.innerHTML=matches.map(s=>`<button type="button" data-service-choice="${s.id}">${esc(s.name)} · ${money(s.price)}</button>`).join("");
-  if(term.length>=2&&!matches.length)list.innerHTML='<div class="muted" style="padding:10px">Nenhum serviço encontrado.</div>';
- });
- list.addEventListener("click",event=>{
-  const choice=event.target.closest("[data-service-choice]");if(!choice)return;
-  state.selectedService=state.services.find(s=>s.id===choice.dataset.serviceChoice)||null;
-  if(state.selectedService){input.value=state.selectedService.name;list.innerHTML="";button.disabled=false;}
+ const input=document.querySelector("#service-search"),button=document.querySelector("#add-service");
+ if(!input||!button)return;
+ cleanupAutocomplete?.();
+ cleanupAutocomplete=mountAutocomplete(input,{
+  search:async term=>state.services.filter(s=>s.name.toLocaleLowerCase("pt-BR").includes(term.toLocaleLowerCase("pt-BR"))).slice(0,8),
+  getLabel:item=>item.name+" · "+money(item.price),
+  onSelect:item=>{state.selectedService=item;button.disabled=!item;}
  });
  button.addEventListener("click",async()=>{
   if(!state.selectedService||!state.selectedOrder)return;
