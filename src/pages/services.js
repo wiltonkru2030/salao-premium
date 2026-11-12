@@ -25,11 +25,15 @@ export async function loadServicesPage(){
  <div class="list-toolbar"><span class="result-count">${data?.length||0} serviços</span></div>
  <div class="record-list">${(data||[]).map(s=>`<article class="record-card"><span class="record-main"><b>${esc(s.name)}</b><small>${esc(s.category||"Sem categoria")} · ${Number(s.duration_minutes)} min</small></span><span class="record-trailing"><b>${money(s.price)}</b><small>${s.active?"Ativo":"Inativo"}</small></span></article>`).join("")||'<div class="empty-state">Nenhum serviço cadastrado.</div>'}</div>`;
  if(host.dataset.bound==="true")return;host.dataset.bound="true";
- host.addEventListener("click",event=>{
+ document.addEventListener("click",event=>{
   if(event.target.closest('[data-action="open-service-modal"]'))host.querySelector("#service-create-modal")?.showModal();
   if(event.target.closest("[data-close-service-modal]"))host.querySelector("#service-create-modal")?.close();
  });
- host.addEventListener("submit",async event=>{
+document.addEventListener("click",event=>{
+  const dialog=host.querySelector("#service-create-modal");
+  if(dialog&&event.target===dialog)dialog.close();
+ });
+  host.addEventListener("submit",async event=>{
   if(!event.target.matches("#service-create-form"))return;event.preventDefault();
   const form=event.target,v=new FormData(form),name=String(v.get("name")||"").trim(),duration=Number(v.get("duration")),price=parseBRL(v.get("price")),submit=form.querySelector('[type="submit"]');
   if(!name||!Number.isFinite(duration)||duration<5||!Number.isFinite(price)||price<0){toast("Confira o nome, duração e preço.");return;}
