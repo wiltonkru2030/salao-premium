@@ -1,3 +1,4 @@
+/** Service worker do App Profissional: instala, atualiza e remove o cache do shell PWA. */
 const CACHE = "salao-profissional-shell-v2";
 const SHELL = ["./", "./index.html", "./styles.css?v=professional-pwa-20261112", "./app.js?v=professional-pwa-20261112", "./manifest.webmanifest", "./icon.svg"];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL))));
