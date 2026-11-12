@@ -1,11 +1,13 @@
 import {runAgendaUnitChecks} from './agenda.test.js';
 import {runConflictUnitChecks} from './conflicts.test.js';
 import {runAgendaServiceChecks} from './services.test.js';
+import {runAgendaRenderChecks} from './render.test.js';
 
 const suites=[
   ['Datas e duração',runAgendaUnitChecks()],
   ['Conflitos e validações',runConflictUnitChecks()],
-  ['Serviço da agenda',runAgendaServiceChecks()]
+  ['Serviço da agenda',runAgendaServiceChecks()],
+  ['Renderização da tela',runAgendaRenderChecks()]
 ];
 let failed=0;
 for(const [name,result] of suites){
