@@ -1,0 +1,1 @@
+export function renderAgendaFilters(){return '<div class="agenda-filters" aria-label="Filtros da agenda"><span>Filtros avançados serão habilitados conforme permissões e dados da unidade.</span></div>'}
