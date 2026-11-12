@@ -1,3 +1,4 @@
+/** App Profissional (PWA): autenticação, sessão individual, Agenda, Comandas, Comissões e configurações do próprio perfil. */
 import { supabase } from "../src/supabase/client.js";
 import { mountAutocomplete } from "../src/components/autocomplete.js";
 import { installGlobalErrorHandlers, reportError } from "../src/utils/errors.js";
@@ -93,7 +94,7 @@ function agendaView(){
  return '<div class="section-title"><h2>Agenda mensal</h2><span class="muted">'+(state.scope==="calendar_all"||state.scope==="all"?"Agenda completa autorizada":"Somente sua agenda")+'</span></div>'+
  '<div class="calendar-head"><button data-action="prev-month">‹</button><strong>'+esc(monthLabel(state.month))+'</strong><button data-action="next-month">›</button></div>'+
  '<div class="calendar">'+["D","S","T","Q","Q","S","S"].map(d=>'<div class="weekday">'+d+'</div>').join("")+cells.join("")+'</div>'+
- '<div class="section-title" style="margin-top:24px"><h2>'+esc(dateLabel(state.selectedDate))+'</h2><span class="muted">'+selected.length+' agendamento(s)</span></div>'+
+ '<div class="section-title section-title--tight-spaced"><h2>'+esc(dateLabel(state.selectedDate))+'</h2><span class="muted">'+selected.length+' agendamento(s)</span></div>'+
  (selected.length?selected.map(appointmentCard).join(""):'<div class="empty">Nenhum agendamento neste dia.</div>')+appointmentDetails();
 }
 // Apresenta comandas autorizadas e seus detalhes.
