@@ -1,3 +1,4 @@
+/** Componente: calendário semanal. Responsabilidade: distribuir dias e agendamentos na grade da semana. */
 import {startOfWeek,addDays,dateKey} from '../utils/date.utils.js';
 import {timeToMinutes} from '../utils/duration.utils.js';
 import {renderAppointmentCard} from './appointment-card.js';
