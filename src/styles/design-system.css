@@ -386,3 +386,6 @@ dialog.sp-modal::backdrop{background:rgba(25,23,19,.48);backdrop-filter:blur(2px
  .detail-drawer:has(.agenda-form){width:calc(100vw - 16px);max-height:92dvh;border-radius:10px}
  .detail-drawer:has(.agenda-form) .drawer-content{max-height:calc(92dvh - 115px);padding:16px}
 }
+
+/* Espaçamento reutilizável entre blocos de histórico e resumo. */
+.section-title--spaced{margin-top:28px}
