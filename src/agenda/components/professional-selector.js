@@ -1,3 +1,4 @@
+/** Componente: seletor de profissional. Responsabilidade: renderizar a seleção do profissional exibido na Agenda. */
 import { esc } from '../../utils.js';
 export function renderProfessionalSelector(selected, professionals=[]) {
   return '<div class="professional-strip" role="group" aria-label="Selecionar profissional">'+
