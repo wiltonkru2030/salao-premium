@@ -6,6 +6,10 @@ import { mountAutocomplete } from "../components/autocomplete.js";
 import { userErrorMessage, reportError } from "../utils/errors.js";
 import { parseBRL } from "../utils/input-masks.js";
 
+/** @typedef {import("../types/tenant.types").TenantContext} TenantContext */
+/** @typedef {import("../types/operations.types").ServiceOrderRecord} ServiceOrderRecord */
+/** @typedef {import("../types/operations.types").ServiceOrderPaymentRecord} ServiceOrderPaymentRecord */
+
 /** Módulo Comandas: consulta comandas, monta detalhes e executa lançamentos e pagamentos. */
 
 let cleanup=[];
@@ -181,6 +185,11 @@ function renderOrderDetails(host,order,data,orgId){
 }
 // Controla carregamento da lista ou dos detalhes de uma comanda.
 /** Carrega a lista de Comandas ou os detalhes de uma Comanda específica, incluindo itens e pagamentos. */
+/**
+ * Carrega lista ou detalhe de uma Comanda do tenant autenticado.
+ * @param {string|null} orderId Identificador da Comanda, quando a tela abre um detalhe.
+ * @returns {Promise<void>} Renderiza dados; gravações financeiras são executadas por RPC.
+ */
 export async function loadComandaPage(orderId=null){
  const host=document.querySelector("#comanda-manager");if(!host)return;
  clearAutocomplete();
