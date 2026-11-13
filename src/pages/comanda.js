@@ -64,7 +64,7 @@ function renderOrderDetails(host,order,data,orgId){
  <div class="list-toolbar"><button class="btn secondary" data-action="back-comandas">← Voltar</button><span class="result-count">Comanda #${esc(order.order_number)}</span><span class="status">${esc(statusLabel(order.status))}</span></div>
  <section class="settings-card"><h3>Cliente e atendimento</h3><div class="setting-row"><span><b>${esc(customer?.name||"Cliente não informado")}</b><small>${esc(customer?.phone||"")}</small></span><b>${esc(professional?.name||"Sem profissional")}</b></div><div class="setting-row"><span>Aberta em</span><b>${new Date(order.created_at).toLocaleString("pt-BR")}</b></div>${order.notes?'<p class="demo-note">'+esc(order.notes)+'</p>':""}</section>
  <section class="settings-card"><h3>Itens da comanda</h3>
- ${items.length?items.map(i=>'<div class="setting-row"><span><b>'+esc(i.description)+'</b><small>'+Number(i.quantity)+' × '+currency(i.unit_price)+(i.professional_id?' · Profissional vinculado':'')+'</small></span><b>'+currency(i.total)+'</b></div>').join(""):'<div class="empty-state">Nenhum item lançado nesta comanda.</div>'}
+ ${items.length?items.map(i=>'<div class="setting-row"><span><b>'+esc(i.description)+'</b><small>'+Number(i.quantity)+' × '+currency(i.unit_price)+(i.professional_id?' · '+esc(professionals.find(p=>p.id===i.professional_id)?.name||'Profissional vinculado'):' · Sem profissional')+'</small></span><b>'+currency(i.total)+'</b></div>').join(""):'<div class="empty-state">Nenhum item lançado nesta comanda.</div>'}
  <div class="setting-row"><span>Subtotal</span><b>${currency(order.subtotal)}</b></div><div class="setting-row"><span>Desconto</span><b>${currency(order.discount)}</b></div><div class="setting-row"><b>Total</b><b>${currency(order.total)}</b></div></section>${itemEditors}
  <section class="settings-card"><h3>Pagamentos</h3>
  ${payments.length?payments.map(p=>'<div class="setting-row"><span>'+currency(p.amount)+'<small>'+esc(p.payment_method)+' · '+new Date(p.paid_at).toLocaleString("pt-BR")+'</small></span><b>'+esc(p.status)+'</b></div>').join(""):'<div class="empty-state">Nenhum pagamento registrado.</div>'}
@@ -77,6 +77,7 @@ function renderOrderDetails(host,order,data,orgId){
  <section class="settings-card"><h3>Adicionar produto</h3><form id="comanda-product-form">
  <label>Produto<input id="comanda-product" class="field" placeholder="Digite para buscar" autocomplete="off" required></label>
  <label>Quantidade<input name="quantity" class="field" type="number" min="0.001" step="0.001" value="1" required></label>
+ <label>Profissional (opcional)<select name="professional_id" class="field"><option value="">Sem profissional</option>${professionals.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("")}</select></label>
  <label>Profissional<select name="professional_id" class="field"><option value="">Sem profissional</option>${professionals.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("")}</select></label>
  <button class="btn primary" type="submit">Adicionar produto</button><p class="demo-note">O estoque será baixado ao quitar a comanda.</p></form></section>`:''}
  ${editable&&allowPay?`
