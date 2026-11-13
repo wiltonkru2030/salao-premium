@@ -26,7 +26,7 @@ export async function loadCommissionsPage(){
  try{
   const orgId=state.organization.id;
   const [commissionResult,professionalResult,payoutResult,settingsResult,serviceResult,ruleResult]=await Promise.all([
-   supabase.from("commissions").select("id,professional_id,base_amount,rate,amount,status,paid_at,created_at,payout_id,sale_id,appointment_id,item_type")
+   supabase.from("commissions").select("id,professional_id,base_amount,rate,amount,status,paid_at,created_at,payout_id,sale_id,appointment_id,item_type,service_order_item_id,service_order_payment_id")
     .eq("org_id",orgId).order("created_at",{ascending:false}).limit(1000),
    supabase.from("professionals").select("id,name,active").eq("org_id",orgId).order("name").limit(500),
    supabase.from("commission_payouts").select("id,professional_id,amount,payment_method,paid_at,notes,cash_movement_id")
@@ -44,6 +44,24 @@ export async function loadCommissionsPage(){
   const commissions=commissionResult.data||[],professionals=professionalResult.data||[],payouts=payoutResult.data||[];
   const services=serviceResult.data||[],serviceRules=ruleResult.data||[];
   const serviceMap=new Map(services.map(item=>[item.id,item]));
+  // Liga cada parcela de comissão ao item da Comanda e ao recebimento que a originou.
+  const commissionItemIds=[...new Set(commissions.map(row=>row.service_order_item_id).filter(Boolean))];
+  const commissionPaymentIds=[...new Set(commissions.map(row=>row.service_order_payment_id).filter(Boolean))];
+  const [commissionItemsResult,commissionPaymentsResult]=await Promise.all([
+   commissionItemIds.length?supabase.from("service_order_items").select("id,order_id,description").eq("org_id",orgId).in("id",commissionItemIds):Promise.resolve({data:[],error:null}),
+   commissionPaymentIds.length?supabase.from("service_order_payments").select("id,amount,paid_at,order_id").eq("org_id",orgId).in("id",commissionPaymentIds):Promise.resolve({data:[],error:null})
+  ]);
+  if(commissionItemsResult.error)throw commissionItemsResult.error;
+  if(commissionPaymentsResult.error)throw commissionPaymentsResult.error;
+  const commissionItems=commissionItemsResult.data||[],commissionPayments=commissionPaymentsResult.data||[];
+  const commissionOrderIds=[...new Set([...commissionItems.map(item=>item.order_id),...commissionPayments.map(payment=>payment.order_id)].filter(Boolean))];
+  const {data:commissionOrders,error:commissionOrdersError}=commissionOrderIds.length
+   ?await supabase.from("service_orders").select("id,order_number").eq("org_id",orgId).in("id",commissionOrderIds)
+   :{data:[],error:null};
+  if(commissionOrdersError)throw commissionOrdersError;
+  const commissionItemMap=new Map(commissionItems.map(item=>[item.id,item]));
+  const commissionPaymentMap=new Map(commissionPayments.map(payment=>[payment.id,payment]));
+  const commissionOrderMap=new Map((commissionOrders||[]).map(order=>[order.id,order]));
   const productSetting=settingsResult.data?.[0]||null;
   const productCommissionEnabled=productSetting?.setting_value?.enabled===true;
   const productCommissionRate=Number(productSetting?.setting_value?.default_rate||0);
@@ -62,7 +80,7 @@ export async function loadCommissionsPage(){
    const professional=professionalMap.get(professionalId),eligible=rows.filter(c=>["pending","approved"].includes(c.status)&&!c.payout_id);
    return '<section class="settings-card commission-group"><div class="section-title"><div><h3>'+esc(professional?.name||"Profissional")+'</h3><small class="muted">'+rows.length+' lançamento(s) · '+money(rows.reduce((sum,c)=>sum+Number(c.amount||0),0))+'</small></div></div>'+
     rows.map(c=>'<div class="setting-row commission-row"><label class="commission-select">'+(canPay()&&eligible.some(x=>x.id===c.id)?'<input type="checkbox" data-commission-select="'+c.id+'" data-professional-id="'+professionalId+'">':'<span class="commission-select-spacer"></span>')+
-     '<span><b>'+money(c.amount)+'</b><small>'+(c.item_type==="product"?"Produto":"Serviço")+' · Base '+money(c.base_amount)+' · '+Number(c.rate)+'% · '+dateTime(c.created_at)+'</small></span></label><span class="record-trailing"><b>'+esc(statusLabel(c.status))+'</b><small>'+(c.paid_at?'Pago em '+dateTime(c.paid_at):'')+'</small></span></div>').join("")+
+     '<span><b>'+money(c.amount)+'</b><small>'+(c.item_type==="product"?"Produto":"Serviço")+' · Base '+money(c.base_amount)+' · '+Number(c.rate)+'%'+(commissionOrderMap.get(commissionItemMap.get(c.service_order_item_id)?.order_id||commissionPaymentMap.get(c.service_order_payment_id)?.order_id)?.order_number?' · Comanda #'+commissionOrderMap.get(commissionItemMap.get(c.service_order_item_id)?.order_id||commissionPaymentMap.get(c.service_order_payment_id)?.order_id).order_number:'')+(commissionPaymentMap.get(c.service_order_payment_id)?' · Parcela '+money(commissionPaymentMap.get(c.service_order_payment_id).amount):'')+' · '+dateTime(c.created_at)+'</small></span></label><span class="record-trailing"><b>'+esc(statusLabel(c.status))+'</b><small>'+(c.paid_at?'Pago em '+dateTime(c.paid_at):'')+'</small></span></div>').join("")+
     (canPay()&&eligible.length?'<div class="commission-payout-controls"><select class="field" data-payment-method="'+professionalId+'"><option value="pix">PIX</option><option value="cash">Dinheiro</option><option value="transfer">Transferência</option><option value="credit_card">Cartão de crédito</option><option value="debit_card">Cartão de débito</option><option value="other">Outro</option></select><button class="btn primary" type="button" data-pay-commissions="'+professionalId+'">Pagar selecionadas</button></div>':'')+
     '</section>';
   }).join("");
