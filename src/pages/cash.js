@@ -10,6 +10,8 @@ import { reportError } from "../utils/errors.js";
 
 const money=value=>Number(value||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const dateTime=value=>value?new Date(value).toLocaleString("pt-BR"):"—";
+const paymentMethodLabel=value=>({pix:"PIX",cash:"Dinheiro",credit_card:"Cartão de crédito",debit_card:"Cartão de débito",transfer:"Transferência",voucher:"Voucher",other:"Outro"})[value]||"Outro";
+const categoryLabel=value=>({service_order:"Recebimento de Comanda",service_order_refund:"Estorno de Comanda",professional_commission:"Comissão profissional"})[value]||"Movimentação";
 const canOperate=()=>["owner","admin","manager","receptionist","finance"].includes(state.membership?.role);
 
 
@@ -51,7 +53,7 @@ export async function loadCashPage(){
   const history=movements.map(m=>{
    const payment=paymentMap.get(m.id),order=payment?.order||orderMap.get(m.service_order_id);
    const label=order?"Comanda #"+order.order_number+" · "+order.customerName:m.description;
-   return '<article class="record-card cash-movement" data-method="'+esc(m.payment_method||"")+'" data-date="'+String(m.created_at).slice(0,10)+'" data-search="'+esc((label+" "+m.description).toLocaleLowerCase("pt-BR"))+'"><span class="record-main"><b>'+esc(label)+'</b><small>'+dateTime(m.created_at)+' · '+esc(m.payment_method||m.category||"Movimento")+'</small></span><span class="record-trailing"><b>'+((m.movement_type==="expense"?"−":"+")+money(m.amount))+'</b><small>'+esc(m.movement_type==="income"?"Entrada":m.movement_type==="expense"?"Saída":m.movement_type)+(payment?" · Pagamento individual":"")+'</small></span></article>';
+   return '<article class="record-card cash-movement" data-method="'+esc(m.payment_method||"")+'" data-date="'+String(m.created_at).slice(0,10)+'" data-search="'+esc((label+" "+m.description).toLocaleLowerCase("pt-BR"))+'"><span class="record-main"><b>'+esc(label)+'</b><small>'+dateTime(m.created_at)+' · '+esc(m.payment_method?paymentMethodLabel(m.payment_method):categoryLabel(m.category))+'</small></span><span class="record-trailing"><b>'+((m.movement_type==="expense"?"−":"+")+money(m.amount))+'</b><small>'+esc(m.movement_type==="income"?"Entrada":m.movement_type==="expense"?"Saída":m.movement_type)+(payment?" · Pagamento individual":"")+'</small></span></article>';
   }).join("");
   host.innerHTML=
    '<section class="settings-card"><div class="section-title"><div><h3>Caixa atual</h3><small class="muted">'+(active?"Aberto desde "+dateTime(active.opened_at):"Nenhum caixa aberto")+'</small></div><b class="status">'+(active?"Aberto":"Fechado")+'</b></div>'+
