@@ -1,2 +1,2 @@
 /** Estado compartilhado do painel administrativo: sessão, organização, navegação, filtros e Agenda. */
-export const state={page:'Dashboard',pro:0,date:new Date(),view:'Dia',drawer:null,setting:'Geral',query:'',filter:'Todos',mobileMenu:false,sidebarCollapsed:false,dragId:null,blockedTimes:[],user:null,organization:null,membership:null};
+export const state={page:'Dashboard',pro:0,date:new Date(),view:'Dia',drawer:null,setting:'Geral',query:'',filter:'Todos',mobileMenu:false,sidebarCollapsed:false,dragId:null,blockedTimes:[],user:null,organization:null,membership:null,availableOrganizations:[],branch:null};
