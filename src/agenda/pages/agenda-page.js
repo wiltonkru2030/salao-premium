@@ -32,7 +32,7 @@ function toCalendarAppointment(row,professionalIndex) {
     date:start.date,time:start.time,duration,price:row.price,
     status:dbStatus(row.status),dbStatus:row.status,notes:row.notes||'',
     booking_source:row.booking_source,created_by_name:row.created_by_name||'',
-    service_order_id:row.service_order_id,arrived_at:row.arrived_at||null
+    service_order_id:row.service_order_id,appointment_group_id:row.appointment_group_id||null,arrived_at:row.arrived_at||null
   };
 }
 // Compõe filtros, resumo e calendário sem executar consultas ao banco.
@@ -88,7 +88,7 @@ export async function loadAgendaPage() {
     }
     const [proResult,appointmentResult,blockResult]=await Promise.all([
       supabase.from('professionals').select('id,name,color,active').eq('org_id',state.organization.id).eq('active',true).order('name'),
-      supabase.from('appointments').select('id,customer_id,professional_id,customer_name,customer_phone,service_id,service_name,professional_name,starts_at,ends_at,status,price,booking_source,created_by_name,notes,service_order_id,arrived_at').eq('org_id',state.organization.id).gte('starts_at',start.toISOString()).lt('starts_at',end.toISOString()).order('starts_at').limit(1000),
+      supabase.from('appointments').select('id,customer_id,professional_id,customer_name,customer_phone,service_id,service_name,professional_name,starts_at,ends_at,status,price,booking_source,created_by_name,notes,service_order_id,appointment_group_id,arrived_at').eq('org_id',state.organization.id).gte('starts_at',start.toISOString()).lt('starts_at',end.toISOString()).order('starts_at').limit(1000),
       supabase.from('appointment_blocks').select('id,professional_id,starts_at,ends_at,reason').eq('org_id',state.organization.id).lt('starts_at',end.toISOString()).gt('ends_at',start.toISOString()).limit(500)
     ]);
     if(proResult.error)throw proResult.error;
