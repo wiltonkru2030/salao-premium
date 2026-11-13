@@ -27,6 +27,9 @@ O App Profissional compartilha os tokens do design system por `professional/styl
 ## Tokens
 `--sp-ink`, `--sp-muted`, `--sp-soft`, `--sp-paper`, `--sp-line`, `--sp-line-strong`, `--sp-gold`, `--sp-gold-soft`, `--sp-radius`, `--sp-shadow`, `--sp-focus` e `--sp-control-height`.
 
+## Camadas legadas organizadas
+`components.css` e `shell.css` também são agregadores: os estilos-base, equipe, gráficos e modo compacto foram separados em folhas menores. Consulte `src/styles/README.md` para a ordem de importação.
+
 ## Regras
 1. Preferir componentes globais antes de criar CSS novo.
 2. CSS de módulo cuida somente de estrutura especializada, como a grade de calendário.
