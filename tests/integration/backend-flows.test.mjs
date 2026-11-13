@@ -305,7 +305,7 @@ async function cleanup() {
     const result = await admin.deleteUser(encodeURIComponent(id));
     if (!result.ok) failures.push("auth user / " + id + ": " + result.error);
   }
-  if (failures.length) throw new Error("Falha na limpeza isolada dos dados de teste:\\n" + failures.join("\\n"));
+  if (failures.length) throw new Error("Falha na limpeza isolada dos dados de teste:\n" + failures.join("\n"));
 }
 
 if (KEEP) console.log("\nDados preservados (--keep). Organizações: " + created.orgs.join(", "));
