@@ -14,7 +14,7 @@ import { recordDrawer, appointmentDrawer, renderDrawer, openDrawer } from './com
 import { supabase } from './supabase/client.js';
 import { loadAgendaPage, refreshAgendaContent, findAppointmentView } from './agenda/pages/agenda-page.js';
 import { dateKey, addDays } from './agenda/utils/date.utils.js';
-import { startAuth, signOut } from './auth/auth.js';
+import { startAuth, signOut, getCurrentUserContext } from './auth/auth.js';
 
 // Conversores de data/horário usados pelos formulários da Agenda.
 function dateFromKey(key) {
@@ -405,11 +405,45 @@ document.addEventListener('keydown',event=>{
   }
 });
 
+
+document.addEventListener("change",async event=>{
+  if(event.target?.id!=="tenant-switcher")return;
+  const select=event.target,organizationId=String(select.value||"");
+  if(!organizationId||organizationId===state.organization?.id)return;
+  select.disabled=true;
+  try{
+    const context=await getCurrentUserContext(organizationId);
+    state.user=context.user;
+    state.profile=context.profile;
+    state.organization=context.organization;
+    state.membership=context.membership;
+    state.availableOrganizations=context.availableOrganizations||[];
+    state.branch=null;
+    state.page="Dashboard";
+    state.drawer=null;
+    state.query="";
+    state.filter="Todos";
+    state.pro=0;
+    state.date=new Date();
+    state.agendaAppointments=[];
+    state.agendaProfessionals=[];
+    state.dbBlockedTimes=[];
+    render();
+  }catch(error){
+    reportError(error,{context:"SaaS > trocar organização"});
+    select.value=state.organization?.id||"";
+  }finally{
+    if(select.isConnected)select.disabled=false;
+  }
+});
+
 startAuth(context=>{
   state.user=context.user;
   state.profile=context.profile;
   state.organization=context.organization;
   state.membership=context.membership;
+  state.availableOrganizations=context.availableOrganizations||[];
+  state.branch=null;
   render();
   // A tela inicial foi montada; erros posteriores pertencem ao tratamento global da aplicação.
   window.__SALAO_PREMIUM_BOOTED__=true;
