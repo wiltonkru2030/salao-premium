@@ -31,11 +31,15 @@ Deno.serve(async (req: Request) => {
   const hash = await digest(submittedToken);
   const headers = { apikey: serviceKey, Authorization: "Bearer " + serviceKey, "Content-Type": "application/json" };
   const endpoint = supabaseUrl + "/rest/v1/quotes?public_token_hash=eq." + hash + "&status=eq.pending";
+  const check = await fetch(endpoint + "&select=id,quote_number,total,valid_until", { headers });
+  if (!check.ok) return html("<h1>Não foi possível consultar o orçamento</h1><p>Entre em contato com o salão.</p>", 503);
+  const rows = await check.json();
+  if (!rows.length) return html("<h1>Orçamento indisponível</h1><p>Este link expirou, já foi respondido ou não é válido. Fale com o salão para receber uma nova proposta.</p>", 404);
+  if (rows[0].valid_until && rows[0].valid_until < new Date().toISOString().slice(0,10)) {
+    await fetch(endpoint, { method: "PATCH", headers: { ...headers, Prefer: "return=minimal" }, body: JSON.stringify({ status: "expired" }) });
+    return html("<h1>Orçamento expirado</h1><p>O prazo desta proposta terminou. Entre em contato com o salão para receber uma nova.</p>", 410);
+  }
   if (req.method === "GET") {
-    const check = await fetch(endpoint + "&select=id,quote_number,total", { headers });
-    if (!check.ok) return html("<h1>Não foi possível consultar o orçamento</h1><p>Entre em contato com o salão.</p>", 503);
-    const rows = await check.json();
-    if (!rows.length) return html("<h1>Orçamento indisponível</h1><p>Este link expirou, já foi respondido ou não é válido. Fale com o salão para receber uma nova proposta.</p>", 404);
     return html("<h1>Seu orçamento está pronto</h1><p>Orçamento #" + rows[0].quote_number + " · R$ " + Number(rows[0].total).toLocaleString("pt-BR", { minimumFractionDigits: 2 }) + "</p><p>Escolha uma opção para registrar sua resposta ao salão.</p><form method='post' action=''><input type='hidden' name='token' value='" + submittedToken + "'><div class='actions'><button class='yes' name='decision' value='accepted'>Aceitar orçamento</button><button class='no' name='decision' value='rejected'>Recusar orçamento</button></div></form>");
   }
   if (req.method !== "POST" || !["accepted", "rejected"].includes(decision)) return html("<h1>Solicitação inválida</h1>", 405);
