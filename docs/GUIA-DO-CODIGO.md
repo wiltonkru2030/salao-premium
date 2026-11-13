@@ -1,243 +1,94 @@
-# Guia técnico e mapa do código — SALÃO PREMIUM
+# Guia técnico e mapa do código
 
-Este documento descreve a estrutura real do repositório e serve como índice para manutenção. Atualize-o sempre que mover módulos ou alterar contratos.
+Este documento descreve onde cada responsabilidade mora e como manter o sistema sem quebrar os vínculos financeiros.
 
-## 1. Visão geral
+## Entradas da aplicação
 
-O projeto é uma aplicação web JavaScript com ES Modules, HTML e CSS. O painel administrativo e o App Profissional são duas entradas separadas que compartilham o cliente Supabase e alguns componentes.
+- `index.html`: documento do painel.
+- `app.js`: entrada mínima que carrega `src/app.js`.
+- `src/app.js`: inicializa máscaras e captura global de erros, autenticação, navegação e eventos do painel.
+- `professional/app.js`: entrada do App Profissional/PWA.
 
-- `index.html`: documento HTML e tela de erro de inicialização do painel.
-- `app.js`: ponto de entrada mínimo; importa `src/app.js`.
-- `src/app.js`: inicialização, eventos globais, fluxo da Agenda e integração entre páginas. **Arquivo concentrador que precisa ser dividido em controladores menores.**
-- `professional/index.html`: entrada PWA do App Profissional.
-- `professional/app.js`: interface, navegação, autenticação e carregamento do App Profissional. **Arquivo concentrador que precisa ser dividido por módulo.**
-
-## 2. Mapa das pastas
+## Mapa de pastas
 
 | Caminho | Responsabilidade |
 |---|---|
-| `src/auth/` | Login, sessão, saída e tela de autenticação do painel |
-| `src/layout/` | Shell administrativo, menu e renderização das páginas |
-| `src/pages/` | Páginas de negócio: clientes, profissionais, serviços, produtos, comandas, comissões etc. |
-| `src/components/` | Componentes reutilizáveis, como drawer, autocomplete e campos compartilhados |
-| `src/agenda/` | Módulo Agenda separado em páginas, componentes, serviços, utilitários, estilos e testes |
-| `src/supabase/` | Cliente Supabase e serviços de acesso a dados |
-| `src/utils/` | Máscaras, formatação, escape HTML e tratamento de erros compartilhados |
-| `src/styles/` | Estilos base, shell, componentes, formulários, listas, modais e responsividade |
-| `professional/` | PWA e interface do profissional |
-| `supabase/functions/` | Edge Functions de acesso profissional e login por CPF |
-| `supabase/migrations/` | Alterações versionadas do banco e políticas de segurança |
-| `.github/workflows/` | Validação de sintaxe/build e testes automatizados |
+| `src/auth/` | Sessão, login e escopo de acesso |
+| `src/layout/` | Menu, shell, navegação e renderização |
+| `src/components/` | Drawers, autocomplete e componentes reutilizáveis |
+| `src/pages/` | Páginas administrativas por domínio |
+| `src/agenda/` | Componentes, calendário, regras e testes da Agenda |
+| `src/supabase/` | Cliente Supabase |
+| `src/utils/` | Máscaras, validações e tratamento de erros |
+| `src/styles/` | CSS base, componentes e design system |
+| `supabase/migrations/` | Histórico SQL incremental |
+| `supabase/functions/` | Edge Functions |
 
-## 3. O que está separado e o que ainda está concentrado
+## Módulos de negócio principais
 
-### Separado
-- As páginas administrativas têm arquivos próprios em `src/pages/`.
-- A Agenda tem estrutura modular própria em `src/agenda/`.
-- Autenticação, layout, componentes, estilos, funções de backend e migrações têm diretórios específicos.
-- O App Profissional tem entrada, HTML, CSS, manifesto e service worker próprios.
+- `src/pages/agenda.js`: adaptador de entrada da página Agenda.
+- `src/agenda/pages/agenda-page.js`: consulta e apresenta calendário, profissionais e bloqueios.
+- `src/pages/comanda.js`: lista/detalha Comandas, itens, pagamentos e cancelamentos; usa RPCs para operações financeiras.
+- `src/pages/cash.js`: abertura/fechamento do Caixa, resumo e histórico de entradas/saídas.
+- `src/pages/commissions.js`: regras por profissional/serviço, lançamentos e pagamentos.
+- `src/pages/professionals.js`: cadastro de profissionais, dados fiscais e serviços permitidos.
+- `src/pages/quotes.js`: orçamentos, aprovação e agendamento agrupado.
 
-### Ainda concentrado ou duplicado
-- `src/app.js` contém muitas responsabilidades: eventos de interface, operações de Agenda, validações, comandas e integração com o banco.
-- `professional/app.js` concentra telas, estado, autenticação, consultas e ações do profissional.
-- `src/pages/professionals.js` e `src/pages/comanda.js` são arquivos grandes que misturam renderização, consulta, validação e gravação.
-- `src/supabase/data-service.js` oferece operações genéricas, mas várias páginas consultam Supabase diretamente; o padrão de acesso a dados não é uniforme.
-- Existem dois arquivos de estilos globais e estilos locais: o painel usa `styles.css` como agregador; o App Profissional importa o design system e acrescenta regras próprias. A consolidação visual precisa preservar as diferenças funcionais sem duplicar tokens.
-- A Agenda tem serviços locais legados em `src/agenda/services/`; o fluxo administrativo atual também consulta o Supabase em `src/agenda/pages/agenda-page.js` e `src/app.js`. O README antigo da Agenda precisa ser alinhado com o fluxo real.
+Arquivos como `sales.js`, `finance.js`, `reports.js` e `branches.js` devem ser conferidos antes de assumir que possuem todos os fluxos de produção; algumas áreas ainda são adaptadores ou páginas demonstrativas.
 
-## 4. Responsabilidade dos arquivos principais
+## Operações de banco mais importantes
 
-- `src/state.js`: estado compartilhado da sessão e da interface.
-- `src/utils.js`: escape de HTML, toast, botões, cabeçalhos, métricas e helpers visuais.
-- `src/utils/input-masks.js`: máscaras e conversão de valores brasileiros.
-- `src/utils/errors.js`: mensagens seguras, registro de erros e captura de rejeições globais.
-- `src/supabase/client.js`: configuração do cliente Supabase. A chave publishable pode estar no frontend; nunca colocar service_role/secret key aqui.
-- `src/supabase/data-service.js`: operações genéricas de leitura, criação, atualização e exclusão com escopo de organização.
-- `src/layout/render.js`: composição do shell e roteamento das páginas.
-- `src/components/drawer.js`: painel de detalhes/edição compartilhado.
-- `src/pages/*.js`: tela e ações de cada módulo de negócio.
-- `src/agenda/pages/agenda-page.js`: consulta de dados da Agenda e composição do calendário.
-- `src/agenda/components/*.js`: partes visuais da Agenda.
-- `src/agenda/utils/*.js`: regras de data, duração e conflitos.
-- `src/agenda/tests/*.js`: testes automatizados da Agenda.
-- `professional/app.js`: aplicação profissional independente; deve ser dividido em módulos de agenda, comandas, comissões, autenticação e shell.
+| RPC/função | Objetivo |
+|---|---|
+| `register_service_order_payment` | Receber pagamento total/parcial, registrar entrada no Caixa, gerar comissões e concluir venda/estoque na quitação |
+| `private.accrue_partial_service_order_commissions` | Calcular comissão proporcional por recebimento parcial |
+| `pay_professional_commissions` | Pagar lançamentos pendentes e registrar saída no Caixa |
+| `open_cash_register` | Abrir caixa com validação de organização e papel |
+| `close_cash_register` | Bloquear caixa, calcular saldo esperado e fechar |
+| `start_appointment_group_service_order` | Abrir todos os serviços agrupados em uma Comanda na mesma transação |
+| `cancel_service_order` | Cancelar Comanda; estornar pagamentos parciais e atualizar agendamentos/grupo |
 
-## 5. Padrão obrigatório para novos arquivos
+## Padrão obrigatório para novos arquivos
 
-Todo arquivo de código deve começar com um bloco curto:
+Cabeçalho de módulo:
+1. O que é e qual problema resolve.
+2. O que consulta e o que grava.
+3. Quais módulos, tabelas e RPCs utiliza.
+4. Quais papéis podem executar ações.
+5. Efeitos financeiros, de estoque ou agenda.
 
-```js
-/**
- * Módulo: [nome da funcionalidade]
- * Responsabilidade: [o que este arquivo faz]
- * Dependências: [serviços/componentes utilizados]
- * Não faz: [responsabilidade que pertence a outro módulo]
- */
-```
+Funções de domínio devem documentar parâmetros, retorno, validações, erros esperados e se o banco executa a operação atomicamente.
 
-Funções exportadas devem ter comentário JSDoc quando seu contrato não for óbvio. Comentários devem explicar intenção, regra de negócio e efeitos colaterais — não repetir literalmente cada linha.
+## Padrão de erros
 
-## 6. Padrão obrigatório de tratamento de erros
+- Usar `reportError(error,{context:"Módulo > ação"})` para erros inesperados.
+- Usar mensagens de validação em português para erros esperados.
+- Nunca exibir stack trace, SQL, nomes internos de políticas ou tokens.
+- Não registrar senhas, tokens ou documentos pessoais.
+- Corrigir a origem do erro; não esconder erros de consulta auxiliar.
 
-1. Validar dados antes de chamar o banco.
-2. Verificar `error` em toda resposta Supabase.
-3. Em operações assíncronas de interface, usar `try/catch/finally`.
-4. Desabilitar o botão durante gravação e reabilitá-lo em `finally`.
-5. Mostrar mensagem simples e segura ao usuário.
-6. Registrar contexto técnico no console com o identificador SP-... gerado por `reportError`.
-7. Não expor stack trace, SQL, tokens, CPF, senha ou dados pessoais em mensagens.
-8. Não ignorar falhas de consultas auxiliares: se um dado for necessário para a operação, a falha deve ser tratada.
-9. Toda operação sensível deve ter validação e autorização no servidor/RLS; validação no navegador não substitui segurança do backend.
+## Padrão visual
 
-Exemplo:
+- Usar `src/styles/design-system.css` como fonte de tokens e componentes.
+- O arquivo é importado por último em `styles.css`.
+- CSS específico de módulo deve tratar apenas layout/visualização especializada.
+- Não duplicar botões, campos, modais, cores ou escalas tipográficas.
 
-```js
-import { reportError } from "../utils/errors.js";
+## Segurança e banco
 
-try {
-  submitButton.disabled = true;
-  await saveRecord(values);
-} catch (error) {
-  reportError(error, { context: "Clientes > salvar cadastro" });
-} finally {
-  submitButton.disabled = false;
-}
-```
+- Não confiar em `user_metadata` para autorização.
+- Toda tabela exposta precisa de RLS apropriada.
+- Funções `SECURITY DEFINER` devem validar usuário, organização e papel dentro do corpo.
+- Não revogar funções existentes sem revisar chamadas e dependências.
+- Não resetar banco remoto nem reaplicar migrations já registradas.
+- Cada migration aplicada no Supabase deve ter arquivo com o mesmo version/name em `supabase/migrations/`.
 
-## 7. Pontos de atenção identificados na auditoria
+## Verificação antes de concluir
 
-- O README anterior dizia que os dados da Agenda eram somente demonstrativos e em memória, mas a página administrativa atual consulta e grava dados no Supabase. Documentação desatualizada pode levar a manutenção errada.
-- O `src/app.js` possui fluxo de Agenda e listeners globais em um único arquivo, dificultando isolar regressões.
-- O `professional/app.js` concentra diversas telas e fluxos de dados.
-- O tratamento de erros varia entre páginas: algumas capturam erros, outras apenas verificam respostas pontuais, e outras dependem de rejeições assíncronas.
-- O `src/pages/professionals.js` inicia quatro consultas paralelas, mas precisa verificar os erros de todas elas e da consulta adicional de perfis antes de montar a tela.
-- Em `src/pages/comanda.js`, a consulta de detalhes ignora erros com código 42501 em consultas auxiliares. Isso pode mascarar falta de permissão e deixar a tela parcialmente incompleta.
-- O documento `index.html` possui um capturador de erro de inicialização que também pode reagir a erros JavaScript após o início da aplicação; o escopo dele deve ser limitado à fase de boot.
-- A pasta `src/pages/` contém módulos curtos de encaminhamento e páginas maiores; isso não é necessariamente erro, mas a convenção deve ficar explícita.
-
-## 8. Ordem segura de reorganização
-
-1. Centralizar erros, validações e logs sem alterar regras de negócio.
-2. Dividir `src/app.js` em controladores por funcionalidade.
-3. Dividir `professional/app.js` em módulos de autenticação, Agenda, Comandas, Comissões e shell.
-4. Separar em cada página: consulta de dados, renderização, validação e ações de gravação.
-5. Padronizar o acesso ao Supabase e verificar todos os erros auxiliares.
-6. Consolidar os estilos globais e eliminar regras duplicadas após comparação visual.
-7. Adicionar testes de cada fluxo antes de remover código legado.
-
-**Regra:** refatorar uma funcionalidade por vez, preservar contratos e executar build/testes após cada etapa. Não reescrever vários módulos críticos simultaneamente.
-
-
-## 9. Auditoria aprofundada — 12/11/2026
-
-### Estrutura verificada
-
-A árvore atual contém 180 entradas no GitHub, incluindo código, estilos, migrações, workflows e recursos visuais. A separação por pastas existe, mas não significa que a arquitetura esteja totalmente modular:
-
-- `src/app.js` continua concentrando orquestração, listeners globais e operações da Agenda.
-- `professional/app.js` concentra autenticação, shell, consultas e ações das quatro áreas do PWA.
-- `src/pages/comanda.js` reúne consulta, renderização, inclusão de itens, pagamento e cancelamento.
-- `src/pages/professionals.js` reúne cadastro fiscal, atribuição de serviços e permissões de acesso.
-- `src/layout/render.js` importa todos os módulos e faz o despacho dos carregadores. É um ponto central de composição, não um serviço de negócio.
-
-A próxima refatoração deve extrair um módulo por vez, preservando contratos e executando os testes depois de cada extração.
-
-### Formulários e modais
-
-- Clientes, Produtos e Serviços usam elementos nativos `<dialog>` com a classe global `.sp-modal`.
-- Profissionais usa um modal próprio `.professional-modal` e estilos específicos.
-- Recuperar usa um modal montado com `div/section` e backdrop próprios; ainda precisa de revisão de foco, teclado e acessibilidade.
-- Comanda tem três formulários operacionais embutidos na página de detalhes: adicionar serviço, adicionar produto e receber pagamento. Eles não são cadastros mestres, mas ainda não usam modal.
-- Login e troca de senha do App Profissional são formulários de autenticação, não cadastros de registros.
-
-**Pendência visual:** não basta todos os cadastros terem modal; os modais de Profissionais e Recuperar ainda precisam ser harmonizados com o componente global e testados visualmente em desktop e celular.
-
-### CSS e consistência visual
-
-O painel carrega vários arquivos em sequência por `styles.css`, com `design-system.css` por último. O PWA importa o design system primeiro e depois aplica muitas regras locais. A análise estática encontrou seletores repetidos entre `design-system.css`, `components.css`, `shell.css`, `responsive.css`, `agenda.css` e `professional/styles.css`.
-
-Isso não prova que cada repetição seja um defeito visual, pois algumas regras são variações responsivas, mas aumenta a dependência da ordem de importação e da especificidade. Foram encontrados estilos inline em páginas como Dashboard, Comissões e Recuperar. A consolidação deve mover esses estilos para classes nomeadas e eliminar duplicações somente após comparação visual.
-
-### Máscaras — correção realizada
-
-Foi identificado um defeito concreto: o campo de login do App Profissional aceita CPF **ou e-mail**, mas seu placeholder continha o exemplo de CPF. A detecção anterior aplicava máscara de CPF a qualquer texto digitado nesse campo, removendo letras e impedindo login por e-mail.
-
-A detecção agora exige um campo inequivocamente identificado ou um placeholder exatamente igual ao padrão fiscal. Foi criado `src/utils/input-masks.test.js` para impedir regressão em login por e-mail, CPF, CNPJ, telefone, CEP e conversão de moeda. Campos com nomes não padronizados devem declarar explicitamente `data-mask`.
-
-### Tratamento de erros — correção realizada
-
-O HTML de entrada mantinha listeners de erro de inicialização ativos mesmo depois de o painel ter carregado. Um erro JavaScript posterior poderia acionar a tela de falha de inicialização e ocultar o sistema já aberto.
-
-O painel agora marca a conclusão do primeiro render e o diagnóstico do HTML ignora falhas posteriores ao boot. Depois da inicialização, os erros devem ser tratados pelo módulo compartilhado `src/utils/errors.js`.
-
-### Limites dos testes
-
-Os workflows validam sintaxe JavaScript, build de produção, testes de máscaras/conversão e testes unitários da Agenda. Eles não testam visualmente os modais, não executam login real, não validam RLS com usuários separados e não cobrem o ciclo de pagamento em ambiente real. Esses pontos exigem testes E2E e verificação no navegador/Supabase.
-
-### Próximas correções recomendadas
-
-1. Padronizar todos os modais de cadastro em um único contrato visual e de acessibilidade.
-2. Tratar as ações assíncronas de Comanda e do App Profissional com erros locais e contexto específico, em vez de depender somente do listener global.
-3. Remover estilos inline e consolidar seletores repetidos com comparação visual.
-4. Extrair os fluxos de Comanda e Profissional para serviços e controladores menores.
-5. Criar testes de integração para autenticação, escopos de profissional, RLS e pagamentos.
-
-
-**Auditoria do banco conectado:** consulte [docs/AUDITORIA-SUPABASE.md](./AUDITORIA-SUPABASE.md) para o estado real de RLS, RPCs SECURITY DEFINER, Edge Functions, advisors e divergência entre migrações remotas e arquivos versionados.
-
-
-## 11. Segunda rodada de auditoria de formulários, modais e estilos — 12/11/2026
-
-### Inventário da árvore
-
-Na leitura desta rodada, o repositório contém 152 arquivos rastreados: 59 JavaScript, 14 CSS, 9 SQL e 2 HTML. A quantidade de arquivos não indica modularidade por si só; o principal gargalo arquitetural continua sendo a concentração de fluxo em `src/app.js`, `professional/app.js` e `src/layout/render.js`.
-
-### Cadastro e formulários
-
-- Clientes: cadastro em `dialog` e estilo global.
-- Produtos: cadastro em `dialog` e estilo global.
-- Serviços: cadastro em `dialog` e estilo global.
-- Profissionais: cadastro em `dialog`; nesta rodada foi alinhado ao contrato global `sp-modal`, com foco inicial e fechamento pelo botão ou clique no backdrop.
-- Recuperar: o detalhe de uma operação da lixeira foi migrado para `dialog.sp-modal`, com backdrop nativo, foco gerenciado pelo navegador e fechamento por Escape.
-- Comanda: os formulários para adicionar serviço, adicionar produto e receber pagamento permanecem embutidos na tela de detalhes. São ações operacionais de uma comanda, não cadastros mestres. A decisão de mantê-los na tela evita abrir modais em sequência durante o atendimento; devem continuar com estados de envio e erro claros.
-- App Profissional: login, alteração de senha e edição de perfil são formulários funcionais, não cadastros de novos registros.
-- Equipe e Configurações: não há fluxo de convite/cadastro de membro ou formulário persistente de configurações nesta versão.
-
-### Máscaras aplicadas nesta rodada
-
-Os campos do cadastro profissional agora declaram explicitamente `data-mask="cpf"`, `data-mask="cnpj"` e `data-mask="phone"`; o CPF de acesso e o telefone do perfil no PWA também usam as máscaras globais. O login CPF ou e-mail permanece sem máscara automática para não destruir endereços de e-mail.
-
-### CSS e HTML
-
-- O gráfico demonstrativo do Dashboard deixou de gerar atributo `style` inline; suas alturas agora são classes CSS explícitas.
-- A imagem de ícone do menu deixou de usar atributo HTML `onerror`; o listener de erro é ligado pelo compositor depois de montar o menu.
-- Os modais de Profissionais e Recuperar usam a estrutura visual global, mas ainda há estilos locais de compatibilidade e regras antigas para o modal da lixeira. A consolidação final deve remover essas regras somente depois de comparar a renderização em desktop e mobile.
-- A cascata continua dividida entre `styles.css`, arquivos de `src/styles/`, estilos da Agenda e `professional/styles.css`. Ainda há seletores repetidos; a próxima etapa deve consolidar por componente, não apagar regras apenas porque têm nomes parecidos.
-
-### Pendências de arquitetura e produto
-
-1. Extrair o fluxo de criação/edição de Profissionais para controlador e serviço de dados, mantendo o componente visual separado.
-2. Extrair as operações de Comanda (adicionar item, receber, cancelar) para um serviço transacional e deixar a página responsável pela interface.
-3. Separar autenticação, navegação, Agenda e ações do PWA em módulos menores.
-4. Transformar Dashboard e páginas de Vendas, Caixa, Financeiro, Relatórios e Unidades em consultas reais antes de remover seus rótulos de demonstração.
-5. Criar testes de interface para abrir/fechar modais, foco, Escape, validação e falha de rede.
-6. Executar teste real com contas de proprietário e profissional; build e testes unitários não cobrem permissões de ponta a ponta.
-
-### Estado de conclusão
-
-Esta rodada corrige problemas concretos de máscaras, padronização de modais, tratamento de erros e estilos inline. Não é uma certificação de todas as páginas: ainda faltam teste visual em navegador, E2E, reconciliação de migrações e implementação dos módulos demonstrativos.
-
-
-## 12. Validação posterior e nova leitura da cascata CSS
-
-- No último commit desta rodada (`53f2603b75c4de90007e2e1cb5ea9f60918c8122)), os workflows **App validation** e **Agenda tests** concluíram com sucesso.
-- A validação de App executou a checagem de sintaxe de todos os arquivos JavaScript, build/imports de produção e testes de regressão configurados.
-- A validação da Agenda concluiu os testes automatizados existentes.
-- Ações assíncronas globais de clique, alteração de visualização e arrastar/soltar na Agenda agora têm captura contextual de exceções; erros de remoção de bloqueio e movimentação são encaminhados ao serviço compartilhado.
-- As páginas genéricas demonstrativas deixaram de oferecer um botão “Novo registro” que abria um drawer genérico sem persistência. Isso evita apresentar uma ação fictícia como cadastro funcional.
-
-### Sobre seletores repetidos
-
-Uma varredura estática dos 14 arquivos CSS encontrou 151 seletores com o mesmo nome presentes em mais de um arquivo. Esse número inclui sobreposições intencionais (regras base, responsivas e ajustes do design system) e não significa 151 defeitos. Os grupos mais sensíveis são Agenda (`src/agenda/styles/agenda.css` e `src/styles/agenda.css`), shell (design system e shell), além dos estilos antigos de Profissionais/Recuperar em `components.css` que recebem overrides do design system.
-
-Não foi feita remoção em massa porque a cascata e a ordem de importação afetam a aparência. A consolidação correta requer comparar cada componente em desktop e mobile antes de apagar regras antigas.
+1. Conferir sintaxe de todos os arquivos JS.
+2. Executar build e testes automatizados.
+3. Conferir migrations e funções no banco.
+4. Verificar permissões/RLS e advisors.
+5. Testar fluxo real com conta e dados controlados.
+6. Conferir desktop e celular no navegador.
+7. Atualizar documentação e registrar limitações que ainda existirem.
