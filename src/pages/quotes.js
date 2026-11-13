@@ -222,7 +222,7 @@ async function printQuote(quote,orgId){
 async function openSchedule(quote,orgId){
   const host=document.querySelector("#quotes-manager");
   const [itemsResult,proResult]=await Promise.all([
-    supabase.from("quote_items").select("id,service_id,professional_id,description,duration_minutes,total").eq("org_id",orgId).eq("quote_id",quote.id).order("sort_order"),
+    supabase.from("quote_items").select("id,service_id,professional_id,description,quantity,duration_minutes,total").eq("org_id",orgId).eq("quote_id",quote.id).order("sort_order"),
     supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("active",true).order("name")
   ]);
   if(itemsResult.error)throw itemsResult.error;if(proResult.error)throw proResult.error;
@@ -235,7 +235,7 @@ async function openSchedule(quote,orgId){
     try{
       const prepared=rows.map((item,index)=>{
         const professionalId=String(values.get("professional_"+index)||""),date=String(values.get("date_"+index)||""),time=String(values.get("time_"+index)||"");
-        const start=new Date(date+"T"+time+":00"),end=new Date(start.getTime()+Number(item.duration_minutes)*60000);
+        const duration=Number(item.duration_minutes)*Number(item.quantity||1);\n        const start=new Date(date+"T"+time+":00"),end=new Date(start.getTime()+duration*60000);
         if(!professionalId||!date||!time||Number.isNaN(start.getTime()))throw new Error("Preencha profissional, data e horário de todos os serviços.");
         return {item,professionalId,start,end};
       });
