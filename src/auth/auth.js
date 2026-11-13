@@ -126,7 +126,7 @@ export function startAuth(onAuthenticated) {
     const orgId = String(new FormData(form).get("org_id") || "");
     const button = form.querySelector('[type="submit"]');
     if (!pendingUser || !orgId) {
-      showOrganizationSelection([], "Sua sessão precisa ser atualizada. Entre novamente.");
+      showAuth("login", "Sua sessão expirou. Entre novamente.", "error");
       return;
     }
     button.disabled = true;
