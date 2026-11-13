@@ -54,6 +54,7 @@ A Comanda é o registro operacional do atendimento.
 - `20261113010311_fix_grouped_order_existing_uuid_lookup`
 - `20261113010319_index_financial_refund_foreign_keys`
 - `20261113010559_document_financial_and_agenda_database_contracts`
+- `20261113010702_use_default_cash_register_for_branch_transactions`
 
 ## Testes pendentes
 
