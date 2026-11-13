@@ -136,9 +136,10 @@ export async function loadQuotesPage() {
         if(!Number.isFinite(percent)||percent<0||percent>100){toast("Informe um limite entre 0 e 100%.");return;}
         const selected=[...form.querySelectorAll('[name="discount_service"]:checked')].map(el=>el.value),fixedAllowed=form.querySelector('[name="allow_fixed_discount"]').checked;
         try{
-          const {error:settingError}=await supabase.from("quote_settings").upsert({org_id:orgId,max_discount_percent:percent,allow_fixed_discount:fixedAllowed,updated_by:state.user?.id},{onConflict:"org_id"});if(settingError)throw settingError;
-          const {error:deleteError}=await supabase.from("quote_discount_services").delete().eq("org_id",orgId);if(deleteError)throw deleteError;
-          if(selected.length){const {error}=await supabase.from("quote_discount_services").insert(selected.map(service_id=>({org_id:orgId,service_id,discount_allowed:true})));if(error)throw error;}
+          const {error}=await supabase.rpc("save_quote_discount_settings",{
+            p_org_id:orgId,p_max_discount_percent:percent,p_allow_fixed_discount:fixedAllowed,p_service_ids:selected
+          });
+          if(error)throw error;
           maxDiscount=percent;allowFixedDiscount=fixedAllowed;discountRules=new Set(selected);toast("Regras de desconto salvas.");renderBuilder();
         }catch(error){reportError(error,{context:"Orçamentos > regras de desconto"});}
       }
