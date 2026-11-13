@@ -10,7 +10,8 @@
     "test:errors": "node src/utils/errors.test.js",
     "test:quotes": "node src/modules/quotes/quote-components.test.js",
     "test:comanda": "node src/modules/comanda/comanda-detail.test.js",
-    "test:cash": "node src/modules/cash/cash-dashboard.test.js"
+    "test:cash": "node src/modules/cash/cash-dashboard.test.js",
+    "test:tenant": "node src/auth/tenant-context.test.js"
   },
   "engines": {
     "node": ">=20"
