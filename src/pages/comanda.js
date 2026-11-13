@@ -180,6 +180,7 @@ function renderOrderDetails(host,order,data,orgId){
  }
 }
 // Controla carregamento da lista ou dos detalhes de uma comanda.
+/** Carrega a lista de Comandas ou os detalhes de uma Comanda específica, incluindo itens e pagamentos. */
 export async function loadComandaPage(orderId=null){
  const host=document.querySelector("#comanda-manager");if(!host)return;
  clearAutocomplete();
