@@ -69,6 +69,7 @@ export function agenda() {
     '<div id="agenda-db-content"><div class="empty-state">Carregando agenda do banco…</div></div>';
 }
 // Consulta profissionais, agendamentos e bloqueios da organização ativa.
+/** Consulta profissionais, agendamentos e bloqueios da organização e renderiza o calendário administrativo. */
 export async function loadAgendaPage() {
   if(!state.user||!state.organization?.id)return;
   const host=document.querySelector('#agenda-db-content');
