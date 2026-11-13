@@ -1,6 +1,6 @@
 # Módulo Agenda
 
-API pública atual: `src/agenda/pages/agenda-page.js`; adaptador legado: `src/pages/agenda.js`.
+Página e consulta: `src/agenda/pages/agenda-page.js`; eventos: `src/agenda/controllers/agenda-controller.js`; ações e gravações: `src/agenda/controllers/appointment-actions.js`; adaptador legado: `src/pages/agenda.js`.
 
 Responsabilidades: calendário Dia/Semana/Mês, filtros, profissionais, agendamentos, bloqueios, conflitos, chegada e integração com Comanda.
 
