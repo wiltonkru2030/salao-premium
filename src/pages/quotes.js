@@ -10,7 +10,7 @@ import { renderQuoteBuilder, renderQuoteList } from "../modules/quotes/component
 
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const statusName = value => ({draft:"Rascunho",pending:"Em análise",accepted:"Aceito",rejected:"Recusado",expired:"Expirado",cancelled:"Cancelado"})[value] || value;
-let customers = [], services = [], professionals = [], items = [], selectedCustomer = null, discountRules = new Set(), maxDiscount = 0, allowFixedDiscount = true, activeQuote = null;
+let customers = [], services = [], professionals = [], professionalServices = [], items = [], selectedCustomer = null, discountRules = new Set(), maxDiscount = 0, allowFixedDiscount = true, activeQuote = null;
 
 function allowed() { return ["owner","admin","manager","receptionist"].includes(state.membership?.role); }
 function totals() {
@@ -49,16 +49,17 @@ export async function loadQuotesPage() {
   try {
     if(!allowed()) throw new Error("Seu perfil não possui acesso ao módulo de orçamentos.");
     const orgId=state.organization.id;
-    const [customerResult,serviceResult,professionalResult,quoteResult,settingResult,ruleResult]=await Promise.all([
+    const [customerResult,serviceResult,professionalResult,professionalServiceResult,quoteResult,settingResult,ruleResult]=await Promise.all([
       supabase.from("customers").select("id,name,phone").eq("org_id",orgId).eq("active",true).order("name").limit(1000),
       supabase.from("services").select("id,name,price,duration_minutes").eq("org_id",orgId).eq("active",true).order("name").limit(500),
       supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("active",true).order("name").limit(500),
+      supabase.from("professional_services").select("professional_id,service_id").eq("org_id",orgId),
       supabase.from("quotes").select("id,quote_number,customer_id,status,total,created_at").eq("org_id",orgId).order("created_at",{ascending:false}).limit(100),
       supabase.from("quote_settings").select("max_discount_percent,allow_fixed_discount").eq("org_id",orgId).maybeSingle(),
       supabase.from("quote_discount_services").select("service_id").eq("org_id",orgId).eq("discount_allowed",true)
     ]);
-    for(const r of [customerResult,serviceResult,professionalResult,quoteResult,settingResult,ruleResult]) if(r.error) throw r.error;
-    customers=customerResult.data||[]; services=serviceResult.data||[]; professionals=professionalResult.data||[];
+    for(const r of [customerResult,serviceResult,professionalResult,professionalServiceResult,quoteResult,settingResult,ruleResult]) if(r.error) throw r.error;
+    customers=customerResult.data||[]; services=serviceResult.data||[]; professionals=professionalResult.data||[]; professionalServices=professionalServiceResult.data||[];
     maxDiscount=Number(settingResult.data?.max_discount_percent||0);
     allowFixedDiscount=settingResult.data?.allow_fixed_discount!==false;
     discountRules=new Set((ruleResult.data||[]).map(r=>r.service_id));
@@ -67,6 +68,15 @@ export async function loadQuotesPage() {
     renderList(quoteResult.data||[],new Map(customers.map(c=>[c.id,c.name])));
     if(host.dataset.bound==="true")return;
     host.dataset.bound="true";
+    host.addEventListener("change",event=>{
+      if(event.target.id!=="quote-service")return;
+      const serviceId=event.target.value,professionalSelect=host.querySelector("#quote-professional");
+      if(!professionalSelect)return;
+      const eligibleIds=new Set(professionalServices.filter(link=>link.service_id===serviceId).map(link=>link.professional_id));
+      const eligible=professionals.filter(professional=>eligibleIds.has(professional.id));
+      professionalSelect.innerHTML='<option value="">A definir</option>'+eligible.map(professional=>'<option value="'+professional.id+'">'+esc(professional.name)+'</option>').join("");
+      professionalSelect.disabled=!serviceId;
+    });
     host.addEventListener("input",async e=>{
       if(e.target.id!=="quote-customer-search")return;
       const term=e.target.value.trim().toLocaleLowerCase("pt-BR"),box=host.querySelector("#quote-customer-results");
@@ -199,13 +209,14 @@ async function printQuote(quote,orgId){
 
 async function openSchedule(quote,orgId){
   const host=document.querySelector("#quotes-manager");
-  const [itemsResult,proResult]=await Promise.all([
+  const [itemsResult,proResult,assignmentResult]=await Promise.all([
     supabase.from("quote_items").select("id,service_id,professional_id,description,quantity,duration_minutes,total").eq("org_id",orgId).eq("quote_id",quote.id).order("sort_order"),
-    supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("active",true).order("name")
+    supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("active",true).order("name"),
+    supabase.from("professional_services").select("professional_id,service_id").eq("org_id",orgId)
   ]);
-  if(itemsResult.error)throw itemsResult.error;if(proResult.error)throw proResult.error;
-  const rows=itemsResult.data||[],pros=proResult.data||[];
-  host.innerHTML='<section class="settings-card"><div class="section-title"><div><h2>Agendar orçamento #'+quote.quote_number+'</h2><small class="muted">Defina um horário independente para cada serviço.</small></div></div><form id="quote-schedule-form">'+rows.map((item,index)=>'<div class="quote-schedule-item"><h3>'+esc(item.description)+'</h3><div class="form-grid"><label>Profissional<select class="field" name="professional_'+index+'" required><option value="">Selecione</option>'+pros.map(p=>'<option value="'+p.id+'" '+(p.id===item.professional_id?'selected':'')+'>'+esc(p.name)+'</option>').join("")+'</select></label><label>Data<input class="field" type="date" name="date_'+index+'" required></label><label>Horário<input class="field" type="time" name="time_'+index+'" required></label></div><input type="hidden" name="item_'+index+'" value="'+item.id+'"><input type="hidden" name="service_'+index+'" value="'+item.service_id+'"><input type="hidden" name="duration_'+index+'" value="'+item.duration_minutes+'"><input type="hidden" name="price_'+index+'" value="'+item.total+'"></div>').join("")+'<button class="btn primary" type="submit">Confirmar todos os horários</button><button class="btn secondary" type="button" id="quote-schedule-back">Voltar</button></form></section>';
+  if(itemsResult.error)throw itemsResult.error;if(proResult.error)throw proResult.error;if(assignmentResult.error)throw assignmentResult.error;
+  const rows=itemsResult.data||[],pros=proResult.data||[],assignments=assignmentResult.data||[];
+  host.innerHTML='<section class="settings-card"><div class="section-title"><div><h2>Agendar orçamento #'+quote.quote_number+'</h2><small class="muted">Defina um horário independente para cada serviço.</small></div></div><form id="quote-schedule-form">'+rows.map((item,index)=>'<div class="quote-schedule-item"><h3>'+esc(item.description)+'</h3><div class="form-grid"><label>Profissional<select class="field" name="professional_'+index+'" required><option value="">Selecione</option>'+pros.filter(p=>assignments.some(link=>link.service_id===item.service_id&&link.professional_id===p.id)).map(p=>'<option value="'+p.id+'" '+(p.id===item.professional_id?'selected':'')+'>'+esc(p.name)+'</option>').join("")+'</select></label><label>Data<input class="field" type="date" name="date_'+index+'" required></label><label>Horário<input class="field" type="time" name="time_'+index+'" required></label></div><input type="hidden" name="item_'+index+'" value="'+item.id+'"><input type="hidden" name="service_'+index+'" value="'+item.service_id+'"><input type="hidden" name="duration_'+index+'" value="'+item.duration_minutes+'"><input type="hidden" name="price_'+index+'" value="'+item.total+'"></div>').join("")+'<button class="btn primary" type="submit">Confirmar todos os horários</button><button class="btn secondary" type="button" id="quote-schedule-back">Voltar</button></form></section>';
   host.querySelector("#quote-schedule-back").addEventListener("click",()=>openQuote(quote.id,orgId));
   host.querySelector("#quote-schedule-form").addEventListener("submit",async event=>{
     event.preventDefault();const form=event.currentTarget,button=form.querySelector('[type=submit]'),values=new FormData(form);
