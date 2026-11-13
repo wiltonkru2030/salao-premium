@@ -53,6 +53,7 @@ Não mover um módulo inteiro em uma única alteração se isso puder quebrar ro
 | Comissões | `src/pages/commissions.js` | regras, ledger e RPC de pagamento |
 
 ## Segurança e limites conhecidos
+- O histórico remoto contém 58 migrations e o repositório contém 31 arquivos SQL; 33 versões históricas ainda precisam ser reconciliadas. Não resetar nem reaplicar migrations antigas. Consulte `docs/MIGRATIONS.md`.
 - RLS está habilitada nas tabelas centrais auditadas de Agenda, Comanda, Caixa, Comissões e Orçamentos.
 - O advisor ainda aponta funções `SECURITY DEFINER` expostas a usuários autenticados. Cada uma deve ser revisada individualmente; não revogar em lote porque operações críticas dependem delas e devem validar usuário, tenant e papel internamente.
 - A proteção de senha comprometida do Supabase Auth permanece desativada e precisa ser habilitada no painel do projeto.
