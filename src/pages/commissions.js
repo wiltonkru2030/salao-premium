@@ -49,6 +49,8 @@ export async function loadCommissionsPage(){
   const productCommissionRate=Number(productSetting?.setting_value?.default_rate||0);
   const professionalMap=new Map(professionals.map(p=>[p.id,p]));
   const visible=selectedProfessionalFilter?commissions.filter(c=>c.professional_id===selectedProfessionalFilter):commissions;
+  // Os handlers são registrados uma vez; mantenha os dados atuais da renderização no host.
+  host._commissionConfig={orgId,productSetting,serviceRules,professionalMap,visible};
   const totals=visible.reduce((acc,c)=>{acc[c.status]=(acc[c.status]||0)+Number(c.amount||0);return acc;},{});
   const pending=Number(totals.pending||0)+Number(totals.approved||0),paid=Number(totals.paid||0);
   const groups=new Map();
@@ -157,6 +159,7 @@ export async function loadCommissionsPage(){
   if(host.dataset.bound!=="true"){
    host.dataset.bound="true";
    host.addEventListener("click",async event=>{
+    const current=host._commissionConfig||{},orgId=current.orgId,professionalMap=current.professionalMap||new Map(),visible=current.visible||[];
     if(event.target.closest("[data-clear-commission-filter]")){
      selectedProfessionalFilter=null;await loadCommissionsPage();return;
     }
