@@ -9,7 +9,8 @@ let cleanupSearch=null;
 let selectedProfessionalFilter=null;
 const money=value=>Number(value||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const dateTime=value=>value?new Date(value).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}):"—";
-const statusLabel=value=>({pending:"Pendente",approved:"Aprovada",paid:"Paga",cancelled:"Cancelada"})[value]||value;
+const statusLabel=value=>({pending:"Pendente",approved:"Aprovada",paid:"Paga",cancelled:"Cancelada"})[value]||"Status não identificado";
+const paymentMethodLabel=value=>({pix:"PIX",cash:"Dinheiro",credit_card:"Cartão de crédito",debit_card:"Cartão de débito",transfer:"Transferência",voucher:"Voucher",other:"Outro"})[value]||"Outro";
 const canPay=()=>["owner","admin","manager","finance"].includes(state.membership?.role);
 const canManageCommissionSettings=()=>["owner","admin"].includes(state.membership?.role);
 
@@ -86,7 +87,7 @@ export async function loadCommissionsPage(){
   }).join("");
   const payoutHistory=payouts.map(p=>{
    const professional=professionalMap.get(p.professional_id);
-   return '<article class="record-card"><span class="record-main"><b>'+esc(professional?.name||"Profissional")+' · '+money(p.amount)+'</b><small>'+dateTime(p.paid_at)+' · '+esc(p.payment_method)+'</small><small>'+esc(p.notes||"Pagamento de comissões")+'</small></span><span class="record-trailing"><small>Pago</small><small>Caixa vinculado</small></span></article>';
+   return '<article class="record-card"><span class="record-main"><b>'+esc(professional?.name||"Profissional")+' · '+money(p.amount)+'</b><small>'+dateTime(p.paid_at)+' · '+esc(paymentMethodLabel(p.payment_method))+'</small><small>'+esc(p.notes||"Pagamento de comissões")+'</small></span><span class="record-trailing"><small>Pago</small><small>Caixa vinculado</small></span></article>';
   }).join("");
   // Cada regra liga um profissional a um serviço e define o percentual específico.
   const serviceRulesCard=canManageCommissionSettings()?`<section class="settings-card commission-rules-card">
