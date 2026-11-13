@@ -27,5 +27,7 @@ jobs:
         run: npm run test:quotes
       - name: Run Comanda component tests
         run: npm run test:comanda
+      - name: Run Cash component tests
+        run: npm run test:cash
       - name: Run agenda regression tests
         run: npm run test:agenda
