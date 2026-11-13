@@ -403,3 +403,33 @@ dialog.sp-modal.recycle-dialog{width:min(760px,calc(100vw - 28px));padding:0;ove
 
 /* Espaçamento global para títulos de seção no App Profissional. */
 .section-title--tight-spaced{margin-top:24px}
+
+
+/* Comissões — regras individuais com a mesma linguagem visual do painel. */
+.commission-rules-card .section-title{padding:15px 18px 0}
+.commission-rule-form{
+ display:grid;grid-template-columns:1.1fr 1.1fr .7fr auto;align-items:end;
+ gap:12px;padding:17px 18px;border-bottom:1px solid var(--sp-line)
+}
+.commission-rule-form label{display:grid;gap:6px;color:var(--sp-muted);font-size:10px}
+.commission-rule-form .btn{min-height:42px}
+.commission-rule-list{display:grid}
+.commission-rule-row{
+ display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;
+ gap:14px;padding:12px 18px;border-bottom:1px solid #efede8
+}
+.commission-rule-row:last-child{border-bottom:0}
+.commission-rule-row>span{display:grid;gap:3px;min-width:0}
+.commission-rule-row>span b{color:var(--sp-ink);font-size:10px;font-weight:600}
+.commission-rule-row>span small{color:var(--sp-muted);font-size:9px}
+.commission-rule-row>strong{color:var(--sp-ink);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.commission-rule-row .btn{min-height:32px;padding:7px 10px;font-size:9px}
+@media(max-width:760px){
+ .commission-rule-form{grid-template-columns:1fr 1fr;padding:14px}
+ .commission-rule-form .btn{width:100%}
+}
+@media(max-width:480px){
+ .commission-rule-form{grid-template-columns:1fr}
+ .commission-rule-row{grid-template-columns:minmax(0,1fr) auto;gap:9px;padding:11px 13px}
+ .commission-rule-row .btn{grid-column:1/-1;width:100%}
+}
