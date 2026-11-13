@@ -145,8 +145,11 @@ color:#999;
 padding:12px 2px 0}
 .week-calendar{overflow-x:auto}
 .week-grid{display:grid;
-grid-template-columns:repeat(7,minmax(115px,1fr));
-min-width:805px}
+grid-template-columns:68px repeat(7,minmax(115px,1fr));
+min-width:873px}
+.week-time-rail{min-width:0;background:#fcfbf8}
+.week-time-rail .week-day-head{align-items:center;justify-content:center}
+.week-time-cell{height:68px;display:flex;justify-content:center;align-items:flex-start;padding-top:9px;border-bottom:1px solid #f0f0f0;border-right:1px solid #e9e6df;color:#77736b;font-size:9px;font-weight:600;font-variant-numeric:tabular-nums}
 .week-day{border-right:1px solid #f0f0f0}
 .week-day:last-child{border-right:0}
 .week-day-head{height:54px;
