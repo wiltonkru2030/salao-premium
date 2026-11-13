@@ -113,7 +113,7 @@ export async function loadQuotesPage() {
           const sum=totals(),notes=host.querySelector("#quote-notes").value.trim(),validUntil=host.querySelector("#quote-valid-until").value||null;
           const {data:quote,error}=await supabase.from("quotes").insert({org_id:orgId,branch_id:state.branch?.id||null,customer_id:selectedCustomer.id,status:"pending",subtotal:sum.subtotal,discount_total:sum.discount,total:sum.total,valid_until:validUntil,notes,created_by:state.user?.id}).select("*").single();
           if(error)throw error;
-          const rows=items.map((item,index)=>({org_id:orgId,quote_id:quote.id,service_id:item.serviceId,professional_id:item.professionalId,description:item.name,quantity:item.quantity,duration_minutes:item.duration,unit_price:item.price,discount_amount:item.discount,total:item.quantity*item.price-item.discount,sort_order:index}));
+          const rows=items.map((item,index)=>({org_id:orgId,quote_id:quote.id,service_id:item.serviceId,professional_id:item.professionalId,description:item.name,quantity:item.quantity,duration_minutes:item.duration,unit_price:item.price,discount_amount:item.discount,discount_mode:item.discountMode,total:item.quantity*item.price-item.discount,sort_order:index}));
           const {error:itemError}=await supabase.from("quote_items").insert(rows);
           if(itemError){await supabase.from("quotes").delete().eq("org_id",orgId).eq("id",quote.id);throw itemError;}
           toast("Orçamento #"+quote.quote_number+" gerado e marcado como Em análise.");
@@ -131,7 +131,7 @@ export async function loadQuotesPage() {
         if(discountInput>0&&!discountRules.has(service.id)){toast("Este serviço não permite desconto nas regras do salão.");return;}
         if(discountInput<0||percent>maxDiscount||discountInput>base){toast("O desconto ultrapassa o limite configurado.");return;}
         const professional=professionals.find(p=>p.id===host.querySelector("#quote-professional").value);
-        items.push({serviceId:service.id,name:service.name,quantity,price:Number(service.price),duration:Number(service.duration_minutes),professionalId:professional?.id||null,professionalName:professional?.name||"",discount:Number((discountMode==="fixed"?discountInput:base*percent/100).toFixed(2))});
+        items.push({serviceId:service.id,name:service.name,quantity,price:Number(service.price),duration:Number(service.duration_minutes),professionalId:professional?.id||null,professionalName:professional?.name||"",discount:Number((discountMode==="fixed"?discountInput:base*percent/100).toFixed(2)),discountMode});
         renderBuilder();return;
       }
       const remove=e.target.closest("[data-remove-quote-item]");
