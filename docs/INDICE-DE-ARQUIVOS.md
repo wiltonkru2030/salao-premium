@@ -113,6 +113,19 @@ Use este índice para localizar a responsabilidade de cada arquivo. Arquivos de 
 | `src/modules/quotes/components/quote-components.js` | Apresentação isolada do construtor e lista de orçamentos. |
 | `src/utils/errors.test.js` | Testes de tradução e sanitização de erros. |
 
+## Módulos e tipos
+
+| Arquivo | O que é / o que faz |
+|---|---|
+| `src/modules/README.md` | Arquitetura-alvo dos módulos e fronteiras de responsabilidade. |
+| `src/modules/quotes/components/quote-components.js` | Componentes puros do construtor e da lista de orçamentos. |
+| `src/types/tenant.types.d.ts` | Tipos do tenant, membership e filial. |
+| `src/types/operations.types.d.ts` | Tipos de Agenda, Comanda, pagamento, Caixa e Orçamento. |
+| `src/utils/errors.test.js` | Regressões de mensagens pt-BR e sanitização. |
+| `src/modules/quotes/quote-components.test.js` | Regressões dos componentes de orçamento. |
+| `docs/SAAS-MULTITENANT.md` | Contrato de isolamento e auditoria multitenant. |
+| `docs/ORCAMENTOS.md` | Fluxo, validações e RPCs atômicas dos Orçamentos. |
+
 ## App Profissional
 
 | Arquivo | O que é / o que faz |
