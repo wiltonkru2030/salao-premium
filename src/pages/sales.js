@@ -1,3 +1,4 @@
+/** Módulo Vendas: apresenta registros comerciais vinculados à organização ativa. */
 import { cardList } from './records.js';
 
 // Página Vendas: mantém sua rota isolada e reutiliza somente o componente de listagem.
