@@ -101,6 +101,14 @@ Use este índice para localizar a responsabilidade de cada arquivo. Arquivos de 
 | `src/styles/responsive.css` | Ajustes responsivos. |
 | `src/styles/components.css` | Componentes visuais compartilhados. |
 | `src/styles/design-system.css` | Agregador final das camadas CSS globais. |
+| `src/styles/README.md` | Contrato e ordem das folhas de estilo. |
+| `src/styles/components.css` | Agregador de componentes legados. |
+| `src/styles/components-base.css` | Componentes globais base. |
+| `src/styles/components-team.css` | Cartões e componentes de equipe/cadastro. |
+| `src/styles/components-charts.css` | Ajustes dos gráficos. |
+| `src/styles/shell.css` | Agregador do shell administrativo. |
+| `src/styles/shell-base.css` | Estrutura principal do shell. |
+| `src/styles/shell-collapse.css` | Menu recolhível e modo compacto. |
 | `src/styles/design-layout.css` | Tokens, reset e base visual. |
 | `src/styles/design-navigation.css` | Navegação e shell. |
 | `src/styles/design-components.css` | Botões, campos, formulários, cartões e listas. |
