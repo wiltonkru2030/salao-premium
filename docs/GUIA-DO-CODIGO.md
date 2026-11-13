@@ -41,6 +41,9 @@
 ## Padrão de arquivo
 Todo arquivo deve declarar responsabilidade, entradas/saídas, dependências, efeitos colaterais e permissões. Funções de domínio devem documentar tabelas/RPCs, tenant e filial, validações e atomicidade. Componentes não consultam banco. Repositórios não montam HTML. Scripts de manutenção não são importados pela aplicação.
 
+## Auditoria automática
+Execute `npm run audit:structure` para localizar arquivos sem cabeçalho descritivo, arquivos acima de 300 linhas e linhas acima de 400 caracteres. O script apenas informa; não altera código nem falha silenciosamente.
+
 ## Critério para arquivos pequenos
 Dividir arquivos acima de aproximadamente 300 linhas quando houver fronteiras reais (página, componente, serviço, repositório, tipos ou testes). Não fragmentar funções triviais em dezenas de arquivos. Cada módulo deve ter README com tabelas, RPCs, papéis e riscos.
 
