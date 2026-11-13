@@ -8,7 +8,7 @@ import { userErrorMessage } from "./errors.js";
 const cases = [
   [{ code: "23505", message: "duplicate key value violates unique constraint" }, "Este registro já existe. Confira os dados informados."],
   [{ code: "23503" }, "Não foi possível concluir porque este registro está vinculado a outros dados."],
-  [{ code: "42501" }, "Você não tem permissão para realizar esta operação."],
+  [{ code: "42501" }, "Sua sessão pode ter expirado ou você não tem permissão para realizar esta operação."],
   [{ code: "PGRST116" }, "O registro não foi encontrado ou não está disponível."],
   [{ code: "23514" }, "Os dados informados não atendem às regras deste cadastro."],
   [{ message: "Invalid login credentials" }, "E-mail ou senha incorretos."],
