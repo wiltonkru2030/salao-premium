@@ -79,7 +79,7 @@ export async function loadCommissionsPage(){
    </form>
    <div class="commission-rule-list">${serviceRules.map(rule=>{
     const pro=professionalMap.get(rule.professional_id),service=serviceMap.get(rule.service_id);
-    return '<div class="commission-rule-row"><span><b>'+esc(pro?.name||'Profissional')+'</b><small>'+esc(service?.name||'Serviço removido')+'</small></span><strong>'+Number(rule.rate).toLocaleString('pt-BR',{maximumFractionDigits:2})+'%</strong><button class="btn secondary" type="button" data-delete-commission-rule="'+rule.id+'">Excluir</button></div>';
+    return '<form class="commission-rule-row" data-update-commission-rule="'+rule.id+'"><label>Profissional<select class="field" name="professional_id" required>'+professionals.filter(p=>p.active).map(p=>'<option value="'+p.id+'" '+(p.id===rule.professional_id?'selected':'')+'>'+esc(p.name)+'</option>').join('')+'</select></label><label>Serviço<select class="field" name="service_id" required>'+services.map(s=>'<option value="'+s.id+'" '+(s.id===rule.service_id?'selected':'')+'>'+esc(s.name)+'</option>').join('')+'</select></label><label>Comissão (%)<input class="field" name="rate" type="number" min="0" max="100" step="0.01" value="'+Number(rule.rate).toFixed(2)+'" required></label><button class="btn secondary" type="submit">Salvar</button><button class="btn secondary" type="button" data-delete-commission-rule="'+rule.id+'">Excluir</button></form>';
    }).join('')||'<p class="empty-state">Nenhuma regra específica cadastrada. O sistema usará a comissão padrão do profissional.</p>'}</div>
   </section>`:'';
   const productSettingsCard=canManageCommissionSettings()?`<section class="settings-card"><div class="section-title"><div><h3>Comissão de produtos</h3><small class="muted">Aplica-se aos produtos vinculados a um profissional na Comanda</small></div></div><form id="product-commission-settings"><label class="setting-row"><span><b>Ativar comissão sobre produtos</b><small>Produtos sem profissional vinculado não geram comissão</small></span><input type="checkbox" name="enabled" ${productCommissionEnabled?'checked':''}></label><label>Percentual de comissão (%)<input class="field" name="rate" type="number" min="0" max="100" step="0.01" value="${productCommissionRate.toFixed(2)}" required></label><button class="btn primary" type="submit">Salvar configuração</button></form></section>`:'';
@@ -109,6 +109,19 @@ export async function loadCommissionsPage(){
     event.preventDefault();
     if(!canManageCommissionSettings()){toast("Somente proprietário ou administrador pode alterar regras de comissão.");return;}
     const button=form.querySelector('[type="submit"]');
+    if(form.matches("[data-update-commission-rule]")){
+     const values=new FormData(form),professionalId=String(values.get("professional_id")||""),serviceId=String(values.get("service_id")||""),rate=Number(values.get("rate")),ruleId=form.dataset.updateCommissionRule;
+     if(!professionalId||!serviceId||!Number.isFinite(rate)||rate<0||rate>100){toast("Confira profissional, serviço e percentual.");return;}
+     if(serviceRules.some(rule=>rule.id!==ruleId&&rule.professional_id===professionalId&&rule.service_id===serviceId)){toast("Já existe outra regra para este profissional e serviço.");return;}
+     button.disabled=true;button.textContent="Salvando…";
+     try{
+      const {error}=await supabase.from("commission_rules").update({professional_id:professionalId,service_id:serviceId,rate}).eq("org_id",orgId).eq("id",ruleId);
+      if(error)throw error;
+      toast("Regra atualizada.");await loadCommissionsPage();
+     }catch(error){reportError(error,{context:"Comissões > editar regra por serviço"});}
+     finally{if(button.isConnected){button.disabled=false;button.textContent="Salvar";}}
+     return;
+    }
     if(form.matches("#service-commission-rule-form")){
      const values=new FormData(form),professionalId=String(values.get("professional_id")||""),serviceId=String(values.get("service_id")||""),rate=Number(values.get("rate"));
      if(!professionalId||!serviceId||!Number.isFinite(rate)||rate<0||rate>100){toast("Selecione o profissional, o serviço e informe um percentual entre 0 e 100.");return;}
