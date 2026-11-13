@@ -5,7 +5,7 @@ O SALÃO PREMIUM é um SaaS multitenant. Uma conta pode ter associação a uma o
 
 ## Camadas
 - **Interface:** páginas e componentes JavaScript, design system CSS e App Profissional.
-- **Orquestração:** `src/app.js`, estado e roteamento.
+- **Orquestração:** `src/app.js` é apenas bootstrap e ciclo do tenant; `src/layout/` roteia; `src/agenda/controllers/` concentra eventos e casos de uso da Agenda.
 - **Domínio:** serviços/repositórios por módulo.
 - **Persistência:** Supabase Auth, Postgres, RLS, triggers e RPCs transacionais.
 - **Contratos:** tipos JSDoc e declarações TypeScript em `src/types/`.
