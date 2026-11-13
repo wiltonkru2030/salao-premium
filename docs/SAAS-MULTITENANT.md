@@ -40,6 +40,9 @@ Quando a conta possui mais de uma associação ativa, o login exige que a pessoa
 ## Correção aplicada nesta auditoria
 As RPCs de liberação e revogação do App Profissional agora recebem `p_org_id`, validam o papel owner/admin nessa organização e só alteram o vínculo dentro do mesmo tenant. As assinaturas antigas que escolhiam automaticamente a primeira organização tiveram EXECUTE revogado para `authenticated`, `anon` e `public`.
 
+## Integridade de migrations
+O histórico remoto tem 58 versões e o repositório 31 arquivos SQL; 33 versões antigas não têm arquivo local correspondente. Essa divergência deve ser reconciliada com os arquivos originais antes de qualquer operação de migração em lote. Consulte `docs/MIGRATIONS.md`.
+
 ## Pontos de segurança ainda abertos
 - O advisor do Supabase sinaliza 11 funções `SECURITY DEFINER` executáveis por usuários autenticados. As funções críticas foram criadas para operações controladas e não devem ser revogadas em lote. Cada função deve ser revisada quanto a validação de tenant/papel e necessidade de exposição.
 - A proteção de senha comprometida do Supabase Auth está desativada; habilitar em Authentication → Settings → Password Security.
