@@ -1,3 +1,4 @@
+/** Serviços de persistência compartilhados; consultas devem validar e filtrar o tenant ativo. */
 import { supabase } from './client.js';
 
 /** Camada genérica de persistência com allowlist de tabelas e filtro por organização. */
