@@ -52,7 +52,6 @@ export function renderQuoteBuilder({ items, selectedCustomer, services, professi
       </form>
       <small class="muted">Serviços não autorizados não recebem desconto. Limite 0% significa que nenhum desconto pode ser aplicado.</small>
     </section>`;
-  `;
 }
 
 
