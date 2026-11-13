@@ -1,0 +1,35 @@
+/* Menu desktop recolhível: modo compacto com ícones */
+@media(min-width:701px){.sidebar{width:252px;
+transition:width .22s ease}
+.main-area{margin-left:252px;
+transition:margin-left .22s ease}
+.sidebar.collapsed{width:76px;
+padding-left:10px;
+padding-right:10px}
+.main-area.sidebar-collapsed{margin-left:76px}
+.sidebar.collapsed .brand{justify-content:center;
+padding-left:0;
+padding-right:0}
+.sidebar.collapsed .brand-copy,.sidebar.collapsed .sidebar-footer>span:last-child,.sidebar.collapsed .nav-group-label{display:none}
+.sidebar.collapsed .brand-logo{width:35px}
+.sidebar.collapsed .sidebar-collapse{position:absolute;
+right:-13px;
+top:28px;
+width:26px;
+height:26px;
+border-radius:50%;
+background:#fff;
+box-shadow:0 1px 5px #0001;
+z-index:2}
+.sidebar.collapsed .nav-item{justify-content:center;
+padding:10px 0;
+gap:0}
+.sidebar.collapsed .nav-item span{display:none}
+.sidebar.collapsed .nav-item img{width:20px;
+height:20px}
+.sidebar.collapsed .sidebar-footer{justify-content:center;
+padding-left:0;
+padding-right:0}
+}
+.sidebar-collapse{display:inline-grid;
+flex-shrink:0}
