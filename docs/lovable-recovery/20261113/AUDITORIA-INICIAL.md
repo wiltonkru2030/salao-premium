@@ -17,7 +17,7 @@ O primeiro commit também contém 13 assets SVG binários, cujos bytes não fora
 
 ### Achados importantes
 
-1. **Duas árvores com responsabilidades diferentes:** `public/salao/` contém a aplicação estática JavaScript entregue ao navegador; `salao-premium/` contém documentação, scripts, migrations, Edge Functions e CI. O script `salo-premium/scripts/assemble-repo.sh` (caminho real: `salao-premium/scripts/assemble-repo.sh`) tenta juntar ambas.
+1. **Duas árvores com responsabilidades diferentes:** `public/salao/` contém a aplicação estática JavaScript entregue ao navegador; `salao-premium/` contém documentação, scripts, migrations, Edge Functions e CI. O script `salao-premium/scripts/assemble-repo.sh` tenta juntar ambas.
 2. **Redirecionamento da home:** `src/routes/index.tsx` troca a página placeholder por redirecionamento para `/salao/index.html`. Isso confirma que a aplicação foi montada para ser servida em `/salao/`, não como substituição direta da raiz.
 3. **Risco no script de montagem:** `salao-premium/scripts/assemble-repo.sh` executa `rm -rf "$OUT"` com um destino fornecido pelo operador. Não deve ser executado com caminhos arbitrários; uma versão segura deve validar diretório temporário dedicado, impedir raiz/home/repositório e nunca apagar destino existente.
 4. **Risco de migrations:** o patch de 64 alterações inclui migrations históricas, migrations arquivadas e versões corrigidas. Não aplicar o patch em lote nem copiar os arquivos para a pasta ativa sem comparar com `supabase_migrations.schema_migrations` e o estado real do banco.
