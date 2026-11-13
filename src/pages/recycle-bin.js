@@ -53,22 +53,15 @@ function renderDetailsModal(group,profiles){
 function renderPage(host,groups,events,profiles){
  const deletedCount=groups.reduce((sum,g)=>sum+g.entries.length,0);
  host.innerHTML=`
- <section class="settings-card recycle-summary">
-  <div><span class="eyebrow">LIXEIRA</span><h2>${deletedCount} registro(s) disponíveis</h2><p>Os snapshots ficam disponíveis por 30 dias após a exclusão.</p></div>
- </section>
- <div class="section-title"><h2>Itens excluídos</h2><span class="result-count">${groups.length} operação(ões)</span></div>
- <div class="record-list">
+ <section class="settings-card recycle-summary"><div><span class="eyebrow">LIXEIRA</span><h2>${deletedCount} registro(s) disponíveis</h2><p>Os snapshots ficam disponíveis por 30 dias após a exclusão.</p></div></section><div class="section-title"><h2>Itens excluídos</h2><span class="result-count">${groups.length} operação(ões)</span></div><div class="record-list">
  ${groups.map(group=>{
   const first=group.entries[0];
   const names=group.entries.map(e=>e.entity_table).filter((v,i,a)=>a.indexOf(v)===i).join(", ");
   return '<button class="record-card" data-recycle-open="'+group.id+'"><span class="record-main"><b>'+esc(group.entries.length+' registro(s) · '+names)+'</b><small>'+esc(first.description)+'</small><small>Excluído por '+esc(actorName(first.deleted_by,profiles))+' · '+dateTime(first.deleted_at)+'</small></span><span class="record-trailing"><small>Expira em</small><b>'+new Date(first.expires_at).toLocaleDateString("pt-BR")+'</b></span><span class="record-chevron">›</span></button>';
  }).join("")||'<div class="empty-state">A lixeira está vazia.</div>'}
- </div>
- <div class="section-title section-title--spaced"><h2>Histórico de operações</h2><span class="result-count">Últimas 100 ações</span></div>
- <div class="record-list">
+ </div><div class="section-title section-title--spaced"><h2>Histórico de operações</h2><span class="result-count">Últimas 100 ações</span></div><div class="record-list">
  ${events.map(event=>'<article class="record-card"><span class="record-main"><b>'+esc(actionLabel[event.action]||event.action)+' · '+esc(event.table_name)+'</b><small>'+esc(event.description)+'</small><small>'+esc(actorName(event.actor_id,profiles))+' · '+dateTime(event.occurred_at)+'</small></span><span class="record-trailing"><small>'+esc(event.actor_role||"Sistema")+'</small><small>'+esc(event.record_id||"—")+'</small></span></article>').join("")||'<div class="empty-state">Nenhuma operação registrada.</div>'}
- </div>
- <div id="recycle-modal-root"></div>`;
+ </div><div id="recycle-modal-root"></div>`;
  if(selectedGroup){
   const group=groups.find(g=>g.id===selectedGroup);
   if(group)host.querySelector("#recycle-modal-root").innerHTML=renderDetailsModal(group,profiles);
