@@ -45,4 +45,4 @@ O PDF é gerado pelo diálogo de impressão do navegador; não existe geração 
 - `20261113011612_save_quote_discount_settings_atomically`
 
 ## Testes
-`npm run test:quotes` valida renderização dos componentes. Build e testes automatizados não substituem o teste integrado com duas organizações e agendamentos reais controlados.
+`npm run test:quotes` valida renderização dos componentes; `npm run test:tenant` valida a seleção explícita de organização. Build e testes automatizados não substituem o teste integrado com duas organizações e agendamentos reais controlados.
