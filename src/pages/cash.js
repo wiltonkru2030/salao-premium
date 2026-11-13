@@ -8,6 +8,7 @@ import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
 import { reportError } from "../utils/errors.js";
 import { renderCashDashboard } from "../modules/cash/components/cash-dashboard.js";
+import { openCashRegister, closeCashRegister } from "../modules/cash/services/cash-operations.js";
 
 /** @typedef {import("../types/tenant.types").TenantContext} TenantContext */
 /** @typedef {import("../types/operations.types").CashRegisterRecord} CashRegisterRecord */
@@ -89,15 +90,11 @@ export async function loadCashPage(){
     try{
      const values=new FormData(form);
      if(form.matches("#cash-open-form")){
-      const opening=Number(values.get("opening_amount"));
-      if(!Number.isFinite(opening)||opening<0)throw new Error("Informe um valor inicial válido.");
-      const {data,error}=await supabase.rpc("open_cash_register",{p_org_id:orgId,p_opening_amount:opening});
+      const {data,error}=await openCashRegister({supabase,orgId,openingAmount:values.get("opening_amount")});
       if(error)throw error;
       toast("Caixa aberto e registrado.");
      }else{
-      const closing=Number(values.get("closing_amount"));
-      if(!Number.isFinite(closing)||closing<0)throw new Error("Informe o valor contado.");
-      const {data,error}=await supabase.rpc("close_cash_register",{p_cash_register_id:active?.id,p_closing_amount:closing});
+      const {data,error}=await closeCashRegister({supabase,cashRegisterId:active?.id,closingAmount:values.get("closing_amount")});
       if(error)throw error;
       toast("Caixa fechado. Diferença: "+money(data?.difference||0)+".");
      }
