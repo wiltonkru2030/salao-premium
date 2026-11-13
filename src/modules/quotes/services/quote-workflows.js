@@ -29,25 +29,46 @@ export async function printQuoteDocument({quote,orgId,supabase,state,esc,money,s
     responseUrl="https://vlifbvzlyzoncefvfgol.supabase.co/functions/v1/respond-to-quote?token="+token;
   }
   w.document.write('<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Orçamento #'+quote.quote_number+
+
 '</title><style>body{font:15px Arial,sans-serif;color:#202020;max-width:800px;margin:40px auto;padding:24px}header{border-bottom:2px solid #b69a62;padding-bottom:18px;margin-bottom:24px}h1{font-size:28px}small{color:#666}.row{display:flex;justify-content:space-between;padding:13px 0;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bold;color:#8b7041;margin-top:20px;text-align:right}.foot{margin-top:40px;color:#666;font-size:12px}@media print{button{display:none}}</style><header><h1>'+esc(branch?.name||org.name)+
+
 '</h1><p>'+esc(addressText||"Endereço não cadastrado")+
+
 '</p><p>CPF/CNPJ: '+esc(doc)+
+
 ' · '+esc(branch?.phone||org.phone||"")+
+
 '</p></header><h2>Orçamento #'+quote.quote_number+
+
 '</h2><p>Cliente: '+esc(quote.customer?.name||"")+
+
 ' · WhatsApp: '+esc(quote.customer?.phone||"")+
+
 '</p>'+quote.items.map(i=>'<div class="row"><span><b>'+esc(i.description)+
+
 '</b><br><small>'+Number(i.quantity)+
+
 ' × '+money(i.unit_price)+
+
 ' · '+esc(pros.get(i.professional_id)||"Profissional a definir")+
+
 '</small></span><b>'+money(i.total)+
+
 '</b></div>').join("")+
+
 '<div class="row"><span>Subtotal</span><b>'+money(quote.subtotal)+
+
 '</b></div><div class="row"><span>Descontos</span><b>− '+money(quote.discount_total)+
+
 '</b></div><div class="total">Valor final: '+money(quote.total)+
+
 '</div><p>Para aceitar ou recusar esta proposta, acesse: <a href="'+responseUrl+
-'">Responder ao orçamento</a></p><p>Proposta: '+esc(statusName(quote.status))+(quote.valid_until?' · Válida até '+new Date(quote.valid_until+
+
+'">Responder ao orçamento</a></p><p>Proposta: '+esc(statusName(quote.status))+
+(quote.valid_until?' · Válida até '+new Date(quote.valid_until+
+
 "T12:00:00").toLocaleDateString("pt-BR"):"")+
+
 '</p><footer class="foot">Orçamento gerado pelo SALÃO PREMIUM. Esta proposta não representa pagamento ou agendamento confirmado.</footer><script>window.onload=()=>window.print()<\/script></html>');
   w.document.close();
 }
@@ -62,23 +83,42 @@ export async function openQuoteSchedule({quote,orgId,supabase,host,esc,toast,rep
   if(itemsResult.error)throw itemsResult.error;if(proResult.error)throw proResult.error;if(assignmentResult.error)throw assignmentResult.error;
   const rows=itemsResult.data||[],pros=proResult.data||[],assignments=assignmentResult.data||[];
   host.innerHTML='<section class="settings-card"><div class="section-title"><div><h2>Agendar orçamento #'+quote.quote_number+
+
 '</h2><small class="muted">Defina um horário independente para cada serviço.</small></div></div><form id="quote-schedule-form">'+rows.map((item,index)=>'<div class="quote-schedule-item"><h3>'+esc(item.description)+
+
 '</h3><div class="form-grid"><label>Profissional<select class="field" name="professional_'+index+
+
 '" required><option value="">Selecione</option>'+pros.filter(p=>assignments.some(link=>link.service_id===item.service_id&&link.professional_id===p.id)).map(p=>'<option value="'+p.id+
-'" '+(p.id===item.professional_id?'selected':'')+
+
+'" '+
+(p.id===item.professional_id?'selected':'')+
+
 '>'+esc(p.name)+
+
 '</option>').join("")+
+
 '</select></label><label>Data<input class="field" type="date" name="date_'+index+
+
 '" required></label><label>Horário<input class="field" type="time" name="time_'+index+
+
 '" required></label></div><input type="hidden" name="item_'+index+
+
 '" value="'+item.id+
+
 '"><input type="hidden" name="service_'+index+
+
 '" value="'+item.service_id+
+
 '"><input type="hidden" name="duration_'+index+
+
 '" value="'+item.duration_minutes+
+
 '"><input type="hidden" name="price_'+index+
+
 '" value="'+item.total+
+
 '"></div>').join("")+
+
 '<button class="btn primary" type="submit">Confirmar todos os horários</button><button class="btn secondary" type="button" id="quote-schedule-back">Voltar</button></form></section>';
   host.querySelector("#quote-schedule-back").addEventListener("click",()=>openQuote(quote.id,orgId));
   host.querySelector("#quote-schedule-form").addEventListener("submit",async event=>{
@@ -89,7 +129,9 @@ export async function openQuoteSchedule({quote,orgId,supabase,host,esc,toast,rep
         const professionalId=String(values.get("professional_"+index)||""),date=String(values.get("date_"+index)||""),time=String(values.get("time_"+index)||"");
         const duration=Number(item.duration_minutes)*Number(item.quantity||1);
         const start=new Date(date+
+
 "T"+time+
+
 ":00"),end=new Date(start.getTime()+duration*60000);
         if(!professionalId||!date||!time||Number.isNaN(start.getTime()))throw new Error("Preencha profissional, data e horário de todos os serviços.");
         return {item,professionalId,start,end};
@@ -102,6 +144,7 @@ export async function openQuoteSchedule({quote,orgId,supabase,host,esc,toast,rep
       const {data:group,error}=await supabase.rpc("create_quote_appointment_group",{p_quote_id:quote.id,p_items:payload});
       if(error)throw error;
       toast("Agendamento agrupado criado com "+Number(group?.count||prepared.length)+
+
 " serviço(s).");
       await loadQuotesPage();
     }catch(error){reportError(error,{context:"Orçamentos > agendar horários"});button.disabled=false;button.textContent="Confirmar todos os horários";}
