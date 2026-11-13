@@ -13,3 +13,13 @@ A função exige autenticação e papel `owner`, `admin`, `manager` ou `finance`
 - Despesa sem filial: usa caixa central.
 - Despesa já paga/cancelada: operação recusada, sem duplicar saída.
 - `p_use_cash=false`: registra pagamento sem movimento de caixa, conforme opção explícita do fluxo.
+
+## Aplicação e verificação realizadas
+
+- Migration aplicada no Supabase: versão `20261113121938`, nome `fix_expense_payment_branch_cash_register`.
+- A versão foi conferida em `supabase_migrations.schema_migrations`.
+- A definição instalada foi relida com `pg_get_functiondef` e confirma o filtro por organização, filial correspondente ou caixa central, com preferência à filial.
+- Privilégios conferidos no catálogo: `anon` não executa a RPC; `authenticated` pode executá-la e a função valida papel e organização antes de alterar dados.
+- Teste SQL isolado da regra de seleção: 4 cenários passaram (filial priorizada, fallback central, ausência de caixa elegível e despesa sem filial). Esse teste valida a regra de seleção, não substitui um teste transacional ponta a ponta com usuários e registros reais.
+- CI GitHub no commit anterior à correção do nome do arquivo: workflow `Agenda tests` aprovado e workflow `App validation` aprovado. O App validation executou verificação de sintaxe, build/imports, auditoria estrutural e testes de utilitários, erros PT-BR, orçamentos, comanda, caixa, tenant e agenda.
+- Após alinhar o nome do arquivo ao timestamp efetivamente registrado no banco, não há confirmação de uma nova execução de CI no HEAD mais recente.
