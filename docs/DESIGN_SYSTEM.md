@@ -30,6 +30,6 @@ Componentes globais: `.btn`, `.field`, `.settings-card`, `.setting-row`, `.recor
 
 ## Estado atual
 
-A camada global foi consolidada e ampliada para padronizar cartões, campos, botões, listas, formulários, estados, Caixa e Comanda; o import global permanece por último para prevalecer sobre estilos antigos. Os estilos de calendário continuam específicos porque representam uma grade funcional, não uma identidade visual separada.
+A camada global foi consolidada e ampliada para padronizar cartões, campos, botões, listas, formulários, estados, Caixa e Comanda; o import global permanece por último no painel para prevalecer sobre estilos antigos. O App Profissional também importa os mesmos tokens globais em `professional/styles.css`, mantendo apenas a composição mobile própria. Os estilos de calendário continuam específicos porque representam uma grade funcional, não uma identidade visual separada.
 
 **O que ainda não é correto afirmar:** que todas as telas foram inspecionadas visualmente em navegador real. A validação automatizada verifica sintaxe, imports, build e regressões; a conferência final de aparência em desktop e celular ainda requer abrir a aplicação e percorrer as telas reais.
