@@ -5,6 +5,9 @@ import { head, esc, toast } from "../utils.js";
 import { reportError } from "../utils/errors.js";
 import { renderQuoteBuilder, renderQuoteList } from "../modules/quotes/components/quote-components.js";
 
+/** @typedef {import("../types/tenant.types").TenantContext} TenantContext */
+/** @typedef {import("../types/operations.types").QuoteRecord} QuoteRecord */
+
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const statusName = value => ({draft:"Rascunho",pending:"Em análise",accepted:"Aceito",rejected:"Recusado",expired:"Expirado",cancelled:"Cancelado"})[value] || value;
 let customers = [], services = [], professionals = [], items = [], selectedCustomer = null, discountRules = new Set(), maxDiscount = 0, allowFixedDiscount = true, activeQuote = null;
@@ -36,6 +39,10 @@ export function quotesPage() {
   return head("Orçamentos","Crie propostas, apresente valores e acompanhe a decisão dos clientes.")+
     '<div id="quotes-manager"><div class="empty-state">Carregando orçamentos…</div></div>';
 }
+/**
+ * Carrega clientes, serviços, profissionais, regras e orçamentos do tenant ativo.
+ * @returns {Promise<void>} Atualiza a interface sem misturar dados de organizações.
+ */
 export async function loadQuotesPage() {
   const host=document.querySelector("#quotes-manager");
   if(!host||!state.organization?.id)return;
