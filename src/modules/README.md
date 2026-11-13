@@ -20,7 +20,7 @@ src/modules/<modulo>/
 
 ## Regras de fronteira
 
-- A página não executa SQL diretamente: chama um serviço/repositório.
+- A página não executa SQL diretamente: chama um serviço/repositório. O seletor de organização só entrega contexto depois de validar o membership ativo.
 - Componentes recebem dados e callbacks; não conhecem o cliente Supabase.
 - Repositórios recebem um contexto de tenant validado e aplicam `org_id` e, quando necessário, `branch_id`.
 - RLS e RPCs validam o tenant no banco. O filtro do navegador é defesa adicional, nunca autorização.
