@@ -1,3 +1,4 @@
+/* Entrada de estilos do painel administrativo: carrega estrutura, componentes e design system global por último. */
 @import url('./src/styles/base.css');
 @import url('./src/styles/shell.css');
 @import url('./src/styles/agenda.css');
