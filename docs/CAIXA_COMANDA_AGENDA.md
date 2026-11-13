@@ -12,7 +12,7 @@ A Agenda administrativa consulta os registros persistidos em `appointments` e os
 
 ## Comanda
 
-A Comanda é o registro operacional do atendimento.
+A Comanda é o registro operacional do atendimento. A camada de operações fica em `src/modules/comanda/services/comanda-operations.js`, separada da apresentação e do controlador de tela.
 
 - Itens de serviço e produto guardam profissional responsável, quantidade, preço, desconto e total.
 - É permitido adicionar itens enquanto a Comanda estiver aberta.
@@ -32,7 +32,7 @@ A Comanda é o registro operacional do atendimento.
 
 ## Caixa
 
-- Abertura e fechamento são feitos por RPCs transacionais.
+- Abertura e fechamento são feitos por RPCs transacionais, encapsulados em `src/modules/cash/services/cash-operations.js`.
 - O fechamento bloqueia a linha do caixa e calcula o saldo esperado no banco, impedindo concorrência com recebimentos e pagamentos.
 - Entradas incluem cada pagamento da Comanda.
 - Saídas incluem pagamento de comissão e estornos.
