@@ -1,6 +1,93 @@
-import { cardList } from './records.js';
+/** Caixa operacional: abertura, fechamento e histórico real de movimentos. */
+import { supabase } from "../supabase/client.js";
+import { state } from "../state.js";
+import { head, esc, toast } from "../utils.js";
+import { reportError } from "../utils/errors.js";
 
-// Página Caixa: mantém sua rota isolada e reutiliza somente o componente de listagem.
-export function cashPage() {
-  return cardList('Caixa');
+const money=value=>Number(value||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const dateTime=value=>value?new Date(value).toLocaleString("pt-BR"):"—";
+const canOperate=()=>["owner","admin","manager","receptionist","finance"].includes(state.membership?.role);
+let bound=false;
+
+export function cashPage(){
+ return head("Caixa","Abertura, conferência e histórico dos recebimentos e saídas.")+
+  '<div id="cash-manager"><div class="empty-state">Carregando movimentações do caixa…</div></div>';
+}
+
+export async function loadCashPage(){
+ const host=document.querySelector("#cash-manager");
+ if(!host||!state.organization?.id)return;
+ try{
+  const orgId=state.organization.id;
+  const today=new Date();today.setHours(0,0,0,0);
+  const tomorrow=new Date(today);tomorrow.setDate(tomorrow.getDate()+1);
+  const [registerResult,movementResult]=await Promise.all([
+   supabase.from("cash_registers").select("id,opening_amount,closing_amount,expected_amount,status,opened_at,closed_at,notes").eq("org_id",orgId).order("opened_at",{ascending:false}).limit(20),
+   supabase.from("cash_movements").select("id,cash_register_id,movement_type,category,description,amount,payment_method,created_at,sale_id").eq("org_id",orgId).order("created_at",{ascending:false}).limit(300)
+  ]);
+  if(registerResult.error)throw registerResult.error;
+  if(movementResult.error)throw movementResult.error;
+  const registers=registerResult.data||[],movements=movementResult.data||[];
+  const active=registers.find(r=>r.status==="open")||null;
+  const todayMoves=movements.filter(m=>new Date(m.created_at)>=today&&new Date(m.created_at)<tomorrow);
+  const sum=(rows,type)=>rows.filter(m=>m.movement_type===type).reduce((total,m)=>total+Number(m.amount||0),0);
+  const income=sum(todayMoves,"income"),expense=sum(todayMoves,"expense"),net=income-expense;
+  const activeNet=active?movements.filter(m=>m.cash_register_id===active.id).reduce((s,m)=>s+(m.movement_type==="income"?1:m.movement_type==="expense"?-1:0)*Number(m.amount||0),0):0;
+  const history=movements.map(m=>'<article class="record-card"><span class="record-main"><b>'+esc(m.description)+'</b><small>'+dateTime(m.created_at)+' · '+esc(m.payment_method||m.category||"Movimento")+'</small></span><span class="record-trailing"><b>'+((m.movement_type==="expense"?"−":"+")+money(m.amount))+'</b><small>'+esc(m.movement_type==="income"?"Entrada":m.movement_type==="expense"?"Saída":m.movement_type)+'</small></span></article>').join("");
+  host.innerHTML=
+   '<section class="settings-card"><div class="section-title"><div><h3>Caixa atual</h3><small class="muted">'+(active?"Aberto desde "+dateTime(active.opened_at):"Nenhum caixa aberto")+'</small></div><b class="status">'+(active?"Aberto":"Fechado")+'</b></div>'+
+   (active?'<div class="setting-row"><span>Valor de abertura</span><b>'+money(active.opening_amount)+'</b></div><div class="setting-row"><span>Movimentação líquida do caixa</span><b>'+money(activeNet)+'</b></div><div class="setting-row"><span>Saldo esperado</span><b>'+money(Number(active.opening_amount||0)+activeNet)+'</b></div>'+
+    (canOperate()?'<form id="cash-close-form" class="form-grid"><label>Valor contado no fechamento (R$)<input class="field" name="closing_amount" type="number" min="0" step="0.01" required></label><button class="btn primary" type="submit">Conferir e fechar caixa</button></form>':"") :
+    (canOperate()?'<form id="cash-open-form" class="form-grid"><label>Valor inicial (R$)<input class="field" name="opening_amount" type="number" min="0" step="0.01" value="0" required></label><button class="btn primary" type="submit">Abrir caixa</button></form>':'<p class="demo-note">Seu perfil não pode abrir ou fechar o caixa.</p>'))+
+   '</section>'+
+   '<section class="settings-card"><h3>Resumo de hoje</h3><div class="commission-summary"><div><small class="eyebrow">ENTRADAS</small><h2>'+money(income)+'</h2></div><div><small class="eyebrow">SAÍDAS</small><h2>'+money(expense)+'</h2></div><div><small class="eyebrow">SALDO DO DIA</small><h2>'+money(net)+'</h2></div></div></section>'+
+   '<div class="section-title section-title--spaced"><h2>Movimentações</h2><span class="result-count">'+movements.length+' lançamento(s)</span></div>'+
+   '<div class="record-list">'+(history||'<div class="empty-state">Nenhuma movimentação registrada. Os pagamentos da Comanda aparecerão aqui, inclusive os parciais.</div>')+'</div>'+
+   '<div class="section-title section-title--spaced"><h2>Histórico de caixas</h2></div>'+
+   '<div class="record-list">'+(registers.map(r=>'<article class="record-card"><span class="record-main"><b>'+esc(r.status==="open"?"Caixa aberto":"Caixa fechado")+'</b><small>Abertura '+dateTime(r.opened_at)+(r.closed_at?' · Fechamento '+dateTime(r.closed_at):"")+'</small></span><span class="record-trailing"><b>'+money(r.status==="open"?r.opening_amount:r.closing_amount)+'</b><small>'+(r.status==="open"?"Em andamento":"Valor contado")+'</small></span></article>').join("")||'<div class="empty-state">Nenhuma abertura de caixa registrada.</div>')+'</div>';
+
+  if(!bound){
+   bound=true;
+   host.addEventListener("submit",async event=>{
+    const form=event.target;
+    if(!form.matches("#cash-open-form")&&!form.matches("#cash-close-form"))return;
+    event.preventDefault();
+    if(!canOperate()){toast("Seu perfil não pode operar o caixa.");return;}
+    const button=form.querySelector('[type="submit"]');
+    button.disabled=true;button.textContent="Salvando…";
+    try{
+     const values=new FormData(form),{data:{user},error:authError}=await supabase.auth.getUser();
+     if(authError)throw authError;
+     if(!user)throw new Error("Sessão expirada. Entre novamente.");
+     if(form.matches("#cash-open-form")){
+      const opening=Number(values.get("opening_amount"));
+      if(!Number.isFinite(opening)||opening<0)throw new Error("Informe um valor inicial válido.");
+      const {data:existing,error:lookupError}=await supabase.from("cash_registers").select("id").eq("org_id",state.organization.id).eq("status","open").limit(1);
+      if(lookupError)throw lookupError;
+      if(existing?.length)throw new Error("Já existe um caixa aberto para esta organização.");
+      const {error}=await supabase.from("cash_registers").insert({org_id:state.organization.id,opening_amount:opening,status:"open",opened_by:user.id});
+      if(error)throw error;
+      toast("Caixa aberto.");
+     }else{
+      const closing=Number(values.get("closing_amount"));
+      if(!Number.isFinite(closing)||closing<0)throw new Error("Informe o valor contado.");
+      const {data:openRegister,error:lookupError}=await supabase.from("cash_registers").select("id,opening_amount").eq("org_id",state.organization.id).eq("status","open").order("opened_at",{ascending:false}).limit(1).maybeSingle();
+      if(lookupError)throw lookupError;
+      if(!openRegister)throw new Error("Não há caixa aberto para fechar.");
+      const {data:rows,error:movementError}=await supabase.from("cash_movements").select("movement_type,amount").eq("org_id",state.organization.id).eq("cash_register_id",openRegister.id);
+      if(movementError)throw movementError;
+      const expected=Number(openRegister.opening_amount||0)+(rows||[]).reduce((sum,m)=>sum+(m.movement_type==="income"?1:m.movement_type==="expense"?-1:0)*Number(m.amount||0),0);
+      const {error}=await supabase.from("cash_registers").update({closing_amount:closing,expected_amount:expected,status:"closed",closed_by:user.id,closed_at:new Date().toISOString()}).eq("org_id",state.organization.id).eq("id",openRegister.id).eq("status","open");
+      if(error)throw error;
+      toast("Caixa fechado. Diferença: "+money(closing-expected)+".");
+     }
+     await loadCashPage();
+    }catch(error){reportError(error,{context:"Caixa > operação"});}
+    finally{if(button.isConnected){button.disabled=false;button.textContent=form.matches("#cash-open-form")?"Abrir caixa":"Conferir e fechar caixa";}}
+   });
+  }
+ }catch(error){
+  reportError(error,{context:"Caixa > carregar movimentações"});
+  host.innerHTML='<div class="empty-state"><b>Não foi possível carregar o Caixa.</b><small>Confira sua permissão e tente novamente.</small></div>';
+ }
 }
