@@ -10,7 +10,7 @@ export function runAgendaRenderChecks(){
   const appointments=[
     {id:"a1",date:"2026-11-12",time:"09:00",name:"Camila Rodrigues",service:"Corte",pro:0,duration:60,status:"Confirmado"},
     {id:"a2",date:"2026-11-13",time:"10:00",name:"Fernanda Alves",service:"Escova",pro:0,duration:45,status:"Em atendimento"},
-    {id:"a3",date:"2026-11-12",time:"09:15",name:"Juliana Souza",service:"Coloração",pro:0,duration:90,status:"Confirmado"}
+    {id:"a3",date:"2026-11-12",time:"10:15",name:"Juliana Souza",service:"Coloração",pro:0,duration:90,status:"Confirmado"}
   ];
   const props={date,pro:0,professional:professionals[0],appointments,blockedTimes:[]};
   const checks=[];
