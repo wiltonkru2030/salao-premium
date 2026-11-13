@@ -6,6 +6,7 @@ Gerar proposta comercial por cliente com vários serviços, quantidade, profissi
 ## Estrutura de código
 - `src/pages/quotes.js`: estado da tela, consultas e ações do módulo; adaptador legado em migração.
 - `src/modules/quotes/components/quote-components.js`: componentes de apresentação do construtor e da lista. Não acessa Supabase.
+- `src/modules/quotes/services/quote-workflows.js`: documento imprimível e agendamento; dependências são injetadas, e a gravação de horários ocorre por RPC.
 - `src/modules/quotes/README.md`: contrato e regras do módulo.
 - `src/modules/quotes/quote-components.test.js`: testes de apresentação, escape HTML e permissão.
 - `src/styles/quotes.css`: composição específica; usa os tokens globais.
