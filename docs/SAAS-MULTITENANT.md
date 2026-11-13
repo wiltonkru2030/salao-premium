@@ -45,6 +45,8 @@ As RPCs de liberação e revogação do App Profissional agora recebem `p_org_id
 - A proteção de senha comprometida do Supabase Auth está desativada; habilitar em Authentication → Settings → Password Security.
 - O isolamento por filial ainda não está implementado como seletor universal em todos os módulos; o Caixa administrativo atualmente opera o caixa padrão da organização.
 
+Migration: `20261113011915_scope_professional_app_access_to_explicit_tenant`.
+
 ## Teste de aceitação multitenant obrigatório
 Criar duas organizações de teste A e B, com usuários distintos e registros parecidos. Confirmar que:
 1. usuário A não lista, lê, atualiza, exclui ou associa clientes/profissionais/serviços da B;
