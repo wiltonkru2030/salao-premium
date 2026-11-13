@@ -10,6 +10,7 @@ const dateTime=value=>new Date(value).toLocaleString("pt-BR",{dateStyle:"short",
 export function recycleBinPage(){
  selectedGroup=null;
  return head("Recuperar","Consulte exclusões realizadas nos últimos 30 dias, veja o histórico e restaure registros.")+
+
   '<div id="recycle-bin-manager"><div class="empty-state">Carregando lixeira e auditoria…</div></div>';
 }
 function actorName(actorId,map){
@@ -20,14 +21,33 @@ function renderDetailsModal(group,profiles){
  const first=group.entries[0];
  const details=group.entries.map(entry=>{
   const pairs=Object.entries(entry.row_data||{});
-  return '<section class="recycle-item-detail"><h3>'+esc(entry.description)+'</h3><div class="recycle-detail-meta"><span>'+esc(entry.entity_table)+'</span><span>ID: '+esc(entry.entity_id)+'</span></div>'+
-   '<dl>'+pairs.map(([key,value])=>'<div><dt>'+esc(key)+'</dt><dd>'+esc(typeof value==="object"&&value!==null?JSON.stringify(value):String(value??"—"))+'</dd></div>').join("")+'</dl></section>';
+  return '<section class="recycle-item-detail"><h3>'+esc(entry.description)+
+'</h3><div class="recycle-detail-meta"><span>'+esc(entry.entity_table)+
+'</span><span>ID: '+esc(entry.entity_id)+
+'</span></div>'+
+
+   '<dl>'+pairs.map(([key,value])=>'<div><dt>'+esc(key)+
+'</dt><dd>'+esc(typeof value==="object"&&value!==null?JSON.stringify(value):String(value??"—"))+
+'</dd></div>').join("")+
+'</dl></section>';
  }).join("");
  return '<dialog class="sp-modal recycle-dialog" id="recycle-details-dialog" aria-labelledby="recycle-details-title"><section class="recycle-modal">'+
+
   '<header><div><small>RECUPERAR · DETALHES</small><h2 id="recycle-details-title">Dados excluídos</h2></div><button type="button" class="icon-btn" data-action="close-recycle-modal" aria-label="Fechar">×</button></header>'+
-  '<div class="recycle-modal-meta"><div><span>Excluído por</span><b>'+esc(actorName(first.deleted_by,profiles))+'</b></div><div><span>Data e hora</span><b>'+dateTime(first.deleted_at)+'</b></div><div><span>Disponível até</span><b>'+dateTime(first.expires_at)+'</b></div><div><span>Registros nesta operação</span><b>'+group.entries.length+'</b></div></div>'+
-  '<div class="recycle-modal-content">'+details+'</div>'+
-  '<footer><button type="button" class="btn secondary" data-action="close-recycle-modal">Fechar</button><button type="button" class="btn secondary" data-recycle-delete="'+group.id+'">Excluir permanentemente</button><button type="button" class="btn primary" data-recycle-restore="'+group.id+'">Restaurar dados</button></footer>'+
+
+  '<div class="recycle-modal-meta"><div><span>Excluído por</span><b>'+esc(actorName(first.deleted_by,profiles))+
+'</b></div><div><span>Data e hora</span><b>'+dateTime(first.deleted_at)+
+'</b></div><div><span>Disponível até</span><b>'+dateTime(first.expires_at)+
+'</b></div><div><span>Registros nesta operação</span><b>'+group.entries.length+
+'</b></div></div>'+
+
+  '<div class="recycle-modal-content">'+details+
+'</div>'+
+
+  '<footer><button type="button" class="btn secondary" data-action="close-recycle-modal">Fechar</button><button type="button" class="btn secondary" data-recycle-delete="'+group.id+
+'">Excluir permanentemente</button><button type="button" class="btn primary" data-recycle-restore="'+group.id+
+'">Restaurar dados</button></footer>'+
+
   '</section></dialog>';
 }
 function renderPage(host,groups,events,profiles){
@@ -94,7 +114,8 @@ export async function loadRecycleBinPage(){
      if(!window.confirm("Restaurar todos os registros desta operação?"))return;
      const {data,error}=await supabase.rpc("restore_recycle_bin_group",{p_group_id:groupId});
      if(error){reportError(error,{context:"Recuperar > restaurar registros"});return;}
-     selectedGroup=null;toast(Number(data||0)+" registro(s) restaurado(s).");host.querySelector("#recycle-details-dialog")?.close();return;
+     selectedGroup=null;toast(Number(data||0)+
+" registro(s) restaurado(s).");host.querySelector("#recycle-details-dialog")?.close();return;
     }
     const remove=event.target.closest("[data-recycle-delete]");
     if(remove){
@@ -102,7 +123,8 @@ export async function loadRecycleBinPage(){
      if(!window.confirm("Excluir permanentemente os snapshots desta operação? Esta ação não pode ser desfeita."))return;
      const {data,error}=await supabase.rpc("permanently_delete_recycle_bin_group",{p_group_id:groupId});
      if(error){reportError(error,{context:"Recuperar > excluir snapshots permanentemente"});return;}
-     selectedGroup=null;toast(Number(data||0)+" snapshot(s) removido(s) permanentemente.");host.querySelector("#recycle-details-dialog")?.close();
+     selectedGroup=null;toast(Number(data||0)+
+" snapshot(s) removido(s) permanentemente.");host.querySelector("#recycle-details-dialog")?.close();
     }
    });
   }
