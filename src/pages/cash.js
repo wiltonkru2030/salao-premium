@@ -20,6 +20,7 @@ export function cashPage(){
   '<div id="cash-manager"><div class="empty-state">Carregando movimentações do caixa…</div></div>';
 }
 
+/** Carrega o caixa padrão, resume entradas/saídas e associa movimentos às Comandas. */
 export async function loadCashPage(){
  const host=document.querySelector("#cash-manager");
  if(!host||!state.organization?.id)return;
