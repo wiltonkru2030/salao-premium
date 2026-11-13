@@ -34,6 +34,9 @@ Foi consultado o estado de RLS das tabelas centrais:
 
 As políticas consultadas usam funções de membership/role e escopo profissional, com permissões diferentes por operação. Isso é uma verificação estrutural, não um teste completo de isolamento com dois usuários reais.
 
+## Seleção e troca de tenant
+Quando a conta possui mais de uma associação ativa, o login exige que a pessoa escolha a organização. O seletor no topo permite trocar de tenant sem encerrar a sessão; a troca limpa filtros, drawers, Agenda e dados operacionais em memória antes de recarregar a tela.
+
 ## Correção aplicada nesta auditoria
 As RPCs de liberação e revogação do App Profissional agora recebem `p_org_id`, validam o papel owner/admin nessa organização e só alteram o vínculo dentro do mesmo tenant. As assinaturas antigas que escolhiam automaticamente a primeira organização tiveram EXECUTE revogado para `authenticated`, `anon` e `public`.
 
