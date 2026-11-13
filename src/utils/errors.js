@@ -32,7 +32,7 @@ export function userErrorMessage(error, fallback = "Não foi possível concluir 
   // Mensagens de domínio escritas em português podem ser mostradas; mensagens técnicas
   // desconhecidas (frequentemente em inglês) permanecem ocultas para não confundir o usuário.
   const safePortuguese = raw && raw.length <= 180 &&
-    /[ãõáéíóúâêôç]|\\b(não|nao|informe|selecione|escolha|preencha|confira|inválid|inval|permissão|comanda|profissional|registro|saldo|horário|serviço|pagamento|estoque|cancelad|encontrad|já existe|já foi)\\b/i.test(raw) &&
+    /[ãõáéíóúâêôç]|\b(não|nao|informe|selecione|escolha|preencha|confira|inválid|inval|permissão|comanda|profissional|registro|saldo|horário|serviço|pagamento|estoque|cancelad|encontrad|já existe|já foi)\b/i.test(raw) &&
     !/sql|postgres|supabase|jwt|token|policy|stack| at /i.test(raw);
   if (safePortuguese) return raw;
   return fallback;
