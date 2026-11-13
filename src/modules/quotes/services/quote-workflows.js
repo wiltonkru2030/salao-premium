@@ -34,7 +34,6 @@ export async function printQuoteDocument({quote,orgId,supabase,state,esc,money,s
 
 /** Agenda todos os serviços do orçamento aceito em uma única operação transacional. */
 export async function openQuoteSchedule({quote,orgId,supabase,host,esc,toast,reportError,loadQuotesPage,openQuote}){
-  const host=document.querySelector("#quotes-manager");
   const [itemsResult,proResult,assignmentResult]=await Promise.all([
     supabase.from("quote_items").select("id,service_id,professional_id,description,quantity,duration_minutes,total").eq("org_id",orgId).eq("quote_id",quote.id).order("sort_order"),
     supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("active",true).order("name"),
