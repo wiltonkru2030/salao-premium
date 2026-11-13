@@ -233,7 +233,6 @@ async function openSchedule(quote,orgId){
     event.preventDefault();const form=event.currentTarget,button=form.querySelector('[type=submit]'),values=new FormData(form);
     button.disabled=true;button.textContent="Verificando disponibilidade…";
     try{
-      const customer=quote.customer|| (await supabase.from("customers").select("id,name,phone").eq("org_id",orgId).eq("id",quote.customer_id).single()).data;
       const prepared=rows.map((item,index)=>{
         const professionalId=String(values.get("professional_"+index)||""),date=String(values.get("date_"+index)||""),time=String(values.get("time_"+index)||"");
         const start=new Date(date+"T"+time+":00"),end=new Date(start.getTime()+Number(item.duration_minutes)*60000);
@@ -244,29 +243,10 @@ async function openSchedule(quote,orgId){
         const a=prepared[i],b=prepared[j];
         if(a.professionalId===b.professionalId&&a.start<b.end&&b.start<a.end)throw new Error("Dois serviços do mesmo profissional estão no mesmo horário. Ajuste os horários.");
       }
-      for(const entry of prepared){
-        const {data:conflicts,error}=await supabase.from("appointments").select("id").eq("org_id",orgId).eq("professional_id",entry.professionalId).in("status",["scheduled","confirmed","arrived","in_progress"]).lt("starts_at",entry.end.toISOString()).gt("ends_at",entry.start.toISOString()).limit(1);
-        if(error)throw error;if(conflicts?.length)throw new Error("Conflito de horário para um dos profissionais. Ajuste a data ou o horário.");
-      }
-      const {data:group,error:groupError}=await supabase.from("appointment_groups").insert({org_id:orgId,branch_id:quote.branch_id,customer_id:quote.customer_id,quote_id:quote.id,created_by:state.user?.id}).select("*").single();
-      if(groupError)throw groupError;
-      const created=[];
-      try{
-        for(const entry of prepared){
-          const {data:professional,error:professionalError}=await supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("id",entry.professionalId).single();
-          if(professionalError)throw professionalError;
-          const payload={org_id:orgId,branch_id:quote.branch_id,customer_id:quote.customer_id,professional_id:entry.professionalId,service_id:entry.item.service_id,customer_name:customer.name,customer_phone:customer.phone,service_name:entry.item.description,professional_name:professional.name,starts_at:entry.start.toISOString(),ends_at:entry.end.toISOString(),status:"scheduled",price:entry.item.total,booking_source:"salon",created_by:state.user?.id,appointment_group_id:group.id};
-          const {data:appointment,error}=await supabase.from("appointments").insert(payload).select("id").single();
-          if(error)throw error;created.push({entry,appointment});
-        }
-        const groupItems=created.map(({entry,appointment})=>({org_id:orgId,appointment_group_id:group.id,quote_item_id:entry.item.id,appointment_id:appointment.id,service_id:entry.item.service_id,professional_id:entry.professionalId,starts_at:entry.start.toISOString(),ends_at:entry.end.toISOString(),price:entry.item.total}));
-        const {error:linkError}=await supabase.from("appointment_group_items").insert(groupItems);if(linkError)throw linkError;
-      }catch(error){
-        for(const row of created)await supabase.from("appointments").delete().eq("org_id",orgId).eq("id",row.appointment.id);
-        await supabase.from("appointment_groups").delete().eq("org_id",orgId).eq("id",group.id);
-        throw error;
-      }
-      toast("Agendamento agrupado criado com "+created.length+" serviço(s).");
+      const payload=prepared.map(entry=>({quote_item_id:entry.item.id,professional_id:entry.professionalId,starts_at:entry.start.toISOString(),ends_at:entry.end.toISOString()}));
+      const {data:group,error}=await supabase.rpc("create_quote_appointment_group",{p_quote_id:quote.id,p_items:payload});
+      if(error)throw error;
+      toast("Agendamento agrupado criado com "+Number(group?.count||prepared.length)+" serviço(s).");
       await loadQuotesPage();
     }catch(error){reportError(error,{context:"Orçamentos > agendar horários"});button.disabled=false;button.textContent="Confirmar todos os horários";}
   });
