@@ -123,9 +123,11 @@ Use este índice para localizar a responsabilidade de cada arquivo. Arquivos de 
 | `src/modules/quotes/quote-components.test.js` | Testes de apresentação dos Orçamentos. |
 | `src/modules/comanda/components/comanda-detail.js` | Componente de apresentação dos detalhes da Comanda, sem acesso ao banco. |
 | `src/modules/comanda/comanda.formatters.js` | Rótulos e formatação monetária do domínio Comanda. |
+| `src/modules/comanda/services/comanda-operations.js` | Pagamentos e cancelamento por RPC transacional. |
 | `src/modules/comanda/comanda-detail.test.js` | Testes do componente Comanda. |
 | `src/modules/comanda/comanda.formatters.js` | Formatação de moeda e rótulos do domínio Comanda. |
 | `src/modules/cash/components/cash-dashboard.js` | Painel visual do Caixa, sem consulta Supabase. |
+| `src/modules/cash/services/cash-operations.js` | Abertura e fechamento por RPC transacional. |
 | `src/modules/cash/cash-dashboard.test.js` | Testes do componente Caixa. |
 | `src/types/tenant.types.d.ts` | Tipos do tenant, membership e filial. |
 | `src/types/operations.types.d.ts` | Tipos de Agenda, Comanda, pagamento, Caixa e Orçamento. |
