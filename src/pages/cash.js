@@ -21,19 +21,34 @@ export async function loadCashPage(){
   const orgId=state.organization.id;
   const today=new Date();today.setHours(0,0,0,0);
   const tomorrow=new Date(today);tomorrow.setDate(tomorrow.getDate()+1);
-  const [registerResult,movementResult]=await Promise.all([
+  const [registerResult,movementResult,paymentResult]=await Promise.all([
    supabase.from("cash_registers").select("id,opening_amount,closing_amount,expected_amount,status,opened_at,closed_at,notes").eq("org_id",orgId).order("opened_at",{ascending:false}).limit(20),
-   supabase.from("cash_movements").select("id,cash_register_id,movement_type,category,description,amount,payment_method,created_at,sale_id").eq("org_id",orgId).order("created_at",{ascending:false}).limit(300)
+   supabase.from("cash_movements").select("id,cash_register_id,movement_type,category,description,amount,payment_method,created_at,sale_id").eq("org_id",orgId).order("created_at",{ascending:false}).limit(500),
+   supabase.from("service_order_payments").select("id,order_id,cash_movement_id,amount,payment_method,paid_at").eq("org_id",orgId).not("cash_movement_id","is",null).order("paid_at",{ascending:false}).limit(500)
   ]);
   if(registerResult.error)throw registerResult.error;
   if(movementResult.error)throw movementResult.error;
+  if(paymentResult.error)throw paymentResult.error;
   const registers=registerResult.data||[],movements=movementResult.data||[];
+  const paymentRows=paymentResult.data||[],orderIds=[...new Set(paymentRows.map(p=>p.order_id))];
+  const {data:orderRows,error:orderError}=orderIds.length?await supabase.from("service_orders").select("id,order_number,customer_id").eq("org_id",orgId).in("id",orderIds):{data:[],error:null};
+  if(orderError)throw orderError;
+  const customerIds=[...new Set((orderRows||[]).map(o=>o.customer_id).filter(Boolean))];
+  const {data:customerRows,error:customerError}=customerIds.length?await supabase.from("customers").select("id,name").eq("org_id",orgId).in("id",customerIds):{data:[],error:null};
+  if(customerError)throw customerError;
+  const customerNames=new Map((customerRows||[]).map(c=>[c.id,c.name]));
+  const orderMap=new Map((orderRows||[]).map(o=>[o.id,{...o,customerName:customerNames.get(o.customer_id)||"Cliente"}]));
+  const paymentMap=new Map(paymentRows.map(p=>[p.cash_movement_id,{...p,order:orderMap.get(p.order_id)}]));
   const active=registers.find(r=>r.status==="open")||null;
   const todayMoves=movements.filter(m=>new Date(m.created_at)>=today&&new Date(m.created_at)<tomorrow);
   const sum=(rows,type)=>rows.filter(m=>m.movement_type===type).reduce((total,m)=>total+Number(m.amount||0),0);
   const income=sum(todayMoves,"income"),expense=sum(todayMoves,"expense"),net=income-expense;
   const activeNet=active?movements.filter(m=>m.cash_register_id===active.id).reduce((s,m)=>s+(m.movement_type==="income"?1:m.movement_type==="expense"?-1:0)*Number(m.amount||0),0):0;
-  const history=movements.map(m=>'<article class="record-card"><span class="record-main"><b>'+esc(m.description)+'</b><small>'+dateTime(m.created_at)+' · '+esc(m.payment_method||m.category||"Movimento")+'</small></span><span class="record-trailing"><b>'+((m.movement_type==="expense"?"−":"+")+money(m.amount))+'</b><small>'+esc(m.movement_type==="income"?"Entrada":m.movement_type==="expense"?"Saída":m.movement_type)+'</small></span></article>').join("");
+  const history=movements.map(m=>{
+   const payment=paymentMap.get(m.id),order=payment?.order;
+   const label=order?"Comanda #"+order.order_number+" · "+order.customerName:m.description;
+   return '<article class="record-card cash-movement" data-method="'+esc(m.payment_method||"")+'" data-date="'+String(m.created_at).slice(0,10)+'" data-search="'+esc((label+" "+m.description).toLocaleLowerCase("pt-BR"))+'"><span class="record-main"><b>'+esc(label)+'</b><small>'+dateTime(m.created_at)+' · '+esc(m.payment_method||m.category||"Movimento")+'</small></span><span class="record-trailing"><b>'+((m.movement_type==="expense"?"−":"+")+money(m.amount))+'</b><small>'+esc(m.movement_type==="income"?"Entrada":m.movement_type==="expense"?"Saída":m.movement_type)+(payment?" · Pagamento individual":"")+'</small></span></article>';
+  }).join("");
   host.innerHTML=
    '<section class="settings-card"><div class="section-title"><div><h3>Caixa atual</h3><small class="muted">'+(active?"Aberto desde "+dateTime(active.opened_at):"Nenhum caixa aberto")+'</small></div><b class="status">'+(active?"Aberto":"Fechado")+'</b></div>'+
    (active?'<div class="setting-row"><span>Valor de abertura</span><b>'+money(active.opening_amount)+'</b></div><div class="setting-row"><span>Movimentação líquida do caixa</span><b>'+money(activeNet)+'</b></div><div class="setting-row"><span>Saldo esperado</span><b>'+money(Number(active.opening_amount||0)+activeNet)+'</b></div>'+
@@ -41,13 +56,23 @@ export async function loadCashPage(){
     (canOperate()?'<form id="cash-open-form" class="form-grid"><label>Valor inicial (R$)<input class="field" name="opening_amount" type="number" min="0" step="0.01" value="0" required></label><button class="btn primary" type="submit">Abrir caixa</button></form>':'<p class="demo-note">Seu perfil não pode abrir ou fechar o caixa.</p>'))+
    '</section>'+
    '<section class="settings-card"><h3>Resumo de hoje</h3><div class="commission-summary"><div><small class="eyebrow">ENTRADAS</small><h2>'+money(income)+'</h2></div><div><small class="eyebrow">SAÍDAS</small><h2>'+money(expense)+'</h2></div><div><small class="eyebrow">SALDO DO DIA</small><h2>'+money(net)+'</h2></div></div></section>'+
-   '<div class="section-title section-title--spaced"><h2>Movimentações</h2><span class="result-count">'+movements.length+' lançamento(s)</span></div>'+
-   '<div class="record-list">'+(history||'<div class="empty-state">Nenhuma movimentação registrada. Os pagamentos da Comanda aparecerão aqui, inclusive os parciais.</div>')+'</div>'+
+   '<div class="section-title section-title--spaced"><h2>Movimentações</h2><span class="result-count">Últimos '+movements.length+' lançamento(s)</span></div>'+
+   '<section class="settings-card cash-filters"><div class="form-grid"><label>Buscar cliente ou comanda<input class="field" id="cash-filter-search" placeholder="Nome ou número"></label><label>Data<input class="field" id="cash-filter-date" type="date"></label><label>Forma de pagamento<select class="field" id="cash-filter-method"><option value="">Todas</option><option value="pix">PIX</option><option value="cash">Dinheiro</option><option value="credit_card">Crédito</option><option value="debit_card">Débito</option><option value="transfer">Transferência</option><option value="voucher">Voucher</option><option value="other">Outro</option></select></label></div></section>'+
+   '<div class="record-list" id="cash-movement-list">'+(history||'<div class="empty-state">Nenhuma movimentação registrada. Os pagamentos da Comanda aparecerão aqui, inclusive os parciais.</div>')+'</div>'+
    '<div class="section-title section-title--spaced"><h2>Histórico de caixas</h2></div>'+
    '<div class="record-list">'+(registers.map(r=>'<article class="record-card"><span class="record-main"><b>'+esc(r.status==="open"?"Caixa aberto":"Caixa fechado")+'</b><small>Abertura '+dateTime(r.opened_at)+(r.closed_at?' · Fechamento '+dateTime(r.closed_at):"")+'</small></span><span class="record-trailing"><b>'+money(r.status==="open"?r.opening_amount:r.closing_amount)+'</b><small>'+(r.status==="open"?"Em andamento":"Valor contado")+'</small></span></article>').join("")||'<div class="empty-state">Nenhuma abertura de caixa registrada.</div>')+'</div>';
 
   if(host.dataset.bound!=="true"){
    host.dataset.bound="true";
+   const applyCashFilters=()=>{
+    const term=String(host.querySelector("#cash-filter-search")?.value||"").trim().toLocaleLowerCase("pt-BR");
+    const date=host.querySelector("#cash-filter-date")?.value||"",method=host.querySelector("#cash-filter-method")?.value||"";
+    host.querySelectorAll(".cash-movement").forEach(row=>{
+      row.hidden=Boolean((term&&!row.dataset.search.includes(term))||(date&&row.dataset.date!==date)||(method&&row.dataset.method!==method));
+    });
+   };
+   host.addEventListener("input",event=>{if(event.target.matches("#cash-filter-search,#cash-filter-date,#cash-filter-method"))applyCashFilters();});
+   host.addEventListener("change",event=>{if(event.target.matches("#cash-filter-search,#cash-filter-date,#cash-filter-method"))applyCashFilters();});
    host.addEventListener("submit",async event=>{
     const form=event.target;
     if(!form.matches("#cash-open-form")&&!form.matches("#cash-close-form"))return;
