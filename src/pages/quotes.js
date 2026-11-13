@@ -235,7 +235,8 @@ async function openSchedule(quote,orgId){
     try{
       const prepared=rows.map((item,index)=>{
         const professionalId=String(values.get("professional_"+index)||""),date=String(values.get("date_"+index)||""),time=String(values.get("time_"+index)||"");
-        const duration=Number(item.duration_minutes)*Number(item.quantity||1);\n        const start=new Date(date+"T"+time+":00"),end=new Date(start.getTime()+duration*60000);
+        const duration=Number(item.duration_minutes)*Number(item.quantity||1);
+        const start=new Date(date+"T"+time+":00"),end=new Date(start.getTime()+duration*60000);
         if(!professionalId||!date||!time||Number.isNaN(start.getTime()))throw new Error("Preencha profissional, data e horário de todos os serviços.");
         return {item,professionalId,start,end};
       });
