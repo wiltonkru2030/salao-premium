@@ -20,6 +20,7 @@ export function commissionsPage(){
   '<div id="commissions-manager"><div class="empty-state">Carregando comissões do banco…</div></div>';
 }
 
+/** Carrega regras, ledger de comissões, pagamentos e referências de Comanda/recebimento. */
 export async function loadCommissionsPage(){
  const host=document.querySelector("#commissions-manager");
  if(!host||!state.organization?.id)return;
