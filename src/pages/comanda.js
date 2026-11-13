@@ -77,7 +77,7 @@ function renderOrderDetails(host,order,data,orgId){
  <label>Produto<input id="comanda-product" class="field" placeholder="Digite para buscar" autocomplete="off" required></label>
  <label>Quantidade<input name="quantity" class="field" type="number" min="0.001" step="0.001" value="1" required></label>
  <label>Profissional (opcional)<select name="professional_id" class="field"><option value="">Sem profissional</option>${professionals.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("")}</select></label>
- <label>Profissional<select name="professional_id" class="field"><option value="">Sem profissional</option>${professionals.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("")}</select></label>
+ 
  <button class="btn primary" type="submit">Adicionar produto</button><p class="demo-note">O estoque será baixado ao quitar a comanda.</p></form></section>`:''}
  ${editable&&allowPay?`
  <section class="settings-card"><h3>Receber pagamento</h3><form id="comanda-payment-form">
