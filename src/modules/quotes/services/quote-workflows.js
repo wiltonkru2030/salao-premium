@@ -2,7 +2,8 @@
  * Fluxos de documento e agendamento do módulo Orçamentos.
  * Cada função recebe suas dependências explicitamente para não importar estado de página.
  */
-export async function printQuoteDocument({quote,orgId,supabase,state,esc,money,statusName}){
+/** Gera a versão imprimível do orçamento e prepara o link de aceite/recusa. */
+export async function printQuoteDocument({quote,orgId,supabase,state,esc,money,statusName,toast}){
   if(!quote)return;
   const w=window.open("","_blank");
   if(!w){toast("Permita a abertura da janela para imprimir o orçamento.");return;}
@@ -31,6 +32,7 @@ export async function printQuoteDocument({quote,orgId,supabase,state,esc,money,s
   w.document.close();
 }
 
+/** Agenda todos os serviços do orçamento aceito em uma única operação transacional. */
 export async function openQuoteSchedule({quote,orgId,supabase,host,esc,toast,reportError,loadQuotesPage,openQuote}){
   const host=document.querySelector("#quotes-manager");
   const [itemsResult,proResult,assignmentResult]=await Promise.all([
