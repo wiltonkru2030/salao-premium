@@ -8,13 +8,15 @@
 ## Diretórios e padrões
 | Caminho | Responsabilidade |
 |---|---|
-| `src/auth/` | autenticação, sessão e associação à organização |
+| `src/auth/` | autenticação, seleção e troca explícita de tenant, sessão e membership |
 | `src/layout/` | shell, menu e roteamento |
 | `src/components/` | componentes compartilhados do painel |
 | `src/pages/` | adaptadores e páginas legadas em migração |
 | `src/modules/` | fronteiras dos módulos de domínio e seus componentes |
 | `src/agenda/` | implementação especializada da Agenda |
 | `src/types/` | contratos `.d.ts` de tenant e entidades |
+| `src/auth/tenant-context.js` | seleção pura de membership/organização, sem consultar dados do tenant |
+| `src/auth/tenant-context.test.js` | testes da seleção explícita de organização |
 | `src/scripts/` | regras para scripts internos; não carregar no navegador |
 | `src/supabase/` | cliente Supabase |
 | `src/utils/` | máscaras, validações, erros e contexto compartilhado |
