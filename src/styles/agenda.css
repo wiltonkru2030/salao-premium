@@ -237,3 +237,21 @@ gap:6px}
 line-height:1.3}
 .week-slot{height:64px}
 }
+
+
+/* Horários laterais: leitura rápida e contraste consistente na grade diária. */
+.calendar-header .time-heading,
+.calendar-body .time-cell{
+  background:#fcfbf8;
+  color:#77736b;
+  font-size:10px;
+  font-weight:600;
+  font-variant-numeric:tabular-nums;
+}
+.calendar-body .time-cell{
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding-top:10px;
+  border-right:1px solid #e9e6df;
+}
