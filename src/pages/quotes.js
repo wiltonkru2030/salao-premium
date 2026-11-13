@@ -197,13 +197,16 @@ async function printQuote(quote,orgId){
   const address=branch?.address||org.address||{};
   const addressText=typeof address==="string"?address:[address.street,address.number,address.district,address.city,address.state,address.zip].filter(Boolean).join(", ");
   const doc=branch?.document||org.document||"Documento não cadastrado";
-  const tokenBytes=crypto.getRandomValues(new Uint8Array(32));
-  const token=[...tokenBytes].map(byte=>byte.toString(16).padStart(2,"0")).join("");
-  const tokenDigest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(token));
-  const tokenHash=[...new Uint8Array(tokenDigest)].map(byte=>byte.toString(16).padStart(2,"0")).join("");
-  const {error:tokenError}=await supabase.from("quotes").update({public_token_hash:tokenHash}).eq("org_id",orgId).eq("id",quote.id).eq("status","pending");
-  if(tokenError)throw tokenError;
-  const responseUrl="https://vlifbvzlyzoncefvfgol.supabase.co/functions/v1/respond-to-quote?token="+token;
+  let responseUrl=null;
+  if(quote.status==="pending"){
+    const tokenBytes=crypto.getRandomValues(new Uint8Array(32));
+    const token=[...tokenBytes].map(byte=>byte.toString(16).padStart(2,"0")).join("");
+    const tokenDigest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(token));
+    const tokenHash=[...new Uint8Array(tokenDigest)].map(byte=>byte.toString(16).padStart(2,"0")).join("");
+    const {error:tokenError}=await supabase.from("quotes").update({public_token_hash:tokenHash}).eq("org_id",orgId).eq("id",quote.id).eq("status","pending");
+    if(tokenError)throw tokenError;
+    responseUrl="https://vlifbvzlyzoncefvfgol.supabase.co/functions/v1/respond-to-quote?token="+token;
+  }
   w.document.write('<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Orçamento #'+quote.quote_number+'</title><style>body{font:15px Arial,sans-serif;color:#202020;max-width:800px;margin:40px auto;padding:24px}header{border-bottom:2px solid #b69a62;padding-bottom:18px;margin-bottom:24px}h1{font-size:28px}small{color:#666}.row{display:flex;justify-content:space-between;padding:13px 0;border-bottom:1px solid #eee}.total{font-size:24px;font-weight:bold;color:#8b7041;margin-top:20px;text-align:right}.foot{margin-top:40px;color:#666;font-size:12px}@media print{button{display:none}}</style><header><h1>'+esc(branch?.name||org.name)+'</h1><p>'+esc(addressText||"Endereço não cadastrado")+'</p><p>CPF/CNPJ: '+esc(doc)+' · '+esc(branch?.phone||org.phone||"")+'</p></header><h2>Orçamento #'+quote.quote_number+'</h2><p>Cliente: '+esc(quote.customer?.name||"")+' · WhatsApp: '+esc(quote.customer?.phone||"")+'</p>'+quote.items.map(i=>'<div class="row"><span><b>'+esc(i.description)+'</b><br><small>'+Number(i.quantity)+' × '+money(i.unit_price)+' · '+esc(pros.get(i.professional_id)||"Profissional a definir")+'</small></span><b>'+money(i.total)+'</b></div>').join("")+'<div class="row"><span>Subtotal</span><b>'+money(quote.subtotal)+'</b></div><div class="row"><span>Descontos</span><b>− '+money(quote.discount_total)+'</b></div><div class="total">Valor final: '+money(quote.total)+'</div><p>Para aceitar ou recusar esta proposta, acesse: <a href="'+responseUrl+'">Responder ao orçamento</a></p><p>Proposta: '+esc(statusName(quote.status))+(quote.valid_until?' · Válida até '+new Date(quote.valid_until+"T12:00:00").toLocaleDateString("pt-BR"):"")+'</p><footer class="foot">Orçamento gerado pelo SALÃO PREMIUM. Esta proposta não representa pagamento ou agendamento confirmado.</footer><script>window.onload=()=>window.print()<\/script></html>');
   w.document.close();
 }
