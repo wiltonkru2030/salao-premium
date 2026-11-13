@@ -57,21 +57,21 @@ export async function loadCashPage(){
    '</section>'+
    '<section class="settings-card"><h3>Resumo de hoje</h3><div class="commission-summary"><div><small class="eyebrow">ENTRADAS</small><h2>'+money(income)+'</h2></div><div><small class="eyebrow">SAÍDAS</small><h2>'+money(expense)+'</h2></div><div><small class="eyebrow">SALDO DO DIA</small><h2>'+money(net)+'</h2></div></div></section>'+
    '<div class="section-title section-title--spaced"><h2>Movimentações</h2><span class="result-count">Últimos '+movements.length+' lançamento(s)</span></div>'+
-   '<section class="settings-card cash-filters"><div class="form-grid"><label>Buscar cliente ou comanda<input class="field" id="cash-filter-search" placeholder="Nome ou número"></label><label>Data<input class="field" id="cash-filter-date" type="date"></label><label>Forma de pagamento<select class="field" id="cash-filter-method"><option value="">Todas</option><option value="pix">PIX</option><option value="cash">Dinheiro</option><option value="credit_card">Crédito</option><option value="debit_card">Débito</option><option value="transfer">Transferência</option><option value="voucher">Voucher</option><option value="other">Outro</option></select></label></div></section>'+
+   '<section class="settings-card cash-filters"><div class="form-grid"><label>Buscar cliente ou comanda<input class="field" id="cash-filter-search" placeholder="Nome ou número"></label><label>De<input class="field" id="cash-filter-from" type="date"></label><label>Até<input class="field" id="cash-filter-to" type="date"></label><label>Forma de pagamento<select class="field" id="cash-filter-method"><option value="">Todas</option><option value="pix">PIX</option><option value="cash">Dinheiro</option><option value="credit_card">Crédito</option><option value="debit_card">Débito</option><option value="transfer">Transferência</option><option value="voucher">Voucher</option><option value="other">Outro</option></select></label></div></section>'+
    '<div class="record-list" id="cash-movement-list">'+(history||'<div class="empty-state">Nenhuma movimentação registrada. Os pagamentos da Comanda aparecerão aqui, inclusive os parciais.</div>')+'</div>'+
    '<div class="section-title section-title--spaced"><h2>Histórico de caixas</h2></div>'+
-   '<div class="record-list">'+(registers.map(r=>'<article class="record-card"><span class="record-main"><b>'+esc(r.status==="open"?"Caixa aberto":"Caixa fechado")+'</b><small>Abertura '+dateTime(r.opened_at)+(r.closed_at?' · Fechamento '+dateTime(r.closed_at):"")+'</small></span><span class="record-trailing"><b>'+money(r.status==="open"?r.opening_amount:r.closing_amount)+'</b><small>'+(r.status==="open"?"Em andamento":"Valor contado")+'</small></span></article>').join("")||'<div class="empty-state">Nenhuma abertura de caixa registrada.</div>')+'</div>';
+   '<div class="record-list">'+(registers.map(r=>'<article class="record-card"><span class="record-main"><b>'+esc(r.status==="open"?"Caixa aberto":"Caixa fechado")+'</b><small>Abertura '+dateTime(r.opened_at)+(r.closed_at?' · Fechamento '+dateTime(r.closed_at):"")+'</small></span><span class="record-trailing"><b>'+money(r.status==="open"?r.opening_amount:r.closing_amount)+'</b><small>'+(r.status==="open"?"Em andamento":"Diferença: "+money(Number(r.closing_amount||0)-Number(r.expected_amount||0)))+'</small></span></article>').join("")||'<div class="empty-state">Nenhuma abertura de caixa registrada.</div>')+'</div>';
 
   if(host.dataset.bound!=="true"){
    host.dataset.bound="true";
    const applyCashFilters=()=>{
     const term=String(host.querySelector("#cash-filter-search")?.value||"").trim().toLocaleLowerCase("pt-BR");
-    const date=host.querySelector("#cash-filter-date")?.value||"",method=host.querySelector("#cash-filter-method")?.value||"";
+    const from=host.querySelector("#cash-filter-from")?.value||"",to=host.querySelector("#cash-filter-to")?.value||"",method=host.querySelector("#cash-filter-method")?.value||"";
     host.querySelectorAll(".cash-movement").forEach(row=>{
-      row.hidden=Boolean((term&&!row.dataset.search.includes(term))||(date&&row.dataset.date!==date)||(method&&row.dataset.method!==method));
+      row.hidden=Boolean((term&&!row.dataset.search.includes(term))||(from&&row.dataset.date<from)||(to&&row.dataset.date>to)||(method&&row.dataset.method!==method));
     });
    };
-   host.addEventListener("input",event=>{if(event.target.matches("#cash-filter-search,#cash-filter-date,#cash-filter-method"))applyCashFilters();});
+   host.addEventListener("input",event=>{if(event.target.matches("#cash-filter-search,#cash-filter-from,#cash-filter-to,#cash-filter-method"))applyCashFilters();});
    host.addEventListener("change",event=>{if(event.target.matches("#cash-filter-search,#cash-filter-date,#cash-filter-method"))applyCashFilters();});
    host.addEventListener("submit",async event=>{
     const form=event.target;
