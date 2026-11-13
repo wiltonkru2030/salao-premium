@@ -1,3 +1,4 @@
+/** Módulo Profissionais: cadastro, dados fiscais, serviços habilitados e permissões vinculados ao tenant ativo. */
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, toast, esc } from "../utils.js";
