@@ -3,6 +3,9 @@ import { state } from '../../state.js';
 import { supabase } from '../../supabase/client.js';
 import { head, btn, initials } from '../../utils.js';
 import { reportError } from '../../utils/errors.js';
+
+/** @typedef {import('../../types/tenant.types').TenantContext} TenantContext */
+/** @typedef {import('../../types/operations.types').AppointmentRecord} AppointmentRecord */
 import { renderProfessionalSelector } from '../components/professional-selector.js';
 import { renderAgendaToolbar } from '../components/agenda-toolbar.js';
 import { renderDayCalendar } from '../components/day-calendar.js';
@@ -74,6 +77,10 @@ export function agenda() {
  * Consulta profissionais, agendamentos e bloqueios do tenant ativo e renderiza o calendário.
  * @returns {Promise<void>} Atualiza o estado visual da Agenda; não altera dados persistidos.
  * @throws Erros são registrados com código de diagnóstico e exibidos em pt-BR.
+ */
+/**
+ * Carrega a Agenda da organização ativa dentro do intervalo visível.
+ * @returns {Promise<void>} Consulta somente; ações de gravação são orquestradas pelo app e banco.
  */
 export async function loadAgendaPage() {
   if(!state.user||!state.organization?.id)return;
