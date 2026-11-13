@@ -6,6 +6,7 @@
 import { supabase } from "../supabase/client.js";
 import { authScreen, organizationSelectionScreen } from "./auth-screen.js";
 import { userErrorMessage } from "../utils/errors.js";
+import { state } from "../state.js";
 
 let authMode = "login";
 let authNotice = "";
@@ -110,6 +111,16 @@ export function startAuth(onAuthenticated) {
       pendingUser = null;
       activeUserId = null;
       resolvingUserId = null;
+      state.user = null;
+      state.profile = null;
+      state.organization = null;
+      state.membership = null;
+      state.availableOrganizations = [];
+      state.branch = null;
+      state.drawer = null;
+      state.agendaAppointments = [];
+      state.agendaProfessionals = [];
+      state.dbBlockedTimes = [];
       showAuth("login");
     }
   });
