@@ -72,6 +72,7 @@ A Comanda é o registro operacional do atendimento.
 - `20261113011533_create_quotes_atomically_with_tenant_validation`
 - `20261113011612_save_quote_discount_settings_atomically`
 - `20261113011915_scope_professional_app_access_to_explicit_tenant`
+- `20261113012733_enforce_professional_service_on_quote_scheduling`
 
 ## Testes pendentes
 
