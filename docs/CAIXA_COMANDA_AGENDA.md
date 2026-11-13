@@ -46,6 +46,14 @@ A Comanda é o registro operacional do atendimento.
 - Comissões não pagas daquele recebimento são canceladas.
 - Comanda fechada/quitada: não é cancelada por este fluxo. Devolução de venda fechada requer fluxo próprio para estoque e financeiro.
 
+## Orçamentos integrados
+
+- Orçamento é independente de Comanda; não movimenta Caixa, estoque ou comissão antes da execução do atendimento.
+- A criação de cabeçalho e itens usa `create_quote_with_items`, que valida organização, cliente, unidade, serviços, profissionais habilitados e descontos dentro de uma transação.
+- A gravação de regras de desconto usa `save_quote_discount_settings`, também transacional.
+- O agendamento só ocorre após aceite e usa `create_quote_appointment_group` para criar o grupo e todos os horários atomicamente.
+- Componentes visuais do construtor e da lista ficam separados em `src/modules/quotes/components/quote-components.js`.
+
 ## Migrations associadas
 
 - `20261113010050_integrate_partial_commissions_cash_and_grouped_comandas`
@@ -56,6 +64,8 @@ A Comanda é o registro operacional do atendimento.
 - `20261113010559_document_financial_and_agenda_database_contracts`
 - `20261113010702_use_default_cash_register_for_branch_transactions`
 - `20261113010729_enforce_unique_professional_service_commission_rules`
+- `20261113011533_create_quotes_atomically_with_tenant_validation`
+- `20261113011612_save_quote_discount_settings_atomically`
 
 ## Testes pendentes
 
