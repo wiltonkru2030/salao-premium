@@ -26,12 +26,12 @@ export async function loadCommissionsPage(){
  try{
   const orgId=state.organization.id;
   const [commissionResult,professionalResult,payoutResult,settingsResult]=await Promise.all([
-   supabase.from("commissions").select("id,professional_id,base_amount,rate,amount,status,paid_at,created_at,payout_id,sale_id,appointment_id")
+   supabase.from("commissions").select("id,professional_id,base_amount,rate,amount,status,paid_at,created_at,payout_id,sale_id,appointment_id,item_type")
     .eq("org_id",orgId).order("created_at",{ascending:false}).limit(1000),
    supabase.from("professionals").select("id,name,active").eq("org_id",orgId).order("name").limit(500),
    supabase.from("commission_payouts").select("id,professional_id,amount,payment_method,paid_at,notes,cash_movement_id")
     .eq("org_id",orgId).order("paid_at",{ascending:false}).limit(300),
-   supabase.from("app_settings").select("id,setting_value").eq("org_id",orgId).is("branch_id",null).eq("setting_key","commission_products").limit(1)
+   supabase.from("app_settings").select("id,setting_value").eq("org_id",orgId).is("branch_id",null).eq("setting_key","product_commission").limit(1)
   ]);
   if(commissionResult.error)throw commissionResult.error;
   if(professionalResult.error)throw professionalResult.error;
@@ -40,7 +40,7 @@ export async function loadCommissionsPage(){
   const commissions=commissionResult.data||[],professionals=professionalResult.data||[],payouts=payoutResult.data||[];
   const productSetting=settingsResult.data?.[0]||null;
   const productCommissionEnabled=productSetting?.setting_value?.enabled===true;
-  const productCommissionRate=Number(productSetting?.setting_value?.rate||0);
+  const productCommissionRate=Number(productSetting?.setting_value?.default_rate||0);
   const professionalMap=new Map(professionals.map(p=>[p.id,p]));
   const visible=selectedProfessionalFilter?commissions.filter(c=>c.professional_id===selectedProfessionalFilter):commissions;
   const totals=visible.reduce((acc,c)=>{acc[c.status]=(acc[c.status]||0)+Number(c.amount||0);return acc;},{});
@@ -90,12 +90,12 @@ export async function loadCommissionsPage(){
     if(!Number.isFinite(rate)||rate<0||rate>100||(enabled&&rate<=0)){toast("Informe uma comissão entre 0,01% e 100% quando a regra estiver ativa.");return;}
     button.disabled=true;button.textContent="Salvando…";
     try{
-     const payload={setting_value:{enabled,rate},updated_by:state.user?.id||null};
+     const payload={setting_value:{enabled,default_rate:rate},updated_by:state.user?.id||null};
      let result;
      if(productSetting){
       result=await supabase.from("app_settings").update(payload).eq("org_id",orgId).eq("id",productSetting.id);
      }else{
-      result=await supabase.from("app_settings").insert({org_id:orgId,branch_id:null,setting_key:"commission_products",...payload});
+      result=await supabase.from("app_settings").insert({org_id:orgId,branch_id:null,setting_key:"product_commission",...payload});
      }
      if(result.error)throw result.error;
      toast(enabled?"Comissão de produtos ativada.":"Comissão de produtos desativada.");
