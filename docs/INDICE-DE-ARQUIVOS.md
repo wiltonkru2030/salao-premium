@@ -145,6 +145,10 @@ Use este índice para localizar a responsabilidade de cada arquivo. Arquivos de 
 | `professional/sw.js` | Service worker e cache offline. |
 | `professional/icon.svg` | Ícone do PWA. |
 
+## Auditoria de banco
+
+- `docs/MIGRATIONS.md`: divergência entre migrations remotas e arquivos SQL do repositório.
+
 ## Backend Supabase
 
 | Arquivo | O que é / o que faz |
