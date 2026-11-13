@@ -7,6 +7,7 @@ import { userErrorMessage, reportError } from "../utils/errors.js";
 import { parseBRL } from "../utils/input-masks.js";
 import { buildComandaDetails } from "../modules/comanda/components/comanda-detail.js";
 import { currency, statusLabel, paymentStatusLabel, paymentMethodLabel } from "../modules/comanda/comanda.formatters.js";
+import { registerComandaPayment, cancelComanda } from "../modules/comanda/services/comanda-operations.js";
 
 /** @typedef {import("../types/tenant.types").TenantContext} TenantContext */
 /** @typedef {import("../types/operations.types").ServiceOrderRecord} ServiceOrderRecord */
@@ -138,7 +139,7 @@ function renderOrderDetails(host,order,data,orgId){
    if(!Number.isFinite(amount)||amount<=0){toast("Informe um valor válido.");return;}
    submit.disabled=true;submit.textContent="Registrando…";
    try{
-    const {data,error}=await supabase.rpc("register_service_order_payment",{p_order_id:order.id,p_amount:amount,p_payment_method:method});
+    const {data,error}=await registerComandaPayment({supabase,orderId:order.id,amount,paymentMethod:method});
     if(error)throw error;
     toast(data?.closed?"Comanda quitada e finalizada. Estoque, caixa e comissões atualizados.":"Pagamento parcial registrado.");
     await loadComandaPage(order.id);
@@ -190,7 +191,7 @@ export async function loadComandaPage(orderId=null){
      if(!window.confirm(message))return;
      button.disabled=true;button.textContent="Processando…";
      try{
-      const {data,error}=await supabase.rpc("cancel_service_order",{p_order_id:button.dataset.orderId,p_refund_payments:refund});
+      const {data,error}=await cancelComanda({supabase,orderId:button.dataset.orderId,refundPayments:refund});
       if(error)throw error;
       toast(refund
        ?"Comanda cancelada. "+currency(data?.refunded_amount||0)+" estornados e registrados no Caixa."
