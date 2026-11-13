@@ -46,6 +46,11 @@ A Comanda é o registro operacional do atendimento.
 - Comissões não pagas daquele recebimento são canceladas.
 - Comanda fechada/quitada: não é cancelada por este fluxo. Devolução de venda fechada requer fluxo próprio para estoque e financeiro.
 
+## Separação dos componentes
+- A tela Comanda delega a montagem dos detalhes para `src/modules/comanda/components/comanda-detail.js`; moeda e rótulos estão em `comanda.formatters.js`.
+- O painel Caixa delega a apresentação para `src/modules/cash/components/cash-dashboard.js`.
+- Os componentes recebem dados já carregados e não fazem consultas Supabase.
+
 ## Orçamentos integrados
 
 - Orçamento é independente de Comanda; não movimenta Caixa, estoque ou comissão antes da execução do atendimento.
@@ -66,6 +71,7 @@ A Comanda é o registro operacional do atendimento.
 - `20261113010729_enforce_unique_professional_service_commission_rules`
 - `20261113011533_create_quotes_atomically_with_tenant_validation`
 - `20261113011612_save_quote_discount_settings_atomically`
+- `20261113011915_scope_professional_app_access_to_explicit_tenant`
 
 ## Testes pendentes
 
