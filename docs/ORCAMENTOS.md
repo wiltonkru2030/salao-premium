@@ -44,6 +44,7 @@ O PDF é gerado pelo diálogo de impressão do navegador; não existe geração 
 - `20261113004807_quote_quantity_aware_appointment_duration`
 - `20261113011533_create_quotes_atomically_with_tenant_validation`
 - `20261113011612_save_quote_discount_settings_atomically`
+- `20261113012733_enforce_professional_service_on_quote_scheduling`
 
 ## Testes
 `npm run test:quotes` valida renderização dos componentes; `npm run test:tenant` valida a seleção explícita de organização. Build e testes automatizados não substituem o teste integrado com duas organizações e agendamentos reais controlados.
