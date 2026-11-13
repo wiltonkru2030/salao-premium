@@ -14,7 +14,9 @@ let selectedService=null;
 let selectedProduct=null;
 let detailLoading=false;
 const currency=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-const statusLabel=v=>({open:"Aberta",in_progress:"Em atendimento",awaiting_payment:"Aguardando pagamento",partially_paid:"Pagamento parcial",closed:"Finalizada",cancelled:"Cancelada"})[v]||v;
+const statusLabel=v=>({open:"Aberta",in_progress:"Em atendimento",awaiting_payment:"Aguardando pagamento",partially_paid:"Pagamento parcial",closed:"Finalizada",cancelled:"Cancelada"})[v]||"Status não identificado";
+const paymentStatusLabel=v=>({confirmed:"Confirmado",refunded:"Estornado",cancelled:"Cancelado"})[v]||"Em análise";
+const paymentMethodLabel=v=>({pix:"PIX",cash:"Dinheiro",credit_card:"Cartão de crédito",debit_card:"Cartão de débito",transfer:"Transferência",voucher:"Voucher",other:"Outro"})[v]||"Outro";
 const escapeHtml=esc;
 function clearAutocomplete(){cleanup.forEach(fn=>fn());cleanup=[];}
 export function comandaPage(){
@@ -35,7 +37,7 @@ function canPay(){return canManage()||state.membership?.professional_app_scope==
 async function queryDetails(order,orgId){
  const [items,payments,customer,professional,services,products,professionals]=await Promise.all([
   supabase.from("service_order_items").select("id,item_type,description,quantity,unit_price,discount,total,professional_id,created_at").eq("org_id",orgId).eq("order_id",order.id).order("created_at"),
-  supabase.from("service_order_payments").select("id,amount,payment_method,status,paid_at").eq("org_id",orgId).eq("order_id",order.id).order("paid_at"),
+  supabase.from("service_order_payments").select("id,amount,payment_method,status,paid_at,refunded_at,refund_cash_movement_id").eq("org_id",orgId).eq("order_id",order.id).order("paid_at"),
   order.customer_id?supabase.from("customers").select("id,name,phone").eq("org_id",orgId).eq("id",order.customer_id).maybeSingle():Promise.resolve({data:null,error:null}),
   order.assigned_professional_id?supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("id",order.assigned_professional_id).maybeSingle():Promise.resolve({data:null,error:null}),
   supabase.from("services").select("id,name,price,duration_minutes").eq("org_id",orgId).eq("active",true).order("name").limit(250),
@@ -67,7 +69,7 @@ function renderOrderDetails(host,order,data,orgId){
  ${items.length?items.map(i=>'<div class="setting-row"><span><b>'+esc(i.description)+'</b><small>'+Number(i.quantity)+' × '+currency(i.unit_price)+(i.professional_id?' · '+esc(professionals.find(p=>p.id===i.professional_id)?.name||'Profissional vinculado'):' · Sem profissional')+'</small></span><b>'+currency(i.total)+'</b></div>').join(""):'<div class="empty-state">Nenhum item lançado nesta comanda.</div>'}
  <div class="setting-row"><span>Subtotal</span><b>${currency(order.subtotal)}</b></div><div class="setting-row"><span>Desconto</span><b>${currency(order.discount)}</b></div><div class="setting-row"><b>Total</b><b>${currency(order.total)}</b></div></section>${itemEditors}
  <section class="settings-card"><h3>Pagamentos</h3>
- ${payments.length?payments.map(p=>'<div class="setting-row"><span>'+currency(p.amount)+'<small>'+esc(p.payment_method)+' · '+new Date(p.paid_at).toLocaleString("pt-BR")+'</small></span><b>'+esc(p.status)+'</b></div>').join(""):'<div class="empty-state">Nenhum pagamento registrado.</div>'}
+ ${payments.length?payments.map(p=>'<div class="setting-row"><span>'+currency(p.amount)+'<small>'+esc(paymentMethodLabel(p.payment_method))+' · '+new Date(p.paid_at).toLocaleString("pt-BR")+(p.refunded_at?' · Estornado em '+new Date(p.refunded_at).toLocaleString("pt-BR"):'')+'</small></span><b>'+esc(paymentStatusLabel(p.status))+'</b></div>').join(""):'<div class="empty-state">Nenhum pagamento registrado.</div>'}
  <div class="setting-row"><span>Total recebido</span><b>${currency(paid)}</b></div><div class="setting-row"><span>Saldo restante</span><b>${currency(balance)}</b></div></section>
  ${editable&&allowEdit?`
  <section class="settings-card"><h3>Adicionar serviço</h3><form id="comanda-service-form">
@@ -85,7 +87,12 @@ function renderOrderDetails(host,order,data,orgId){
  <label>Valor recebido (R$)<input name="amount" class="field" type="text" inputmode="decimal" data-mask="currency" value="${balance.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}" required></label>
  <label>Forma de pagamento<select name="payment_method" class="field" required><option value="pix">PIX</option><option value="cash">Dinheiro</option><option value="credit_card">Cartão de crédito</option><option value="debit_card">Cartão de débito</option><option value="transfer">Transferência</option><option value="voucher">Voucher</option><option value="other">Outro</option></select></label>
  <button class="btn primary" type="submit" ${balance<=0?"disabled":""}>Registrar pagamento</button><p class="demo-note">Cada recebimento, inclusive parcial, gera uma entrada no Caixa. Na quitação, o sistema finaliza a venda, baixa o estoque e gera as comissões configuradas.</p></form></section>`:''}
- ${editable&&allowEdit?'<section class="settings-card"><button class="btn secondary" data-action="cancel-comanda" data-order-id="'+order.id+'">Cancelar comanda e horários vinculados</button></section>':""}
+ ${editable&&allowEdit?(()=>{
+  const hasConfirmedPayment=payments.some(p=>p.status==="confirmed");
+  const canRefund=["owner","admin","manager","finance"].includes(state.membership?.role);
+  if(hasConfirmedPayment&&!canRefund)return '<section class="settings-card"><p class="demo-note">Esta comanda possui recebimentos. O estorno integral e o cancelamento exigem perfil de administração ou financeiro.</p></section>';
+  return '<section class="settings-card"><button class="btn secondary" data-action="cancel-comanda" data-order-id="'+order.id+'" data-refund-payments="'+(hasConfirmedPayment?'true':'false')+'">'+(hasConfirmedPayment?'Estornar recebimentos e cancelar comanda':'Cancelar comanda e horários vinculados')+'</button></section>';
+})():""}
  ${order.status==="closed"?'<div class="notice">Comanda finalizada. O registro permanece no histórico.</div>':""}`;
  clearAutocomplete();
  if(editable&&allowEdit){
@@ -201,9 +208,21 @@ export async function loadComandaPage(orderId=null){
     const open=e.target.closest("[data-open-comanda]");if(open){selectedOrder=open.dataset.openComanda;await loadComandaPage(selectedOrder);return;}
     if(e.target.closest('[data-action="back-comandas"]')){selectedOrder=null;await loadComandaPage();return;}
     if(e.target.closest('[data-action="cancel-comanda"]')){
-     const button=e.target.closest('[data-action="cancel-comanda"]');if(!window.confirm("Cancelar esta comanda? Os agendamentos vinculados também serão cancelados."))return;
-     const {error}=await supabase.from("service_orders").update({status:"cancelled"}).eq("org_id",orgId).eq("id",button.dataset.orderId);
-     if(error){reportError(error,{context:"Comanda > cancelar comanda"});return;}toast("Comanda e horários vinculados cancelados.");selectedOrder=null;await loadComandaPage();
+     const button=e.target.closest('[data-action="cancel-comanda"]');
+     const refund=button.dataset.refundPayments==="true";
+     const message=refund
+      ?"A comanda será cancelada e todos os pagamentos parciais serão estornados como saídas no Caixa. Deseja continuar?"
+      :"Cancelar esta comanda e os agendamentos vinculados? Esta ação não pode ser desfeita.";
+     if(!window.confirm(message))return;
+     button.disabled=true;button.textContent="Processando…";
+     try{
+      const {data,error}=await supabase.rpc("cancel_service_order",{p_order_id:button.dataset.orderId,p_refund_payments:refund});
+      if(error)throw error;
+      toast(refund
+       ?"Comanda cancelada. "+currency(data?.refunded_amount||0)+" estornados e registrados no Caixa."
+       :"Comanda e horários vinculados cancelados.");
+      selectedOrder=null;await loadComandaPage();
+     }catch(error){reportError(error,{context:"Comanda > cancelar e estornar"});button.disabled=false;button.textContent=refund?"Estornar recebimentos e cancelar comanda":"Cancelar comanda e horários vinculados";}
     }
    });
    host.addEventListener("input",e=>{
