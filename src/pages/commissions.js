@@ -25,19 +25,25 @@ export async function loadCommissionsPage(){
  cleanupSearch?.();cleanupSearch=null;
  try{
   const orgId=state.organization.id;
-  const [commissionResult,professionalResult,payoutResult,settingsResult]=await Promise.all([
+  const [commissionResult,professionalResult,payoutResult,settingsResult,serviceResult,ruleResult]=await Promise.all([
    supabase.from("commissions").select("id,professional_id,base_amount,rate,amount,status,paid_at,created_at,payout_id,sale_id,appointment_id,item_type")
     .eq("org_id",orgId).order("created_at",{ascending:false}).limit(1000),
    supabase.from("professionals").select("id,name,active").eq("org_id",orgId).order("name").limit(500),
    supabase.from("commission_payouts").select("id,professional_id,amount,payment_method,paid_at,notes,cash_movement_id")
     .eq("org_id",orgId).order("paid_at",{ascending:false}).limit(300),
-   supabase.from("app_settings").select("id,setting_value").eq("org_id",orgId).is("branch_id",null).eq("setting_key","product_commission").limit(1)
+   supabase.from("app_settings").select("id,setting_value").eq("org_id",orgId).is("branch_id",null).eq("setting_key","product_commission").limit(1),
+   supabase.from("services").select("id,name,active").eq("org_id",orgId).eq("active",true).order("name").limit(500),
+   supabase.from("commission_rules").select("id,professional_id,service_id,rate,active,item_type").eq("org_id",orgId).eq("item_type","service").eq("active",true).order("created_at",{ascending:false}).limit(1000)
   ]);
   if(commissionResult.error)throw commissionResult.error;
   if(professionalResult.error)throw professionalResult.error;
   if(payoutResult.error)throw payoutResult.error;
   if(settingsResult.error)throw settingsResult.error;
+  if(serviceResult.error)throw serviceResult.error;
+  if(ruleResult.error)throw ruleResult.error;
   const commissions=commissionResult.data||[],professionals=professionalResult.data||[],payouts=payoutResult.data||[];
+  const services=serviceResult.data||[],serviceRules=ruleResult.data||[];
+  const serviceMap=new Map(services.map(item=>[item.id,item]));
   const productSetting=settingsResult.data?.[0]||null;
   const productCommissionEnabled=productSetting?.setting_value?.enabled===true;
   const productCommissionRate=Number(productSetting?.setting_value?.default_rate||0);
@@ -62,8 +68,23 @@ export async function loadCommissionsPage(){
    const professional=professionalMap.get(p.professional_id);
    return '<article class="record-card"><span class="record-main"><b>'+esc(professional?.name||"Profissional")+' · '+money(p.amount)+'</b><small>'+dateTime(p.paid_at)+' · '+esc(p.payment_method)+'</small><small>'+esc(p.notes||"Pagamento de comissões")+'</small></span><span class="record-trailing"><small>Pago</small><small>Caixa vinculado</small></span></article>';
   }).join("");
+  // Cada regra liga um profissional a um serviço e define o percentual específico.
+  const serviceRulesCard=canManageCommissionSettings()?`<section class="settings-card commission-rules-card">
+   <div class="section-title"><div><h3>Comissão por profissional e serviço</h3><small class="muted">A regra específica prevalece sobre a comissão padrão do profissional.</small></div></div>
+   <form id="service-commission-rule-form" class="commission-rule-form">
+    <label>Profissional<select class="field" name="professional_id" required><option value="">Selecione o profissional</option>${professionals.filter(p=>p.active).map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join('')}</select></label>
+    <label>Serviço<select class="field" name="service_id" required><option value="">Selecione o serviço</option>${services.map(s=>'<option value="'+s.id+'">'+esc(s.name)+'</option>').join('')}</select></label>
+    <label>Comissão (%)<input class="field" name="rate" type="number" min="0" max="100" step="0.01" placeholder="Ex.: 50" required></label>
+    <button class="btn primary" type="submit">Adicionar regra</button>
+   </form>
+   <div class="commission-rule-list">${serviceRules.map(rule=>{
+    const pro=professionalMap.get(rule.professional_id),service=serviceMap.get(rule.service_id);
+    return '<div class="commission-rule-row"><span><b>'+esc(pro?.name||'Profissional')+'</b><small>'+esc(service?.name||'Serviço removido')+'</small></span><strong>'+Number(rule.rate).toLocaleString('pt-BR',{maximumFractionDigits:2})+'%</strong><button class="btn secondary" type="button" data-delete-commission-rule="'+rule.id+'">Excluir</button></div>';
+   }).join('')||'<p class="empty-state">Nenhuma regra específica cadastrada. O sistema usará a comissão padrão do profissional.</p>'}</div>
+  </section>`:'';
   const productSettingsCard=canManageCommissionSettings()?`<section class="settings-card"><div class="section-title"><div><h3>Comissão de produtos</h3><small class="muted">Aplica-se aos produtos vinculados a um profissional na Comanda</small></div></div><form id="product-commission-settings"><label class="setting-row"><span><b>Ativar comissão sobre produtos</b><small>Produtos sem profissional vinculado não geram comissão</small></span><input type="checkbox" name="enabled" ${productCommissionEnabled?'checked':''}></label><label>Percentual de comissão (%)<input class="field" name="rate" type="number" min="0" max="100" step="0.01" value="${productCommissionRate.toFixed(2)}" required></label><button class="btn primary" type="submit">Salvar configuração</button></form></section>`:'';
   host.innerHTML=`
+   ${serviceRulesCard}
    ${productSettingsCard}
    <section class="settings-card commission-summary"><div><small class="eyebrow">A PAGAR</small><h2>${money(pending)}</h2></div><div><small class="eyebrow">PAGO</small><h2>${money(paid)}</h2></div><div><small class="eyebrow">LANÇAMENTOS</small><h2>${visible.length}</h2></div></section>
    <div class="list-toolbar"><label class="search-box"><span>⌕</span><input id="commission-professional-search" placeholder="Filtrar por profissional" autocomplete="off"></label><button class="btn secondary" data-clear-commission-filter>Todos</button></div>
@@ -83,10 +104,26 @@ export async function loadCommissionsPage(){
   if(host.dataset.settingsBound!=="true"){
    host.dataset.settingsBound="true";
    host.addEventListener("submit",async event=>{
-    const form=event.target;if(!form.matches("#product-commission-settings"))return;
+    const form=event.target;
+    if(!form.matches("#product-commission-settings")&&!form.matches("#service-commission-rule-form"))return;
     event.preventDefault();
-    if(!canManageCommissionSettings()){toast("Somente proprietário, administrador ou gerente pode alterar esta regra.");return;}
-    const values=new FormData(form),enabled=values.get("enabled")==="on",rate=Number(values.get("rate")),button=form.querySelector('[type="submit"]');
+    if(!canManageCommissionSettings()){toast("Somente proprietário ou administrador pode alterar regras de comissão.");return;}
+    const button=form.querySelector('[type="submit"]');
+    if(form.matches("#service-commission-rule-form")){
+     const values=new FormData(form),professionalId=String(values.get("professional_id")||""),serviceId=String(values.get("service_id")||""),rate=Number(values.get("rate"));
+     if(!professionalId||!serviceId||!Number.isFinite(rate)||rate<0||rate>100){toast("Selecione o profissional, o serviço e informe um percentual entre 0 e 100.");return;}
+     if(serviceRules.some(rule=>rule.professional_id===professionalId&&rule.service_id===serviceId)){toast("Já existe uma regra para este profissional e serviço. Exclua a regra anterior antes de cadastrar outra.");return;}
+     button.disabled=true;button.textContent="Salvando…";
+     try{
+      const {error}=await supabase.from("commission_rules").insert({org_id:orgId,professional_id:professionalId,service_id:serviceId,item_type:"service",rate,active:true});
+      if(error)throw error;
+      toast("Regra de comissão salva.");
+      await loadCommissionsPage();
+     }catch(error){reportError(error,{context:"Comissões > cadastrar regra por serviço"});}
+     finally{if(button.isConnected){button.disabled=false;button.textContent="Adicionar regra";}}
+     return;
+    }
+    const values=new FormData(form),enabled=values.get("enabled")==="on",rate=Number(values.get("rate"));
     if(!Number.isFinite(rate)||rate<0||rate>100||(enabled&&rate<=0)){toast("Informe uma comissão entre 0,01% e 100% quando a regra estiver ativa.");return;}
     button.disabled=true;button.textContent="Salvando…";
     try{
@@ -109,6 +146,15 @@ export async function loadCommissionsPage(){
    host.addEventListener("click",async event=>{
     if(event.target.closest("[data-clear-commission-filter]")){
      selectedProfessionalFilter=null;await loadCommissionsPage();return;
+    }
+    const deleteRule=event.target.closest("[data-delete-commission-rule]");
+    if(deleteRule){
+     if(!canManageCommissionSettings()){toast("Você não tem permissão para alterar regras.");return;}
+     if(!window.confirm("Excluir esta regra específica? O sistema voltará a usar a comissão padrão do profissional."))return;
+     deleteRule.disabled=true;
+     const {error}=await supabase.from("commission_rules").delete().eq("org_id",orgId).eq("id",deleteRule.dataset.deleteCommissionRule);
+     if(error){reportError(error,{context:"Comissões > excluir regra"});deleteRule.disabled=false;return;}
+     toast("Regra removida.");await loadCommissionsPage();return;
     }
     const button=event.target.closest("[data-pay-commissions]");
     if(!button)return;
