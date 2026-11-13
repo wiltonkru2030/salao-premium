@@ -55,7 +55,7 @@ function renderOrderDetails(host,order,data,orgId){
  const editable=["open","in_progress","partially_paid","awaiting_payment"].includes(order.status);
  const allowEdit=canManage();
  const allowPay=canPay();
- const canEditItems=["owner","admin","manager"].includes(state.membership?.role)&&!payments.some(p=>p.status==="confirmed");
+ const canEditItems=editable&&["owner","admin","manager"].includes(state.membership?.role)&&!payments.some(p=>p.status==="confirmed");
  const itemEditors=canEditItems?'<section class="settings-card"><h3>Editar itens</h3>'+items.map(i=>{
   const options='<option value="">Sem profissional</option>'+professionals.map(p=>'<option value="'+p.id+'"'+(i.professional_id===p.id?' selected':'')+'>'+esc(p.name)+'</option>').join("");
   return '<details class="comanda-item-editor"><summary>'+esc(i.description)+' · '+currency(i.total)+'</summary><form data-edit-comanda-item="'+i.id+'"><label>Quantidade<input class="field" name="quantity" type="number" min="0.001" step="0.001" value="'+Number(i.quantity)+'" required></label><label>Preço unitário (R$)<input class="field" name="unit_price" type="number" min="0" step="0.01" value="'+Number(i.unit_price).toFixed(2)+'" required></label><label>Desconto (R$)<input class="field" name="discount" type="number" min="0" step="0.01" value="'+Number(i.discount||0).toFixed(2)+'" required></label><label>Profissional<select class="field" name="professional_id">'+options+'</select></label><button class="btn primary" type="submit">Salvar alterações</button><button class="btn secondary" type="button" data-delete-comanda-item="'+i.id+'">Excluir item</button></form></details>';
@@ -72,7 +72,6 @@ function renderOrderDetails(host,order,data,orgId){
  ${editable&&allowEdit?`
  <section class="settings-card"><h3>Adicionar serviço</h3><form id="comanda-service-form">
  <label>Serviço<input id="comanda-service" class="field" placeholder="Digite para buscar" autocomplete="off" required></label>
- <label>Profissional<select name="professional_id" class="field"><option value="">Sem profissional</option>${professionals.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("")}</select></label>
  <button class="btn primary" type="submit">Adicionar serviço</button></form></section>
  <section class="settings-card"><h3>Adicionar produto</h3><form id="comanda-product-form">
  <label>Produto<input id="comanda-product" class="field" placeholder="Digite para buscar" autocomplete="off" required></label>
