@@ -1,6 +1,6 @@
 # Módulo Comanda
 
-Implementação da página: `src/pages/comanda.js`; apresentação dos detalhes em `components/comanda-detail.js`; rótulos e moeda em `comanda.formatters.js`; API de compatibilidade preservada pelo roteador.
+Implementação da página: `src/pages/comanda.js`; apresentação dos detalhes em `components/comanda-detail.js`; rótulos e moeda em `comanda.formatters.js`; pagamentos e cancelamento em `services/comanda-operations.js`; API de compatibilidade preservada pelo roteador.
 
 Responsabilidades: itens de serviço/produto, profissional por item, pagamentos parciais/totais, saldo, cancelamento e estorno permitido.
 
