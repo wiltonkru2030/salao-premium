@@ -63,7 +63,7 @@ async function selectExistingOrder(orders) {
   return {orderId:chosen.id,forceNew:false};
 }
 // Valida e persiste criação/edição de agendamento no Supabase.
-async export function saveAppointment(form) {
+export async function saveAppointment(form) {
   const values=new FormData(form);
   const customerId=String(values.get('customer_id')||'');
   const serviceId=String(values.get('service_id')||'');
@@ -144,7 +144,7 @@ async export function saveAppointment(form) {
   toast('Agendamento criado. Nenhuma comanda foi aberta.');
 }
 // Atualiza status e timestamps de chegada, cancelamento ou conclusão.
-async export function updateAppointmentStatus(appointment,status) {
+export async function updateAppointmentStatus(appointment,status) {
   const changes={status};
   if(status==='arrived')changes.arrived_at=new Date().toISOString();
   if(status==='cancelled')changes.cancelled_at=new Date().toISOString();
@@ -156,7 +156,7 @@ async export function updateAppointmentStatus(appointment,status) {
   await loadAgendaPage();
 }
 // Solicita ao backend a abertura transacional da comanda.
-async export function openAppointmentOrder(appointment) {
+export async function openAppointmentOrder(appointment) {
   if(appointment.dbStatus==='cancelled'||appointment.dbStatus==='completed'||appointment.dbStatus==='no_show') {
     throw new Error('Este agendamento não pode abrir uma comanda.');
   }
@@ -194,7 +194,7 @@ async export function openAppointmentOrder(appointment) {
   toast('Comanda #'+result.order_number+' aberta com '+count+' serviço(s).');
 }
 // Roteia ações do drawer para os fluxos de Agenda correspondentes.
-async export function handleAppointmentAction(action) {
+export async function handleAppointmentAction(action) {
   const appointment=appointmentActionRow();
   if(!appointment)return;
   if(action==='reschedule') {
@@ -233,7 +233,7 @@ async export function handleAppointmentAction(action) {
   }
 }
 // Valida conflitos e persiste bloqueios de disponibilidade.
-async export function saveBlockTime(form) {
+export async function saveBlockTime(form) {
   const values=new FormData(form);
   const professionalId=String(values.get('professional_id')||'');
   const date=String(values.get('date')||'');
