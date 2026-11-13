@@ -1,0 +1,193 @@
+/* Modal global — usado por todos os cadastros e edições */
+dialog.sp-modal{
+  width:min(680px,calc(100vw - 28px));max-width:none;max-height:min(88dvh,860px);
+  margin:auto;padding:0;border:1px solid var(--sp-line);border-radius:11px;
+  background:var(--sp-paper);color:var(--sp-ink);box-shadow:var(--sp-shadow);overflow:hidden
+}
+dialog.sp-modal::backdrop{background:rgba(25,23,19,.48);backdrop-filter:blur(2px)}
+.sp-modal-shell{display:flex;flex-direction:column;max-height:min(88dvh,860px);min-height:0}
+.sp-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:20px 22px;border-bottom:1px solid var(--sp-line);background:#fff}
+.sp-modal-head h2{margin:0;color:var(--sp-ink);font-size:18px;font-weight:600;letter-spacing:-.25px}
+.sp-modal-head p{margin:5px 0 0;color:var(--sp-muted);font-size:10px;line-height:1.6}
+.sp-modal-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px;padding:20px 22px;overflow:auto}
+.sp-modal-body>label{display:grid;align-content:start;gap:7px;min-width:0;color:#66635d;font-size:10px;font-weight:500}
+.sp-modal-body>label input,.sp-modal-body>label select,.sp-modal-body>label textarea{
+ width:100%;min-width:0;min-height:var(--sp-control-height);padding:10px 12px;
+ border:1px solid var(--sp-line-strong);border-radius:7px;background:#fff;color:var(--sp-ink);
+ font:inherit;font-size:11px;outline:0
+}
+.sp-modal-body>label input:focus,.sp-modal-body>label select:focus,.sp-modal-body>label textarea:focus{border-color:var(--sp-gold);box-shadow:var(--sp-focus)}
+.sp-modal-body>label.sp-span{grid-column:1/-1}
+.sp-modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 22px;border-top:1px solid var(--sp-line);background:#fff}
+.sp-modal-close{width:34px;height:34px;border:1px solid var(--sp-line);border-radius:7px;background:#fff;color:#555;font-size:20px;cursor:pointer}
+@media(max-width:600px){
+ dialog.sp-modal{width:calc(100vw - 16px);max-height:92dvh}
+ .sp-modal-head{padding:16px}
+ .sp-modal-body{grid-template-columns:1fr;padding:15px;gap:12px}
+ .sp-modal-body>label.sp-span{grid-column:auto}
+ .sp-modal-foot{padding:12px 15px;display:grid;grid-template-columns:1fr 1fr}
+}
+
+
+/* Formulários de agenda e bloqueios também são modais, não painéis laterais */
+.detail-drawer:has(.agenda-form){
+  inset:50% auto auto 50%;transform:translate(-50%,-50%);
+  width:min(680px,calc(100vw - 28px));height:auto;max-height:min(88dvh,860px);
+  border:1px solid var(--sp-line);border-radius:11px;box-shadow:var(--sp-shadow);
+  animation:modalEnter .16s ease-out
+}
+.detail-drawer:has(.agenda-form) .drawer-content{min-height:0;max-height:calc(88dvh - 130px);overflow:auto}
+.detail-drawer:has(.agenda-form) .drawer-bottom{display:none}
+.detail-drawer:has(.agenda-form) .agenda-form{display:grid;gap:12px}
+.detail-drawer:has(.agenda-form) .agenda-form .form-field{margin:0}
+.detail-drawer:has(.agenda-form) .agenda-form .btn{margin-top:4px}
+@keyframes modalEnter{from{opacity:0;transform:translate(-50%,-48%)}to{opacity:1;transform:translate(-50%,-50%)}}
+@media(max-width:600px){
+ .detail-drawer:has(.agenda-form){width:calc(100vw - 16px);max-height:92dvh;border-radius:10px}
+ .detail-drawer:has(.agenda-form) .drawer-content{max-height:calc(92dvh - 115px);padding:16px}
+}
+
+/* Espaçamento reutilizável entre blocos de histórico e resumo. */
+.section-title--spaced{margin-top:28px}
+
+/* O cadastro de profissional usa a mesma estrutura global dos demais modais. */
+.professional-modal.sp-modal{padding:0;overflow:hidden}
+.professional-modal-form.sp-modal-shell{width:100%;max-height:min(88dvh,860px);min-height:0}
+.professional-modal-body.sp-modal-body{display:flex;flex-direction:column;gap:13px;overflow:auto;min-height:0}
+.professional-modal-body.sp-modal-body h3{margin:7px 0 0}
+
+/* Recuperar: conteúdo dentro do diálogo nativo global (ESC, foco e backdrop nativos). */
+dialog.sp-modal.recycle-dialog{width:min(760px,calc(100vw - 28px));padding:0;overflow:hidden}
+.recycle-dialog .recycle-modal{position:relative;z-index:auto;left:auto;top:auto;transform:none;width:100%;max-height:min(86dvh,900px);border:0;border-radius:0;box-shadow:none}
+@media(max-width:600px){dialog.sp-modal.recycle-dialog{width:calc(100vw - 16px);max-height:92dvh}.recycle-dialog .recycle-modal{max-height:92dvh}}
+
+/* Espaçamento global para títulos de seção no App Profissional. */
+.section-title--tight-spaced{margin-top:24px}
+
+
+/* Comissões — regras individuais com a mesma linguagem visual do painel. */
+.commission-rules-card .section-title{padding:15px 18px 0}
+.commission-rule-form{
+ display:grid;grid-template-columns:1.1fr 1.1fr .7fr auto;align-items:end;
+ gap:12px;padding:17px 18px;border-bottom:1px solid var(--sp-line)
+}
+.commission-rule-form label{display:grid;gap:6px;color:var(--sp-muted);font-size:10px}
+.commission-rule-form .btn{min-height:42px}
+.commission-rule-list{display:grid}
+.commission-rule-row{
+ display:grid;grid-template-columns:1.1fr 1.1fr .65fr auto auto;align-items:end;
+ gap:10px;padding:12px 18px;border-bottom:1px solid #efede8
+}
+.commission-rule-row label{display:grid;gap:5px;min-width:0;color:var(--sp-muted);font-size:9px}
+.commission-rule-row .field{min-width:0;min-height:36px;padding:7px 9px;font-size:10px}
+.commission-rule-row:last-child{border-bottom:0}
+.commission-rule-row>span{display:grid;gap:3px;min-width:0}
+.commission-rule-row>span b{color:var(--sp-ink);font-size:10px;font-weight:600}
+.commission-rule-row>span small{color:var(--sp-muted);font-size:9px}
+.commission-rule-row>strong{color:var(--sp-ink);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.commission-rule-row .btn{min-height:32px;padding:7px 10px;font-size:9px}
+@media(max-width:760px){
+ .commission-rule-form{grid-template-columns:1fr 1fr;padding:14px}
+ .commission-rule-form .btn{width:100%}
+}
+@media(max-width:480px){
+ .commission-rule-form{grid-template-columns:1fr}
+ .commission-rule-row{grid-template-columns:1fr 1fr;gap:9px;padding:11px 13px}
+ .commission-rule-row label:nth-child(3){grid-column:1/-1}
+ .commission-rule-row .btn{width:100%}
+}
+
+
+/* Padrão transversal — Agenda, Comanda, Caixa e demais módulos. */
+.settings-card{
+  min-width:0;margin:0 0 16px;padding:0;
+  border:1px solid var(--sp-line);border-radius:var(--sp-radius);
+  background:var(--sp-paper);box-shadow:none;overflow:hidden
+}
+.settings-card>h3,.settings-card>.section-title{
+  margin:0;padding:17px 19px;color:var(--sp-ink);
+  font-size:12px;font-weight:600;border-bottom:1px solid var(--sp-line)
+}
+.settings-card>p:not(.demo-note){padding-inline:19px}
+.setting-row{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  min-width:0;padding:13px 18px;border-bottom:1px solid #f0eee9
+}
+.setting-row:last-child{border-bottom:0}
+.setting-row>span:first-child{min-width:0}
+.setting-row b{color:var(--sp-ink);font-size:11px;font-weight:600}
+.setting-row small{display:block;margin-top:4px;color:var(--sp-muted);font-size:9px;line-height:1.5}
+.record-list{display:grid;gap:8px;min-width:0}
+.record-card{
+  min-width:0;border:1px solid var(--sp-line);border-radius:8px;
+  background:#fff;color:var(--sp-ink);box-shadow:none
+}
+.record-card:hover{border-color:var(--sp-line-strong);background:#fdfcf9}
+.record-main,.record-trailing{min-width:0}
+.record-main b,.record-trailing b{font-size:11px;font-weight:600}
+.record-main small,.record-trailing small{font-size:9px;color:var(--sp-muted)}
+.list-toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;margin:0 0 14px
+}
+.search-box{min-width:min(100%,280px)}
+.search-box input,.field{
+  min-width:0;min-height:var(--sp-control-height);
+  border:1px solid var(--sp-line-strong);border-radius:7px;
+  background:#fff;color:var(--sp-ink);font-family:'Poppins',sans-serif;font-size:11px
+}
+.search-box input:focus,.field:focus{
+  outline:0;border-color:var(--sp-gold);box-shadow:var(--sp-focus)
+}
+.form-grid,.form-row{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:end;gap:13px;padding:17px 19px
+}
+.form-grid>label,.form-row>label,.settings-card form>label{
+  display:grid;align-content:start;gap:7px;min-width:0;
+  color:#66635d;font-size:10px;font-weight:500;line-height:1.45
+}
+.form-grid>.btn,.form-row>.btn{justify-self:start}
+.settings-card form .field{width:100%}
+.notice,.demo-note,.empty-state{
+  border-radius:7px;font-size:10px;line-height:1.6
+}
+.empty-state{
+  padding:25px 18px;border:1px dashed var(--sp-line-strong);
+  background:#fbfaf8;color:var(--sp-muted);text-align:center
+}
+.notice{padding:12px 15px;border:1px solid #e8e1d4;background:#faf8f3;color:#665a43}
+.demo-note{margin:0;padding:12px 17px;background:#faf9f6;color:var(--sp-muted)}
+.status{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:24px;padding:4px 9px;border:1px solid var(--sp-line);
+  border-radius:99px;background:#faf9f6;color:#69665f;
+  font-size:9px;font-weight:500;white-space:nowrap
+}
+.section-title--spaced{margin:24px 0 12px}
+.comanda-item-editor{padding:12px 16px;border-bottom:1px solid var(--sp-line)}
+.comanda-item-editor summary{cursor:pointer;color:var(--sp-ink);font-size:11px;font-weight:600}
+.comanda-item-editor form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;padding:14px 0 2px}
+.comanda-item-editor form label{display:grid;gap:6px;color:var(--sp-muted);font-size:10px}
+.comanda-item-editor form .btn{justify-self:start}
+.cash-filters .form-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.commission-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:17px}
+.commission-summary>div{min-width:0}
+@media(max-width:900px){
+  .page-content{padding:25px 22px 44px}
+  .cash-filters .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .page-content{padding:18px 13px 34px}
+  .page-head{align-items:flex-start;flex-direction:column;gap:12px;margin-bottom:18px}
+  .page-head h1{font-size:25px}
+  .settings-card>h3,.settings-card>.section-title{padding:14px}
+  .setting-row{padding:11px 13px}
+  .form-grid,.form-row,.cash-filters .form-grid{grid-template-columns:1fr;padding:13px}
+  .form-grid>.btn,.form-row>.btn{width:100%}
+  .comanda-item-editor form{grid-template-columns:1fr}
+  .comanda-item-editor form .btn{width:100%}
+  .commission-summary{grid-template-columns:1fr;gap:8px;padding:13px}
+  .list-toolbar{align-items:stretch}
+  .list-toolbar>*{max-width:100%}
+}
