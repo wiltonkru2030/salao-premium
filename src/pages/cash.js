@@ -8,6 +8,9 @@ import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
 import { reportError } from "../utils/errors.js";
 
+/** @typedef {import("../types/tenant.types").TenantContext} TenantContext */
+/** @typedef {import("../types/operations.types").CashRegisterRecord} CashRegisterRecord */
+
 const money=value=>Number(value||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const dateTime=value=>value?new Date(value).toLocaleString("pt-BR"):"—";
 const paymentMethodLabel=value=>({pix:"PIX",cash:"Dinheiro",credit_card:"Cartão de crédito",debit_card:"Cartão de débito",transfer:"Transferência",voucher:"Voucher",other:"Outro"})[value]||"Outro";
@@ -21,6 +24,10 @@ export function cashPage(){
 }
 
 /** Carrega o caixa padrão, resume entradas/saídas e associa movimentos às Comandas. */
+/**
+ * Carrega o caixa padrão da organização ativa e seus movimentos.
+ * @returns {Promise<void>} Apenas leitura; abertura e fechamento usam RPC transacional.
+ */
 export async function loadCashPage(){
  const host=document.querySelector("#cash-manager");
  if(!host||!state.organization?.id)return;
