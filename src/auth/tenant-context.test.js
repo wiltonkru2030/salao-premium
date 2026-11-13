@@ -1,3 +1,4 @@
+/** Testes unitários da seleção explícita de tenant; não acessa Supabase nem estado global. */
 import assert from "node:assert/strict";
 import { resolveTenantMemberships } from "./tenant-context.js";
 
