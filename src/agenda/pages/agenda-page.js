@@ -2,6 +2,7 @@
 import { state } from '../../state.js';
 import { supabase } from '../../supabase/client.js';
 import { head, btn, initials } from '../../utils.js';
+import { reportError } from '../../utils/errors.js';
 import { renderProfessionalSelector } from '../components/professional-selector.js';
 import { renderAgendaToolbar } from '../components/agenda-toolbar.js';
 import { renderDayCalendar } from '../components/day-calendar.js';
@@ -69,7 +70,11 @@ export function agenda() {
     '<div id="agenda-db-content"><div class="empty-state">Carregando agenda do banco…</div></div>';
 }
 // Consulta profissionais, agendamentos e bloqueios da organização ativa.
-/** Consulta profissionais, agendamentos e bloqueios da organização e renderiza o calendário administrativo. */
+/**
+ * Consulta profissionais, agendamentos e bloqueios do tenant ativo e renderiza o calendário.
+ * @returns {Promise<void>} Atualiza o estado visual da Agenda; não altera dados persistidos.
+ * @throws Erros são registrados com código de diagnóstico e exibidos em pt-BR.
+ */
 export async function loadAgendaPage() {
   if(!state.user||!state.organization?.id)return;
   const host=document.querySelector('#agenda-db-content');
@@ -107,7 +112,8 @@ export async function loadAgendaPage() {
     });
     buildContent();
   }catch(error){
-    host.innerHTML='<div class="empty-state"><b>Não foi possível carregar a agenda.</b><small>'+String(error.message||'Verifique sua conexão e permissões.')+'</small></div>';
+    const diagnostic=reportError(error,{context:"Agenda > carregar calendário",notify:false});
+    host.innerHTML='<div class="empty-state"><b>Não foi possível carregar a agenda.</b><small>Verifique sua conexão e suas permissões. Código '+diagnostic.id+'</small></div>';
   }
 }
 export function refreshAgendaContent(){buildContent();}
