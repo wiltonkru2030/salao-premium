@@ -107,8 +107,9 @@ export async function loadCommissionsPage(){
    host.dataset.settingsBound="true";
    host.addEventListener("submit",async event=>{
     const form=event.target;
-    if(!form.matches("#product-commission-settings")&&!form.matches("#service-commission-rule-form"))return;
+    if(!form.matches("#product-commission-settings")&&!form.matches("#service-commission-rule-form")&&!form.matches("[data-update-commission-rule]"))return;
     event.preventDefault();
+    const current=host._commissionConfig||{},orgId=current.orgId,productSetting=current.productSetting,serviceRules=current.serviceRules||[];
     if(!canManageCommissionSettings()){toast("Somente proprietário ou administrador pode alterar regras de comissão.");return;}
     const button=form.querySelector('[type="submit"]');
     if(form.matches("[data-update-commission-rule]")){
