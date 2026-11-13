@@ -6,6 +6,7 @@ import { mountAutocomplete } from "../components/autocomplete.js";
 import { userErrorMessage, reportError } from "../utils/errors.js";
 import { parseBRL } from "../utils/input-masks.js";
 import { buildComandaDetails } from "../modules/comanda/components/comanda-detail.js";
+import { currency, statusLabel, paymentStatusLabel, paymentMethodLabel } from "../modules/comanda/comanda.formatters.js";
 
 /** @typedef {import("../types/tenant.types").TenantContext} TenantContext */
 /** @typedef {import("../types/operations.types").ServiceOrderRecord} ServiceOrderRecord */
@@ -18,10 +19,6 @@ let selectedOrder=null;
 let selectedService=null;
 let selectedProduct=null;
 let detailLoading=false;
-const currency=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-const statusLabel=v=>({open:"Aberta",in_progress:"Em atendimento",awaiting_payment:"Aguardando pagamento",partially_paid:"Pagamento parcial",closed:"Finalizada",cancelled:"Cancelada"})[v]||"Status não identificado";
-const paymentStatusLabel=v=>({confirmed:"Confirmado",refunded:"Estornado",cancelled:"Cancelado"})[v]||"Em análise";
-const paymentMethodLabel=v=>({pix:"PIX",cash:"Dinheiro",credit_card:"Cartão de crédito",debit_card:"Cartão de débito",transfer:"Transferência",voucher:"Voucher",other:"Outro"})[v]||"Outro";
 const escapeHtml=esc;
 function clearAutocomplete(){cleanup.forEach(fn=>fn());cleanup=[];}
 export function comandaPage(){
