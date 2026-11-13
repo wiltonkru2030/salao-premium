@@ -144,7 +144,7 @@ export async function loadProfessionalsPage(){
   if(staffToggle){
    const userId=staffToggle.dataset.staffAppToggle,role=staffToggle.dataset.staffRole,enabled=staffToggle.checked;
    staffToggle.disabled=true;
-   const {error}=await supabase.rpc("set_professional_app_access",{p_target_user_id:userId,p_enabled:enabled,p_scope:role==="receptionist"?"calendar_all":"all"});
+   const {error}=await supabase.rpc("set_professional_app_access",{p_org_id:state.organization.id,p_target_user_id:userId,p_enabled:enabled,p_scope:role==="receptionist"?"calendar_all":"all"});
    staffToggle.disabled=false;
    if(error){reportError(error,{context:"Profissionais > alterar acesso da equipe"});staffToggle.checked=!enabled;return;}
    toast(enabled?"Acesso ao App liberado.":"Acesso ao App revogado.");await loadProfessionalsPage();return;
@@ -153,7 +153,7 @@ export async function loadProfessionalsPage(){
   const id=toggle.dataset.professionalToggle;
   if(toggle.checked){const ok=await provision(toggle,"create");if(!ok)toggle.checked=false;}
   else{
-   toggle.disabled=true;const {error}=await supabase.rpc("revoke_professional_app_access",{p_professional_id:id});toggle.disabled=false;
+   toggle.disabled=true;const {error}=await supabase.rpc("revoke_professional_app_access",{p_org_id:state.organization.id,p_professional_id:id});toggle.disabled=false;
    if(error){reportError(error,{context:"Profissionais > revogar acesso ao App"});toggle.checked=true;return;}
    initialPasswords.delete(id);toast("Acesso ao App Profissional revogado.");await loadProfessionalsPage();
   }
