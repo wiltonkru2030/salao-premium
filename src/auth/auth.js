@@ -52,6 +52,14 @@ export async function getUserContext(user, selectedOrgId = null) {
   return { user, membership, profile: profileResult.data, organization, availableOrganizations };
 }
 
+/** Recarrega o contexto da sessão para trocar de organização sem misturar estado entre tenants. */
+export async function getCurrentUserContext(organizationId) {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  if (!user) throw new Error("Sua sessão expirou. Entre novamente.");
+  return getUserContext(user, organizationId);
+}
+
 function showAuth(mode = "login", notice = "", type = "info") {
   authMode = mode;
   authNotice = notice;
