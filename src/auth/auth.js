@@ -7,6 +7,7 @@ import { supabase } from "../supabase/client.js";
 import { authScreen, organizationSelectionScreen } from "./auth-screen.js";
 import { userErrorMessage } from "../utils/errors.js";
 import { state } from "../state.js";
+import { resolveTenantMemberships } from "./tenant-context.js";
 
 let authMode = "login";
 let authNotice = "";
@@ -33,24 +34,11 @@ export async function getUserContext(user, selectedOrgId = null) {
   if (profileResult.error) throw profileResult.error;
   if (organizationsResult.error) throw organizationsResult.error;
 
-  const organizationMap = new Map((organizationsResult.data || []).map(item => [item.id, item]));
-  const availableOrganizations = memberships
-    .map(membership => ({ ...membership, organization: organizationMap.get(membership.org_id) }))
-    .filter(item => item.organization)
-    .map(item => ({ id: item.org_id, name: item.organization.name, role: item.role }));
-
-  if (!availableOrganizations.length) throw new Error("Não foi possível localizar uma organização vinculada à sua conta.");
-
-  if (!selectedOrgId && availableOrganizations.length > 1) {
-    return { requiresOrganizationSelection: true, user, profile: profileResult.data, organizations: availableOrganizations };
+  const tenant = resolveTenantMemberships(memberships, organizationsResult.data || [], selectedOrgId);
+  if (tenant.requiresOrganizationSelection) {
+    return { ...tenant, user, profile: profileResult.data };
   }
-
-  const selected = availableOrganizations.find(item => item.id === selectedOrgId) || (availableOrganizations.length === 1 ? availableOrganizations[0] : null);
-  if (!selected) throw new Error("Selecione uma organização válida para continuar.");
-
-  const membership = memberships.find(item => item.org_id === selected.id);
-  const organization = organizationMap.get(selected.id);
-  return { user, membership, profile: profileResult.data, organization, availableOrganizations };
+  return { user, membership: tenant.membership, profile: profileResult.data, organization: tenant.organization, availableOrganizations: tenant.availableOrganizations };
 }
 
 /** Recarrega o contexto da sessão para trocar de organização sem misturar estado entre tenants. */
