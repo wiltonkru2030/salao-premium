@@ -11,7 +11,8 @@
     "test:quotes": "node src/modules/quotes/quote-components.test.js",
     "test:comanda": "node src/modules/comanda/comanda-detail.test.js && node src/modules/comanda/comanda-operations.test.js",
     "test:cash": "node src/modules/cash/cash-dashboard.test.js && node src/modules/cash/cash-operations.test.js",
-    "test:tenant": "node src/auth/tenant-context.test.js"
+    "test:tenant": "node src/auth/tenant-context.test.js",
+    "audit:structure": "node scripts/audit-code-structure.mjs"
   },
   "engines": {
     "node": ">=20"
