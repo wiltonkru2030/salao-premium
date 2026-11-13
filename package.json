@@ -7,7 +7,8 @@
     "build": "npx --yes vite@6 build",
     "test:agenda": "node src/agenda/tests/run.js",
     "test:utils": "node src/utils/input-masks.test.js",
-    "test:errors": "node src/utils/errors.test.js"
+    "test:errors": "node src/utils/errors.test.js",
+    "test:quotes": "node src/modules/quotes/quote-components.test.js"
   },
   "engines": {
     "node": ">=20"
