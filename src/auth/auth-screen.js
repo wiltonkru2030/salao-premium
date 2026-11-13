@@ -31,3 +31,36 @@ export function authScreen(mode = 'login', notice = '', noticeType = 'info') {
     <aside class="auth-aside"><div><span>GESTÃO PROFISSIONAL</span><h2>Seu salão.<br>Em perfeita sintonia.</h2><p>Agenda, clientes, equipe e resultados em um só lugar.</p></div></aside>
   </main>`;
 }
+
+/**
+ * Tela de seleção explícita do tenant quando o usuário participa de mais de uma organização.
+ * @param {Array<{id:string,name:string,role:string}>} organizations Organizações acessíveis pela sessão.
+ */
+export function organizationSelectionScreen(organizations, notice = "") {
+  return `
+  <main class="auth-shell">
+    <section class="auth-panel">
+      <div class="auth-brand">
+        <img src="./brand/identidade-visual/logo/SAL%C3%83O%20PREMIUN_20261111_231325_0003.png" alt="SALÃO PREMIUM">
+        <span><b>SALÃO PREMIUM</b><small>GESTÃO INTELIGENTE</small></span>
+      </div>
+      <div class="auth-heading">
+        <span class="auth-eyebrow">SELEÇÃO DE ORGANIZAÇÃO</span>
+        <h1>Qual salão deseja acessar?</h1>
+        <p>Sua conta tem acesso a mais de uma organização. Escolha o ambiente desta sessão.</p>
+      </div>
+      ${notice ? `<div class="auth-notice error" role="alert">${esc(notice)}</div>` : ""}
+      <form class="auth-form" data-organization-form>
+        <label>Organização
+          <select name="org_id" required>
+            <option value="">Selecione o salão</option>
+            ${organizations.map(org => `<option value="${esc(org.id)}">${esc(org.name)} · ${esc(org.role)}</option>`).join("")}
+          </select>
+        </label>
+        <button class="auth-submit" type="submit">Entrar nesta organização</button>
+      </form>
+      <p class="auth-legal">Os dados de cada organização permanecem isolados.</p>
+    </section>
+    <aside class="auth-aside"><div><span>GESTÃO PROFISSIONAL</span><h2>Seu salão.<br>Em perfeita sintonia.</h2><p>Agenda, clientes, equipe e resultados em um só lugar.</p></div></aside>
+  </main>`;
+}
