@@ -1,25 +1,35 @@
 # Identidade visual e CSS global
 
-## Direção visual
+## Direção visual oficial
 
-- Fundo branco e superfícies claras.
-- Texto preto/cinza, linhas discretas e dourado apenas como acento.
-- Poppins para interface; Body Grotesque Fit para títulos quando disponível.
-- Bordas suaves, sombras discretas e controles consistentes.
-- Layout responsivo, sem modais ou formulários com aparência diferente entre módulos.
+- Superfícies brancas e cinzas muito claros.
+- Texto preto/grafite e cinza para informações secundárias.
+- Dourado discreto apenas como acento.
+- Poppins para interface; Body Grotesque Fit em títulos quando a fonte estiver disponível.
+- Bordas suaves, sem sombras pesadas, botões e campos consistentes.
+- Responsividade para desktop, tablet e celular.
 
-## Fonte global
+## Fonte de verdade
 
-`styles.css` importa a estrutura e, ao final, `src/styles/design-system.css`. O arquivo de design system define variáveis `--sp-*`, tipografia, botões, campos, cartões, listas, estados, modais, tabelas e breakpoints.
+`styles.css` importa os estilos estruturais, componentes e estilos específicos de módulos. `src/styles/design-system.css` é carregado por último para aplicar os tokens e os padrões globais.
 
-## Regras obrigatórias para novos módulos
+Tokens principais:
+- `--sp-ink`, `--sp-muted`, `--sp-soft`, `--sp-paper`
+- `--sp-line`, `--sp-line-strong`, `--sp-gold`, `--sp-gold-soft`
+- `--sp-radius`, `--sp-shadow`, `--sp-focus`, `--sp-control-height`
 
-1. Usar tokens `--sp-ink`, `--sp-muted`, `--sp-line`, `--sp-gold`, `--sp-paper` e dimensões globais.
-2. Reutilizar classes globais `.btn`, `.field`, `.settings-card`, `.record-card`, `.empty-state` e `.sp-modal`.
-3. Não criar paleta, tipografia, raio, sombra ou modal próprios sem justificativa documentada.
-4. CSS de módulo deve conter somente layout ou comportamento realmente específico.
-5. Toda tela deve ser revisada em desktop, tablet e celular, incluindo estados vazio, carregando, erro e conteúdo longo.
+Componentes globais: `.btn`, `.field`, `.settings-card`, `.setting-row`, `.record-card`, `.record-list`, `.list-toolbar`, `.form-grid`, `.empty-state`, `.notice`, `.status`.
 
-## Estado real da migração
+## Regras para novos módulos
 
-O design system global existe e está importado, mas o CSS **ainda não está finalizado para o sistema inteiro**. Folhas legadas e regras específicas continuam carregadas antes dele; o arquivo global sobrescreve parte delas, mas isso não substitui uma revisão tela a tela. O trabalho pendente inclui inventariar seletores duplicados, migrar componentes antigos, remover regras conflitantes e fazer validação visual de todos os módulos.
+1. Usar tokens e componentes globais antes de criar novos estilos.
+2. CSS de módulo deve cuidar apenas de estrutura específica (calendário, gráficos, componentes especializados).
+3. Não criar paleta, tipografia, raio, sombra ou modal diferentes sem justificativa.
+4. Formulários, cartões, listas, mensagens vazias e estados devem usar a mesma escala visual.
+5. Todo novo componente deve ter estados normal, hover, foco, desabilitado, carregando e erro.
+
+## Estado atual
+
+A camada global foi consolidada e ampliada para padronizar cartões, campos, botões, listas, formulários, estados, Caixa e Comanda; o import global permanece por último para prevalecer sobre estilos antigos. Os estilos de calendário continuam específicos porque representam uma grade funcional, não uma identidade visual separada.
+
+**O que ainda não é correto afirmar:** que todas as telas foram inspecionadas visualmente em navegador real. A validação automatizada verifica sintaxe, imports, build e regressões; a conferência final de aparência em desktop e celular ainda requer abrir a aplicação e percorrer as telas reais.
