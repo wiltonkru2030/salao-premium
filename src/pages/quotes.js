@@ -50,7 +50,7 @@ function renderBuilder() {
       <label>Observações<textarea class="field" id="quote-notes" rows="2" maxlength="1000" placeholder="Informações adicionais para o cliente"></textarea></label>
       <button class="btn primary" id="quote-save" type="button" ${!selectedCustomer||!items.length?"disabled":""}>Gerar orçamento e deixar em análise</button>
     </section>
-    <section class="settings-card"><div class="section-title"><div><h3>Regras de desconto</h3><small class="muted">Defina o limite e quais serviços podem receber desconto.</small></div></div>
+    <section class="settings-card" id="quote-discount-settings-card"><div class="section-title"><div><h3>Regras de desconto</h3><small class="muted">Defina o limite e quais serviços podem receber desconto.</small></div></div>
       <form id="quote-discount-settings" class="form-grid">
         <label>Desconto máximo permitido (%)<input class="field" name="max_discount_percent" type="number" min="0" max="100" step="0.01" value="${maxDiscount}" required></label>
         <label class="setting-row"><span>Permitir desconto em valor fixo</span><input type="checkbox" name="allow_fixed_discount" ${allowFixedDiscount?"checked":""}></label>
@@ -59,6 +59,7 @@ function renderBuilder() {
       </form>
       <small class="muted">Serviços não autorizados não recebem desconto. Limite 0% significa que nenhum desconto pode ser aplicado.</small>
     </section>`;
+  if (!["owner","admin","manager"].includes(state.membership?.role)) host.querySelector("#quote-discount-settings-card").hidden=true;
 }
 function renderList(quotes, customersById) {
   const host = document.querySelector("#quotes-list");
