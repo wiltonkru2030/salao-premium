@@ -11,6 +11,7 @@ const money=value=>Number(value||0).toLocaleString("pt-BR",{style:"currency",cur
 const dateTime=value=>value?new Date(value).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}):"—";
 const statusLabel=value=>({pending:"Pendente",approved:"Aprovada",paid:"Paga",cancelled:"Cancelada"})[value]||value;
 const canPay=()=>["owner","admin","manager","finance"].includes(state.membership?.role);
+const canManageCommissionSettings=()=>["owner","admin","manager"].includes(state.membership?.role);
 
 export function commissionsPage(){
  selectedProfessionalFilter=null;
@@ -24,17 +25,22 @@ export async function loadCommissionsPage(){
  cleanupSearch?.();cleanupSearch=null;
  try{
   const orgId=state.organization.id;
-  const [commissionResult,professionalResult,payoutResult]=await Promise.all([
+  const [commissionResult,professionalResult,payoutResult,settingsResult]=await Promise.all([
    supabase.from("commissions").select("id,professional_id,base_amount,rate,amount,status,paid_at,created_at,payout_id,sale_id,appointment_id")
     .eq("org_id",orgId).order("created_at",{ascending:false}).limit(1000),
    supabase.from("professionals").select("id,name,active").eq("org_id",orgId).order("name").limit(500),
    supabase.from("commission_payouts").select("id,professional_id,amount,payment_method,paid_at,notes,cash_movement_id")
-    .eq("org_id",orgId).order("paid_at",{ascending:false}).limit(300)
+    .eq("org_id",orgId).order("paid_at",{ascending:false}).limit(300),
+   supabase.from("app_settings").select("id,setting_value").eq("org_id",orgId).is("branch_id",null).eq("setting_key","commission_products").limit(1)
   ]);
   if(commissionResult.error)throw commissionResult.error;
   if(professionalResult.error)throw professionalResult.error;
   if(payoutResult.error)throw payoutResult.error;
+  if(settingsResult.error)throw settingsResult.error;
   const commissions=commissionResult.data||[],professionals=professionalResult.data||[],payouts=payoutResult.data||[];
+  const productSetting=settingsResult.data?.[0]||null;
+  const productCommissionEnabled=productSetting?.setting_value?.enabled===true;
+  const productCommissionRate=Number(productSetting?.setting_value?.rate||0);
   const professionalMap=new Map(professionals.map(p=>[p.id,p]));
   const visible=selectedProfessionalFilter?commissions.filter(c=>c.professional_id===selectedProfessionalFilter):commissions;
   const totals=visible.reduce((acc,c)=>{acc[c.status]=(acc[c.status]||0)+Number(c.amount||0);return acc;},{});
@@ -56,7 +62,9 @@ export async function loadCommissionsPage(){
    const professional=professionalMap.get(p.professional_id);
    return '<article class="record-card"><span class="record-main"><b>'+esc(professional?.name||"Profissional")+' · '+money(p.amount)+'</b><small>'+dateTime(p.paid_at)+' · '+esc(p.payment_method)+'</small><small>'+esc(p.notes||"Pagamento de comissões")+'</small></span><span class="record-trailing"><small>Pago</small><small>Caixa vinculado</small></span></article>';
   }).join("");
+  const productSettingsCard=canManageCommissionSettings()?'<section class="settings-card"><div class="section-title"><div><h3>Comissão de produtos</h3><small class="muted">Aplica-se aos produtos vinculados a um profissional na Comanda</small></div></div><form id="product-commission-settings"><label class="setting-row"><span><b>Ativar comissão sobre produtos</b><small>Produtos sem profissional vinculado não geram comissão</small></span><input type="checkbox" name="enabled" ${productCommissionEnabled?'checked':''}></label><label>Percentual de comissão (%)<input class="field" name="rate" type="number" min="0" max="100" step="0.01" value="${productCommissionRate.toFixed(2)}" required></label><button class="btn primary" type="submit">Salvar configuração</button></form></section>':'';
   host.innerHTML=`
+   ${productSettingsCard}
    <section class="settings-card commission-summary"><div><small class="eyebrow">A PAGAR</small><h2>${money(pending)}</h2></div><div><small class="eyebrow">PAGO</small><h2>${money(paid)}</h2></div><div><small class="eyebrow">LANÇAMENTOS</small><h2>${visible.length}</h2></div></section>
    <div class="list-toolbar"><label class="search-box"><span>⌕</span><input id="commission-professional-search" placeholder="Filtrar por profissional" autocomplete="off"></label><button class="btn secondary" data-clear-commission-filter>Todos</button></div>
    <div id="commission-groups">${sections||'<div class="empty-state">Nenhuma comissão foi gerada. As comissões são criadas quando uma comanda é quitada.</div>'}</div>
@@ -69,6 +77,31 @@ export async function loadCommissionsPage(){
     search:async term=>professionals.filter(p=>p.name.toLocaleLowerCase("pt-BR").includes(term.toLocaleLowerCase("pt-BR"))).slice(0,8),
     getLabel:item=>item.name,
     onSelect:item=>{selectedProfessionalFilter=item?.id||null;loadCommissionsPage();}
+   });
+  }
+
+  if(host.dataset.settingsBound!=="true"){
+   host.dataset.settingsBound="true";
+   host.addEventListener("submit",async event=>{
+    const form=event.target;if(!form.matches("#product-commission-settings"))return;
+    event.preventDefault();
+    if(!canManageCommissionSettings()){toast("Somente proprietário, administrador ou gerente pode alterar esta regra.");return;}
+    const values=new FormData(form),enabled=values.get("enabled")==="on",rate=Number(values.get("rate")),button=form.querySelector('[type="submit"]');
+    if(!Number.isFinite(rate)||rate<0||rate>100||(enabled&&rate<=0)){toast("Informe uma comissão entre 0,01% e 100% quando a regra estiver ativa.");return;}
+    button.disabled=true;button.textContent="Salvando…";
+    try{
+     const payload={setting_value:{enabled,rate},updated_by:state.user?.id||null};
+     let result;
+     if(productSetting){
+      result=await supabase.from("app_settings").update(payload).eq("org_id",orgId).eq("id",productSetting.id);
+     }else{
+      result=await supabase.from("app_settings").insert({org_id:orgId,branch_id:null,setting_key:"commission_products",...payload});
+     }
+     if(result.error)throw result.error;
+     toast(enabled?"Comissão de produtos ativada.":"Comissão de produtos desativada.");
+     await loadCommissionsPage();
+    }catch(error){reportError(error,{context:"Comissões > configurar comissão de produtos"});}
+    finally{if(button.isConnected){button.disabled=false;button.textContent="Salvar configuração";}}
    });
   }
   if(host.dataset.bound!=="true"){
