@@ -50,9 +50,9 @@ A Comanda é o registro operacional do atendimento.
 
 - `20261113010050_integrate_partial_commissions_cash_and_grouped_comandas`
 - `20261113010144_require_open_cash_for_payments_and_refunds`
-- `20261113010231_serialize_cash_register_movements`
-- `20261113010312_fix_grouped_order_existing_uuid_lookup`
-- `20261113010350_index_financial_refund_foreign_keys`
+- `20261113010244_serialize_cash_register_movements`
+- `20261113010311_fix_grouped_order_existing_uuid_lookup`
+- `20261113010319_index_financial_refund_foreign_keys`
 
 ## Testes pendentes
 
