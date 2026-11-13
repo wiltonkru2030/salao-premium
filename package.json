@@ -12,7 +12,8 @@
     "test:comanda": "node src/modules/comanda/comanda-detail.test.js && node src/modules/comanda/comanda-operations.test.js",
     "test:cash": "node src/modules/cash/cash-dashboard.test.js && node src/modules/cash/cash-operations.test.js",
     "test:tenant": "node src/auth/tenant-context.test.js",
-    "audit:structure": "node scripts/audit-code-structure.mjs"
+    "audit:structure": "node scripts/audit-code-structure.mjs",
+    "test:integration:backend": "node tests/integration/backend-flows.test.mjs"
   },
   "engines": {
     "node": ">=20"
