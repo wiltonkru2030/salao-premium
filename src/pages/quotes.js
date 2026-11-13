@@ -6,7 +6,7 @@ import { reportError } from "../utils/errors.js";
 
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const statusName = value => ({draft:"Rascunho",pending:"Em análise",accepted:"Aceito",rejected:"Recusado",expired:"Expirado",cancelled:"Cancelado"})[value] || value;
-let customers = [], services = [], professionals = [], items = [], selectedCustomer = null, discountRules = new Set(), maxDiscount = 0, activeQuote = null;
+let customers = [], services = [], professionals = [], items = [], selectedCustomer = null, discountRules = new Set(), maxDiscount = 0, allowFixedDiscount = true, activeQuote = null;
 
 function allowed() { return ["owner","admin","manager","receptionist"].includes(state.membership?.role); }
 function totals() {
