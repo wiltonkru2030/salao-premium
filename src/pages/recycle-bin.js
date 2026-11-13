@@ -11,7 +11,9 @@ export function recycleBinPage(){
  selectedGroup=null;
  return head("Recuperar","Consulte exclusões realizadas nos últimos 30 dias, veja o histórico e restaure registros.")+
 
-  '<div id="recycle-bin-manager"><div class="empty-state">Carregando lixeira e auditoria…</div></div>';
+  '<div id="recycle-bin-manager">
+<div class="empty-state">Carregando lixeira e auditoria…</div>
+</div>';
 }
 function actorName(actorId,map){
  if(!actorId)return "Sistema";
@@ -21,54 +23,124 @@ function renderDetailsModal(group,profiles){
  const first=group.entries[0];
  const details=group.entries.map(entry=>{
   const pairs=Object.entries(entry.row_data||{});
-  return '<section class="recycle-item-detail"><h3>'+esc(entry.description)+
-'</h3><div class="recycle-detail-meta"><span>'+esc(entry.entity_table)+
-'</span><span>ID: '+esc(entry.entity_id)+
-'</span></div>'+
+  return '<section class="recycle-item-detail">
+<h3>'+esc(entry.description)+
+'</h3>
+<div class="recycle-detail-meta">
+<span>'+esc(entry.entity_table)+
+'</span>
+<span>ID: '+esc(entry.entity_id)+
+'</span>
+</div>'+
 
-   '<dl>'+pairs.map(([key,value])=>'<div><dt>'+esc(key)+
-'</dt><dd>'+esc(typeof value==="object"&&value!==null?JSON.stringify(value):String(value??"—"))+
-'</dd></div>').join("")+
-'</dl></section>';
+   '<dl>'+pairs.map(([key,value])=>'<div>
+<dt>'+esc(key)+
+'</dt>
+<dd>'+esc(typeof value==="object"&&value!==null?JSON.stringify(value):String(value??"—"))+
+'</dd>
+</div>').join("")+
+'</dl>
+</section>';
  }).join("");
- return '<dialog class="sp-modal recycle-dialog" id="recycle-details-dialog" aria-labelledby="recycle-details-title"><section class="recycle-modal">'+
+ return '<dialog class="sp-modal recycle-dialog" id="recycle-details-dialog" aria-labelledby="recycle-details-title">
+<section class="recycle-modal">'+
 
-  '<header><div><small>RECUPERAR · DETALHES</small><h2 id="recycle-details-title">Dados excluídos</h2></div><button type="button" class="icon-btn" data-action="close-recycle-modal" aria-label="Fechar">×</button></header>'+
+  '<header>
+<div>
+<small>RECUPERAR · DETALHES</small>
+<h2 id="recycle-details-title">Dados excluídos</h2>
+</div>
+<button type="button" class="icon-btn" data-action="close-recycle-modal" aria-label="Fechar">×</button>
+</header>'+
 
-  '<div class="recycle-modal-meta"><div><span>Excluído por</span><b>'+esc(actorName(first.deleted_by,profiles))+
-'</b></div><div><span>Data e hora</span><b>'+dateTime(first.deleted_at)+
-'</b></div><div><span>Disponível até</span><b>'+dateTime(first.expires_at)+
-'</b></div><div><span>Registros nesta operação</span><b>'+group.entries.length+
-'</b></div></div>'+
+  '<div class="recycle-modal-meta">
+<div>
+<span>Excluído por</span>
+<b>'+esc(actorName(first.deleted_by,profiles))+
+'</b>
+</div>
+<div>
+<span>Data e hora</span>
+<b>'+dateTime(first.deleted_at)+
+'</b>
+</div>
+<div>
+<span>Disponível até</span>
+<b>'+dateTime(first.expires_at)+
+'</b>
+</div>
+<div>
+<span>Registros nesta operação</span>
+<b>'+group.entries.length+
+'</b>
+</div>
+</div>'+
 
   '<div class="recycle-modal-content">'+details+
 '</div>'+
 
-  '<footer><button type="button" class="btn secondary" data-action="close-recycle-modal">Fechar</button><button type="button" class="btn secondary" data-recycle-delete="'+group.id+
-'">Excluir permanentemente</button><button type="button" class="btn primary" data-recycle-restore="'+group.id+
-'">Restaurar dados</button></footer>'+
+  '<footer>
+<button type="button" class="btn secondary" data-action="close-recycle-modal">Fechar</button>
+<button type="button" class="btn secondary" data-recycle-delete="'+group.id+
+'">Excluir permanentemente</button>
+<button type="button" class="btn primary" data-recycle-restore="'+group.id+
+'">Restaurar dados</button>
+</footer>'+
 
-  '</section></dialog>';
+  '</section>
+</dialog>';
 }
 function renderPage(host,groups,events,profiles){
  const deletedCount=groups.reduce((sum,g)=>sum+g.entries.length,0);
  host.innerHTML=`
  <section class="settings-card recycle-summary">
-  <div><span class="eyebrow">LIXEIRA</span><h2>${deletedCount} registro(s) disponíveis</h2><p>Os snapshots ficam disponíveis por 30 dias após a exclusão.</p></div>
+  <div>
+<span class="eyebrow">LIXEIRA</span>
+<h2>${deletedCount} registro(s) disponíveis</h2>
+<p>Os snapshots ficam disponíveis por 30 dias após a exclusão.</p>
+</div>
  </section>
- <div class="section-title"><h2>Itens excluídos</h2><span class="result-count">${groups.length} operação(ões)</span></div>
+ <div class="section-title">
+<h2>Itens excluídos</h2>
+<span class="result-count">${groups.length} operação(ões)</span>
+</div>
  <div class="record-list">
  ${groups.map(group=>{
   const first=group.entries[0];
   const names=group.entries.map(e=>e.entity_table).filter((v,i,a)=>a.indexOf(v)===i).join(", ");
-  return '<button class="record-card" data-recycle-open="'+group.id+'"><span class="record-main"><b>'+esc(group.entries.length+' registro(s) · '+names)+'</b><small>'+esc(first.description)+'</small><small>Excluído por '+esc(actorName(first.deleted_by,profiles))+' · '+dateTime(first.deleted_at)+'</small></span><span class="record-trailing"><small>Expira em</small><b>'+new Date(first.expires_at).toLocaleDateString("pt-BR")+'</b></span><span class="record-chevron">›</span></button>';
+  return '<button class="record-card" data-recycle-open="'+group.id+'">
+<span class="record-main">
+<b>'+esc(group.entries.length+' registro(s) · '+names)+'</b>
+<small>'+esc(first.description)+'</small>
+<small>Excluído por '+esc(actorName(first.deleted_by,profiles))+' · '+dateTime(first.deleted_at)+'</small>
+</span>
+<span class="record-trailing">
+<small>Expira em</small>
+<b>'+new Date(first.expires_at).toLocaleDateString("pt-BR")+'</b>
+</span>
+<span class="record-chevron">›</span>
+</button>';
  }).join("")||'<div class="empty-state">A lixeira está vazia.</div>'}
  </div>
- <div class="section-title section-title--spaced"><h2>Histórico de operações</h2><span class="result-count">Últimas 100 ações</span></div>
+ <div class="section-title section-title--spaced">
+<h2>Histórico de operações</h2>
+<span class="result-count">Últimas 100 ações</span>
+</div>
  <div class="record-list">
- ${events.map(event=>'<article class="record-card"><span class="record-main"><b>'+esc(actionLabel[event.action]||event.action)+' · '+esc(event.table_name)+'</b><small>'+esc(event.description)+'</small><small>'+esc(actorName(event.actor_id,profiles))+' · '+dateTime(event.occurred_at)+'</small></span><span class="record-trailing"><small>'+esc(event.actor_role||"Sistema")+'</small><small>'+esc(event.record_id||"—")+'</small></span></article>').join("")||'<div class="empty-state">Nenhuma operação registrada.</div>'}
+ ${events.map(event=>'<article class="record-card">
+<span class="record-main">
+<b>'+esc(actionLabel[event.action]||event.action)+' · '+esc(event.table_name)+'</b>
+<small>'+esc(event.description)+'</small>
+<small>'+esc(actorName(event.actor_id,profiles))+' · '+dateTime(event.occurred_at)+'</small>
+</span>
+<span class="record-trailing">
+<small>'+esc(event.actor_role||"Sistema")+'</small>
+<small>'+esc(event.record_id||"—")+'</small>
+</span>
+</article>').join("")||'<div class="empty-state">Nenhuma operação registrada.</div>'}
  </div>
- <div id="recycle-modal-root"></div>`;
+ <div id="recycle-modal-root">
+</div>`;
  if(selectedGroup){
   const group=groups.find(g=>g.id===selectedGroup);
   if(group)host.querySelector("#recycle-modal-root").innerHTML=renderDetailsModal(group,profiles);
@@ -136,6 +208,9 @@ export async function loadRecycleBinPage(){
   }
  }catch(error){
   reportError(error,{context:"Recuperar > carregar lixeira e auditoria"});
-  host.innerHTML='<div class="empty-state"><b>Não foi possível carregar Recuperar.</b><small>Verifique sua permissão e tente novamente.</small></div>';
+  host.innerHTML='<div class="empty-state">
+<b>Não foi possível carregar Recuperar.</b>
+<small>Verifique sua permissão e tente novamente.</small>
+</div>';
  }
 }
