@@ -22,7 +22,7 @@ Deno.serve(async (req: Request) => {
     submittedToken = String(form.get("token") || "");
     decision = String(form.get("decision") || "");
   }
-  if (!submittedToken || submittedToken.length < 40 || submittedToken.length > 200) {
+  if (!/^[a-f0-9]{64}$/.test(submittedToken)) {
     return html("<h1>Link inválido</h1><p>Solicite ao salão o envio de um novo orçamento.</p>", 400);
   }
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
