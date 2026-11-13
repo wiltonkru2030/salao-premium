@@ -1,22 +1,21 @@
 # Tratamento de erros
 
-## Implementação compartilhada
+## Camada compartilhada
 
-`src/utils/errors.js` oferece:
-- `userErrorMessage(error, fallback)`: converte códigos comuns de banco e autenticação em mensagens seguras em português.
-- `reportError(error, {context, notify, fallback})`: cria um identificador de diagnóstico, registra contexto técnico no console e mostra mensagem ao usuário.
+`src/utils/errors.js` fornece:
+- `userErrorMessage(error, fallback)`: traduz códigos comuns de banco e autenticação para mensagens seguras em português.
+- `reportError(error, {context, notify, fallback})`: registra diagnóstico com código `SP-...` e apresenta mensagem segura.
 - `installGlobalErrorHandlers()`: captura rejeições de Promise e erros JavaScript globais.
 
-O painel instala os manipuladores globais em `src/app.js`.
+O painel instala os manipuladores em `src/app.js`.
 
-## Mensagens ao usuário
+## Regras de interface
 
-Erros conhecidos de validação, autenticação, permissão, conexão e integridade devem ser apresentados em português. Mensagens técnicas desconhecidas não devem ser exibidas literalmente: use uma mensagem segura e o código de diagnóstico.
+- Mensagens de validação, permissões, pagamentos, estoque, agenda e autenticação devem ser escritas em português.
+- Mensagens técnicas desconhecidas não são exibidas literalmente; o usuário recebe um texto seguro e um código de diagnóstico.
+- Mensagens de RPCs dos fluxos críticos Agenda, Comanda e Caixa foram mantidas em português.
+- Não registrar senha, token, CPF, CNPJ ou dado bancário em logs.
 
-## Diagnóstico
+## Estado real
 
-O console recebe o identificador `SP-...` e o contexto do módulo. Não registrar senhas, tokens, CPF, CNPJ, dados bancários ou outros dados pessoais desnecessários.
-
-## Limitações atuais
-
-A camada central existe e está em português, mas não é correto afirmar que todos os erros do sistema inteiro já estão traduzidos. Ainda há páginas com tratamento local, mensagens provenientes de RPCs, erros de Edge Functions e componentes antigos que precisam ser inventariados e testados. O critério de conclusão é revisar cada operação e garantir que nenhum erro técnico cru em inglês apareça para o usuário.
+O tratamento central e os principais fluxos críticos estão preparados para exibir mensagens em português. Isso não prova que todo o sistema esteja 100% traduzido: páginas antigas e integrações externas ainda precisam de auditoria individual. O critério de conclusão é que nenhum erro técnico cru em inglês seja exibido ao usuário, sem esconder o contexto de diagnóstico da equipe.
