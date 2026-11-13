@@ -7,7 +7,7 @@ import { reportError } from "../utils/errors.js";
 const money=value=>Number(value||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const dateTime=value=>value?new Date(value).toLocaleString("pt-BR"):"—";
 const canOperate=()=>["owner","admin","manager","receptionist","finance"].includes(state.membership?.role);
-let bound=false;
+
 
 export function cashPage(){
  return head("Caixa","Abertura, conferência e histórico dos recebimentos e saídas.")+
@@ -46,8 +46,8 @@ export async function loadCashPage(){
    '<div class="section-title section-title--spaced"><h2>Histórico de caixas</h2></div>'+
    '<div class="record-list">'+(registers.map(r=>'<article class="record-card"><span class="record-main"><b>'+esc(r.status==="open"?"Caixa aberto":"Caixa fechado")+'</b><small>Abertura '+dateTime(r.opened_at)+(r.closed_at?' · Fechamento '+dateTime(r.closed_at):"")+'</small></span><span class="record-trailing"><b>'+money(r.status==="open"?r.opening_amount:r.closing_amount)+'</b><small>'+(r.status==="open"?"Em andamento":"Valor contado")+'</small></span></article>').join("")||'<div class="empty-state">Nenhuma abertura de caixa registrada.</div>')+'</div>';
 
-  if(!bound){
-   bound=true;
+  if(host.dataset.bound!=="true"){
+   host.dataset.bound="true";
    host.addEventListener("submit",async event=>{
     const form=event.target;
     if(!form.matches("#cash-open-form")&&!form.matches("#cash-close-form"))return;
