@@ -1,3 +1,4 @@
+/** Testes dos contratos de pagamento e cancelamento da Comanda com cliente Supabase simulado. */
 import assert from "node:assert/strict";
 import { registerComandaPayment, cancelComanda } from "./services/comanda-operations.js";
 
