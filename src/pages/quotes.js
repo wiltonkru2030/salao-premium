@@ -38,6 +38,7 @@ function renderList(quotes, customersById) {
 export function quotesPage() {
   selectedCustomer=null; items=[]; activeQuote=null;
   return head("Orçamentos","Crie propostas, apresente valores e acompanhe a decisão dos clientes.")+
+
     '<div id="quotes-manager"><div class="empty-state">Carregando orçamentos…</div></div>';
 }
 /**
@@ -75,15 +76,21 @@ export async function loadQuotesPage() {
       if(!professionalSelect)return;
       const eligibleIds=new Set(professionalServices.filter(link=>link.service_id===serviceId).map(link=>link.professional_id));
       const eligible=professionals.filter(professional=>eligibleIds.has(professional.id));
-      professionalSelect.innerHTML='<option value="">A definir</option>'+eligible.map(professional=>'<option value="'+professional.id+'">'+esc(professional.name)+'</option>').join("");
+      professionalSelect.innerHTML='<option value="">A definir</option>'+eligible.map(professional=>'<option value="'+professional.id+
+'">'+esc(professional.name)+
+'</option>').join("");
       professionalSelect.disabled=!serviceId;
     });
     host.addEventListener("input",async e=>{
       if(e.target.id!=="quote-customer-search")return;
       const term=e.target.value.trim().toLocaleLowerCase("pt-BR"),box=host.querySelector("#quote-customer-results");
       if(term.length<2){box.innerHTML="";return;}
-      const matches=customers.filter(c=>(c.name+" "+(c.phone||"")).toLocaleLowerCase("pt-BR").includes(term)).slice(0,8);
-      box.innerHTML=matches.length?matches.map(c=>'<button type="button" class="quote-suggestion" data-select-customer="'+c.id+'"><b>'+esc(c.name)+'</b><small>'+esc(c.phone||"WhatsApp não informado")+'</small></button>').join(""):'<div class="quote-not-found">Cliente não encontrado <button class="btn secondary" type="button" id="quote-show-quick">＋ Cadastrar cliente</button></div>';
+      const matches=customers.filter(c=>(c.name+
+" "+(c.phone||"")).toLocaleLowerCase("pt-BR").includes(term)).slice(0,8);
+      box.innerHTML=matches.length?matches.map(c=>'<button type="button" class="quote-suggestion" data-select-customer="'+c.id+
+'"><b>'+esc(c.name)+
+'</b><small>'+esc(c.phone||"WhatsApp não informado")+
+'</small></button>').join(""):'<div class="quote-not-found">Cliente não encontrado <button class="btn secondary" type="button" id="quote-show-quick">＋ Cadastrar cliente</button></div>';
     });
     host.addEventListener("click",async e=>{
       const select=e.target.closest("[data-select-customer]");
@@ -105,7 +112,8 @@ export async function loadQuotesPage() {
             p_valid_until:validUntil,p_notes:notes,p_items:payload
           });
           if(error)throw error;
-          toast("Orçamento #"+quote.quote_number+" gerado e marcado como Em análise.");
+          toast("Orçamento #"+quote.quote_number+
+" gerado e marcado como Em análise.");
           await openQuote(quote.id,orgId);
         }catch(error){reportError(error,{context:"Orçamentos > gerar orçamento"});button.disabled=false;button.textContent="Gerar orçamento e deixar em análise";}
         return;
@@ -131,7 +139,9 @@ export async function loadQuotesPage() {
       if(status){await changeQuoteStatus(status.dataset.quoteId,status.dataset.quoteStatus,orgId);return;}
       if(e.target.closest("#quote-schedule")){await openQuoteSchedule({quote:activeQuote,orgId,supabase,host,esc,toast,reportError,loadQuotesPage,openQuote});return;}
       if(e.target.closest("#quote-print")){await printQuoteDocument({quote:activeQuote,orgId,supabase,state,esc,money,statusName,toast});return;}
-      if(e.target.closest("#quote-whatsapp")){const phone=activeQuote?.customer?.phone||"";if(!phone){toast("Cadastre o WhatsApp do cliente para compartilhar.");return;}let digits=phone.replace(/\D/g,"");if(digits.length===10||digits.length===11)digits="55"+digits;window.open("https://wa.me/"+digits+"?text="+encodeURIComponent("Olá! Seu orçamento do "+(state.organization?.name||"salão")+" está pronto. Vou anexar o PDF nesta conversa."),"_blank","noopener");return;}
+      if(e.target.closest("#quote-whatsapp")){const phone=activeQuote?.customer?.phone||"";if(!phone){toast("Cadastre o WhatsApp do cliente para compartilhar.");return;}let digits=phone.replace(/\D/g,"");if(digits.length===10||digits.length===11)digits="55"+digits;window.open("https://wa.me/"+digits+
+"?text="+encodeURIComponent("Olá! Seu orçamento do "+(state.organization?.name||"salão")+
+" está pronto. Vou anexar o PDF nesta conversa."),"_blank","noopener");return;}
       if(e.target.closest("#quote-back")){activeQuote=null;renderBuilder();renderList(quoteResult.data||[],new Map(customers.map(c=>[c.id,c.name])));return;}
     });
     host.addEventListener("submit",async e=>{
@@ -177,5 +187,28 @@ async function openQuote(id,orgId){
   if(quoteResult.error)throw quoteResult.error;if(itemResult.error)throw itemResult.error;if(professionalResult.error)throw professionalResult.error;
   const professionalNames=new Map((professionalResult.data||[]).map(p=>[p.id,p.name]));
   activeQuote={...quoteResult.data,customer:quoteResult.data.customers,items:(itemResult.data||[]).map(item=>({...item,professionalName:professionalNames.get(item.professional_id)||"Profissional a definir"}))};
-  host.innerHTML='<section class="settings-card quote-preview"><div class="section-title"><div><small class="eyebrow">SALÃO PREMIUM · PROPOSTA COMERCIAL</small><h2>Orçamento #'+activeQuote.quote_number+'</h2><small class="muted">'+esc(statusName(activeQuote.status))+' · '+new Date(activeQuote.created_at).toLocaleDateString("pt-BR")+'</small></div><span class="status">'+esc(statusName(activeQuote.status))+'</span></div><h3>Cliente: '+esc(activeQuote.customer?.name||"Cliente")+'</h3><div class="record-list">'+activeQuote.items.map(i=>'<div class="setting-row"><span><b>'+esc(i.description)+'</b><small>'+i.quantity+' × '+money(i.unit_price)+' · '+Number(i.duration_minutes)+' min · '+esc(i.professionalName)+'</small></span><span class="record-trailing"><b>'+money(i.total)+'</b>'+(i.discount_amount?'<small>Desconto '+money(i.discount_amount)+'</small>':'')+'</span></div>').join("")+'</div><div class="quote-totals"><div class="setting-row"><span>Subtotal</span><b>'+money(activeQuote.subtotal)+'</b></div><div class="setting-row"><span>Desconto</span><b>− '+money(activeQuote.discount_total)+'</b></div><div class="setting-row quote-grand-total"><b>Valor final</b><strong>'+money(activeQuote.total)+'</strong></div></div><p class="muted">'+esc(activeQuote.notes||"")+'</p><div class="quote-actions"><button class="btn secondary" id="quote-back">Voltar</button><button class="btn secondary" id="quote-print">Gerar PDF / Imprimir</button><button class="btn secondary" id="quote-whatsapp">Abrir WhatsApp (anexar PDF)</button>'+(activeQuote.status==="pending"?'<button class="btn primary" data-quote-status="accepted" data-quote-id="'+id+'">Marcar como aceito</button><button class="btn secondary" data-quote-status="rejected" data-quote-id="'+id+'">Marcar como recusado</button>':"")+(activeQuote.status==="accepted"?'<button class="btn primary" id="quote-schedule" data-quote-id="'+id+'">Agendar horários</button><button class="btn secondary" data-quote-status="cancelled" data-quote-id="'+id+'">Cancelar orçamento</button>':"")+'</div></section>';
+  host.innerHTML='<section class="settings-card quote-preview"><div class="section-title"><div><small class="eyebrow">SALÃO PREMIUM · PROPOSTA COMERCIAL</small><h2>Orçamento #'+activeQuote.quote_number+
+'</h2><small class="muted">'+esc(statusName(activeQuote.status))+
+' · '+new Date(activeQuote.created_at).toLocaleDateString("pt-BR")+
+'</small></div><span class="status">'+esc(statusName(activeQuote.status))+
+'</span></div><h3>Cliente: '+esc(activeQuote.customer?.name||"Cliente")+
+'</h3><div class="record-list">'+activeQuote.items.map(i=>'<div class="setting-row"><span><b>'+esc(i.description)+
+'</b><small>'+i.quantity+
+' × '+money(i.unit_price)+
+' · '+Number(i.duration_minutes)+
+' min · '+esc(i.professionalName)+
+'</small></span><span class="record-trailing"><b>'+money(i.total)+
+'</b>'+(i.discount_amount?'<small>Desconto '+money(i.discount_amount)+
+'</small>':'')+
+'</span></div>').join("")+
+'</div><div class="quote-totals"><div class="setting-row"><span>Subtotal</span><b>'+money(activeQuote.subtotal)+
+'</b></div><div class="setting-row"><span>Desconto</span><b>− '+money(activeQuote.discount_total)+
+'</b></div><div class="setting-row quote-grand-total"><b>Valor final</b><strong>'+money(activeQuote.total)+
+'</strong></div></div><p class="muted">'+esc(activeQuote.notes||"")+
+'</p><div class="quote-actions"><button class="btn secondary" id="quote-back">Voltar</button><button class="btn secondary" id="quote-print">Gerar PDF / Imprimir</button><button class="btn secondary" id="quote-whatsapp">Abrir WhatsApp (anexar PDF)</button>'+(activeQuote.status==="pending"?'<button class="btn primary" data-quote-status="accepted" data-quote-id="'+id+
+'">Marcar como aceito</button><button class="btn secondary" data-quote-status="rejected" data-quote-id="'+id+
+'">Marcar como recusado</button>':"")+(activeQuote.status==="accepted"?'<button class="btn primary" id="quote-schedule" data-quote-id="'+id+
+'">Agendar horários</button><button class="btn secondary" data-quote-status="cancelled" data-quote-id="'+id+
+'">Cancelar orçamento</button>':"")+
+'</div></section>';
 }
