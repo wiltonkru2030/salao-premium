@@ -173,15 +173,30 @@ async function openAppointmentOrder(appointment) {
     existingId=choice.orderId;
     forceNew=choice.forceNew;
   }
-  const {data,error}=await supabase.rpc('start_appointment_service_order',{
-    p_appointment_id:appointment.id,
-    p_existing_order_id:existingId,
-    p_force_new:forceNew
-  });
-  if(error)throw error;
+  const appointmentIds=[appointment.id];
+  if(appointment.appointment_group_id){
+    const {data:groupRows,error:groupError}=await supabase.from('appointments')
+      .select('id,starts_at').eq('org_id',state.organization.id)
+      .eq('appointment_group_id',appointment.appointment_group_id)
+      .not('status','in','(cancelled,completed,no_show)')
+      .order('starts_at');
+    if(groupError)throw groupError;
+    for(const row of groupRows||[])if(!appointmentIds.includes(row.id))appointmentIds.push(row.id);
+  }
+  let result=null;
+  for(const [index,appointmentId] of appointmentIds.entries()){
+    const {data,error}=await supabase.rpc('start_appointment_service_order',{
+      p_appointment_id:appointmentId,
+      p_existing_order_id:existingId,
+      p_force_new:index===0?forceNew:false
+    });
+    if(error)throw error;
+    result=data;
+    existingId=data.order_id;
+  }
   state.drawer=null;
   await loadAgendaPage();
-  toast('Comanda #'+data.order_number+' aberta. O horário agora está em atendimento.');
+  toast('Comanda #'+result.order_number+' aberta com '+appointmentIds.length+' serviço(s) do atendimento agrupado.');
 }
 // Roteia ações do drawer para os fluxos de Agenda correspondentes.
 async function handleAppointmentAction(action) {
