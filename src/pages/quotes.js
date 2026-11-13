@@ -130,7 +130,7 @@ export async function loadQuotesPage() {
       const status=e.target.closest("[data-quote-status]");
       if(status){await changeQuoteStatus(status.dataset.quoteId,status.dataset.quoteStatus,orgId);return;}
       if(e.target.closest("#quote-schedule")){await openQuoteSchedule({quote:activeQuote,orgId,supabase,host,esc,toast,reportError,loadQuotesPage,openQuote});return;}
-      if(e.target.closest("#quote-print")){await printQuoteDocument({quote:activeQuote,orgId,supabase,state,esc,money,statusName});return;}
+      if(e.target.closest("#quote-print")){await printQuoteDocument({quote:activeQuote,orgId,supabase,state,esc,money,statusName,toast});return;}
       if(e.target.closest("#quote-whatsapp")){const phone=activeQuote?.customer?.phone||"";if(!phone){toast("Cadastre o WhatsApp do cliente para compartilhar.");return;}let digits=phone.replace(/\D/g,"");if(digits.length===10||digits.length===11)digits="55"+digits;window.open("https://wa.me/"+digits+"?text="+encodeURIComponent("Olá! Seu orçamento do "+(state.organization?.name||"salão")+" está pronto. Vou anexar o PDF nesta conversa."),"_blank","noopener");return;}
       if(e.target.closest("#quote-back")){activeQuote=null;renderBuilder();renderList(quoteResult.data||[],new Map(customers.map(c=>[c.id,c.name])));return;}
     });
