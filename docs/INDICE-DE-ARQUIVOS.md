@@ -10,7 +10,7 @@ Use este índice para localizar a responsabilidade de cada arquivo. Arquivos de 
 | `app.js` | Ponto de entrada mínimo do painel; importa `src/app.js`. |
 | `styles.css` | Agregador dos estilos do painel administrativo. |
 | `package.json` | Scripts de desenvolvimento, build e testes; versão mínima de Node. |
-| `.github/workflows/app-validation.yml` | Verifica sintaxe JavaScript e build de produção. |
+| `.github/workflows/app-validation.yml` | Verifica sintaxe JavaScript, build e regressões de utilitários, erros e Orçamentos. |
 | `.github/workflows/agenda-tests.yml` | Executa os testes de regressão da Agenda. |
 
 ## Painel — núcleo
@@ -100,7 +100,18 @@ Use este índice para localizar a responsabilidade de cada arquivo. Arquivos de 
 | `src/styles/effects.css` | Efeitos e transições. |
 | `src/styles/responsive.css` | Ajustes responsivos. |
 | `src/styles/components.css` | Componentes visuais compartilhados. |
-| `src/styles/design-system.css` | Tokens e regras globais de tipografia, controles, cartões, formulários e modais. |
+| `src/styles/design-system.css` | Agregador final das camadas CSS globais. |
+| `src/styles/design-layout.css` | Tokens, reset e base visual. |
+| `src/styles/design-navigation.css` | Navegação e shell. |
+| `src/styles/design-components.css` | Botões, campos, formulários, cartões e listas. |
+| `src/styles/design-data.css` | Tabelas, comissões e históricos. |
+| `src/styles/design-accessibility.css` | Foco, acessibilidade e responsividade. |
+| `src/styles/design-overrides.css` | Ajustes transversais. |
+| `src/styles/design-modals.css` | Modais e drawers. |
+| `src/types/*.d.ts` | Contratos de tenant, Agenda, Comanda, pagamentos, Caixa e Orçamentos. |
+| `src/modules/` | Fronteiras e documentação por módulo; migração de páginas legadas em andamento. |
+| `src/modules/quotes/components/quote-components.js` | Apresentação isolada do construtor e lista de orçamentos. |
+| `src/utils/errors.test.js` | Testes de tradução e sanitização de erros. |
 
 ## App Profissional
 
@@ -120,6 +131,14 @@ Use este índice para localizar a responsabilidade de cada arquivo. Arquivos de 
 | `supabase/functions/manage-professional-access/index.ts` | Edge Function de criação, redefinição e revogação de acesso profissional. |
 | `supabase/functions/professional-cpf-login/index.ts` | Edge Function de autenticação por CPF e senha. |
 | `supabase/migrations/*.sql` | Migrações de escopo, permissões, RLS, perfil fiscal e vínculo de serviços. Cada migração registra uma mudança específica do banco. |
+
+## Arquitetura multitenant e contratos
+
+- `src/types/tenant.types.d.ts`: organização ativa, usuário, membership, papel e unidade.
+- `src/types/operations.types.d.ts`: entidades operacionais e estados persistidos.
+- `src/modules/`: contratos de Agenda, Comanda, Caixa e Orçamentos.
+- `docs/SAAS-MULTITENANT.md`: regras de isolamento e auditoria do banco.
+- `docs/ORCAMENTOS.md`: operações atômicas e regras comerciais de orçamento.
 
 ## Convenção de comentários no código
 
