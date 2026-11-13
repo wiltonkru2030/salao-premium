@@ -1,6 +1,6 @@
 # Módulo Caixa
 
-Consulta e ações: `src/pages/cash.js`; apresentação do painel: `components/cash-dashboard.js`. O componente recebe dados prontos e não acessa Supabase.
+Consulta e ações: `src/pages/cash.js`; apresentação do painel: `components/cash-dashboard.js`; abertura e fechamento via `services/cash-operations.js`. O componente recebe dados prontos e não acessa Supabase.
 
 Responsabilidades: abertura, movimentos, conferência e fechamento. Cada movimento financeiro precisa de referência à origem e não pode ser apagado para corrigir saldo.
 
