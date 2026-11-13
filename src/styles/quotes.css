@@ -1,1 +1,72 @@
-.quote-page-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.8fr);gap:22px;align-items:start}.quote-builder-card{border:1px solid var(--border,#e8e5df);box-shadow:0 12px 36px rgba(30,25,15,.045)}.quote-item-entry{display:grid;grid-template-columns:1.4fr 1fr .55fr .65fr auto;gap:12px;align-items:end;margin:22px 0}.quote-items-list{border-top:1px solid var(--border,#e8e5df);border-bottom:1px solid var(--border,#e8e5df);padding:8px 0}.quote-totals{max-width:440px;margin:20px 0 20px auto}.quote-grand-total{border-top:1px solid var(--border,#e8e5df);padding-top:16px;margin-top:8px}.quote-grand-total strong{font-size:1.45rem;color:var(--text,#202020)}.quote-suggestions{display:grid;gap:5px;margin-top:6px}.quote-suggestion{display:flex;justify-content:space-between;gap:16px;text-align:left;padding:12px 14px;border:1px solid var(--border,#e8e5df);border-radius:10px;background:#fff;color:inherit;cursor:pointer}.quote-suggestion small{color:var(--muted,#777)}.quote-not-found{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;background:#faf9f6;border-radius:10px}.quote-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}.quote-preview{max-width:920px;margin:0 auto;padding:clamp(20px,4vw,42px);border:1px solid var(--border,#e8e5df);box-shadow:0 16px 48px rgba(30,25,15,.06)}.quote-preview h2{font-size:1.8rem}.quote-preview .eyebrow{letter-spacing:.14em;color:#9b8151}.quote-discount-services{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 18px}.quote-schedule-item{padding:16px 0;border-bottom:1px solid var(--border,#e8e5df)}.quote-schedule-item h3{margin:0 0 12px}.quote-schedule-item .form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}@media(max-width:900px){.quote-page-grid{grid-template-columns:1fr}.quote-item-entry{grid-template-columns:1fr 1fr}.quote-discount-services{grid-template-columns:1fr}}@media(max-width:560px){.quote-item-entry,.quote-schedule-item .form-grid{grid-template-columns:1fr}.quote-actions{display:grid;grid-template-columns:1fr}.quote-actions .btn{width:100%}}
+.quote-page-grid{display:grid;
+grid-template-columns:minmax(0,1.45fr) minmax(300px,.8fr);
+gap:22px;
+align-items:start}
+.quote-builder-card{border:1px solid var(--border,#e8e5df);
+box-shadow:0 12px 36px rgba(30,25,15,.045)}
+.quote-item-entry{display:grid;
+grid-template-columns:1.4fr 1fr .55fr .65fr auto;
+gap:12px;
+align-items:end;
+margin:22px 0}
+.quote-items-list{border-top:1px solid var(--border,#e8e5df);
+border-bottom:1px solid var(--border,#e8e5df);
+padding:8px 0}
+.quote-totals{max-width:440px;
+margin:20px 0 20px auto}
+.quote-grand-total{border-top:1px solid var(--border,#e8e5df);
+padding-top:16px;
+margin-top:8px}
+.quote-grand-total strong{font-size:1.45rem;
+color:var(--text,#202020)}
+.quote-suggestions{display:grid;
+gap:5px;
+margin-top:6px}
+.quote-suggestion{display:flex;
+justify-content:space-between;
+gap:16px;
+text-align:left;
+padding:12px 14px;
+border:1px solid var(--border,#e8e5df);
+border-radius:10px;
+background:#fff;
+color:inherit;
+cursor:pointer}
+.quote-suggestion small{color:var(--muted,#777)}
+.quote-not-found{display:flex;
+align-items:center;
+justify-content:space-between;
+gap:12px;
+padding:12px;
+background:#faf9f6;
+border-radius:10px}
+.quote-actions{display:flex;
+flex-wrap:wrap;
+gap:10px;
+margin-top:24px}
+.quote-preview{max-width:920px;
+margin:0 auto;
+padding:clamp(20px,4vw,42px);
+border:1px solid var(--border,#e8e5df);
+box-shadow:0 16px 48px rgba(30,25,15,.06)}
+.quote-preview h2{font-size:1.8rem}
+.quote-preview .eyebrow{letter-spacing:.14em;
+color:#9b8151}
+.quote-discount-services{display:grid;
+grid-template-columns:repeat(2,minmax(0,1fr));
+gap:4px 18px}
+.quote-schedule-item{padding:16px 0;
+border-bottom:1px solid var(--border,#e8e5df)}
+.quote-schedule-item h3{margin:0 0 12px}
+.quote-schedule-item .form-grid{display:grid;
+grid-template-columns:repeat(3,minmax(0,1fr));
+gap:12px}
+@media(max-width:900px){.quote-page-grid{grid-template-columns:1fr}
+.quote-item-entry{grid-template-columns:1fr 1fr}
+.quote-discount-services{grid-template-columns:1fr}
+}
+@media(max-width:560px){.quote-item-entry,.quote-schedule-item .form-grid{grid-template-columns:1fr}
+.quote-actions{display:grid;
+grid-template-columns:1fr}
+.quote-actions .btn{width:100%}
+}
