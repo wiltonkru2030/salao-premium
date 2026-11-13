@@ -119,6 +119,7 @@ Use este índice para localizar a responsabilidade de cada arquivo. Arquivos de 
 |---|---|
 | `src/modules/README.md` | Arquitetura-alvo dos módulos e fronteiras de responsabilidade. |
 | `src/modules/quotes/components/quote-components.js` | Componentes puros do construtor e da lista de orçamentos. |
+| `src/modules/quotes/services/quote-workflows.js` | Documento imprimível e agendamento agrupado de Orçamentos. |
 | `src/modules/quotes/quote-components.test.js` | Testes de apresentação dos Orçamentos. |
 | `src/modules/comanda/components/comanda-detail.js` | Componente de apresentação dos detalhes da Comanda, sem acesso ao banco. |
 | `src/modules/comanda/comanda.formatters.js` | Rótulos e formatação monetária do domínio Comanda. |
