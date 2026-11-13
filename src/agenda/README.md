@@ -1,37 +1,36 @@
 # Módulo Agenda — SALÃO PREMIUM
 
-## Estrutura do módulo
-- `pages/agenda-page.js`: consulta o Supabase, adapta os registros e compõe a tela do calendário.
+## Estrutura
+- `pages/agenda-page.js`: consulta dados do Supabase, adapta registros e compõe o calendário.
 - `components/`: seletor de profissional, toolbar, calendários Dia/Semana/Mês, slots, cards, drawer, formulários e filtros.
-- `hooks/`: adaptadores simples de estado e consulta; não são React hooks.
-- `services/agenda.service.js`: repositório local legado em memória. Não é a fonte de persistência do fluxo administrativo atual.
-- `services/availability.service.js`: validações locais de disponibilidade.
+- `hooks/`: adaptadores simples de estado/consulta; não são React hooks.
+- `services/agenda.service.js`: repositório legado em memória; não é a fonte de persistência do fluxo administrativo.
+- `services/availability.service.js`: validações locais auxiliares.
 - `utils/`: datas, duração e conflitos.
-- `styles/agenda.css`: estilos específicos; identidade e tokens globais ficam em `src/styles/`.
+- `styles/agenda.css`: layout específico do calendário; tokens e componentes globais ficam em `src/styles/design-system.css`.
 - `tests/`: testes automatizados de regras, serviços e renderização.
 
-## Fluxo administrativo atual
-1. `src/app.js` recebe ações globais da interface e executa operações de agendamento/bloqueio.
-2. `src/agenda/pages/agenda-page.js` consulta profissionais, agendamentos e bloqueios no Supabase.
-3. `src/agenda/components/` desenha o calendário e os formulários.
-4. `src/supabase/client.js` fornece a conexão autenticada; as consultas filtram a organização ativa.
-5. A validação visual no navegador não substitui regras, autorização, RLS e integridade no banco.
+## Fluxo conectado ao banco
+1. `src/app.js` recebe ações globais e executa criação, edição, confirmação, chegada, cancelamento e bloqueios.
+2. `src/agenda/pages/agenda-page.js` consulta profissionais, agendamentos e bloqueios do Supabase.
+3. O banco valida conflitos de horário e compatibilidade profissional/serviço por triggers.
+4. Ao abrir um atendimento agrupado, `start_appointment_group_service_order` chama a abertura dos serviços dentro de uma única transação. Se qualquer serviço falhar, todo o grupo é revertido.
+5. A Comanda mantém o vínculo de cada item com o agendamento de origem.
 
-## Funcionalidades implementadas no fluxo administrativo
-- Alternância Dia, Semana e Mês; navegação de período e botão Hoje.
+## Funcionalidades
+- Visões Dia, Semana e Mês, navegação de período e Hoje.
 - Filtro por profissional, busca e status.
-- Leitura de agendamentos e bloqueios persistidos no Supabase.
+- Leitura de agendamentos e bloqueios persistidos.
 - Criar, editar, confirmar, registrar chegada, cancelar e excluir agendamentos.
-- Abrir comanda a partir da chegada do cliente.
+- Abrir ou reutilizar Comanda a partir da chegada.
 - Criar e remover bloqueios de horário.
-- Verificação de conflitos antes de criar bloqueios e validações de formulário.
-- Testes automatizados de regras e regressões da Agenda.
+- Validação de conflito e de profissional/serviço no backend.
 
-## Código legado / cuidado
-`services/agenda.service.js` e os adaptadores `hooks/` mantêm um repositório demonstrativo em memória. Eles não devem ser confundidos com o fluxo administrativo conectado ao Supabase. Antes de reutilizar ou remover esse código, verificar referências e testes.
+## Segurança e manutenção
+- As consultas são limitadas à organização ativa e sujeitas a RLS.
+- A interface não substitui os triggers de integridade e as RPCs.
+- Os fluxos de data usam horário local no navegador e timestamptz no banco; alterações devem preservar esse contrato.
+- O repositório em memória e os adaptadores legados não devem ser confundidos com o fluxo administrativo Supabase.
 
-## Limitações a validar
-- As regras de disponibilidade e conflitos precisam ser garantidas no servidor, não apenas no navegador.
-- Validar fuso horário, expediente, folgas, buffers, recursos, serviços compatíveis e concorrência no backend.
-- Confirmar RLS e escopo de organização para cada consulta e mutação.
-- Criar testes de integração para criação concorrente, reagendamento e sincronização com comandas.
+## Testes e limitações
+Os testes automatizados da Agenda e o build são executados pelo GitHub Actions. Ainda falta validar visualmente o calendário em navegador e testar com registros reais controlados: conflito concorrente, reagendamento, bloqueios, atendimento agrupado e sincronização com Comanda.
