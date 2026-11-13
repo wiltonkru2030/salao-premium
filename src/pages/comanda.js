@@ -25,6 +25,7 @@ function clearAutocomplete(){cleanup.forEach(fn=>fn());cleanup=[];}
 export function comandaPage(){
  selectedOrder=null;
  return head("Comanda","Comandas criadas a partir da chegada do cliente, com serviços, produtos e pagamentos.")+
+
  '<div id="comanda-manager"><div class="empty-state">Carregando comandas…</div></div>';
 }
 // Confirma sessão e organização ativa antes de consultar comandas.
@@ -48,7 +49,8 @@ async function queryDetails(order,orgId){
   supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("active",true).order("name").limit(200)
  ]);
  for(const [label,result] of [["itens",items],["pagamentos",payments],["cliente",customer],["profissional",professional],["serviços",services],["produtos",products],["equipe",professionals]]) {
-  if(result.error) throw new Error("Falha ao carregar "+label+": "+userErrorMessage(result.error));
+  if(result.error) throw new Error("Falha ao carregar "+label+
+": "+userErrorMessage(result.error));
  }
  return {items:items.data||[],payments:payments.data||[],customer:customer.data,professional:professional.data,services:services.data||[],products:products.data||[],professionals:professionals.data||[]};
 }
@@ -67,13 +69,20 @@ function renderOrderDetails(host,order,data,orgId){
  if(editable&&allowEdit){
   selectedService=null;selectedProduct=null;
   cleanup.push(mountAutocomplete(host.querySelector("#comanda-service"),{
-   search:async term=>{const {data,error}=await supabase.from("services").select("id,name,price,duration_minutes").eq("org_id",orgId).eq("active",true).ilike("name","%"+term+"%").order("name").limit(8);if(error)throw error;return data||[];},
-   getLabel:item=>item.name+" · "+currency(item.price)+" · "+Number(item.duration_minutes)+" min",
+   search:async term=>{const {data,error}=await supabase.from("services").select("id,name,price,duration_minutes").eq("org_id",orgId).eq("active",true).ilike("name","%"+term+
+"%").order("name").limit(8);if(error)throw error;return data||[];},
+   getLabel:item=>item.name+
+" · "+currency(item.price)+
+" · "+Number(item.duration_minutes)+
+" min",
    onSelect:item=>selectedService=item
   }));
   cleanup.push(mountAutocomplete(host.querySelector("#comanda-product"),{
-   search:async term=>{const {data,error}=await supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).eq("active",true).gt("stock_quantity",0).ilike("name","%"+term+"%").order("name").limit(8);if(error)throw error;return data||[];},
-   getLabel:item=>item.name+" · "+currency(item.sale_price)+" · Estoque: "+Number(item.stock_quantity||0),
+   search:async term=>{const {data,error}=await supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).eq("active",true).gt("stock_quantity",0).ilike("name","%"+term+
+"%").order("name").limit(8);if(error)throw error;return data||[];},
+   getLabel:item=>item.name+
+" · "+currency(item.sale_price)+
+" · Estoque: "+Number(item.stock_quantity||0),
    onSelect:item=>selectedProduct=item
   }));
  }
@@ -175,8 +184,17 @@ export async function loadComandaPage(orderId=null){
   if(customers.error)throw new Error("Falha ao carregar clientes das comandas: "+userErrorMessage(customers.error));
   if(professionals.error)throw new Error("Falha ao carregar profissionais das comandas: "+userErrorMessage(professionals.error));
   const customerMap=new Map((customers.data||[]).map(c=>[c.id,c.name])),professionalMap=new Map((professionals.data||[]).map(p=>[p.id,p.name]));
-  host.innerHTML='<div class="list-toolbar"><label class="search-box"><span>⌕</span><input id="comanda-search" placeholder="Buscar cliente, profissional ou número"></label><span class="result-count">'+(orders?.length||0)+' comandas</span></div>'+
-   '<div class="record-list">'+(orders||[]).map(o=>'<button class="record-card" data-open-comanda="'+o.id+'"><span class="record-main"><b>Comanda #'+esc(o.order_number)+'</b><small>'+esc(customerMap.get(o.customer_id)||"Cliente não informado")+'</small><small>'+esc(professionalMap.get(o.assigned_professional_id)||"Sem profissional")+'</small></span><span class="record-trailing"><b>'+currency(o.total)+'</b><small>'+esc(statusLabel(o.status))+'</small></span><span class="record-chevron">›</span></button>').join("")+(orders?.length?"":'<div class="empty-state">Nenhuma comanda aberta. A comanda é criada quando o cliente chega e o atendimento começa na Agenda.</div>')+'</div>';
+  host.innerHTML='<div class="list-toolbar"><label class="search-box"><span>⌕</span><input id="comanda-search" placeholder="Buscar cliente, profissional ou número"></label><span class="result-count">'+(orders?.length||0)+
+' comandas</span></div>'+
+
+   '<div class="record-list">'+(orders||[]).map(o=>'<button class="record-card" data-open-comanda="'+o.id+
+'"><span class="record-main"><b>Comanda #'+esc(o.order_number)+
+'</b><small>'+esc(customerMap.get(o.customer_id)||"Cliente não informado")+
+'</small><small>'+esc(professionalMap.get(o.assigned_professional_id)||"Sem profissional")+
+'</small></span><span class="record-trailing"><b>'+currency(o.total)+
+'</b><small>'+esc(statusLabel(o.status))+
+'</small></span><span class="record-chevron">›</span></button>').join("")+(orders?.length?"":'<div class="empty-state">Nenhuma comanda aberta. A comanda é criada quando o cliente chega e o atendimento começa na Agenda.</div>')+
+'</div>';
   if(host.dataset.bound!=="true"){
    host.dataset.bound="true";
    host.addEventListener("click",async e=>{
@@ -194,7 +212,8 @@ export async function loadComandaPage(orderId=null){
       const {data,error}=await cancelComanda({supabase,orderId:button.dataset.orderId,refundPayments:refund});
       if(error)throw error;
       toast(refund
-       ?"Comanda cancelada. "+currency(data?.refunded_amount||0)+" estornados e registrados no Caixa."
+       ?"Comanda cancelada. "+currency(data?.refunded_amount||0)+
+" estornados e registrados no Caixa."
        :"Comanda e horários vinculados cancelados.");
       selectedOrder=null;await loadComandaPage();
      }catch(error){reportError(error,{context:"Comanda > cancelar e estornar"});button.disabled=false;button.textContent=refund?"Estornar recebimentos e cancelar comanda":"Cancelar comanda e horários vinculados";}
