@@ -27,7 +27,7 @@ export function renderQuoteBuilder({ items, selectedCustomer, services, professi
       </div>
       <div class="quote-item-entry">
         <label>Serviço<select class="field" id="quote-service"><option value="">Selecione um serviço</option>${services.map(s=>'<option value="'+s.id+'">'+esc(s.name)+' · '+money(s.price)+'</option>').join("")}</select></label>
-        <label>Profissional<select class="field" id="quote-professional"><option value="">A definir</option>${professionals.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("")}</select></label>
+        <label>Profissional<select class="field" id="quote-professional" disabled><option value="">Selecione um serviço primeiro</option></select></label>
         <label>Quantidade<input class="field" id="quote-quantity" type="number" min="1" step="1" value="1"></label>
         <label>Tipo de desconto<select class="field" id="quote-discount-mode"><option value="percent">Percentual (%)</option><option value="fixed" ${allowFixedDiscount?"":"disabled"}>Valor (R$)</option></select></label>
         <label>Desconto<input class="field" id="quote-discount" type="number" min="0" step="0.01" value="0"></label>
