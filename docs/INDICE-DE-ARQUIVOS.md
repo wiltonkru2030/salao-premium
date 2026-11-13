@@ -10,7 +10,7 @@ Use este índice para localizar a responsabilidade de cada arquivo. Arquivos de 
 | `app.js` | Ponto de entrada mínimo do painel; importa `src/app.js`. |
 | `styles.css` | Agregador dos estilos do painel administrativo. |
 | `package.json` | Scripts de desenvolvimento, build e testes; versão mínima de Node. |
-| `.github/workflows/app-validation.yml` | Verifica sintaxe JavaScript, build e regressões de utilitários, erros e Orçamentos. |
+| `.github/workflows/app-validation.yml` | Verifica sintaxe JavaScript, build e regressões de utilitários, erros, Comanda, Caixa e Orçamentos. |
 | `.github/workflows/agenda-tests.yml` | Executa os testes de regressão da Agenda. |
 
 ## Painel — núcleo
@@ -119,6 +119,9 @@ Use este índice para localizar a responsabilidade de cada arquivo. Arquivos de 
 |---|---|
 | `src/modules/README.md` | Arquitetura-alvo dos módulos e fronteiras de responsabilidade. |
 | `src/modules/quotes/components/quote-components.js` | Componentes puros do construtor e da lista de orçamentos. |
+| `src/modules/comanda/components/comanda-detail.js` | Componente de apresentação dos detalhes da Comanda, sem acesso ao banco. |
+| `src/modules/comanda/comanda.formatters.js` | Formatação de moeda e rótulos do domínio Comanda. |
+| `src/modules/cash/components/cash-dashboard.js` | Painel visual do Caixa, sem consulta Supabase. |
 | `src/types/tenant.types.d.ts` | Tipos do tenant, membership e filial. |
 | `src/types/operations.types.d.ts` | Tipos de Agenda, Comanda, pagamento, Caixa e Orçamento. |
 | `src/utils/errors.test.js` | Regressões de mensagens pt-BR e sanitização. |
