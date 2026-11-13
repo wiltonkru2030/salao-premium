@@ -34,6 +34,9 @@ Foi consultado o estado de RLS das tabelas centrais:
 
 As políticas consultadas usam funções de membership/role e escopo profissional, com permissões diferentes por operação. Isso é uma verificação estrutural, não um teste completo de isolamento com dois usuários reais.
 
+## Correção aplicada nesta auditoria
+As RPCs de liberação e revogação do App Profissional agora recebem `p_org_id`, validam o papel owner/admin nessa organização e só alteram o vínculo dentro do mesmo tenant. As assinaturas antigas que escolhiam automaticamente a primeira organização tiveram EXECUTE revogado para `authenticated`, `anon` e `public`.
+
 ## Pontos de segurança ainda abertos
 - O advisor do Supabase sinaliza 11 funções `SECURITY DEFINER` executáveis por usuários autenticados. As funções críticas foram criadas para operações controladas e não devem ser revogadas em lote. Cada função deve ser revisada quanto a validação de tenant/papel e necessidade de exposição.
 - A proteção de senha comprometida do Supabase Auth está desativada; habilitar em Authentication → Settings → Password Security.
