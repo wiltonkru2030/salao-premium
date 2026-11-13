@@ -119,9 +119,13 @@ Use este índice para localizar a responsabilidade de cada arquivo. Arquivos de 
 |---|---|
 | `src/modules/README.md` | Arquitetura-alvo dos módulos e fronteiras de responsabilidade. |
 | `src/modules/quotes/components/quote-components.js` | Componentes puros do construtor e da lista de orçamentos. |
+| `src/modules/quotes/quote-components.test.js` | Testes de apresentação dos Orçamentos. |
 | `src/modules/comanda/components/comanda-detail.js` | Componente de apresentação dos detalhes da Comanda, sem acesso ao banco. |
+| `src/modules/comanda/comanda.formatters.js` | Rótulos e formatação monetária do domínio Comanda. |
+| `src/modules/comanda/comanda-detail.test.js` | Testes do componente Comanda. |
 | `src/modules/comanda/comanda.formatters.js` | Formatação de moeda e rótulos do domínio Comanda. |
 | `src/modules/cash/components/cash-dashboard.js` | Painel visual do Caixa, sem consulta Supabase. |
+| `src/modules/cash/cash-dashboard.test.js` | Testes do componente Caixa. |
 | `src/types/tenant.types.d.ts` | Tipos do tenant, membership e filial. |
 | `src/types/operations.types.d.ts` | Tipos de Agenda, Comanda, pagamento, Caixa e Orçamento. |
 | `src/utils/errors.test.js` | Regressões de mensagens pt-BR e sanitização. |
