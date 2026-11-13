@@ -13,4 +13,5 @@
 @import url('./src/styles/components.css');
 @import url('./src/styles/quotes.css');
 
+/* Fonte global de tokens e componentes: manter este import por último. */
 @import url('./src/styles/design-system.css');
