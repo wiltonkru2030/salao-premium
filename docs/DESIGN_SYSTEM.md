@@ -1,35 +1,39 @@
 # Identidade visual e CSS global
 
 ## Direção visual oficial
-
 - Superfícies brancas e cinzas muito claros.
-- Texto preto/grafite e cinza para informações secundárias.
-- Dourado discreto apenas como acento.
-- Poppins para interface; Body Grotesque Fit em títulos quando a fonte estiver disponível.
-- Bordas suaves, sem sombras pesadas, botões e campos consistentes.
-- Responsividade para desktop, tablet e celular.
+- Texto preto/grafite; cinza para informação secundária.
+- Dourado discreto como acento, nunca como fundo dominante.
+- Poppins na interface; Body Grotesque Fit em títulos somente quando a fonte estiver disponível.
+- Bordas suaves, sombras discretas, foco visível e componentes consistentes.
+- Layout responsivo para desktop, tablet e celular.
 
-## Fonte de verdade
+## Ponto único de entrada
+`styles.css` carrega a estrutura do painel e, por último, `src/styles/design-system.css`.
+O arquivo `design-system.css` é um agregador pequeno. A ordem das camadas é explícita:
 
-`styles.css` importa os estilos estruturais, componentes e estilos específicos de módulos. `src/styles/design-system.css` é carregado por último para aplicar os tokens e os padrões globais.
+| Arquivo | Responsabilidade |
+|---|---|
+| `design-layout.css` | tokens globais, reset e base visual |
+| `design-navigation.css` | menu, sidebar, topbar e navegação |
+| `design-components.css` | botões, campos, formulários, cartões e listas |
+| `design-data.css` | comissões, equipe, histórico e tabelas |
+| `design-accessibility.css` | foco, acessibilidade e adaptação responsiva |
+| `design-overrides.css` | ajustes globais posteriores e composição transversal |
+| `design-modals.css` | modais, drawers, formulários de diálogo e estados específicos |
 
-Tokens principais:
-- `--sp-ink`, `--sp-muted`, `--sp-soft`, `--sp-paper`
-- `--sp-line`, `--sp-line-strong`, `--sp-gold`, `--sp-gold-soft`
-- `--sp-radius`, `--sp-shadow`, `--sp-focus`, `--sp-control-height`
+O App Profissional compartilha os tokens do design system por `professional/styles.css`; a composição mobile permanece própria.
 
-Componentes globais: `.btn`, `.field`, `.settings-card`, `.setting-row`, `.record-card`, `.record-list`, `.list-toolbar`, `.form-grid`, `.empty-state`, `.notice`, `.status`.
+## Tokens
+`--sp-ink`, `--sp-muted`, `--sp-soft`, `--sp-paper`, `--sp-line`, `--sp-line-strong`, `--sp-gold`, `--sp-gold-soft`, `--sp-radius`, `--sp-shadow`, `--sp-focus` e `--sp-control-height`.
 
-## Regras para novos módulos
-
-1. Usar tokens e componentes globais antes de criar novos estilos.
-2. CSS de módulo deve cuidar apenas de estrutura específica (calendário, gráficos, componentes especializados).
+## Regras
+1. Preferir componentes globais antes de criar CSS novo.
+2. CSS de módulo cuida somente de estrutura especializada, como a grade de calendário.
 3. Não criar paleta, tipografia, raio, sombra ou modal diferentes sem justificativa.
-4. Formulários, cartões, listas, mensagens vazias e estados devem usar a mesma escala visual.
-5. Todo novo componente deve ter estados normal, hover, foco, desabilitado, carregando e erro.
+4. Todo componente interativo deve prever hover, foco, desabilitado, carregando e erro.
+5. Manter os imports do design system por último no painel administrativo.
+6. Não duplicar regras globais em folhas de estilo específicas.
 
-## Estado atual
-
-A camada global foi consolidada e ampliada para padronizar cartões, campos, botões, listas, formulários, estados, Caixa e Comanda; o import global permanece por último no painel para prevalecer sobre estilos antigos. O App Profissional também importa os mesmos tokens globais em `professional/styles.css`, mantendo apenas a composição mobile própria. Os estilos de calendário continuam específicos porque representam uma grade funcional, não uma identidade visual separada.
-
-**O que ainda não é correto afirmar:** que todas as telas foram inspecionadas visualmente em navegador real. A validação automatizada verifica sintaxe, imports, build e regressões; a conferência final de aparência em desktop e celular ainda requer abrir a aplicação e percorrer as telas reais.
+## Limite da validação
+A divisão em camadas foi implementada e o build automatizado verifica os imports CSS via Vite. Isso não equivale a inspeção visual de todas as páginas em navegador real. A conferência visual desktop/mobile permanece obrigatória antes de declarar a identidade visual integralmente aprovada.
