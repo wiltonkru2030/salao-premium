@@ -1,21 +1,28 @@
-# Tratamento de erros
+# Tratamento de erros e idioma pt-BR
 
-## Camada compartilhada
-
+## Camada central
 `src/utils/errors.js` fornece:
-- `userErrorMessage(error, fallback)`: traduz códigos comuns de banco e autenticação para mensagens seguras em português.
-- `reportError(error, {context, notify, fallback})`: registra diagnóstico com código `SP-...` e apresenta mensagem segura.
+- `userErrorMessage(error, fallback)`: traduz códigos comuns do Postgres, PostgREST, rede e autenticação.
+- `reportError(error, {context, notify, fallback})`: gera código de diagnóstico e exibe texto seguro.
 - `installGlobalErrorHandlers()`: captura rejeições de Promise e erros JavaScript globais.
 
-O painel instala os manipuladores em `src/app.js`.
+A instalação ocorre uma vez em `src/app.js`.
 
-## Regras de interface
+## Segurança de mensagens e logs
+- Erros técnicos desconhecidos em inglês nunca são exibidos literalmente; recebem mensagem genérica em português.
+- Mensagens de domínio em português podem ser exibidas quando passam pela validação de segurança.
+- SQL, stack traces, tokens, JWTs, senhas, CPF, CNPJ e dados bancários não devem aparecer na interface ou em logs.
+- O console recebe metadados sanitizados (contexto, classe, código e mensagem segura), não o objeto bruto.
+- Cada erro comunicado ao usuário recebe identificador `SP-...` para suporte.
 
-- Mensagens de validação, permissões, pagamentos, estoque, agenda e autenticação devem ser escritas em português.
-- Mensagens técnicas desconhecidas não são exibidas literalmente; o usuário recebe um texto seguro e um código de diagnóstico.
-- Mensagens de RPCs dos fluxos críticos Agenda, Comanda e Caixa foram mantidas em português.
-- Não registrar senha, token, CPF, CNPJ ou dado bancário em logs.
+## Cobertura de códigos
+Inclui conflitos/duplicidade, integridade referencial, campos obrigatórios, restrições, conversão numérica, permissões, sessão expirada, registro inexistente, concorrência, deadlock, timeout, rede, credenciais e confirmação de e-mail.
 
-## Estado real
+## Testes automatizados
+- `npm run test:errors`: mapeamentos pt-BR, fallback para inglês técnico e preservação de mensagens de domínio.
+- `npm run test:utils`: máscaras e utilitários.
+- `npm run test:quotes`: componentes de orçamento.
+- `npm run test:agenda`: regressões da Agenda.
 
-O tratamento central e os principais fluxos críticos estão preparados para exibir mensagens em português. Isso não prova que todo o sistema esteja 100% traduzido: páginas antigas e integrações externas ainda precisam de auditoria individual. O critério de conclusão é que nenhum erro técnico cru em inglês seja exibido ao usuário, sem esconder o contexto de diagnóstico da equipe.
+## Pendência de auditoria
+A camada global e os módulos críticos foram fortalecidos. Ainda é necessário revisar todas as páginas antigas, integrações e mensagens escritas localmente. Não se deve declarar tradução integral enquanto uma busca de strings e um teste de navegação não confirmarem que nenhuma exceção técnica crua chega à interface.
