@@ -21,5 +21,7 @@ jobs:
         run: npm run build
       - name: Run utility regression tests
         run: npm run test:utils
+      - name: Run Portuguese error handling tests
+        run: npm run test:errors
       - name: Run agenda regression tests
         run: npm run test:agenda
