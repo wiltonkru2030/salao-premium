@@ -57,13 +57,22 @@ export function renderQuoteBuilder({ items, selectedCustomer, services, professi
 
 export function renderQuoteList(quotes, customersById) {
   return '<div class="section-title section-title--spaced"><h2>Orçamentos recentes</h2><span class="result-count">'+quotes.length+
-' registro(s)</span></div><div class="record-list">'+(quotes.map(q=>'<article class="record-card"><span class="record-main"><b>Orçamento #'+q.quote_number+
+
+' registro(s)</span></div><div class="record-list">'+
+(quotes.map(q=>'<article class="record-card"><span class="record-main"><b>Orçamento #'+q.quote_number+
+
 ' · '+esc(customersById.get(q.customer_id)||"Cliente")+
+
 '</b><small>'+new Date(q.created_at).toLocaleString("pt-BR")+
+
 ' · '+esc(statusName(q.status))+
+
 '</small></span><span class="record-trailing"><b>'+money(q.total)+
+
 '</b><button class="btn secondary" data-open-quote="'+q.id+
+
 '">Abrir</button></span></article>').join("")||'<div class="empty-state">Nenhum orçamento criado.</div>')+
+
 '</div>';
 }
 
