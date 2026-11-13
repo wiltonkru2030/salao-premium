@@ -1,94 +1,46 @@
 # Guia técnico e mapa do código
 
-Este documento descreve onde cada responsabilidade mora e como manter o sistema sem quebrar os vínculos financeiros.
-
-## Entradas da aplicação
-
-- `index.html`: documento do painel.
-- `app.js`: entrada mínima que carrega `src/app.js`.
-- `src/app.js`: inicializa máscaras e captura global de erros, autenticação, navegação e eventos do painel.
+## Entradas
+- `index.html` e `app.js`: entrada do painel administrativo.
+- `src/app.js`: inicializa sessão, tenant, navegação e eventos de aplicação.
 - `professional/app.js`: entrada do App Profissional/PWA.
 
-## Mapa de pastas
-
+## Diretórios e padrões
 | Caminho | Responsabilidade |
 |---|---|
-| `src/auth/` | Sessão, login e escopo de acesso |
-| `src/layout/` | Menu, shell, navegação e renderização |
-| `src/components/` | Drawers, autocomplete e componentes reutilizáveis |
-| `src/pages/` | Páginas administrativas por domínio |
-| `src/agenda/` | Componentes, calendário, regras e testes da Agenda |
-| `src/supabase/` | Cliente Supabase |
-| `src/utils/` | Máscaras, validações e tratamento de erros |
-| `src/styles/` | CSS base, componentes e design system |
-| `supabase/migrations/` | Histórico SQL incremental |
+| `src/auth/` | autenticação, sessão e associação à organização |
+| `src/layout/` | shell, menu e roteamento |
+| `src/components/` | componentes compartilhados do painel |
+| `src/pages/` | adaptadores e páginas legadas em migração |
+| `src/modules/` | fronteiras dos módulos de domínio e seus componentes |
+| `src/agenda/` | implementação especializada da Agenda |
+| `src/types/` | contratos `.d.ts` de tenant e entidades |
+| `src/scripts/` | regras para scripts internos; não carregar no navegador |
+| `src/supabase/` | cliente Supabase |
+| `src/utils/` | máscaras, validações, erros e contexto compartilhado |
+| `src/styles/` | CSS base e camadas do design system |
+| `supabase/migrations/` | alterações SQL incrementais |
 | `supabase/functions/` | Edge Functions |
 
-## Módulos de negócio principais
+## CSS global
+`styles.css` importa estrutura e módulos. `src/styles/design-system.css` é o agregador final de camadas. Consulte `docs/DESIGN_SYSTEM.md`.
 
-- `src/pages/agenda.js`: adaptador de entrada da página Agenda.
-- `src/agenda/pages/agenda-page.js`: consulta e apresenta calendário, profissionais e bloqueios.
-- `src/pages/comanda.js`: lista/detalha Comandas, itens, pagamentos e cancelamentos; usa RPCs para operações financeiras.
-- `src/pages/cash.js`: abertura/fechamento do Caixa, resumo e histórico de entradas/saídas.
-- `src/pages/commissions.js`: regras por profissional/serviço, lançamentos e pagamentos.
-- `src/pages/professionals.js`: cadastro de profissionais, dados fiscais e serviços permitidos.
-- `src/pages/quotes.js`: orçamentos, aprovação e agendamento agrupado.
+## Contratos de tipos
+- `src/types/tenant.types.d.ts`: contexto multitenant, papéis e registros pertencentes à organização.
+- `src/types/operations.types.d.ts`: Agenda, Comanda, pagamentos, Caixa e Orçamentos.
 
-Arquivos como `sales.js`, `finance.js`, `reports.js` e `branches.js` devem ser conferidos antes de assumir que possuem todos os fluxos de produção; algumas áreas ainda são adaptadores ou páginas demonstrativas.
+## Módulos
+- Agenda: `src/agenda/` e `src/modules/agenda/README.md`.
+- Comanda: `src/pages/comanda.js` e `src/modules/comanda/README.md`.
+- Caixa: `src/pages/cash.js` e `src/modules/cash/README.md`.
+- Orçamentos: `src/pages/quotes.js`, `src/modules/quotes/components/` e `src/modules/quotes/README.md`.
+- Comissões: `src/pages/commissions.js`.
 
-## Operações de banco mais importantes
+## Padrão de arquivo
+Todo arquivo deve declarar responsabilidade, entradas/saídas, dependências, efeitos colaterais e permissões. Funções de domínio devem documentar tabelas/RPCs, tenant e filial, validações e atomicidade. Componentes não consultam banco. Repositórios não montam HTML. Scripts de manutenção não são importados pela aplicação.
 
-| RPC/função | Objetivo |
-|---|---|
-| `register_service_order_payment` | Receber pagamento total/parcial, registrar entrada no Caixa, gerar comissões e concluir venda/estoque na quitação |
-| `private.accrue_partial_service_order_commissions` | Calcular comissão proporcional por recebimento parcial |
-| `pay_professional_commissions` | Pagar lançamentos pendentes e registrar saída no Caixa |
-| `open_cash_register` | Abrir caixa com validação de organização e papel |
-| `close_cash_register` | Bloquear caixa, calcular saldo esperado e fechar |
-| `start_appointment_group_service_order` | Abrir todos os serviços agrupados em uma Comanda na mesma transação |
-| `cancel_service_order` | Cancelar Comanda; estornar pagamentos parciais e atualizar agendamentos/grupo |
+## Critério para arquivos pequenos
+Dividir arquivos acima de aproximadamente 300 linhas quando houver fronteiras reais (página, componente, serviço, repositório, tipos ou testes). Não fragmentar funções triviais em dezenas de arquivos. Cada módulo deve ter README com tabelas, RPCs, papéis e riscos.
 
-## Padrão obrigatório para novos arquivos
-
-Cabeçalho de módulo:
-1. O que é e qual problema resolve.
-2. O que consulta e o que grava.
-3. Quais módulos, tabelas e RPCs utiliza.
-4. Quais papéis podem executar ações.
-5. Efeitos financeiros, de estoque ou agenda.
-
-Funções de domínio devem documentar parâmetros, retorno, validações, erros esperados e se o banco executa a operação atomicamente.
-
-## Padrão de erros
-
-- Usar `reportError(error,{context:"Módulo > ação"})` para erros inesperados.
-- Usar mensagens de validação em português para erros esperados.
-- Nunca exibir stack trace, SQL, nomes internos de políticas ou tokens.
-- Não registrar senhas, tokens ou documentos pessoais.
-- Corrigir a origem do erro; não esconder erros de consulta auxiliar.
-
-## Padrão visual
-
-- Usar `src/styles/design-system.css` como fonte de tokens e componentes.
-- O arquivo é importado por último em `styles.css`.
-- CSS específico de módulo deve tratar apenas layout/visualização especializada.
-- Não duplicar botões, campos, modais, cores ou escalas tipográficas.
-
-## Segurança e banco
-
-- Não confiar em `user_metadata` para autorização.
-- Toda tabela exposta precisa de RLS apropriada.
-- Funções `SECURITY DEFINER` devem validar usuário, organização e papel dentro do corpo.
-- Não revogar funções existentes sem revisar chamadas e dependências.
-- Não resetar banco remoto nem reaplicar migrations já registradas.
-- Cada migration aplicada no Supabase deve ter arquivo com o mesmo version/name em `supabase/migrations/`.
-
-## Verificação antes de concluir
-
-1. Conferir sintaxe de todos os arquivos JS.
-2. Executar build e testes automatizados.
-3. Conferir migrations e funções no banco.
-4. Verificar permissões/RLS e advisors.
-5. Testar fluxo real com conta e dados controlados.
-6. Conferir desktop e celular no navegador.
-7. Atualizar documentação e registrar limitações que ainda existirem.
+## Segurança
+Não confiar em IDs ou papel enviados pelo navegador. RLS/RPC devem validar tenant e membership no banco. Não resetar banco remoto, apagar histórico financeiro ou reaplicar migrations registradas.
