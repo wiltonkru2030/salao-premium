@@ -25,6 +25,8 @@ Sistema de gestão para salões de beleza, com painel administrativo e App Profi
 ## Documentação técnica
 
 - [Guia técnico e mapa do código](docs/GUIA-DO-CODIGO.md)
+- [SaaS multitenant e isolamento de dados](docs/SAAS-MULTITENANT.md)
+- [Orçamentos e integração com Agenda](docs/ORCAMENTOS.md)
 - [Arquitetura e integrações](docs/ARCHITECTURE.md)
 - [Identidade visual e CSS global](docs/DESIGN_SYSTEM.md)
 - [Tratamento de erros](docs/ERROR_HANDLING.md)
