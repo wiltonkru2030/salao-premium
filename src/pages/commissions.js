@@ -11,7 +11,7 @@ const money=value=>Number(value||0).toLocaleString("pt-BR",{style:"currency",cur
 const dateTime=value=>value?new Date(value).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}):"—";
 const statusLabel=value=>({pending:"Pendente",approved:"Aprovada",paid:"Paga",cancelled:"Cancelada"})[value]||value;
 const canPay=()=>["owner","admin","manager","finance"].includes(state.membership?.role);
-const canManageCommissionSettings=()=>["owner","admin","manager"].includes(state.membership?.role);
+const canManageCommissionSettings=()=>["owner","admin"].includes(state.membership?.role);
 
 export function commissionsPage(){
  selectedProfessionalFilter=null;
