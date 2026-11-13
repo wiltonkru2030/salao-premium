@@ -436,3 +436,98 @@ dialog.sp-modal.recycle-dialog{width:min(760px,calc(100vw - 28px));padding:0;ove
  .commission-rule-row label:nth-child(3){grid-column:1/-1}
  .commission-rule-row .btn{width:100%}
 }
+
+
+/* Padrão transversal — Agenda, Comanda, Caixa e demais módulos. */
+.settings-card{
+  min-width:0;margin:0 0 16px;padding:0;
+  border:1px solid var(--sp-line);border-radius:var(--sp-radius);
+  background:var(--sp-paper);box-shadow:none;overflow:hidden
+}
+.settings-card>h3,.settings-card>.section-title{
+  margin:0;padding:17px 19px;color:var(--sp-ink);
+  font-size:12px;font-weight:600;border-bottom:1px solid var(--sp-line)
+}
+.settings-card>p:not(.demo-note){padding-inline:19px}
+.setting-row{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  min-width:0;padding:13px 18px;border-bottom:1px solid #f0eee9
+}
+.setting-row:last-child{border-bottom:0}
+.setting-row>span:first-child{min-width:0}
+.setting-row b{color:var(--sp-ink);font-size:11px;font-weight:600}
+.setting-row small{display:block;margin-top:4px;color:var(--sp-muted);font-size:9px;line-height:1.5}
+.record-list{display:grid;gap:8px;min-width:0}
+.record-card{
+  min-width:0;border:1px solid var(--sp-line);border-radius:8px;
+  background:#fff;color:var(--sp-ink);box-shadow:none
+}
+.record-card:hover{border-color:var(--sp-line-strong);background:#fdfcf9}
+.record-main,.record-trailing{min-width:0}
+.record-main b,.record-trailing b{font-size:11px;font-weight:600}
+.record-main small,.record-trailing small{font-size:9px;color:var(--sp-muted)}
+.list-toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;margin:0 0 14px
+}
+.search-box{min-width:min(100%,280px)}
+.search-box input,.field{
+  min-width:0;min-height:var(--sp-control-height);
+  border:1px solid var(--sp-line-strong);border-radius:7px;
+  background:#fff;color:var(--sp-ink);font-family:'Poppins',sans-serif;font-size:11px
+}
+.search-box input:focus,.field:focus{
+  outline:0;border-color:var(--sp-gold);box-shadow:var(--sp-focus)
+}
+.form-grid,.form-row{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:end;gap:13px;padding:17px 19px
+}
+.form-grid>label,.form-row>label,.settings-card form>label{
+  display:grid;align-content:start;gap:7px;min-width:0;
+  color:#66635d;font-size:10px;font-weight:500;line-height:1.45
+}
+.form-grid>.btn,.form-row>.btn{justify-self:start}
+.settings-card form .field{width:100%}
+.notice,.demo-note,.empty-state{
+  border-radius:7px;font-size:10px;line-height:1.6
+}
+.empty-state{
+  padding:25px 18px;border:1px dashed var(--sp-line-strong);
+  background:#fbfaf8;color:var(--sp-muted);text-align:center
+}
+.notice{padding:12px 15px;border:1px solid #e8e1d4;background:#faf8f3;color:#665a43}
+.demo-note{margin:0;padding:12px 17px;background:#faf9f6;color:var(--sp-muted)}
+.status{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:24px;padding:4px 9px;border:1px solid var(--sp-line);
+  border-radius:99px;background:#faf9f6;color:#69665f;
+  font-size:9px;font-weight:500;white-space:nowrap
+}
+.section-title--spaced{margin:24px 0 12px}
+.comanda-item-editor{padding:12px 16px;border-bottom:1px solid var(--sp-line)}
+.comanda-item-editor summary{cursor:pointer;color:var(--sp-ink);font-size:11px;font-weight:600}
+.comanda-item-editor form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;padding:14px 0 2px}
+.comanda-item-editor form label{display:grid;gap:6px;color:var(--sp-muted);font-size:10px}
+.comanda-item-editor form .btn{justify-self:start}
+.cash-filters .form-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.commission-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:17px}
+.commission-summary>div{min-width:0}
+@media(max-width:900px){
+  .page-content{padding:25px 22px 44px}
+  .cash-filters .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .page-content{padding:18px 13px 34px}
+  .page-head{align-items:flex-start;flex-direction:column;gap:12px;margin-bottom:18px}
+  .page-head h1{font-size:25px}
+  .settings-card>h3,.settings-card>.section-title{padding:14px}
+  .setting-row{padding:11px 13px}
+  .form-grid,.form-row,.cash-filters .form-grid{grid-template-columns:1fr;padding:13px}
+  .form-grid>.btn,.form-row>.btn{width:100%}
+  .comanda-item-editor form{grid-template-columns:1fr}
+  .comanda-item-editor form .btn{width:100%}
+  .commission-summary{grid-template-columns:1fr;gap:8px;padding:13px}
+  .list-toolbar{align-items:stretch}
+  .list-toolbar>*{max-width:100%}
+}
