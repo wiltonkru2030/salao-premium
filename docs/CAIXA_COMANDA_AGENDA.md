@@ -85,3 +85,8 @@ As migrations e funções foram aplicadas/verificadas no banco, e os workflows d
 - atendimento agrupado com vários profissionais;
 - conflitos e bloqueios concorrentes;
 - visual desktop e celular.
+
+
+## Exibição dos horários na Agenda diária
+
+A grade diária usa intervalos visuais de 30 minutos a partir das 08:00. Agendamentos com início fora da marcação exata (por exemplo, 09:15) são posicionados no intervalo de meia hora correspondente, mantendo o horário real exibido no cartão. A duração continua determinando os intervalos seguintes como ocupados. A suíte `test:agenda` verifica esse comportamento.
