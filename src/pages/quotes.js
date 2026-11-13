@@ -83,12 +83,17 @@ export async function loadQuotesPage() {
         if(!selectedCustomer||!items.length){toast("Selecione um cliente e adicione ao menos um serviço.");return;}
         const button=host.querySelector("#quote-save");button.disabled=true;button.textContent="Salvando orçamento…";
         try{
-          const sum=totals(),notes=host.querySelector("#quote-notes").value.trim(),validUntil=host.querySelector("#quote-valid-until").value||null;
-          const {data:quote,error}=await supabase.from("quotes").insert({org_id:orgId,branch_id:state.branch?.id||null,customer_id:selectedCustomer.id,status:"pending",subtotal:sum.subtotal,discount_total:sum.discount,total:sum.total,valid_until:validUntil,notes,created_by:state.user?.id}).select("*").single();
+          const notes=host.querySelector("#quote-notes").value.trim(),validUntil=host.querySelector("#quote-valid-until").value||null;
+          const payload=items.map(item=>({
+            service_id:item.serviceId,professional_id:item.professionalId,quantity:item.quantity,
+            discount_mode:item.discountMode,
+            discount_value:item.discountMode==="percent"?(item.quantity*item.price>0?item.discount/(item.quantity*item.price)*100:0):item.discount
+          }));
+          const {data:quote,error}=await supabase.rpc("create_quote_with_items",{
+            p_org_id:orgId,p_branch_id:state.branch?.id||null,p_customer_id:selectedCustomer.id,
+            p_valid_until:validUntil,p_notes:notes,p_items:payload
+          });
           if(error)throw error;
-          const rows=items.map((item,index)=>({org_id:orgId,quote_id:quote.id,service_id:item.serviceId,professional_id:item.professionalId,description:item.name,quantity:item.quantity,duration_minutes:item.duration,unit_price:item.price,discount_amount:item.discount,discount_mode:item.discountMode,total:item.quantity*item.price-item.discount,sort_order:index}));
-          const {error:itemError}=await supabase.from("quote_items").insert(rows);
-          if(itemError){await supabase.from("quotes").delete().eq("org_id",orgId).eq("id",quote.id);throw itemError;}
           toast("Orçamento #"+quote.quote_number+" gerado e marcado como Em análise.");
           await openQuote(quote.id,orgId);
         }catch(error){reportError(error,{context:"Orçamentos > gerar orçamento"});button.disabled=false;button.textContent="Gerar orçamento e deixar em análise";}
