@@ -20,13 +20,21 @@ export function userErrorMessage(error, fallback = "Não foi possível concluir 
   if (code === "23502") return "Preencha todos os campos obrigatórios.";
   if (code === "42501" || code === "401" || code === "403") return "Você não tem permissão para realizar esta operação.";
   if (code === "PGRST116") return "O registro não foi encontrado ou não está disponível.";
-  if (/fetch|network|timeout|failed to fetch/i.test(String(error?.message || error || ""))) {
+  const raw = String(error?.message || error || "").trim();
+  if (/invalid login credentials|invalid email or password/i.test(raw)) return "E-mail ou senha incorretos.";
+  if (/email not confirmed/i.test(raw)) return "Confirme seu e-mail antes de entrar.";
+  if (/user already registered|already been registered/i.test(raw)) return "Este e-mail já possui cadastro.";
+  if (/password should be at least|password is too short/i.test(raw)) return "A senha não atende ao tamanho mínimo exigido.";
+  if (/email rate limit|rate limit exceeded/i.test(raw)) return "Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.";
+  if (/fetch|network|timeout|failed to fetch|load failed/i.test(raw)) {
     return "Falha de conexão. Verifique sua internet e tente novamente.";
   }
-  const message = String(error?.message || "").trim();
-  if (message && message.length <= 180 && !/sql|postgres|supabase|jwt|token|policy|stack| at /i.test(message)) {
-    return message;
-  }
+  // Mensagens de domínio escritas em português podem ser mostradas; mensagens técnicas
+  // desconhecidas (frequentemente em inglês) permanecem ocultas para não confundir o usuário.
+  const safePortuguese = raw && raw.length <= 180 &&
+    /[ãõáéíóúâêôç]|\\b(não|nao|informe|selecione|escolha|preencha|confira|inválid|inval|permissão|comanda|profissional|registro|saldo|horário|serviço|pagamento|estoque|cancelad|encontrad|já existe|já foi)\\b/i.test(raw) &&
+    !/sql|postgres|supabase|jwt|token|policy|stack| at /i.test(raw);
+  if (safePortuguese) return raw;
   return fallback;
 }
 
