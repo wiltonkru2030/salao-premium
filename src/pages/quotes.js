@@ -36,7 +36,8 @@ function renderBuilder() {
         <label>Serviço<select class="field" id="quote-service"><option value="">Selecione um serviço</option>${services.map(s=>'<option value="'+s.id+'">'+esc(s.name)+' · '+money(s.price)+'</option>').join("")}</select></label>
         <label>Profissional<select class="field" id="quote-professional"><option value="">A definir</option>${professionals.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("")}</select></label>
         <label>Quantidade<input class="field" id="quote-quantity" type="number" min="1" step="1" value="1"></label>
-        <label>Desconto (%)<input class="field" id="quote-discount" type="number" min="0" max="${maxDiscount}" step="0.01" value="0"></label>
+        <label>Tipo de desconto<select class="field" id="quote-discount-mode"><option value="percent">Percentual (%)</option><option value="fixed" ${allowFixedDiscount?"":"disabled"}>Valor (R$)</option></select></label>
+        <label>Desconto<input class="field" id="quote-discount" type="number" min="0" step="0.01" value="0"></label>
         <button class="btn secondary" type="button" id="quote-add-item">＋ Adicionar serviço</button>
       </div>
       <div class="quote-items-list">${items.length ? items.map((item,index)=>'<div class="setting-row"><span><b>'+esc(item.name)+'</b><small>'+item.quantity+' × '+money(item.price)+' · '+esc(item.professionalName||"Profissional a definir")+(item.discount?' · Desconto '+money(item.discount):' · Sem desconto')+'</small></span><span class="record-trailing"><b>'+money(item.quantity*item.price-item.discount)+'</b><button type="button" class="btn text" data-remove-quote-item="'+index+'">Remover</button></span></div>').join("") : '<div class="empty-state">Adicione os serviços para compor o orçamento.</div>'}</div>
@@ -52,6 +53,7 @@ function renderBuilder() {
     <section class="settings-card"><div class="section-title"><div><h3>Regras de desconto</h3><small class="muted">Defina o limite e quais serviços podem receber desconto.</small></div></div>
       <form id="quote-discount-settings" class="form-grid">
         <label>Desconto máximo permitido (%)<input class="field" name="max_discount_percent" type="number" min="0" max="100" step="0.01" value="${maxDiscount}" required></label>
+        <label class="setting-row"><span>Permitir desconto em valor fixo</span><input type="checkbox" name="allow_fixed_discount" ${allowFixedDiscount?"checked":""}></label>
         <div class="quote-discount-services">${services.map(s=>'<label class="setting-row"><span>'+esc(s.name)+'</span><input type="checkbox" name="discount_service" value="'+s.id+'" '+(discountRules.has(s.id)?"checked":"")+'> Permitir desconto</label>').join("")}</div>
         <button class="btn secondary" type="submit">Salvar regras de desconto</button>
       </form>
@@ -79,12 +81,13 @@ export async function loadQuotesPage() {
       supabase.from("services").select("id,name,price,duration_minutes").eq("org_id",orgId).eq("active",true).order("name").limit(500),
       supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("active",true).order("name").limit(500),
       supabase.from("quotes").select("id,quote_number,customer_id,status,total,created_at").eq("org_id",orgId).order("created_at",{ascending:false}).limit(100),
-      supabase.from("quote_settings").select("max_discount_percent").eq("org_id",orgId).maybeSingle(),
+      supabase.from("quote_settings").select("max_discount_percent,allow_fixed_discount").eq("org_id",orgId).maybeSingle(),
       supabase.from("quote_discount_services").select("service_id").eq("org_id",orgId).eq("discount_allowed",true)
     ]);
     for(const r of [customerResult,serviceResult,professionalResult,quoteResult,settingResult,ruleResult]) if(r.error) throw r.error;
     customers=customerResult.data||[]; services=serviceResult.data||[]; professionals=professionalResult.data||[];
     maxDiscount=Number(settingResult.data?.max_discount_percent||0);
+    allowFixedDiscount=settingResult.data?.allow_fixed_discount!==false;
     discountRules=new Set((ruleResult.data||[]).map(r=>r.service_id));
     host.innerHTML='<div class="quote-page-grid"><div><div id="quote-builder"></div></div><div id="quotes-list"></div></div>';
     renderBuilder();
@@ -121,12 +124,14 @@ export async function loadQuotesPage() {
       if(e.target.closest("#quote-add-item")){
         const service=services.find(s=>s.id===host.querySelector("#quote-service").value);
         if(!service){toast("Selecione um serviço válido.");return;}
-        const quantity=Number(host.querySelector("#quote-quantity").value||1),percent=Number(host.querySelector("#quote-discount").value||0);
+        const quantity=Number(host.querySelector("#quote-quantity").value||1),discountInput=Number(host.querySelector("#quote-discount").value||0),discountMode=host.querySelector("#quote-discount-mode").value;
         if(!Number.isInteger(quantity)||quantity<1){toast("Informe uma quantidade válida.");return;}
-        if(percent>0&&!discountRules.has(service.id)){toast("Este serviço não permite desconto nas regras do salão.");return;}
-        if(percent<0||percent>maxDiscount){toast("O desconto ultrapassa o limite configurado.");return;}
+        if(discountMode==="fixed"&&!allowFixedDiscount){toast("O salão não permite desconto em valor fixo.");return;}
+        const base=quantity*Number(service.price),percent=discountMode==="fixed"?(base>0?discountInput/base*100:0):discountInput;
+        if(discountInput>0&&!discountRules.has(service.id)){toast("Este serviço não permite desconto nas regras do salão.");return;}
+        if(discountInput<0||percent>maxDiscount||discountInput>base){toast("O desconto ultrapassa o limite configurado.");return;}
         const professional=professionals.find(p=>p.id===host.querySelector("#quote-professional").value);
-        items.push({serviceId:service.id,name:service.name,quantity,price:Number(service.price),duration:Number(service.duration_minutes),professionalId:professional?.id||null,professionalName:professional?.name||"",discount:Number((quantity*Number(service.price)*percent/100).toFixed(2))});
+        items.push({serviceId:service.id,name:service.name,quantity,price:Number(service.price),duration:Number(service.duration_minutes),professionalId:professional?.id||null,professionalName:professional?.name||"",discount:Number((discountMode==="fixed"?discountInput:base*percent/100).toFixed(2))});
         renderBuilder();return;
       }
       const remove=e.target.closest("[data-remove-quote-item]");
@@ -151,12 +156,12 @@ export async function loadQuotesPage() {
       if(e.target.id==="quote-discount-settings"){
         e.preventDefault();const form=e.target,percent=Number(new FormData(form).get("max_discount_percent"));
         if(!Number.isFinite(percent)||percent<0||percent>100){toast("Informe um limite entre 0 e 100%.");return;}
-        const selected=[...form.querySelectorAll('[name="discount_service"]:checked')].map(el=>el.value);
+        const selected=[...form.querySelectorAll('[name="discount_service"]:checked')].map(el=>el.value),fixedAllowed=form.querySelector('[name="allow_fixed_discount"]').checked;
         try{
-          const {error:settingError}=await supabase.from("quote_settings").upsert({org_id:orgId,max_discount_percent:percent,updated_by:state.user?.id},{onConflict:"org_id"});if(settingError)throw settingError;
+          const {error:settingError}=await supabase.from("quote_settings").upsert({org_id:orgId,max_discount_percent:percent,allow_fixed_discount:fixedAllowed,updated_by:state.user?.id},{onConflict:"org_id"});if(settingError)throw settingError;
           const {error:deleteError}=await supabase.from("quote_discount_services").delete().eq("org_id",orgId);if(deleteError)throw deleteError;
           if(selected.length){const {error}=await supabase.from("quote_discount_services").insert(selected.map(service_id=>({org_id:orgId,service_id,discount_allowed:true})));if(error)throw error;}
-          maxDiscount=percent;discountRules=new Set(selected);toast("Regras de desconto salvas.");renderBuilder();
+          maxDiscount=percent;allowFixedDiscount=fixedAllowed;discountRules=new Set(selected);toast("Regras de desconto salvas.");renderBuilder();
         }catch(error){reportError(error,{context:"Orçamentos > regras de desconto"});}
       }
     });
