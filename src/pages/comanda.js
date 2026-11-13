@@ -72,6 +72,7 @@ function renderOrderDetails(host,order,data,orgId){
  ${editable&&allowEdit?`
  <section class="settings-card"><h3>Adicionar serviço</h3><form id="comanda-service-form">
  <label>Serviço<input id="comanda-service" class="field" placeholder="Digite para buscar" autocomplete="off" required></label>
+ <label>Profissional (opcional)<select name="professional_id" class="field"><option value="">Sem profissional</option>${professionals.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("")}</select></label>
  <button class="btn primary" type="submit">Adicionar serviço</button></form></section>
  <section class="settings-card"><h3>Adicionar produto</h3><form id="comanda-product-form">
  <label>Produto<input id="comanda-product" class="field" placeholder="Digite para buscar" autocomplete="off" required></label>
