@@ -196,13 +196,13 @@ async function printQuote(quote,orgId){
   if(!w){toast("Permita a abertura da janela para imprimir o orçamento.");return;}
   w.opener=null;
   const [orgResult,branchResult,professionalResult]=await Promise.all([
-    supabase.from("organizations").select("name,document,address,phone").eq("id",orgId).single(),
+    supabase.from("organizations").select("name,document,phone").eq("id",orgId).single(),
     supabase.from("branches").select("name,document,address,phone,is_main").eq("org_id",orgId).eq("is_main",true).maybeSingle(),
     supabase.from("professionals").select("id,name").eq("org_id",orgId)
   ]);
   if(orgResult.error)throw orgResult.error;if(branchResult.error)throw branchResult.error;
   const org=orgResult.data,branch=branchResult.data,pros=new Map((professionalResult.data||[]).map(p=>[p.id,p.name]));
-  const address=branch?.address||org.address||{};
+  const address=branch?.address||{};
   const addressText=typeof address==="string"?address:[address.street,address.number,address.district,address.city,address.state,address.zip].filter(Boolean).join(", ");
   const doc=branch?.document||org.document||"Documento não cadastrado";
   let responseUrl=null;
