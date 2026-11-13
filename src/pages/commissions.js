@@ -17,6 +17,7 @@ const canManageCommissionSettings=()=>["owner","admin"].includes(state.membershi
 export function commissionsPage(){
  selectedProfessionalFilter=null;
  return head("Comissões","Valores gerados pelos atendimentos, histórico e pagamentos aos profissionais.")+
+
   '<div id="commissions-manager"><div class="empty-state">Carregando comissões do banco…</div></div>';
 }
 
@@ -80,15 +81,37 @@ export async function loadCommissionsPage(){
   }
   const sections=[...groups.entries()].map(([professionalId,rows])=>{
    const professional=professionalMap.get(professionalId),eligible=rows.filter(c=>["pending","approved"].includes(c.status)&&!c.payout_id);
-   return '<section class="settings-card commission-group"><div class="section-title"><div><h3>'+esc(professional?.name||"Profissional")+'</h3><small class="muted">'+rows.length+' lançamento(s) · '+money(rows.reduce((sum,c)=>sum+Number(c.amount||0),0))+'</small></div></div>'+
-    rows.map(c=>'<div class="setting-row commission-row"><label class="commission-select">'+(canPay()&&eligible.some(x=>x.id===c.id)?'<input type="checkbox" data-commission-select="'+c.id+'" data-professional-id="'+professionalId+'">':'<span class="commission-select-spacer"></span>')+
-     '<span><b>'+money(c.amount)+'</b><small>'+(c.item_type==="product"?"Produto":"Serviço")+' · Base '+money(c.base_amount)+' · '+Number(c.rate)+'%'+(commissionOrderMap.get(commissionItemMap.get(c.service_order_item_id)?.order_id||commissionPaymentMap.get(c.service_order_payment_id)?.order_id)?.order_number?' · Comanda #'+commissionOrderMap.get(commissionItemMap.get(c.service_order_item_id)?.order_id||commissionPaymentMap.get(c.service_order_payment_id)?.order_id).order_number:'')+(commissionPaymentMap.get(c.service_order_payment_id)?' · Parcela '+money(commissionPaymentMap.get(c.service_order_payment_id).amount):'')+' · '+dateTime(c.created_at)+'</small></span></label><span class="record-trailing"><b>'+esc(statusLabel(c.status))+'</b><small>'+(c.paid_at?'Pago em '+dateTime(c.paid_at):'')+'</small></span></div>').join("")+
-    (canPay()&&eligible.length?'<div class="commission-payout-controls"><select class="field" data-payment-method="'+professionalId+'"><option value="pix">PIX</option><option value="cash">Dinheiro</option><option value="transfer">Transferência</option><option value="credit_card">Cartão de crédito</option><option value="debit_card">Cartão de débito</option><option value="other">Outro</option></select><button class="btn primary" type="button" data-pay-commissions="'+professionalId+'">Pagar selecionadas</button></div>':'')+
+   return '<section class="settings-card commission-group"><div class="section-title"><div><h3>'+esc(professional?.name||"Profissional")+
+'</h3><small class="muted">'+rows.length+
+' lançamento(s) · '+money(rows.reduce((sum,c)=>sum+Number(c.amount||0),0))+
+'</small></div></div>'+
+    rows.map(c=>'<div class="setting-row commission-row"><label class="commission-select">'+(canPay()&&eligible.some(x=>x.id===c.id)?'<input type="checkbox" data-commission-select="'+c.id+
+'" data-professional-id="'+professionalId+
+'">':'<span class="commission-select-spacer"></span>')+
+
+     '<span><b>'+money(c.amount)+
+'</b><small>'+(c.item_type==="product"?"Produto":"Serviço")+
+' · Base '+money(c.base_amount)+
+' · '+Number(c.rate)+
+'%'+(commissionOrderMap.get(commissionItemMap.get(c.service_order_item_id)?.order_id||commissionPaymentMap.get(c.service_order_payment_id)?.order_id)?.order_number?' · Comanda #'+commissionOrderMap.get(commissionItemMap.get(c.service_order_item_id)?.order_id||commissionPaymentMap.get(c.service_order_payment_id)?.order_id).order_number:'')+(commissionPaymentMap.get(c.service_order_payment_id)?' · Parcela '+money(commissionPaymentMap.get(c.service_order_payment_id).amount):'')+
+' · '+dateTime(c.created_at)+
+'</small></span></label><span class="record-trailing"><b>'+esc(statusLabel(c.status))+
+'</b><small>'+(c.paid_at?'Pago em '+dateTime(c.paid_at):'')+
+'</small></span></div>').join("")+
+    (canPay()&&eligible.length?'<div class="commission-payout-controls"><select class="field" data-payment-method="'+professionalId+
+'"><option value="pix">PIX</option><option value="cash">Dinheiro</option><option value="transfer">Transferência</option><option value="credit_card">Cartão de crédito</option><option value="debit_card">Cartão de débito</option><option value="other">Outro</option></select><button class="btn primary" type="button" data-pay-commissions="'+professionalId+
+'">Pagar selecionadas</button></div>':'')+
+
     '</section>';
   }).join("");
   const payoutHistory=payouts.map(p=>{
    const professional=professionalMap.get(p.professional_id);
-   return '<article class="record-card"><span class="record-main"><b>'+esc(professional?.name||"Profissional")+' · '+money(p.amount)+'</b><small>'+dateTime(p.paid_at)+' · '+esc(paymentMethodLabel(p.payment_method))+'</small><small>'+esc(p.notes||"Pagamento de comissões")+'</small></span><span class="record-trailing"><small>Pago</small><small>Caixa vinculado</small></span></article>';
+   return '<article class="record-card"><span class="record-main"><b>'+esc(professional?.name||"Profissional")+
+' · '+money(p.amount)+
+'</b><small>'+dateTime(p.paid_at)+
+' · '+esc(paymentMethodLabel(p.payment_method))+
+'</small><small>'+esc(p.notes||"Pagamento de comissões")+
+'</small></span><span class="record-trailing"><small>Pago</small><small>Caixa vinculado</small></span></article>';
   }).join("");
   // Cada regra liga um profissional a um serviço e define o percentual específico.
   const serviceRulesCard=canManageCommissionSettings()?`<section class="settings-card commission-rules-card">
@@ -200,10 +223,13 @@ export async function loadCommissionsPage(){
     const checked=[...host.querySelectorAll('[data-commission-select]:checked')].filter(input=>input.dataset.professionalId===professionalId);
     const ids=checked.map(input=>input.dataset.commissionSelect);
     if(!ids.length){toast("Selecione as comissões que deseja pagar.");return;}
-    const method=host.querySelector('[data-payment-method="'+professionalId+'"]')?.value||"pix";
+    const method=host.querySelector('[data-payment-method="'+professionalId+
+'"]')?.value||"pix";
     const name=professionalMap.get(professionalId)?.name||"profissional";
     const amount=visible.filter(c=>ids.includes(c.id)).reduce((sum,c)=>sum+Number(c.amount||0),0);
-    if(!window.confirm("Confirmar pagamento de "+money(amount)+" para "+name+"? O lançamento será registrado como saída no Caixa."))return;
+    if(!window.confirm("Confirmar pagamento de "+money(amount)+
+" para "+name+
+"? O lançamento será registrado como saída no Caixa."))return;
     button.disabled=true;button.textContent="Registrando…";
     let payment;
     try {
@@ -216,7 +242,8 @@ export async function loadCommissionsPage(){
      reportError(error,{context:"Comissões > registrar pagamento"});
      button.disabled=false;button.textContent="Pagar selecionadas";return;
     }
-    toast(money(payment.data?.amount)+" pago. Caixa e histórico atualizados.");await loadCommissionsPage();
+    toast(money(payment.data?.amount)+
+" pago. Caixa e histórico atualizados.");await loadCommissionsPage();
    });
   }
  }catch(error){
