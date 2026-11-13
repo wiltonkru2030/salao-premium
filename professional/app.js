@@ -30,23 +30,56 @@ function clearAutocomplete(){disposeAutocomplete?.();disposeAutocomplete=null;}
 // Renderiza a tela de autenticação do profissional.
 function loginView(){
  clearAutocomplete();
- root.innerHTML='<main class="login"><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Bem-vindo(a)</h1><p>Profissionais entram com CPF e senha. Proprietários e usuários autorizados podem usar o e-mail.</p>'+
+ root.innerHTML='<main class="login">
+<div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small>
+</div>
+<h1>Bem-vindo(a)</h1>
+<p>Profissionais entram com CPF e senha. Proprietários e usuários autorizados podem usar o e-mail.</p>'+
  (state.notice?'<div class="notice">'+esc(state.notice)+'</div>':'')+
- '<form id="professional-login"><label class="field">CPF ou e-mail<input name="login" autocomplete="username" placeholder="000.000.000-00 ou e-mail" required></label><label class="field">Senha<input name="password" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Entrar</button></form><p class="muted">A recuperação de senha é feita somente pelo administrador do salão.</p></main>';
+ '<form id="professional-login">
+<label class="field">CPF ou e-mail<input name="login" autocomplete="username" placeholder="000.000.000-00 ou e-mail" required>
+</label>
+<label class="field">Senha<input name="password" type="password" autocomplete="current-password" required>
+</label>
+<button class="primary" type="submit">Entrar</button>
+</form>
+<p class="muted">A recuperação de senha é feita somente pelo administrador do salão.</p>
+</main>';
 }
 // Renderiza a troca obrigatória de senha temporária.
 function changePasswordView(){
- root.innerHTML='<main class="login"><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Crie sua nova senha</h1><p>Altere a senha temporária para proteger seu acesso.</p>'+
+ root.innerHTML='<main class="login">
+<div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small>
+</div>
+<h1>Crie sua nova senha</h1>
+<p>Altere a senha temporária para proteger seu acesso.</p>'+
  (state.notice?'<div class="notice">'+esc(state.notice)+'</div>':'')+
- '<form id="professional-password-change"><label class="field">Nova senha<input name="password" type="password" minlength="10" autocomplete="new-password" required></label><label class="field">Confirmar senha<input name="confirm" type="password" minlength="10" autocomplete="new-password" required></label><button class="primary" type="submit">Salvar nova senha</button></form></main>';
+ '<form id="professional-password-change">
+<label class="field">Nova senha<input name="password" type="password" minlength="10" autocomplete="new-password" required>
+</label>
+<label class="field">Confirmar senha<input name="confirm" type="password" minlength="10" autocomplete="new-password" required>
+</label>
+<button class="primary" type="submit">Salvar nova senha</button>
+</form>
+</main>';
 }
 // Monta cabeçalho, conteúdo e navegação principal do PWA.
 function shell(content){
  const links=[["Agenda","▦"],["Comandas","▤"],["Comissões","％"],["Configurações","⚙"]];
  const greeting=state.professional?.name||state.profile?.full_name||"Equipe";
- root.innerHTML='<div class="app-shell"><header class="top"><div><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Olá, '+esc(greeting.split(" ")[0])+'</h1></div><button class="icon-button" data-action="logout" aria-label="Sair">↪</button></header>'+
+ root.innerHTML='<div class="app-shell">
+<header class="top">
+<div>
+<div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small>
+</div>
+<h1>Olá, '+esc(greeting.split(" ")[0])+'</h1>
+</div>
+<button class="icon-button" data-action="logout" aria-label="Sair">↪</button>
+</header>'+
  '<main class="content">'+(state.notice?'<div class="notice">'+esc(state.notice)+'</div>':'')+content+'</main>'+
- '<nav class="nav">'+links.map(([label,icon])=>'<button data-page="'+label+'" class="'+(state.page===label?"active":"")+'"><span>'+icon+'</span>'+label+'</button>').join("")+'</nav></div>';
+ '<nav class="nav">'+links.map(([label,icon])=>'<button data-page="'+label+'" class="'+(state.page===label?"active":"")+'">
+<span>'+icon+'</span>'+label+'</button>').join("")+'</nav>
+</div>';
 }
 function appointmentClass(a){
  if(a.status==="in_progress")return "progress";
@@ -56,26 +89,69 @@ function appointmentClass(a){
 }
 function appointmentCard(a){
  const duration=Math.max(0,Math.round((new Date(a.ends_at)-new Date(a.starts_at))/60000));
- return '<button type="button" class="appointment '+appointmentClass(a)+'" data-appointment="'+esc(a.id)+'"><strong>'+timeLabel(a.starts_at)+' · '+esc(a.customer_name)+'</strong>'+
+ return '<button type="button" class="appointment '+appointmentClass(a)+'" data-appointment="'+esc(a.id)+'">
+<strong>'+timeLabel(a.starts_at)+' · '+esc(a.customer_name)+'</strong>'+
  '<div class="meta">'+esc(a.service_name)+' · '+timeLabel(a.ends_at)+'<br>'+esc(a.customer_phone||"Telefone não informado")+' · '+money(a.price)+'<br>'+esc(a.professional_name||state.professional?.name||"Profissional")+' · '+duration+' min</div>'+
- '<span class="tag">'+esc(statusLabel(a.status))+' · Agendado por: '+esc(sourceLabel(a.booking_source))+'</span></button>';
+ '<span class="tag">'+esc(statusLabel(a.status))+' · Agendado por: '+esc(sourceLabel(a.booking_source))+'</span>
+</button>';
 }
 function appointmentDetails(){
  const a=state.selectedAppointment;if(!a)return "";
  const duration=Math.max(0,Math.round((new Date(a.ends_at)-new Date(a.starts_at))/60000));
- return '<section class="detail"><div class="section-title"><h2>Detalhes do agendamento</h2><button class="secondary" data-action="close-appointment">Fechar</button></div>'+
- '<div class="detail-row"><span>Cliente</span><b>'+esc(a.customer_name)+'</b></div>'+
- '<div class="detail-row"><span>Telefone</span><b>'+esc(a.customer_phone||"—")+'</b></div>'+
- '<div class="detail-row"><span>Serviço</span><b>'+esc(a.service_name)+'</b></div>'+
- '<div class="detail-row"><span>Profissional</span><b>'+esc(a.professional_name||state.professional?.name||"—")+'</b></div>'+
- '<div class="detail-row"><span>Data</span><b>'+new Date(a.starts_at).toLocaleDateString("pt-BR")+'</b></div>'+
- '<div class="detail-row"><span>Horário</span><b>'+timeLabel(a.starts_at)+'–'+timeLabel(a.ends_at)+'</b></div>'+
- '<div class="detail-row"><span>Duração</span><b>'+duration+' minutos</b></div>'+
- '<div class="detail-row"><span>Valor previsto</span><b>'+money(a.price)+'</b></div>'+
- '<div class="detail-row"><span>Status</span><b>'+esc(statusLabel(a.status))+'</b></div>'+
- '<div class="detail-row"><span>Origem</span><b>'+esc(sourceLabel(a.booking_source))+'</b></div>'+
- '<div class="detail-row"><span>Quem criou</span><b>'+esc(a.created_by_name||sourceLabel(a.booking_source))+'</b></div>'+
- '<div class="detail-row"><span>Observações</span><b>'+esc(a.notes||"—")+'</b></div></section>';
+ return '<section class="detail">
+<div class="section-title">
+<h2>Detalhes do agendamento</h2>
+<button class="secondary" data-action="close-appointment">Fechar</button>
+</div>'+
+ '<div class="detail-row">
+<span>Cliente</span>
+<b>'+esc(a.customer_name)+'</b>
+</div>'+
+ '<div class="detail-row">
+<span>Telefone</span>
+<b>'+esc(a.customer_phone||"—")+'</b>
+</div>'+
+ '<div class="detail-row">
+<span>Serviço</span>
+<b>'+esc(a.service_name)+'</b>
+</div>'+
+ '<div class="detail-row">
+<span>Profissional</span>
+<b>'+esc(a.professional_name||state.professional?.name||"—")+'</b>
+</div>'+
+ '<div class="detail-row">
+<span>Data</span>
+<b>'+new Date(a.starts_at).toLocaleDateString("pt-BR")+'</b>
+</div>'+
+ '<div class="detail-row">
+<span>Horário</span>
+<b>'+timeLabel(a.starts_at)+'–'+timeLabel(a.ends_at)+'</b>
+</div>'+
+ '<div class="detail-row">
+<span>Duração</span>
+<b>'+duration+' minutos</b>
+</div>'+
+ '<div class="detail-row">
+<span>Valor previsto</span>
+<b>'+money(a.price)+'</b>
+</div>'+
+ '<div class="detail-row">
+<span>Status</span>
+<b>'+esc(statusLabel(a.status))+'</b>
+</div>'+
+ '<div class="detail-row">
+<span>Origem</span>
+<b>'+esc(sourceLabel(a.booking_source))+'</b>
+</div>'+
+ '<div class="detail-row">
+<span>Quem criou</span>
+<b>'+esc(a.created_by_name||sourceLabel(a.booking_source))+'</b>
+</div>'+
+ '<div class="detail-row">
+<span>Observações</span>
+<b>'+esc(a.notes||"—")+'</b>
+</div>
+</section>';
 }
 // Apresenta calendário mensal e lista de agendamentos do profissional.
 function agendaView(){
@@ -88,47 +164,137 @@ function agendaView(){
   else if(i>=offset+days){d=new Date(year,month+1,i-offset-days+1);inside=false;}
   else d=new Date(year,month,i-offset+1);
   const key=dateKey(d),classes=[inside?"":"outside",key===dateKey(state.selectedDate)?"selected":"",key===dateKey(new Date())?"today":""].join(" ");
-  cells.push('<button class="day '+classes+'" data-date="'+key+'">'+d.getDate()+(marks.has(key)?'<i class="dot"></i>':'')+'</button>');
+  cells.push('<button class="day '+classes+'" data-date="'+key+'">'+d.getDate()+(marks.has(key)?'<i class="dot">
+</i>':'')+'</button>');
  }
  const selected=state.appointments.filter(a=>dateKey(new Date(a.starts_at))===dateKey(state.selectedDate)).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at));
- return '<div class="section-title"><h2>Agenda mensal</h2><span class="muted">'+(state.scope==="calendar_all"||state.scope==="all"?"Agenda completa autorizada":"Somente sua agenda")+'</span></div>'+
- '<div class="calendar-head"><button data-action="prev-month">‹</button><strong>'+esc(monthLabel(state.month))+'</strong><button data-action="next-month">›</button></div>'+
+ return '<div class="section-title">
+<h2>Agenda mensal</h2>
+<span class="muted">'+(state.scope==="calendar_all"||state.scope==="all"?"Agenda completa autorizada":"Somente sua agenda")+'</span>
+</div>'+
+ '<div class="calendar-head">
+<button data-action="prev-month">‹</button>
+<strong>'+esc(monthLabel(state.month))+'</strong>
+<button data-action="next-month">›</button>
+</div>'+
  '<div class="calendar">'+["D","S","T","Q","Q","S","S"].map(d=>'<div class="weekday">'+d+'</div>').join("")+cells.join("")+'</div>'+
- '<div class="section-title section-title--tight-spaced"><h2>'+esc(dateLabel(state.selectedDate))+'</h2><span class="muted">'+selected.length+' agendamento(s)</span></div>'+
+ '<div class="section-title section-title--tight-spaced">
+<h2>'+esc(dateLabel(state.selectedDate))+'</h2>
+<span class="muted">'+selected.length+' agendamento(s)</span>
+</div>'+
  (selected.length?selected.map(appointmentCard).join(""):'<div class="empty">Nenhum agendamento neste dia.</div>')+appointmentDetails();
 }
 // Apresenta comandas autorizadas e seus detalhes.
 function ordersView(){
  if(state.selectedOrder){
   const order=state.selectedOrder,canRegister=state.role==="professional"&&!!state.professional&&["open","in_progress","partially_paid"].includes(order.status);
-  const rows=state.orderItems.length?state.orderItems.map(i=>'<article class="service"><strong>'+esc(i.description)+'</strong><div class="meta">'+Number(i.quantity)+' × '+money(i.unit_price)+' · '+money(i.total)+'</div><span class="tag">'+(i.item_type==="service"?"Serviço":"Produto")+'</span></article>').join(""):'<div class="empty">Nenhum item visível nesta comanda.</div>';
+  const rows=state.orderItems.length?state.orderItems.map(i=>'<article class="service">
+<strong>'+esc(i.description)+'</strong>
+<div class="meta">'+Number(i.quantity)+' × '+money(i.unit_price)+' · '+money(i.total)+'</div>
+<span class="tag">'+(i.item_type==="service"?"Serviço":"Produto")+'</span>
+</article>').join(""):'<div class="empty">Nenhum item visível nesta comanda.</div>';
   return '<button class="secondary" data-action="back-orders">← Voltar às comandas</button>'+
-   '<div class="detail"><strong>Comanda #'+esc(order.order_number)+'</strong><div class="detail-row"><span>Status</span><b>'+esc(statusLabel(order.status))+'</b></div><div class="detail-row"><span>Total</span><b>'+money(order.total)+'</b></div></div>'+
-   '<div class="section-title"><h2>Atendimentos e itens</h2></div>'+rows+
-   (canRegister?'<section class="detail"><strong>Registrar serviço realizado</strong><label class="field service-search">Buscar serviço<input id="service-search" placeholder="Digite o nome do serviço" autocomplete="off"></label><button class="primary" id="add-service" disabled>Registrar serviço</button><p class="muted">O valor é confirmado pelo catálogo do salão. Produtos e pagamentos são geridos pela equipe autorizada.</p></section>':"");
+   '<div class="detail">
+<strong>Comanda #'+esc(order.order_number)+'</strong>
+<div class="detail-row">
+<span>Status</span>
+<b>'+esc(statusLabel(order.status))+'</b>
+</div>
+<div class="detail-row">
+<span>Total</span>
+<b>'+money(order.total)+'</b>
+</div>
+</div>'+
+   '<div class="section-title">
+<h2>Atendimentos e itens</h2>
+</div>'+rows+
+   (canRegister?'<section class="detail">
+<strong>Registrar serviço realizado</strong>
+<label class="field service-search">Buscar serviço<input id="service-search" placeholder="Digite o nome do serviço" autocomplete="off">
+</label>
+<button class="primary" id="add-service" disabled>Registrar serviço</button>
+<p class="muted">O valor é confirmado pelo catálogo do salão. Produtos e pagamentos são geridos pela equipe autorizada.</p>
+</section>':"");
  }
- return '<div class="section-title"><h2>Comandas</h2><span class="muted">Atendimentos vinculados ao seu acesso</span></div>'+
- (state.orders.length?state.orders.map(o=>'<button class="order" data-order="'+esc(o.id)+'"><strong>Comanda #'+esc(o.order_number)+'</strong><div class="meta">Status: '+esc(statusLabel(o.status))+' · '+money(o.total)+'</div></button>').join(""):'<div class="empty">Nenhuma comanda disponível.</div>');
+ return '<div class="section-title">
+<h2>Comandas</h2>
+<span class="muted">Atendimentos vinculados ao seu acesso</span>
+</div>'+
+ (state.orders.length?state.orders.map(o=>'<button class="order" data-order="'+esc(o.id)+'">
+<strong>Comanda #'+esc(o.order_number)+'</strong>
+<div class="meta">Status: '+esc(statusLabel(o.status))+' · '+money(o.total)+'</div>
+</button>').join(""):'<div class="empty">Nenhuma comanda disponível.</div>');
 }
 // Apresenta valores e histórico de comissões do profissional.
 function commissionsView(){
  const total=state.commissions.reduce((sum,c)=>sum+Number(c.amount||0),0);
  const paid=state.commissions.filter(c=>c.status==="paid").reduce((sum,c)=>sum+Number(c.amount||0),0);
  const payoutTotal=state.commissionPayouts.reduce((sum,p)=>sum+Number(p.amount||0),0);
- return '<div class="section-title"><h2>Comissões</h2><span class="muted">Valores, histórico e pagamentos</span></div>'+
- '<section class="detail"><div class="detail-row"><span>Total registrado</span><b>'+money(total)+'</b></div><div class="detail-row"><span>Total pago</span><b>'+money(paid)+'</b></div><div class="detail-row"><span>Em aberto</span><b>'+money(total-paid)+'</b></div></section>'+
- '<div class="section-title"><h2>Histórico de comissões</h2></div>'+
- (state.commissions.length?state.commissions.map(c=>'<article class="commission"><strong>'+money(c.amount)+'</strong><div class="meta">Base: '+money(c.base_amount)+' · Taxa: '+Number(c.rate)+'%<br>Registro: '+dateTimeLabel(c.created_at)+(c.paid_at?' · Pagamento: '+dateTimeLabel(c.paid_at):'')+'</div><span class="tag">'+esc(statusLabel(c.status))+'</span></article>').join(""):'<div class="empty">Nenhuma comissão registrada.</div>')+
- '<div class="section-title"><h2>Pagamentos recebidos</h2><span class="muted">'+money(payoutTotal)+' em pagamentos</span></div>'+
- (state.commissionPayouts.length?state.commissionPayouts.map(p=>'<article class="commission"><strong>'+money(p.amount)+'</strong><div class="meta">'+esc(p.payment_method)+' · '+dateTimeLabel(p.paid_at)+(p.notes?' · '+esc(p.notes):'')+'</div><span class="tag success">Pago</span></article>').join(""):'<div class="empty">Nenhum pagamento de comissão registrado.</div>');
+ return '<div class="section-title">
+<h2>Comissões</h2>
+<span class="muted">Valores, histórico e pagamentos</span>
+</div>'+
+ '<section class="detail">
+<div class="detail-row">
+<span>Total registrado</span>
+<b>'+money(total)+'</b>
+</div>
+<div class="detail-row">
+<span>Total pago</span>
+<b>'+money(paid)+'</b>
+</div>
+<div class="detail-row">
+<span>Em aberto</span>
+<b>'+money(total-paid)+'</b>
+</div>
+</section>'+
+ '<div class="section-title">
+<h2>Histórico de comissões</h2>
+</div>'+
+ (state.commissions.length?state.commissions.map(c=>'<article class="commission">
+<strong>'+money(c.amount)+'</strong>
+<div class="meta">Base: '+money(c.base_amount)+' · Taxa: '+Number(c.rate)+'%<br>Registro: '+dateTimeLabel(c.created_at)+(c.paid_at?' · Pagamento: '+dateTimeLabel(c.paid_at):'')+'</div>
+<span class="tag">'+esc(statusLabel(c.status))+'</span>
+</article>').join(""):'<div class="empty">Nenhuma comissão registrada.</div>')+
+ '<div class="section-title">
+<h2>Pagamentos recebidos</h2>
+<span class="muted">'+money(payoutTotal)+' em pagamentos</span>
+</div>'+
+ (state.commissionPayouts.length?state.commissionPayouts.map(p=>'<article class="commission">
+<strong>'+money(p.amount)+'</strong>
+<div class="meta">'+esc(p.payment_method)+' · '+dateTimeLabel(p.paid_at)+(p.notes?' · '+esc(p.notes):'')+'</div>
+<span class="tag success">Pago</span>
+</article>').join(""):'<div class="empty">Nenhum pagamento de comissão registrado.</div>');
 }
 // Apresenta dados de perfil e segurança da conta.
 function settingsView(){
  const name=state.profile?.full_name||state.professional?.name||"";
- return '<div class="section-title"><h2>Configurações</h2><span class="muted">Perfil, senha e preferências</span></div>'+
- '<section class="detail"><div class="detail-row"><span>Salão</span><b>'+esc(state.organization?.name||"Conta vinculada")+'</b></div><div class="detail-row"><span>Permissão</span><b>'+esc(state.scope==="all"?"Acesso completo":state.scope==="calendar_all"?"Agenda completa":"Somente seus dados")+'</b></div>'+
- '<label class="field">Nome<input id="profile-name" value="'+esc(name)+'" maxlength="120"></label><label class="field">Telefone<input id="profile-phone" data-mask="phone" value="'+esc(state.profile?.phone||"")+'" inputmode="tel"></label><button class="primary" data-action="save-profile">Salvar perfil</button></section>'+
- '<section class="detail"><h3>Senha</h3><label class="field">Nova senha<input id="settings-password" type="password" minlength="10" autocomplete="new-password" placeholder="Mínimo de 10 caracteres"></label><button class="secondary" data-action="change-password">Atualizar senha</button><p class="muted">A redefinição de senha também pode ser feita pelo administrador.</p></section>'+
+ return '<div class="section-title">
+<h2>Configurações</h2>
+<span class="muted">Perfil, senha e preferências</span>
+</div>'+
+ '<section class="detail">
+<div class="detail-row">
+<span>Salão</span>
+<b>'+esc(state.organization?.name||"Conta vinculada")+'</b>
+</div>
+<div class="detail-row">
+<span>Permissão</span>
+<b>'+esc(state.scope==="all"?"Acesso completo":state.scope==="calendar_all"?"Agenda completa":"Somente seus dados")+'</b>
+</div>'+
+ '<label class="field">Nome<input id="profile-name" value="'+esc(name)+'" maxlength="120">
+</label>
+<label class="field">Telefone<input id="profile-phone" data-mask="phone" value="'+esc(state.profile?.phone||"")+'" inputmode="tel">
+</label>
+<button class="primary" data-action="save-profile">Salvar perfil</button>
+</section>'+
+ '<section class="detail">
+<h3>Senha</h3>
+<label class="field">Nova senha<input id="settings-password" type="password" minlength="10" autocomplete="new-password" placeholder="Mínimo de 10 caracteres">
+</label>
+<button class="secondary" data-action="change-password">Atualizar senha</button>
+<p class="muted">A redefinição de senha também pode ser feita pelo administrador.</p>
+</section>'+
  '<button class="secondary" data-action="logout">Sair da conta</button>';
 }
 function render(){
