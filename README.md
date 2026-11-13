@@ -2,40 +2,48 @@
 
 Sistema de gestão para salões de beleza, com painel administrativo e App Profissional.
 
-## Princípios do projeto
+## Padrões obrigatórios
 
-1. **Uma identidade visual:** páginas administrativas reutilizam tokens, tipografia, botões, campos, cartões, estados e modais definidos em `src/styles/design-system.css`.
-2. **Dados integrados:** clientes, profissionais, serviços, Agenda, Comandas, Caixa e Comissões devem compartilhar os mesmos identificadores e respeitar a organização e a unidade.
-3. **Segurança no servidor:** permissões, cálculos financeiros e alterações críticas são validados no Supabase; a interface não é autoridade de segurança.
-4. **Histórico preservado:** pagamentos, comissões, estornos e auditoria não devem ser apagados ou alterados silenciosamente.
-5. **Erros compreensíveis:** mensagens para usuários em português; detalhes técnicos ficam no console com código de diagnóstico.
-6. **Documentação junto do código:** módulos e funções de domínio devem explicar responsabilidade, entradas, efeitos e integrações.
+1. **Identidade visual única:** os módulos administrativos usam os tokens e componentes de `src/styles/design-system.css`. Os CSS de cada módulo ficam restritos à composição específica da tela.
+2. **Dados integrados:** clientes, profissionais, serviços, Agenda, Comandas, Caixa e Comissões compartilham identificadores e escopo de organização/unidade.
+3. **Segurança no servidor:** permissões, cálculos financeiros, disponibilidade e operações críticas são validados pelo Supabase, RLS e RPCs.
+4. **Histórico preservado:** pagamentos, estornos, comissões e auditoria não são apagados nem alterados silenciosamente.
+5. **Mensagens em português:** erros técnicos não devem ser exibidos crus ao usuário; o diagnóstico fica no console com identificador.
+6. **Código documentado:** cada módulo explica responsabilidade, dependências, dados lidos/gravados, permissões e efeitos financeiros.
 
-## Estrutura principal
+## Estrutura
 
-- `src/app.js`: inicialização do painel, eventos globais e coordenação dos módulos.
+- `src/app.js`: inicialização do painel, rotas e orquestração de eventos.
 - `src/pages/`: páginas administrativas por domínio.
-- `src/agenda/`: implementação modular da Agenda.
-- `src/styles/`: estilos compartilhados e design system.
+- `src/agenda/`: componentes, regras e tela da Agenda.
+- `src/styles/`: CSS base, componentes e design system.
 - `src/utils/errors.js`: tradução segura e registro centralizado de erros.
 - `professional/`: App Profissional.
-- `supabase/migrations/`: alterações incrementais de banco.
+- `supabase/migrations/`: histórico versionado de alterações incrementais do banco.
 - `supabase/functions/`: funções de servidor.
 
-## Documentação
+## Documentação técnica
 
+- [Guia técnico e mapa do código](docs/GUIA-DO-CODIGO.md)
 - [Arquitetura e integrações](docs/ARCHITECTURE.md)
 - [Identidade visual e CSS global](docs/DESIGN_SYSTEM.md)
-- [Tratamento de erros e mensagens](docs/ERROR_HANDLING.md)
+- [Tratamento de erros](docs/ERROR_HANDLING.md)
+- [Agenda, Comanda e Caixa](docs/CAIXA_COMANDA_AGENDA.md)
 - [Regras de Comissões](docs/COMMISSIONS.md)
 
-## Estado do design system
+## Situação da implementação
 
-O CSS global já possui uma camada compartilhada e é importado pelo `styles.css`. Isso **não significa que a migração visual de todas as páginas esteja concluída**: ainda existem folhas antigas e estilos específicos por módulo. A conclusão exige revisar cada tela, remover conflitos e validar desktop e celular.
+- **Design system global:** tokens, tipografia, botões, campos, cartões, listas, estados, formulários e responsividade compartilhados estão centralizados e importados por último em `styles.css`.
+- **Agenda:** consulta o Supabase; a validação de conflitos e de profissional/serviço também é aplicada no banco; abertura de atendimento agrupado é transacional.
+- **Comanda:** itens e pagamentos persistidos no Supabase; pagamentos parciais geram entradas no Caixa; cancelamento com recebimentos parciais exige estorno integral e gera saídas rastreáveis.
+- **Caixa:** abertura, fechamento, recebimentos, estornos e pagamentos de comissão são operações protegidas no banco.
+- **Comissões:** cada recebimento gera comissão proporcional, com percentual registrado no lançamento.
 
-## Desenvolvimento seguro
+A padronização do CSS e as regras de backend foram atualizadas, mas ainda é necessário validar visualmente cada tela em navegador real e executar fluxos ponta a ponta com uma conta de teste e dados controlados. Build verde não substitui teste operacional.
 
-- Não apagar nem recriar o banco para corrigir uma funcionalidade.
-- Criar migrations aditivas, revisar permissões RLS e testar com dados isolados.
-- Nunca colocar segredos, senhas, tokens ou dados pessoais nos logs.
-- Não declarar uma funcionalidade concluída apenas porque o build passou; fluxos financeiros precisam de testes integrados.
+## Segurança e manutenção
+
+- Não resetar o banco nem apagar dados para corrigir funcionalidades.
+- Criar migrations aditivas e manter os arquivos versionados em `supabase/migrations/`.
+- Não registrar senhas, tokens, CPF, CNPJ ou dados bancários nos logs.
+- Não marcar fluxo financeiro como concluído sem verificar os vínculos de Caixa, Comanda, pagamento, comissão e estorno.
