@@ -22,6 +22,7 @@ const canOperate=()=>["owner","admin","manager","receptionist","finance"].includ
 
 export function cashPage(){
  return head("Caixa","Abertura, conferência e histórico dos recebimentos e saídas.")+
+
   '<div id="cash-manager"><div class="empty-state">Carregando movimentações do caixa…</div></div>';
 }
 
@@ -62,8 +63,18 @@ export async function loadCashPage(){
   const activeNet=active?movements.filter(m=>m.cash_register_id===active.id).reduce((s,m)=>s+(m.movement_type==="income"?1:m.movement_type==="expense"?-1:0)*Number(m.amount||0),0):0;
   const history=movements.map(m=>{
    const payment=paymentMap.get(m.id),order=payment?.order||orderMap.get(m.service_order_id);
-   const label=order?"Comanda #"+order.order_number+" · "+order.customerName:m.description;
-   return '<article class="record-card cash-movement" data-method="'+esc(m.payment_method||"")+'" data-date="'+String(m.created_at).slice(0,10)+'" data-search="'+esc((label+" "+m.description).toLocaleLowerCase("pt-BR"))+'"><span class="record-main"><b>'+esc(label)+'</b><small>'+dateTime(m.created_at)+' · '+esc(m.payment_method?paymentMethodLabel(m.payment_method):categoryLabel(m.category))+'</small></span><span class="record-trailing"><b>'+((m.movement_type==="expense"?"−":"+")+money(m.amount))+'</b><small>'+esc(m.movement_type==="income"?"Entrada":m.movement_type==="expense"?"Saída":m.movement_type)+(payment?" · Pagamento individual":"")+'</small></span></article>';
+   const label=order?"Comanda #"+order.order_number+
+" · "+order.customerName:m.description;
+   return '<article class="record-card cash-movement" data-method="'+esc(m.payment_method||"")+
+'" data-date="'+String(m.created_at).slice(0,10)+
+'" data-search="'+esc((label+
+" "+m.description).toLocaleLowerCase("pt-BR"))+
+'"><span class="record-main"><b>'+esc(label)+
+'</b><small>'+dateTime(m.created_at)+
+' · '+esc(m.payment_method?paymentMethodLabel(m.payment_method):categoryLabel(m.category))+
+'</small></span><span class="record-trailing"><b>'+((m.movement_type==="expense"?"−":"+")+money(m.amount))+
+'</b><small>'+esc(m.movement_type==="income"?"Entrada":m.movement_type==="expense"?"Saída":m.movement_type)+(payment?" · Pagamento individual":"")+
+'</small></span></article>';
   }).join("");
   host.innerHTML=renderCashDashboard({
    active,activeNet,income,expense,net,movements,history,registers,canOperate:canOperate()
@@ -96,7 +107,8 @@ export async function loadCashPage(){
      }else{
       const {data,error}=await closeCashRegister({supabase,cashRegisterId:active?.id,closingAmount:values.get("closing_amount")});
       if(error)throw error;
-      toast("Caixa fechado. Diferença: "+money(data?.difference||0)+".");
+      toast("Caixa fechado. Diferença: "+money(data?.difference||0)+
+".");
      }
      await loadCashPage();
     }catch(error){reportError(error,{context:"Caixa > operação"});}
