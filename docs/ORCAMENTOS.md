@@ -27,7 +27,7 @@ Todas as gravações são limitadas ao `org_id` ativo e sujeitas a RLS. A unidad
 - O agendamento cria um registro por serviço e profissional, vinculados por `appointment_group_id`.
 - Descontos são permitidos somente para serviços configurados e respeitam o limite percentual do salão.
 - Desconto fixo depende de configuração e também respeita o limite percentual equivalente.
-- Profissional indicado precisa estar ativo e habilitado para aquele serviço.
+- Profissional indicado precisa estar ativo e habilitado para aquele serviço, tanto na criação quanto no agendamento; o seletor só apresenta profissionais vinculados ao serviço.
 
 ## Limitações
 O PDF é gerado pelo diálogo de impressão do navegador; não existe geração PDF server-side nem anexo automático na API do WhatsApp. O envio pelo WhatsApp abre mensagem preparada e o usuário anexa o PDF salvo.
