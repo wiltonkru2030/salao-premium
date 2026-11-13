@@ -19,7 +19,10 @@ export function runAgendaRenderChecks(){
     checks.push(["renderiza agenda diária",day.includes("calendar surface")&&day.includes("Mariana Costa")]);
     checks.push(["mostra atendimento do dia",day.includes("Camila Rodrigues")]);
     checks.push(["mostra atendimento iniciado fora da meia hora exata",day.includes("Juliana Souza")&&day.includes("10:15")]);
-    checks.push(["renderiza agenda semanal",renderWeekCalendar(props).includes("week-calendar")]);
+    const week=renderWeekCalendar(props);
+    checks.push(["renderiza agenda semanal",week.includes("week-calendar")]);
+    checks.push(["exibe horários laterais na semana",week.includes("week-time-rail")&&week.includes("HORÁRIO")]);
+    checks.push(["mostra início de atendimento fora da meia hora na semana",week.includes("Juliana Souza")&&week.includes("10:15")]);
     checks.push(["renderiza agenda mensal",renderMonthCalendar(props).includes("month-calendar")]);
     checks.push(["seletor exibe profissionais dinâmicos",renderProfessionalSelector(1,professionals).includes("Ana Lima")]);
   }catch(error){
