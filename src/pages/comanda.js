@@ -55,23 +55,29 @@ function renderOrderDetails(host,order,data,orgId){
  const editable=["open","in_progress","partially_paid","awaiting_payment"].includes(order.status);
  const allowEdit=canManage();
  const allowPay=canPay();
+ const canEditItems=["owner","admin","manager"].includes(state.membership?.role)&&!payments.some(p=>p.status==="confirmed");
+ const itemEditors=canEditItems?'<section class="settings-card"><h3>Editar itens</h3>'+items.map(i=>{
+  const options='<option value="">Sem profissional</option>'+professionals.map(p=>'<option value="'+p.id+'"'+(i.professional_id===p.id?' selected':'')+'>'+esc(p.name)+'</option>').join("");
+  return '<details class="comanda-item-editor"><summary>'+esc(i.description)+' · '+currency(i.total)+'</summary><form data-edit-comanda-item="'+i.id+'"><label>Quantidade<input class="field" name="quantity" type="number" min="0.001" step="0.001" value="'+Number(i.quantity)+'" required></label><label>Preço unitário (R$)<input class="field" name="unit_price" type="number" min="0" step="0.01" value="'+Number(i.unit_price).toFixed(2)+'" required></label><label>Desconto (R$)<input class="field" name="discount" type="number" min="0" step="0.01" value="'+Number(i.discount||0).toFixed(2)+'" required></label><label>Profissional<select class="field" name="professional_id">'+options+'</select></label><button class="btn primary" type="submit">Salvar alterações</button><button class="btn secondary" type="button" data-delete-comanda-item="'+i.id+'">Excluir item</button></form></details>';
+ }).join("")+'</section>':(payments.some(p=>p.status==="confirmed")?'<p class="demo-note">Os itens ficam bloqueados após o primeiro recebimento para preservar o histórico financeiro.</p>':'');
  host.innerHTML=`
  <div class="list-toolbar"><button class="btn secondary" data-action="back-comandas">← Voltar</button><span class="result-count">Comanda #${esc(order.order_number)}</span><span class="status">${esc(statusLabel(order.status))}</span></div>
  <section class="settings-card"><h3>Cliente e atendimento</h3><div class="setting-row"><span><b>${esc(customer?.name||"Cliente não informado")}</b><small>${esc(customer?.phone||"")}</small></span><b>${esc(professional?.name||"Sem profissional")}</b></div><div class="setting-row"><span>Aberta em</span><b>${new Date(order.created_at).toLocaleString("pt-BR")}</b></div>${order.notes?'<p class="demo-note">'+esc(order.notes)+'</p>':""}</section>
  <section class="settings-card"><h3>Itens da comanda</h3>
  ${items.length?items.map(i=>'<div class="setting-row"><span><b>'+esc(i.description)+'</b><small>'+Number(i.quantity)+' × '+currency(i.unit_price)+(i.professional_id?' · Profissional vinculado':'')+'</small></span><b>'+currency(i.total)+'</b></div>').join(""):'<div class="empty-state">Nenhum item lançado nesta comanda.</div>'}
- <div class="setting-row"><span>Subtotal</span><b>${currency(order.subtotal)}</b></div><div class="setting-row"><span>Desconto</span><b>${currency(order.discount)}</b></div><div class="setting-row"><b>Total</b><b>${currency(order.total)}</b></div></section>
+ <div class="setting-row"><span>Subtotal</span><b>${currency(order.subtotal)}</b></div><div class="setting-row"><span>Desconto</span><b>${currency(order.discount)}</b></div><div class="setting-row"><b>Total</b><b>${currency(order.total)}</b></div></section>${itemEditors}
  <section class="settings-card"><h3>Pagamentos</h3>
  ${payments.length?payments.map(p=>'<div class="setting-row"><span>'+currency(p.amount)+'<small>'+esc(p.payment_method)+' · '+new Date(p.paid_at).toLocaleString("pt-BR")+'</small></span><b>'+esc(p.status)+'</b></div>').join(""):'<div class="empty-state">Nenhum pagamento registrado.</div>'}
  <div class="setting-row"><span>Total recebido</span><b>${currency(paid)}</b></div><div class="setting-row"><span>Saldo restante</span><b>${currency(balance)}</b></div></section>
  ${editable&&allowEdit?`
  <section class="settings-card"><h3>Adicionar serviço</h3><form id="comanda-service-form">
  <label>Serviço<input id="comanda-service" class="field" placeholder="Digite para buscar" autocomplete="off" required></label>
- <label>Profissional<select name="professional_id" class="field" required>${professionals.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("")}</select></label>
+ <label>Profissional<select name="professional_id" class="field"><option value="">Sem profissional</option>${professionals.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("")}</select></label>
  <button class="btn primary" type="submit">Adicionar serviço</button></form></section>
  <section class="settings-card"><h3>Adicionar produto</h3><form id="comanda-product-form">
  <label>Produto<input id="comanda-product" class="field" placeholder="Digite para buscar" autocomplete="off" required></label>
  <label>Quantidade<input name="quantity" class="field" type="number" min="0.001" step="0.001" value="1" required></label>
+ <label>Profissional<select name="professional_id" class="field"><option value="">Sem profissional</option>${professionals.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("")}</select></label>
  <button class="btn primary" type="submit">Adicionar produto</button><p class="demo-note">O estoque será baixado ao quitar a comanda.</p></form></section>`:''}
  ${editable&&allowPay?`
  <section class="settings-card"><h3>Receber pagamento</h3><form id="comanda-payment-form">
@@ -94,6 +100,29 @@ function renderOrderDetails(host,order,data,orgId){
    onSelect:item=>selectedProduct=item
   }));
  }
+
+ if(canEditItems){
+  host.querySelectorAll("[data-edit-comanda-item]").forEach(form=>form.addEventListener("submit",async e=>{
+   e.preventDefault();const submit=form.querySelector('[type="submit"]');
+   const values=new FormData(form),quantity=Number(values.get("quantity")),unitPrice=Number(values.get("unit_price")),discount=Number(values.get("discount")),professionalId=String(values.get("professional_id")||"");
+   const base=quantity*unitPrice,total=base-discount;
+   if(!Number.isFinite(quantity)||quantity<=0||!Number.isFinite(unitPrice)||unitPrice<0||!Number.isFinite(discount)||discount<0||discount>base){toast("Confira quantidade, preço e desconto.");return;}
+   submit.disabled=true;submit.textContent="Salvando…";
+   try{
+    const {error}=await supabase.from("service_order_items").update({quantity,unit_price:unitPrice,discount,total,professional_id:professionalId||null}).eq("org_id",orgId).eq("order_id",order.id).eq("id",form.dataset.editComandaItem);
+    if(error)throw error;toast("Item atualizado e total da comanda recalculado.");await loadComandaPage(order.id);
+   }catch(error){reportError(error,{context:"Comanda > editar item"});}
+   finally{if(submit.isConnected){submit.disabled=false;submit.textContent="Salvar alterações";}}
+  }));
+  host.querySelectorAll("[data-delete-comanda-item]").forEach(button=>button.addEventListener("click",async()=>{
+   if(!window.confirm("Excluir este item da comanda? O total será recalculado."))return;
+   button.disabled=true;
+   try{
+    const {error}=await supabase.from("service_order_items").delete().eq("org_id",orgId).eq("order_id",order.id).eq("id",button.dataset.deleteComandaItem);
+    if(error)throw error;toast("Item removido e total recalculado.");await loadComandaPage(order.id);
+   }catch(error){reportError(error,{context:"Comanda > excluir item"});button.disabled=false;}
+  }));
+ }
  if(editable&&allowEdit){
   host.querySelector("#comanda-service-form").addEventListener("submit",async e=>{
    e.preventDefault();const form=e.currentTarget,submit=form.querySelector('[type="submit"]');
@@ -102,8 +131,8 @@ function renderOrderDetails(host,order,data,orgId){
    submit.disabled=true;submit.textContent="Adicionando…";
    try{
     const {user}=await tenant(),professionalId=String(new FormData(form).get("professional_id")||""),price=Number(selectedService.price||0);
-    if(!professionalId)throw new Error("Selecione o profissional responsável pelo serviço.");
-    const {error}=await supabase.from("service_order_items").insert({org_id:orgId,order_id:order.id,item_type:"service",service_id:selectedService.id,professional_id:professionalId,description:selectedService.name,quantity:1,unit_price:price,total:price,created_by:user.id});
+
+    const {error}=await supabase.from("service_order_items").insert({org_id:orgId,order_id:order.id,item_type:"service",service_id:selectedService.id,professional_id:professionalId||null,description:selectedService.name,quantity:1,unit_price:price,total:price,created_by:user.id});
     if(error)throw error;
     toast("Serviço adicionado.");await loadComandaPage(order.id);
    }catch(error){reportError(error,{context:"Comanda > adicionar serviço"});}
@@ -113,12 +142,12 @@ function renderOrderDetails(host,order,data,orgId){
    e.preventDefault();const form=e.currentTarget,submit=form.querySelector('[type="submit"]');
    if(!selectedProduct){toast("Selecione um produto na lista.");return;}
    if(!form.reportValidity())return;
-   const values=new FormData(form),quantity=Number(values.get("quantity")||1),price=Number(selectedProduct.sale_price||0);
+   const values=new FormData(form),quantity=Number(values.get("quantity")||1),price=Number(selectedProduct.sale_price||0),professionalId=String(values.get("professional_id")||"");
    if(!Number.isFinite(quantity)||quantity<=0||quantity>Number(selectedProduct.stock_quantity||0)){toast("Quantidade inválida ou maior que o estoque.");return;}
    submit.disabled=true;submit.textContent="Adicionando…";
    try{
     const {user}=await tenant();
-    const {error}=await supabase.from("service_order_items").insert({org_id:orgId,order_id:order.id,item_type:"product",product_id:selectedProduct.id,description:selectedProduct.name,quantity,unit_price:price,total:price*quantity,created_by:user.id});
+    const {error}=await supabase.from("service_order_items").insert({org_id:orgId,order_id:order.id,item_type:"product",product_id:selectedProduct.id,professional_id:professionalId||null,description:selectedProduct.name,quantity,unit_price:price,total:price*quantity,created_by:user.id});
     if(error)throw error;
     toast("Produto adicionado.");await loadComandaPage(order.id);
    }catch(error){reportError(error,{context:"Comanda > adicionar produto"});}
