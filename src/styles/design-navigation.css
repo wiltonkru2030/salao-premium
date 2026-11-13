@@ -22,3 +22,9 @@
 }
 .head-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;flex-shrink:0}
 
+
+/* Seletor de tenant: deixa a organização ativa visível e a troca explícita. */
+.tenant-switcher{display:flex;align-items:center;gap:8px;min-width:0;color:var(--sp-muted);font-size:10px}
+.tenant-switcher select{max-width:220px;min-width:120px;height:34px;padding:0 28px 0 10px;border:1px solid var(--sp-line);border-radius:7px;background:var(--sp-paper);color:var(--sp-ink);font:inherit;font-size:11px}
+.tenant-switcher select:focus-visible{outline:2px solid var(--sp-gold);outline-offset:2px}
+@media(max-width:760px){.tenant-switcher span{display:none}.tenant-switcher select{max-width:150px;min-width:100px}}
