@@ -45,10 +45,7 @@ function buildContent() {
   if(!host)return;
   const professionals=state.agendaProfessionals||[];
   if(!professionals.length){
-    host.innerHTML='<div class="empty-state">
-<b>Nenhum profissional ativo</b>
-<small>Cadastre um profissional para começar a organizar a agenda.</small>
-</div>';
+    host.innerHTML='<div class="empty-state"><b>Nenhum profissional ativo</b><small>Cadastre um profissional para começar a organizar a agenda.</small></div>';
     return;
   }
   if(state.pro<0||state.pro>=professionals.length)state.pro=0;
@@ -64,20 +61,9 @@ function buildContent() {
   let html=renderProfessionalSelector(state.pro,professionals);
   html+=renderAgendaToolbar(state.date,state.view);
   html+=renderAgendaFilters({query:state.query,filter:state.filter});
-  html+='<div class="agenda-summary">
-<span>
-<i class="legend-dot booked">
-</i> Agendado</span>
-<span>
-<i class="legend-dot progress">
-</i> Em atendimento</span>
-<span>
-<i class="legend-dot free">
-</i> Disponível</span>
-<span class="summary-count">'+count+
+  html+='<div class="agenda-summary"><span><i class="legend-dot booked"></i> Agendado</span><span><i class="legend-dot progress"></i> Em atendimento</span><span><i class="legend-dot free"></i> Disponível</span><span class="summary-count">'+count+
 ' atendimento(s) para '+selectedProfessional[1]+
-'</span>
-</div>';
+'</span></div>';
   const props={date:state.date,pro:state.pro,professional:selectedProfessional,appointments:items,
     blockedTimes:state.dbBlockedTimes||[],includeReleased:state.filter==='Cancelado'||state.filter==='Falta'};
   html+=state.view==='Dia'?renderDayCalendar(props):state.view==='Semana'?renderWeekCalendar(props):renderMonthCalendar(props);
@@ -87,9 +73,7 @@ function buildContent() {
 export function agenda() {
   return head('Agenda','Gerencie horários, atendimentos e disponibilidade dos profissionais.',btn('＋ Novo agendamento','new-appointment','primary'))+
 
-    '<div id="agenda-db-content">
-<div class="empty-state">Carregando agenda do banco…</div>
-</div>';
+    '<div id="agenda-db-content"><div class="empty-state">Carregando agenda do banco…</div></div>';
 }
 // Consulta profissionais, agendamentos e bloqueios da organização ativa.
 /**
@@ -139,11 +123,8 @@ export async function loadAgendaPage() {
     buildContent();
   }catch(error){
     const diagnostic=reportError(error,{context:"Agenda > carregar calendário",notify:false});
-    host.innerHTML='<div class="empty-state">
-<b>Não foi possível carregar a agenda.</b>
-<small>Verifique sua conexão e suas permissões. Código '+diagnostic.id+
-'</small>
-</div>';
+    host.innerHTML='<div class="empty-state"><b>Não foi possível carregar a agenda.</b><small>Verifique sua conexão e suas permissões. Código '+diagnostic.id+
+'</small></div>';
   }
 }
 export function refreshAgendaContent(){buildContent();}
