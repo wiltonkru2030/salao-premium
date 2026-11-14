@@ -49,9 +49,10 @@ export function buildComandaDetails(order,data,permissions){
 '</option>').join("")}</select></label><button class="btn primary" type="submit">Adicionar produto</button><p class="demo-note">O estoque será baixado ao quitar a comanda.</p></form></section>`:''}
  ${editable&&allowPay?`
  <section class="settings-card"><h3>Receber pagamento</h3><form id="comanda-payment-form"><label>Valor recebido (R$)<input name="amount" class="field" type="text" inputmode="decimal" data-mask="currency" value="${balance.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}" required></label><label>Forma de pagamento<select name="payment_method" class="field" required><option value="pix">PIX</option><option value="cash">Dinheiro</option><option value="credit_card">Cartão de crédito</option><option value="debit_card">Cartão de débito</option><option value="transfer">Transferência</option><option value="voucher">Voucher</option><option value="other">Outro</option></select></label><button class="btn primary" type="submit" ${balance<=0?"disabled":""}>Registrar pagamento</button><p class="demo-note">Cada recebimento, inclusive parcial, gera uma entrada no Caixa. Na quitação, o sistema finaliza a venda, baixa o estoque e gera as comissões configuradas.</p></form></section>`:''}
- ${editable&&allowEdit?(()=>{
+ ${editable&&(allowEdit||(payments.some(p=>p.status==="confirmed")&&permissions.canRefund))?(()=>{
   const hasConfirmedPayment=payments.some(p=>p.status==="confirmed");
   const canRefund=permissions.canRefund;
+  const canCancel=permissions.canManage||(hasConfirmedPayment&&canRefund);
   if(hasConfirmedPayment&&!canRefund)return '<section class="settings-card"><p class="demo-note">Esta comanda possui recebimentos. O estorno integral e o cancelamento exigem perfil de administração ou financeiro.</p></section>';
   return '<section class="settings-card"><button class="btn secondary" data-action="cancel-comanda" data-order-id="'+order.id+'" data-refund-payments="'+(hasConfirmedPayment?'true':'false')+'">'+(hasConfirmedPayment?'Estornar recebimentos e cancelar comanda':'Cancelar comanda e horários vinculados')+'</button></section>';
 })():""}
