@@ -16,6 +16,9 @@ import { dateKey, startOfWeek, addDays } from '../utils/date.utils.js';
 
 export { dateKey };
 
+// Impede que consultas antigas sobrescrevam a Agenda após trocar unidade, data ou visualização.
+let agendaLoadSequence = 0;
+
 // Adapta os estados do banco aos rótulos exibidos no calendário.
 function dbStatus(value) {
   return ({scheduled:'Aguardando',confirmed:'Confirmado',arrived:'Cliente chegou',in_progress:'Em atendimento',completed:'Finalizado',cancelled:'Cancelado',no_show:'Falta'})[value] || value;
@@ -89,24 +92,32 @@ export async function loadAgendaPage() {
   if(!state.user||!state.organization?.id)return;
   const host=document.querySelector('#agenda-db-content');
   if(!host)return;
+  const requestId=++agendaLoadSequence;
+  const organizationId=state.organization.id;
+  const requestedDate=dateKey(state.date);
+  const requestedView=state.view;
+  const selectedDate=new Date(state.date);
   host.innerHTML='<div class="empty-state">Carregando agenda…</div>';
   try{
     let start,end;
-    if(state.view==='Dia'){
-      start=new Date(state.date.getFullYear(),state.date.getMonth(),state.date.getDate());
+    if(requestedView==='Dia'){
+      start=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),selectedDate.getDate());
       end=addDays(start,1);
-    }else if(state.view==='Semana'){
-      start=startOfWeek(state.date);
+    }else if(requestedView==='Semana'){
+      start=startOfWeek(selectedDate);
       end=addDays(start,7);
     }else{
-      start=new Date(state.date.getFullYear(),state.date.getMonth(),1);
-      end=new Date(state.date.getFullYear(),state.date.getMonth()+1,1);
+      start=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
+      end=new Date(selectedDate.getFullYear(),selectedDate.getMonth()+1,1);
     }
     const [proResult,appointmentResult,blockResult]=await Promise.all([
-      supabase.from('professionals').select('id,name,color,active').eq('org_id',state.organization.id).eq('active',true).order('name'),
-      supabase.from('appointments').select('id,customer_id,professional_id,customer_name,customer_phone,service_id,service_name,professional_name,starts_at,ends_at,status,price,booking_source,created_by_name,notes,service_order_id,appointment_group_id,arrived_at').eq('org_id',state.organization.id).gte('starts_at',start.toISOString()).lt('starts_at',end.toISOString()).order('starts_at').limit(1000),
-      supabase.from('appointment_blocks').select('id,professional_id,starts_at,ends_at,reason').eq('org_id',state.organization.id).lt('starts_at',end.toISOString()).gt('ends_at',start.toISOString()).limit(500)
+      supabase.from('professionals').select('id,name,color,active').eq('org_id',organizationId).eq('active',true).order('name'),
+      supabase.from('appointments').select('id,customer_id,professional_id,customer_name,customer_phone,service_id,service_name,professional_name,starts_at,ends_at,status,price,booking_source,created_by_name,notes,service_order_id,appointment_group_id,arrived_at').eq('org_id',organizationId).gte('starts_at',start.toISOString()).lt('starts_at',end.toISOString()).order('starts_at').limit(1000),
+      supabase.from('appointment_blocks').select('id,professional_id,starts_at,ends_at,reason').eq('org_id',organizationId).lt('starts_at',end.toISOString()).gt('ends_at',start.toISOString()).limit(500)
     ]);
+    // Uma resposta atrasada nunca pode substituir dados da unidade/data atualmente exibida.
+    if(requestId!==agendaLoadSequence || state.organization?.id!==organizationId ||
+      state.view!==requestedView || dateKey(state.date)!==requestedDate || !host.isConnected)return;
     if(proResult.error)throw proResult.error;
     if(appointmentResult.error)throw appointmentResult.error;
     if(blockResult.error)throw blockResult.error;
@@ -122,6 +133,8 @@ export async function loadAgendaPage() {
     });
     buildContent();
   }catch(error){
+    if(requestId!==agendaLoadSequence || state.organization?.id!==organizationId ||
+      state.view!==requestedView || dateKey(state.date)!==requestedDate || !host.isConnected)return;
     const diagnostic=reportError(error,{context:"Agenda > carregar calendário",notify:false});
     host.innerHTML='<div class="empty-state"><b>Não foi possível carregar a agenda.</b><small>Verifique sua conexão e suas permissões. Código '+diagnostic.id+
 '</small></div>';
