@@ -147,10 +147,33 @@ export async function loadProductsPage() {
         cost_price: cost, sale_price: price, min_stock: minStock
       };
       const productId = form.dataset.productId;
-      const result = productId
-        ? await supabase.from("products").update(payload).eq("org_id", state.organization.id).eq("id", productId)
-        : await supabase.from("products").insert({ ...payload, org_id: state.organization.id, stock_quantity: stock, active: true });
-      if (result.error) throw result.error;
+      if (productId) {
+        const result = await supabase.from("products").update(payload)
+          .eq("org_id", state.organization.id).eq("id", productId);
+        if (result.error) throw result.error;
+      } else {
+        // O saldo inicial também precisa gerar uma movimentação auditável.
+        const result = await supabase.from("products")
+          .insert({ ...payload, org_id: state.organization.id, stock_quantity: 0, active: true })
+          .select("id").single();
+        if (result.error) throw result.error;
+        if (stock > 0) {
+          const movement = await supabase.rpc("adjust_product_stock", {
+            p_product_id: result.data.id,
+            p_movement_type: "in",
+            p_quantity: stock,
+            p_reason: "Estoque inicial do cadastro",
+            p_unit_cost: cost
+          });
+          if (movement.error) {
+            reportError(movement.error, { context: "Produtos > registrar estoque inicial" });
+            host.querySelector("#product-create-modal")?.close();
+            await loadProductsPage();
+            toast("Produto cadastrado, mas o estoque inicial não foi lançado. Faça a entrada pelo ajuste de estoque.");
+            return;
+          }
+        }
+      }
       host.querySelector("#product-create-modal")?.close();
       toast(productId ? "Produto atualizado." : "Produto cadastrado.");
       await loadProductsPage();
