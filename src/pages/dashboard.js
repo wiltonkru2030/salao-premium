@@ -31,6 +31,9 @@ export async function loadDashboardPage() {
       .select("id,starts_at,customer_name,service_name,professional_name,status,price")
       .eq("org_id", orgId).gte("starts_at", start.toISOString())
       .lt("starts_at", end.toISOString()).order("starts_at").limit(8);
+    let appointmentsCountQuery = supabase.from("appointments")
+      .select("id", { count: "exact", head: true }).eq("org_id", orgId)
+      .gte("starts_at", start.toISOString()).lt("starts_at", end.toISOString());
     let movementsQuery = supabase.from("cash_movements")
       .select("id,movement_type,amount,created_at")
       .eq("org_id", orgId).gte("created_at", start.toISOString())
@@ -42,15 +45,16 @@ export async function loadDashboardPage() {
 
     if (state.branch?.id) {
       appointmentsQuery = appointmentsQuery.eq("branch_id", state.branch.id);
+      appointmentsCountQuery = appointmentsCountQuery.eq("branch_id", state.branch.id);
       movementsQuery = movementsQuery.eq("branch_id", state.branch.id);
       customersQuery = customersQuery.eq("branch_id", state.branch.id);
       professionalsQuery = professionalsQuery.eq("branch_id", state.branch.id);
     }
 
-    const [appointmentsResult, movementsResult, customersResult, professionalsResult] = await Promise.all([
-      appointmentsQuery, movementsQuery, customersQuery, professionalsQuery
+    const [appointmentsResult, appointmentsCountResult, movementsResult, customersResult, professionalsResult] = await Promise.all([
+      appointmentsQuery, appointmentsCountQuery, movementsQuery, customersQuery, professionalsQuery
     ]);
-    for (const result of [appointmentsResult, movementsResult, customersResult, professionalsResult]) {
+    for (const result of [appointmentsResult, appointmentsCountResult, movementsResult, customersResult, professionalsResult]) {
       if (result.error) throw result.error;
     }
 
@@ -65,7 +69,7 @@ export async function loadDashboardPage() {
       <section class="metrics">
         <article class="metric-card"><div class="metric-top"><span>Recebimentos hoje</span></div><strong>${money(received)}</strong><small>Entradas registradas no Caixa</small></article>
         <article class="metric-card"><div class="metric-top"><span>Saídas hoje</span></div><strong>${money(outflow)}</strong><small>Saídas registradas no Caixa</small></article>
-        <article class="metric-card"><div class="metric-top"><span>Agendamentos hoje</span></div><strong>${appointments.length}</strong><small>Atendimentos listados para hoje</small></article>
+        <article class="metric-card"><div class="metric-top"><span>Agendamentos hoje</span></div><strong>${appointmentsCountResult.count ?? "—"}</strong><small>Atendimentos cadastrados para hoje</small></article>
         <article class="metric-card"><div class="metric-top"><span>Clientes ativos</span></div><strong>${customersResult.count ?? "—"}</strong><small>Cadastro da unidade selecionada</small></article>
         <article class="metric-card"><div class="metric-top"><span>Profissionais ativos</span></div><strong>${professionalsResult.count ?? "—"}</strong><small>Equipe da unidade selecionada</small></article>
       </section>
