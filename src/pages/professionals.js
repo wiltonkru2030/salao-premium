@@ -68,6 +68,7 @@ export async function loadProfessionalsPage(){
   <div class="professional-person-meta"><span>${esc(p.phone||p.email||"Contato não informado")}</span><span>Comissão <b>${Number(p.commission_rate||0)}%</b></span>${p.tax_regime==="mei"?'<span>CNPJ '+esc(p.cnpj||"—")+'</span>':''}</div>
   <div class="professional-assigned-services"><small>SERVIÇOS HABILITADOS</small><div>${(assignedNames.get(p.id)||[]).length?(assignedNames.get(p.id)||[]).map(name=>'<span>'+esc(name)+'</span>').join(""):'<em>Nenhum serviço vinculado</em>'}</div></div>
   <div class="professional-person-footer">
+   <div class="professional-person-actions"><button type="button" class="btn secondary" data-edit-professional="${p.id}">Editar cadastro</button><button type="button" class="btn secondary" data-toggle-professional-active="${p.id}" data-active="${p.active?"true":"false"}">${p.active?"Desativar":"Ativar"}</button></div>
    <label class="professional-app-toggle"><input type="checkbox" data-professional-toggle="${p.id}" ${p.access_enabled?"checked":""} ${!p.active?"disabled":""}><span class="professional-switch"></span><span>App Profissional</span></label>
    <details class="professional-access-details"><summary>Gerenciar acesso</summary>
     <div class="professional-access-fields">
@@ -124,7 +125,29 @@ export async function loadProfessionalsPage(){
  if(host.dataset.bound==="true")return;
  host.dataset.bound="true";
  host.addEventListener("click",async event=>{
-  if(event.target.closest("[data-open-professional-modal]")){const modal=host.querySelector("#professional-create-modal");if(modal&&!modal.open){modal.showModal();modal.querySelector('[name="name"]')?.focus();}return;}
+  if(event.target.closest("[data-open-professional-modal]")){const modal=host.querySelector("#professional-create-modal");if(modal&&!modal.open){const form=modal.querySelector("#professional-create-form");form.reset();form.dataset.professionalId="";modal.querySelector("#professional-modal-title").textContent="Novo profissional";form.querySelector('[type="submit"]').textContent="Salvar profissional";modal.querySelectorAll('input[name="service_ids"]').forEach(input=>input.checked=false);modal.showModal();modal.querySelector('[name="name"]')?.focus();}return;}
+  const edit=event.target.closest("[data-edit-professional]");
+  if(edit){
+   const person=(data||[]).find(item=>item.id===edit.dataset.editProfessional),modal=host.querySelector("#professional-create-modal");
+   if(!person||!modal)return;
+   const form=modal.querySelector("#professional-create-form");form.dataset.professionalId=person.id;
+   for(const key of ["name","phone","email","specialty","commission_rate","tax_regime","cnpj","legal_name","trade_name"])if(form.elements[key])form.elements[key].value=person[key]??(key==="commission_rate"?0:"");
+   const mei=person.tax_regime==="mei",meiFields=modal.querySelector("#professional-mei-fields");meiFields.hidden=!mei;
+   meiFields.querySelector('[name="cnpj"]').required=mei;meiFields.querySelector('[name="legal_name"]').required=mei;
+   const assigned=new Set((assignments||[]).filter(link=>link.professional_id===person.id).map(link=>link.service_id));
+   modal.querySelectorAll('input[name="service_ids"]').forEach(input=>input.checked=assigned.has(input.value));
+   modal.querySelector("#professional-modal-title").textContent="Editar profissional";
+   form.querySelector('[type="submit"]').textContent="Salvar alterações";modal.showModal();return;
+  }
+  const activeButton=event.target.closest("[data-toggle-professional-active]");
+  if(activeButton){
+   const active=activeButton.dataset.active==="true";
+   if(!window.confirm(active?"Desativar este profissional? Ele deixará de receber novos agendamentos.":"Reativar este profissional?"))return;
+   activeButton.disabled=true;
+   const {error}=await supabase.from("professionals").update({active:!active}).eq("org_id",state.organization.id).eq("id",activeButton.dataset.toggleProfessionalActive);
+   if(error){reportError(error,{context:"Profissionais > alterar situação"});activeButton.disabled=false;return;}
+   toast(active?"Profissional desativado.":"Profissional reativado.");await loadProfessionalsPage();return;
+  }
   if(event.target===host.querySelector("#professional-create-modal")||event.target.closest("[data-close-professional-modal]")){host.querySelector("#professional-create-modal")?.close();return;}
   const reset=event.target.closest("[data-professional-reset]");
   if(reset){if(!window.confirm("Gerar uma nova senha temporária para este profissional?"))return;await provision(reset,"reset");return;}
@@ -165,19 +188,30 @@ export async function loadProfessionalsPage(){
   let button;
   try{
   const form=event.target;button=form.querySelector('[type="submit"]');const v=new FormData(form);
+  const professionalId=form.dataset.professionalId||"";
   const name=String(v.get("name")||"").trim(),cpf=String(v.get("cpf")||"").replace(/\\D/g,""),phone=String(v.get("phone")||"").trim(),email=String(v.get("email")||"").trim(),rate=Number(v.get("commission_rate")||0),taxRegime=String(v.get("tax_regime")||"individual"),cnpj=String(v.get("cnpj")||"").replace(/\\D/g,"");
   const serviceIds=[...form.querySelectorAll('input[name="service_ids"]:checked')].map(input=>input.value);
-  if(!name||!validCpf(cpf)||!Number.isFinite(rate)||rate<0||rate>100){toast("Confira nome, CPF e comissão.");return;}
+  if(!name||!Number.isFinite(rate)||rate<0||rate>100){toast("Confira nome e comissão.");return;}
+  if(!professionalId&&!validCpf(cpf)){toast("Informe um CPF válido para o profissional.");return;}
   if(taxRegime==="mei"&&(!validCnpj(cnpj)||!String(v.get("legal_name")||"").trim())){toast("Para MEI, informe CNPJ válido e razão social.");return;}
   if(!serviceIds.length){toast("Selecione ao menos um serviço que o profissional atende.");return;}
   button.disabled=true;button.textContent="Salvando…";
-  const payload={org_id:state.organization.id,name,phone:phone||null,email:email||null,commission_rate:rate,active:true,tax_regime:taxRegime,cnpj:taxRegime==="mei"?cnpj:null,legal_name:taxRegime==="mei"?String(v.get("legal_name")||"").trim():null,trade_name:taxRegime==="mei"?String(v.get("trade_name")||"").trim()||null:null,specialty:String(v.get("specialty")||"").trim()||null};
-  const {data:professional,error:insertError}=await supabase.from("professionals").insert(payload).select("id").single();
-  if(insertError){reportError(insertError,{context:"Profissionais > inserir cadastro"});button.disabled=false;button.textContent="Salvar profissional";return;}
-  const links=serviceIds.map(service_id=>({org_id:state.organization.id,professional_id:professional.id,service_id}));
-  const {error:linkError}=await supabase.from("professional_services").insert(links);
-  if(linkError){const rollback=await supabase.from("professionals").delete().eq("org_id",state.organization.id).eq("id",professional.id);if(rollback.error)reportError(rollback.error,{context:"Profissionais > reverter cadastro incompleto"});reportError(linkError,{context:"Profissionais > vincular serviços"});button.disabled=false;button.textContent="Salvar profissional";return;}
-  const enableApp=v.get("enable_app")==="on";
+  const payload={name,phone:phone||null,email:email||null,commission_rate:rate,tax_regime:taxRegime,cnpj:taxRegime==="mei"?cnpj:null,legal_name:taxRegime==="mei"?String(v.get("legal_name")||"").trim():null,trade_name:taxRegime==="mei"?String(v.get("trade_name")||"").trim()||null:null,specialty:String(v.get("specialty")||"").trim()||null};
+  if(professionalId){
+   const {error:updateError}=await supabase.from("professionals").update(payload).eq("org_id",state.organization.id).eq("id",professionalId);
+   if(updateError){reportError(updateError,{context:"Profissionais > atualizar cadastro"});button.disabled=false;button.textContent="Salvar alterações";return;}
+   const previous=new Set((assignments||[]).filter(link=>link.professional_id===professionalId).map(link=>link.service_id));
+   const additions=serviceIds.filter(id=>!previous.has(id)),removals=[...previous].filter(id=>!serviceIds.includes(id));
+   if(additions.length){const {error}=await supabase.from("professional_services").insert(additions.map(service_id=>({org_id:state.organization.id,professional_id:professionalId,service_id})));if(error){reportError(error,{context:"Profissionais > adicionar serviços"});toast("Cadastro atualizado, mas não foi possível adicionar todos os serviços.");button.disabled=false;button.textContent="Salvar alterações";return;}}
+   if(removals.length){const {error}=await supabase.from("professional_services").delete().eq("org_id",state.organization.id).eq("professional_id",professionalId).in("service_id",removals);if(error){reportError(error,{context:"Profissionais > remover serviços"});toast("Cadastro atualizado, mas não foi possível remover alguns vínculos.");button.disabled=false;button.textContent="Salvar alterações";return;}}
+  }else{
+   const {data:professional,error:insertError}=await supabase.from("professionals").insert({...payload,org_id:state.organization.id,active:true}).select("id").single();
+   if(insertError){reportError(insertError,{context:"Profissionais > inserir cadastro"});button.disabled=false;button.textContent="Salvar profissional";return;}
+   const links=serviceIds.map(service_id=>({org_id:state.organization.id,professional_id:professional.id,service_id}));
+   const {error:linkError}=await supabase.from("professional_services").insert(links);
+   if(linkError){const rollback=await supabase.from("professionals").delete().eq("org_id",state.organization.id).eq("id",professional.id);if(rollback.error)reportError(rollback.error,{context:"Profissionais > reverter cadastro incompleto"});reportError(linkError,{context:"Profissionais > vincular serviços"});button.disabled=false;button.textContent="Salvar profissional";return;}
+  }
+  const enableApp=!professionalId&&v.get("enable_app")==="on";
   let appNotice="";
   if(enableApp){
    const {data:access,error:accessError}=await supabase.functions.invoke("manage-professional-access",{body:{action:"create",org_id:state.organization.id,professional_id:professional.id,cpf}});
@@ -193,7 +227,8 @@ export async function loadProfessionalsPage(){
   const meiFields=host.querySelector("#professional-mei-fields");if(meiFields){meiFields.hidden=true;meiFields.querySelector('[name="cnpj"]').required=false;meiFields.querySelector('[name="legal_name"]').required=false;}
   host.querySelector("#professional-service-filter").value="";
   host.querySelector("#professional-create-modal")?.close();button.disabled=false;button.textContent="Salvar profissional";
-  toast(appNotice||"Profissional cadastrado e serviços vinculados.");await loadProfessionalsPage();
+  form.dataset.professionalId="";
+  toast(appNotice||(professionalId?"Profissional atualizado e serviços sincronizados.":"Profissional cadastrado e serviços vinculados."));await loadProfessionalsPage();
   }catch(error){reportError(error,{context:"Profissionais > salvar cadastro"});if(button){button.disabled=false;button.textContent="Salvar profissional";}}
  });
  async function provision(button,action){
