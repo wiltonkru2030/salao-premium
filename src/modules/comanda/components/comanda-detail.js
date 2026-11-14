@@ -20,7 +20,8 @@ export function buildComandaDetails(order,data,permissions){
  const allowPay=permissions.canPay;
  const canEditItems=permissions.canEditItems;
  const itemEditors=canEditItems?'<section class="settings-card"><h3>Editar itens</h3>'+items.map(i=>{
-  const allowed=assignments.filter(link=>link.service_id===i.service_id).map(link=>link.professional_id);\n  const options='<option value="">Sem profissional</option>'+professionals.filter(p=>i.item_type!=="service"||allowed.includes(p.id)).map(p=>'<option value="'+p.id+
+  const allowed=assignments.filter(link=>link.service_id===i.service_id).map(link=>link.professional_id);
+  const options='<option value="">Sem profissional</option>'+professionals.filter(p=>i.item_type!=="service"||allowed.includes(p.id)).map(p=>'<option value="'+p.id+
 '"'+(i.professional_id===p.id?' selected':'')+
 '>'+esc(p.name)+
 '</option>').join("");
