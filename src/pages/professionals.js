@@ -125,12 +125,12 @@ export async function loadProfessionalsPage(){
  if(host.dataset.bound==="true")return;
  host.dataset.bound="true";
  host.addEventListener("click",async event=>{
-  if(event.target.closest("[data-open-professional-modal]")){const modal=host.querySelector("#professional-create-modal");if(modal&&!modal.open){const form=modal.querySelector("#professional-create-form");form.reset();form.dataset.professionalId="";modal.querySelector("#professional-modal-title").textContent="Novo profissional";form.querySelector('[type="submit"]').textContent="Salvar profissional";modal.querySelectorAll('input[name="service_ids"]').forEach(input=>input.checked=false);modal.showModal();modal.querySelector('[name="name"]')?.focus();}return;}
+  if(event.target.closest("[data-open-professional-modal]")){const modal=host.querySelector("#professional-create-modal");if(modal&&!modal.open){const form=modal.querySelector("#professional-create-form");form.reset();form.dataset.professionalId="";form.elements.cpf.required=true;form.elements.cpf.closest("label").hidden=false;modal.querySelector("#professional-modal-title").textContent="Novo profissional";form.querySelector('[type="submit"]').textContent="Salvar profissional";modal.querySelectorAll('input[name="service_ids"]').forEach(input=>input.checked=false);modal.showModal();modal.querySelector('[name="name"]')?.focus();}return;}
   const edit=event.target.closest("[data-edit-professional]");
   if(edit){
    const person=(data||[]).find(item=>item.id===edit.dataset.editProfessional),modal=host.querySelector("#professional-create-modal");
    if(!person||!modal)return;
-   const form=modal.querySelector("#professional-create-form");form.dataset.professionalId=person.id;
+   const form=modal.querySelector("#professional-create-form");form.dataset.professionalId=person.id;form.elements.cpf.required=false;form.elements.cpf.value="";form.elements.cpf.closest("label").hidden=true;
    for(const key of ["name","phone","email","specialty","commission_rate","tax_regime","cnpj","legal_name","trade_name"])if(form.elements[key])form.elements[key].value=person[key]??(key==="commission_rate"?0:"");
    const mei=person.tax_regime==="mei",meiFields=modal.querySelector("#professional-mei-fields");meiFields.hidden=!mei;
    meiFields.querySelector('[name="cnpj"]').required=mei;meiFields.querySelector('[name="legal_name"]').required=mei;
