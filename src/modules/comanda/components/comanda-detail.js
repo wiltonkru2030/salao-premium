@@ -52,7 +52,6 @@ export function buildComandaDetails(order,data,permissions){
  ${editable&&(allowEdit||(payments.some(p=>p.status==="confirmed")&&permissions.canRefund))?(()=>{
   const hasConfirmedPayment=payments.some(p=>p.status==="confirmed");
   const canRefund=permissions.canRefund;
-  const canCancel=permissions.canManage||(hasConfirmedPayment&&canRefund);
   if(hasConfirmedPayment&&!canRefund)return '<section class="settings-card"><p class="demo-note">Esta comanda possui recebimentos. O estorno integral e o cancelamento exigem perfil de administração ou financeiro.</p></section>';
   return '<section class="settings-card"><button class="btn secondary" data-action="cancel-comanda" data-order-id="'+order.id+'" data-refund-payments="'+(hasConfirmedPayment?'true':'false')+'">'+(hasConfirmedPayment?'Estornar recebimentos e cancelar comanda':'Cancelar comanda e horários vinculados')+'</button></section>';
 })():""}
