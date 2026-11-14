@@ -121,7 +121,7 @@ function renderApplicationShell(navigation, content) {
 /** Aciona somente o carregador do módulo que está visível na rota atual. */
 function loadCurrentPageData() {
   const loaders = {
-    Agenda: loadAgendaPage,
+    Dashboard: loadDashboardPage,\n    Vendas: loadRecordsPage,\n    Financeiro: loadRecordsPage,\n    Relatórios: loadRecordsPage,\n    Unidades: loadRecordsPage,\n    Agenda: loadAgendaPage,
     Profissionais: loadProfessionalsPage,
     Comanda: loadComandaPage,
     Orçamentos: loadQuotesPage,
