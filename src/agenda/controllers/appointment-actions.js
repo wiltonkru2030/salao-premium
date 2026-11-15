@@ -92,7 +92,7 @@ export async function saveAppointment(form) {
   const existing=appointmentActionRow();
   const payload={
     org_id:state.organization.id,
-    branch_id:existing?.branch_id??state.branch?.id??null,
+    branch_id:existing?.id?(existing.branch_id??null):(state.branch?.id??null),
     customer_id:customerId,
     professional_id:professionalId,
     service_id:serviceId,
