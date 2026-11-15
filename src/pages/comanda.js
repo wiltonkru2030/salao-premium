@@ -174,13 +174,17 @@ export async function loadComandaPage(orderId=null){
   const {orgId}=await tenant();
   if(requestId!==comandaLoadSequence||state.organization?.id!==orgId||!host.isConnected||state.page!=="Comanda")return;
   if(orderId||selectedOrder){
-   const {data:order,error}=await supabase.from("service_orders").select("id,order_number,status,total,subtotal,discount,notes,customer_id,assigned_professional_id,appointment_id,created_at,branch_id").eq("org_id",orgId).eq("id",orderId||selectedOrder).maybeSingle();
+   let orderQuery=supabase.from("service_orders").select("id,order_number,status,total,subtotal,discount,notes,customer_id,assigned_professional_id,appointment_id,created_at,branch_id").eq("org_id",orgId).eq("id",orderId||selectedOrder);
+   if(state.branch?.id)orderQuery=orderQuery.eq("branch_id",state.branch.id);
+   const {data:order,error}=await orderQuery.maybeSingle();
    if(error)throw error;if(!order)throw new Error("Comanda não encontrada.");
    selectedOrder=order.id;const details=await queryDetails(order,orgId);
    if(requestId!==comandaLoadSequence||state.organization?.id!==orgId||!host.isConnected||state.page!=="Comanda")return;
    renderOrderDetails(host,order,details,orgId);return;
   }
-  const {data:orders,error}=await supabase.from("service_orders").select("id,order_number,status,total,created_at,customer_id,assigned_professional_id").eq("org_id",orgId).order("created_at",{ascending:false}).limit(200);
+  let ordersQuery=supabase.from("service_orders").select("id,order_number,status,total,created_at,customer_id,assigned_professional_id,branch_id").eq("org_id",orgId);
+  if(state.branch?.id)ordersQuery=ordersQuery.eq("branch_id",state.branch.id);
+  const {data:orders,error}=await ordersQuery.order("created_at",{ascending:false}).limit(200);
   if(error)throw error;
   const customersIds=[...new Set((orders||[]).map(o=>o.customer_id).filter(Boolean))],professionalIds=[...new Set((orders||[]).map(o=>o.assigned_professional_id).filter(Boolean))];
   const [customers,professionals]=await Promise.all([
