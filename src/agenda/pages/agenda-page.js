@@ -32,7 +32,7 @@ function toCalendarAppointment(row,professionalIndex) {
   const start=asLocalDateTime(row.starts_at);
   const duration=Math.max(5,Math.round((new Date(row.ends_at)-new Date(row.starts_at))/60000));
   return {
-    id:row.id,name:row.customer_name,phone:row.customer_phone||'',service:row.service_name,
+    id:row.id,branch_id:row.branch_id||null,name:row.customer_name,phone:row.customer_phone||'',service:row.service_name,
     pro:professionalIndex,professional_id:row.professional_id,
     professionalName:row.professional_name||'Profissional',
     customer_id:row.customer_id,service_id:row.service_id,
@@ -94,6 +94,7 @@ export async function loadAgendaPage() {
   if(!host)return;
   const requestId=++agendaLoadSequence;
   const organizationId=state.organization.id;
+  const branchId=state.branch?.id||null;
   const requestedDate=dateKey(state.date);
   const requestedView=state.view;
   const selectedDate=new Date(state.date);
@@ -110,13 +111,13 @@ export async function loadAgendaPage() {
       start=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
       end=new Date(selectedDate.getFullYear(),selectedDate.getMonth()+1,1);
     }
-    const [proResult,appointmentResult,blockResult]=await Promise.all([
-      supabase.from('professionals').select('id,name,color,active').eq('org_id',organizationId).eq('active',true).order('name'),
-      supabase.from('appointments').select('id,customer_id,professional_id,customer_name,customer_phone,service_id,service_name,professional_name,starts_at,ends_at,status,price,booking_source,created_by_name,notes,service_order_id,appointment_group_id,arrived_at').eq('org_id',organizationId).gte('starts_at',start.toISOString()).lt('starts_at',end.toISOString()).order('starts_at').limit(1000),
-      supabase.from('appointment_blocks').select('id,professional_id,starts_at,ends_at,reason').eq('org_id',organizationId).lt('starts_at',end.toISOString()).gt('ends_at',start.toISOString()).limit(500)
-    ]);
+    let professionalsQuery=supabase.from('professionals').select('id,name,color,active').eq('org_id',organizationId).eq('active',true).order('name');
+    let appointmentsQuery=supabase.from('appointments').select('id,branch_id,customer_id,professional_id,customer_name,customer_phone,service_id,service_name,professional_name,starts_at,ends_at,status,price,booking_source,created_by_name,notes,service_order_id,appointment_group_id,arrived_at').eq('org_id',organizationId).gte('starts_at',start.toISOString()).lt('starts_at',end.toISOString()).order('starts_at').limit(1000);
+    let blocksQuery=supabase.from('appointment_blocks').select('id,branch_id,professional_id,starts_at,ends_at,reason').eq('org_id',organizationId).lt('starts_at',end.toISOString()).gt('ends_at',start.toISOString()).limit(500);
+    if(branchId){professionalsQuery=professionalsQuery.eq('branch_id',branchId);appointmentsQuery=appointmentsQuery.eq('branch_id',branchId);blocksQuery=blocksQuery.eq('branch_id',branchId);}
+    const [proResult,appointmentResult,blockResult]=await Promise.all([professionalsQuery,appointmentsQuery,blocksQuery]);
     // Uma resposta atrasada nunca pode substituir dados da unidade/data atualmente exibida.
-    if(requestId!==agendaLoadSequence || state.organization?.id!==organizationId ||
+    if(requestId!==agendaLoadSequence || state.organization?.id!==organizationId || state.branch?.id!==branchId ||
       state.view!==requestedView || dateKey(state.date)!==requestedDate || !host.isConnected)return;
     if(proResult.error)throw proResult.error;
     if(appointmentResult.error)throw appointmentResult.error;
