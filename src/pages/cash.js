@@ -35,6 +35,10 @@ export function cashPage(){
 export async function loadCashPage(){
  const host=document.querySelector("#cash-manager");
  if(!host||!state.organization?.id)return;
+ if(state.branch?.id){
+  host.innerHTML='<div class="empty-state"><b>Caixa desta filial ainda não está habilitado.</b><small>O banco e as operações transacionais atuais suportam somente o caixa da matriz. Para proteger seus recebimentos, este módulo não exibirá nem alterará o caixa da matriz enquanto outra filial estiver selecionada.</small></div>';
+  return;
+ }
  const requestId=++cashLoadSequence;
  try{
   const orgId=state.organization.id;
