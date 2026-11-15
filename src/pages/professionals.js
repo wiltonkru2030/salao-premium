@@ -29,6 +29,8 @@ export async function loadProfessionalsPage(){
  const host=document.querySelector("#professionals-access");
  if(!host||!state.organization?.id)return;
  const orgId=state.organization.id,branchId=state.branch?.id||null;
+ const requestId=(loadProfessionalsPage.sequence=(loadProfessionalsPage.sequence||0)+1);
+ const branchMatch=query=>branchId?query.eq("branch_id",branchId):query.is("branch_id",null);
  let professionalsQuery=supabase.from("professionals").select("id,name,phone,email,active,access_enabled,commission_rate,tax_regime,cnpj,legal_name,trade_name,specialty,branch_id").eq("org_id",orgId);
  professionalsQuery=branchId?professionalsQuery.eq("branch_id",branchId):professionalsQuery.is("branch_id",null);
  const [professionalResult,serviceResult,membersResult,assignmentResult]=await Promise.all([
@@ -37,6 +39,7 @@ export async function loadProfessionalsPage(){
   supabase.from("org_memberships").select("user_id,role,professional_app_enabled,professional_app_scope").eq("org_id",state.organization.id).eq("status","active").in("role",["owner","admin","receptionist"]),
   supabase.from("professional_services").select("professional_id,service_id").eq("org_id",state.organization.id)
  ]);
+ if(requestId!==loadProfessionalsPage.sequence||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId||!host.isConnected)return;
  const {data,error}=professionalResult,{data:services, error:serviceError}=serviceResult,{data:members,error:membersError}=membersResult,{data:assignments,error:assignmentError}=assignmentResult;
  const serviceNames=new Map((services||[]).map(s=>[s.id,s.name]));
  const assignedNames=new Map();
@@ -201,7 +204,7 @@ export async function loadProfessionalsPage(){
   button.disabled=true;button.textContent="Salvando…";
   const payload={name,phone:phone||null,email:email||null,commission_rate:rate,tax_regime:taxRegime,cnpj:taxRegime==="mei"?cnpj:null,legal_name:taxRegime==="mei"?String(v.get("legal_name")||"").trim():null,trade_name:taxRegime==="mei"?String(v.get("trade_name")||"").trim()||null:null,specialty:String(v.get("specialty")||"").trim()||null};
   if(professionalId){
-   const {error:updateError}=await supabase.from("professionals").update(payload).eq("org_id",orgId).eq("id",professionalId).eq("branch_id",branchId);
+   const {error:updateError}=await branchMatch(supabase.from("professionals").update(payload).eq("org_id",orgId).eq("id",professionalId));
    if(updateError){reportError(updateError,{context:"Profissionais > atualizar cadastro"});button.disabled=false;button.textContent="Salvar alterações";return;}
    const previous=new Set((assignments||[]).filter(link=>link.professional_id===professionalId).map(link=>link.service_id));
    const additions=serviceIds.filter(id=>!previous.has(id)),removals=[...previous].filter(id=>!serviceIds.includes(id));
