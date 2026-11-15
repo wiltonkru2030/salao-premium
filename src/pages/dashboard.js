@@ -8,6 +8,7 @@ import { head, esc, status } from "../utils.js";
 import { reportError } from "../utils/errors.js";
 
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+let dashboardLoadSequence=0;
 const dateTime = value => value ? new Date(value).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—";
 
 export function dashboard() {
@@ -20,6 +21,7 @@ export async function loadDashboardPage() {
   const host = document.querySelector("#dashboard-manager");
   const orgId = state.organization?.id;
   if (!host || !orgId) return;
+  const requestId=++dashboardLoadSequence,branchId=state.branch?.id||null;
 
   const start = new Date();
   start.setHours(0, 0, 0, 0);
@@ -43,13 +45,12 @@ export async function loadDashboardPage() {
     let professionalsQuery = supabase.from("professionals")
       .select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("active", true);
 
-    if (state.branch?.id) {
-      appointmentsQuery = appointmentsQuery.eq("branch_id", state.branch.id);
-      appointmentsCountQuery = appointmentsCountQuery.eq("branch_id", state.branch.id);
-      movementsQuery = movementsQuery.eq("branch_id", state.branch.id);
-      customersQuery = customersQuery.eq("branch_id", state.branch.id);
-      professionalsQuery = professionalsQuery.eq("branch_id", state.branch.id);
-    }
+    const branchFilter = query => branchId ? query.eq("branch_id",branchId) : query.is("branch_id",null);
+    appointmentsQuery=branchFilter(appointmentsQuery);
+    appointmentsCountQuery=branchFilter(appointmentsCountQuery);
+    movementsQuery=branchFilter(movementsQuery);
+    customersQuery=branchFilter(customersQuery);
+    professionalsQuery=branchFilter(professionalsQuery);
 
     const [appointmentsResult, appointmentsCountResult, movementsResult, customersResult, professionalsResult] = await Promise.all([
       appointmentsQuery, appointmentsCountQuery, movementsQuery, customersQuery, professionalsQuery
@@ -58,6 +59,7 @@ export async function loadDashboardPage() {
       if (result.error) throw result.error;
     }
 
+    if(requestId!==dashboardLoadSequence||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId||!host.isConnected||state.page!=="Dashboard")return;
     const movements = movementsResult.data || [];
     const received = movements.filter(item => item.movement_type === "income")
       .reduce((sum, item) => sum + Number(item.amount || 0), 0);
@@ -85,6 +87,7 @@ export async function loadDashboardPage() {
       </section>
       <p class="subtle-note">Indicadores calculados a partir dos registros disponíveis no banco de dados. Valores não representam previsão de faturamento.</p>`;
   } catch (error) {
+    if(requestId!==dashboardLoadSequence||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId||!host.isConnected||state.page!=="Dashboard")return;
     reportError(error, { context: "Dashboard > carregar indicadores" });
     host.innerHTML = '<div class="empty-state">Não foi possível carregar os indicadores. Verifique a conexão e as permissões da unidade.</div>';
   }
