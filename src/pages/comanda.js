@@ -16,6 +16,7 @@ import { registerComandaPayment, cancelComanda } from "../modules/comanda/servic
 /** Módulo Comandas: consulta comandas, monta detalhes e executa lançamentos e pagamentos. */
 
 let cleanup=[];
+let comandaLoadSequence=0;
 let selectedOrder=null;
 let selectedService=null;
 let selectedProduct=null;
@@ -167,13 +168,17 @@ function renderOrderDetails(host,order,data,orgId){
  */
 export async function loadComandaPage(orderId=null){
  const host=document.querySelector("#comanda-manager");if(!host)return;
+ const requestId=++comandaLoadSequence;
  clearAutocomplete();
  try{
   const {orgId}=await tenant();
+  if(requestId!==comandaLoadSequence||state.organization?.id!==orgId||!host.isConnected||state.page!=="Comanda")return;
   if(orderId||selectedOrder){
    const {data:order,error}=await supabase.from("service_orders").select("id,order_number,status,total,subtotal,discount,notes,customer_id,assigned_professional_id,appointment_id,created_at,branch_id").eq("org_id",orgId).eq("id",orderId||selectedOrder).maybeSingle();
    if(error)throw error;if(!order)throw new Error("Comanda não encontrada.");
-   selectedOrder=order.id;const details=await queryDetails(order,orgId);renderOrderDetails(host,order,details,orgId);return;
+   selectedOrder=order.id;const details=await queryDetails(order,orgId);
+   if(requestId!==comandaLoadSequence||state.organization?.id!==orgId||!host.isConnected||state.page!=="Comanda")return;
+   renderOrderDetails(host,order,details,orgId);return;
   }
   const {data:orders,error}=await supabase.from("service_orders").select("id,order_number,status,total,created_at,customer_id,assigned_professional_id").eq("org_id",orgId).order("created_at",{ascending:false}).limit(200);
   if(error)throw error;
@@ -182,6 +187,7 @@ export async function loadComandaPage(orderId=null){
    customersIds.length?supabase.from("customers").select("id,name").eq("org_id",orgId).in("id",customersIds):Promise.resolve({data:[]}),
    professionalIds.length?supabase.from("professionals").select("id,name").eq("org_id",orgId).in("id",professionalIds):Promise.resolve({data:[]})
   ]);
+  if(requestId!==comandaLoadSequence||state.organization?.id!==orgId||!host.isConnected||state.page!=="Comanda")return;
   if(customers.error)throw new Error("Falha ao carregar clientes das comandas: "+userErrorMessage(customers.error));
   if(professionals.error)throw new Error("Falha ao carregar profissionais das comandas: "+userErrorMessage(professionals.error));
   const customerMap=new Map((customers.data||[]).map(c=>[c.id,c.name])),professionalMap=new Map((professionals.data||[]).map(p=>[p.id,p.name]));
@@ -225,5 +231,7 @@ export async function loadComandaPage(orderId=null){
     host.querySelectorAll("[data-open-comanda]").forEach(card=>card.style.display=card.textContent.toLocaleLowerCase("pt-BR").includes(q)?"":"none");
    });
   }
- }catch(error){reportError(error,{context:"Comanda > carregar dados"});host.innerHTML='<div class="empty-state">Não foi possível carregar as comandas. Atualize a página e tente novamente.</div>';}
+ }catch(error){
+  if(requestId!==comandaLoadSequence||!host.isConnected||state.page!=="Comanda")return;
+  reportError(error,{context:"Comanda > carregar dados"});host.innerHTML='<div class="empty-state">Não foi possível carregar as comandas. Atualize a página e tente novamente.</div>';}
 }
