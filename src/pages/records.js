@@ -10,6 +10,7 @@ import { reportError } from "../utils/errors.js";
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const date = value => value ? new Date(value).toLocaleDateString("pt-BR") : "—";
 const hostId = "records-manager";
+let recordsLoadSequence=0;
 
 export function cardList(name) {
   return head(name, descriptions[name] || "Consulte os registros da organização ativa.") +
@@ -40,13 +41,15 @@ export async function loadRecordsPage() {
   const orgId = state.organization?.id;
   const page = state.page;
   if (!host || !orgId) return;
+  const requestId=++recordsLoadSequence,branchId=state.branch?.id||null;
+  const branchFilter=query=>branchId?query.eq("branch_id",branchId):query.is("branch_id",null);
 
   host.innerHTML = '<div class="empty-state">Consultando o banco de dados…</div>';
   try {
     let html = "";
     if (page === "Vendas") {
-      const { data, error } = await supabase.from("sales").select("*")
-        .eq("org_id", orgId).order("sold_at", { ascending: false }).limit(200);
+      const { data, error } = await branchFilter(supabase.from("sales").select("*")
+        .eq("org_id", orgId)).order("sold_at", { ascending: false }).limit(200);
       if (error) throw error;
       html = (data || []).map(sale => row(
         "Venda #" + (sale.sale_number || String(sale.id || "").slice(0, 8)),
@@ -55,9 +58,9 @@ export async function loadRecordsPage() {
       )).join("") || empty("Nenhuma venda registrada.");
     } else if (page === "Financeiro") {
       const [movementResult, expenseResult] = await Promise.all([
-        supabase.from("cash_movements").select("*").eq("org_id", orgId)
+        branchFilter(supabase.from("cash_movements").select("*").eq("org_id", orgId))
           .order("created_at", { ascending: false }).limit(200),
-        supabase.from("expenses").select("*").eq("org_id", orgId)
+        branchFilter(supabase.from("expenses").select("*").eq("org_id", orgId))
           .order("created_at", { ascending: false }).limit(200)
       ]);
       if (movementResult.error) throw movementResult.error;
@@ -78,10 +81,10 @@ export async function loadRecordsPage() {
         empty("Nenhuma movimentação ou despesa encontrada.");
     } else if (page === "Relatórios") {
       const [salesResult, appointmentsResult, customersResult, professionalsResult] = await Promise.all([
-        supabase.from("sales").select("id,total,status", { count: "exact" }).eq("org_id", orgId).limit(1000),
-        supabase.from("appointments").select("id,status", { count: "exact" }).eq("org_id", orgId).limit(1000),
-        supabase.from("customers").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("active", true),
-        supabase.from("professionals").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("active", true)
+        branchFilter(supabase.from("sales").select("id,total,status", { count: "exact" }).eq("org_id", orgId)).limit(1000),
+        branchFilter(supabase.from("appointments").select("id,status", { count: "exact" }).eq("org_id", orgId)).limit(1000),
+        branchFilter(supabase.from("customers").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("active", true)),
+        branchFilter(supabase.from("professionals").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("active", true))
       ]);
       for (const result of [salesResult, appointmentsResult, customersResult, professionalsResult]) {
         if (result.error) throw result.error;
@@ -109,8 +112,10 @@ export async function loadRecordsPage() {
     } else {
       html = empty("Este módulo ainda não possui uma listagem operacional.");
     }
+    if(requestId!==recordsLoadSequence||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId||state.page!==page||!host.isConnected)return;
     host.innerHTML = '<div class="record-list">' + html + '</div>';
   } catch (error) {
+    if(requestId!==recordsLoadSequence||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId||state.page!==page||!host.isConnected)return;
     reportError(error, { context: page + " > carregar registros" });
     host.innerHTML = empty("Não foi possível carregar os registros. Verifique a conexão, as permissões e a estrutura do banco.");
   }
