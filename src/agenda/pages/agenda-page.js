@@ -134,7 +134,7 @@ export async function loadAgendaPage() {
     });
     buildContent();
   }catch(error){
-    if(requestId!==agendaLoadSequence || state.organization?.id!==organizationId ||
+    if(requestId!==agendaLoadSequence || state.organization?.id!==organizationId || state.branch?.id!==branchId ||
       state.view!==requestedView || dateKey(state.date)!==requestedDate || !host.isConnected)return;
     const diagnostic=reportError(error,{context:"Agenda > carregar calendário",notify:false});
     host.innerHTML='<div class="empty-state"><b>Não foi possível carregar a agenda.</b><small>Verifique sua conexão e suas permissões. Código '+diagnostic.id+
