@@ -43,6 +43,7 @@ async function findOpenCustomerOrders(customerId) {
     .select('id,order_number,status')
     .eq('org_id',state.organization.id)
     .eq('customer_id',customerId)
+    .eq('branch_id',state.branch?.id||null)
     .in('status',['open','in_progress','partially_paid','awaiting_payment'])
     .order('created_at',{ascending:false}).limit(20);
   if(error) throw error;
@@ -90,6 +91,7 @@ export async function saveAppointment(form) {
   const existing=appointmentActionRow();
   const payload={
     org_id:state.organization.id,
+    branch_id:existing?.branch_id??state.branch?.id??null,
     customer_id:customerId,
     professional_id:professionalId,
     service_id:serviceId,
@@ -249,7 +251,7 @@ export async function saveBlockTime(form) {
   if(appointmentError)throw appointmentError;
   if(appointments?.length)throw new Error('Já existe um agendamento neste intervalo ('+appointments[0].customer_name+').');
   const {error}=await supabase.from('appointment_blocks').insert({
-    org_id:state.organization.id,professional_id:professionalId,
+    org_id:state.organization.id,branch_id:state.branch?.id||null,professional_id:professionalId,
     starts_at:start.toISOString(),ends_at:end.toISOString(),reason,created_by:state.user.id
   });
   if(error)throw error;
