@@ -23,6 +23,7 @@ export async function loadProductsPage() {
   const host = document.querySelector("#products-manager");
   if (!host || !state.organization?.id) return;
   const orgId=state.organization.id,branchId=state.branch?.id||null,requestId=++productsLoadSequence;
+  const branchMatch=query=>branchId?query.eq("branch_id",branchId):query.is("branch_id",null);
   let products;
   try {
     let query=supabase.from("products")
@@ -122,8 +123,8 @@ export async function loadProductsPage() {
       if (!window.confirm(active ? "Desativar este produto? Ele deixará de aparecer para novos lançamentos." : "Reativar este produto?")) return;
       toggle.disabled = true;
       try {
-        const { error } = await supabase.from("products").update({ active: !active })
-          .eq("org_id", orgId).eq("id", toggle.dataset.toggleProduct).eq("branch_id", branchId);
+        const { error } = await branchMatch(supabase.from("products").update({ active: !active })
+          .eq("org_id", orgId).eq("id", toggle.dataset.toggleProduct));
         if (error) throw error;
         toast(active ? "Produto desativado." : "Produto reativado.");
         await loadProductsPage();
@@ -154,8 +155,8 @@ export async function loadProductsPage() {
       };
       const productId = form.dataset.productId;
       if (productId) {
-        const result = await supabase.from("products").update(payload)
-          .eq("org_id", orgId).eq("id", productId).eq("branch_id", branchId);
+        const result = await branchMatch(supabase.from("products").update(payload)
+          .eq("org_id", orgId).eq("id", productId));
         if (result.error) throw result.error;
       } else {
         // O saldo inicial também precisa gerar uma movimentação auditável.
