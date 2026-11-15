@@ -172,10 +172,10 @@ export async function loadComandaPage(orderId=null){
  clearAutocomplete();
  try{
   const {orgId}=await tenant();
-  if(requestId!==comandaLoadSequence||state.organization?.id!==orgId||!host.isConnected||state.page!=="Comanda")return;
+  if(requestId!==comandaLoadSequence||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId||!host.isConnected||state.page!=="Comanda")return;
   if(orderId||selectedOrder){
    let orderQuery=supabase.from("service_orders").select("id,order_number,status,total,subtotal,discount,notes,customer_id,assigned_professional_id,appointment_id,created_at,branch_id").eq("org_id",orgId).eq("id",orderId||selectedOrder);
-   if(state.branch?.id)orderQuery=orderQuery.eq("branch_id",state.branch.id);
+   orderQuery=branchId?orderQuery.eq("branch_id",branchId):orderQuery.is("branch_id",null);
    const {data:order,error}=await orderQuery.maybeSingle();
    if(error)throw error;if(!order)throw new Error("Comanda não encontrada.");
    selectedOrder=order.id;const details=await queryDetails(order,orgId);
@@ -183,7 +183,7 @@ export async function loadComandaPage(orderId=null){
    renderOrderDetails(host,order,details,orgId);return;
   }
   let ordersQuery=supabase.from("service_orders").select("id,order_number,status,total,created_at,customer_id,assigned_professional_id,branch_id").eq("org_id",orgId);
-  if(state.branch?.id)ordersQuery=ordersQuery.eq("branch_id",state.branch.id);
+  ordersQuery=branchId?ordersQuery.eq("branch_id",branchId):ordersQuery.is("branch_id",null);
   const {data:orders,error}=await ordersQuery.order("created_at",{ascending:false}).limit(200);
   if(error)throw error;
   const customersIds=[...new Set((orders||[]).map(o=>o.customer_id).filter(Boolean))],professionalIds=[...new Set((orders||[]).map(o=>o.assigned_professional_id).filter(Boolean))];
