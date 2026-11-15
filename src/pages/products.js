@@ -10,6 +10,7 @@ import { parseBRL } from "../utils/input-masks.js";
 import { reportError } from "../utils/errors.js";
 
 let modalListenerInstalled = false;
+let productsLoadSequence=0;
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function productsPage() {
@@ -21,14 +22,19 @@ export function productsPage() {
 export async function loadProductsPage() {
   const host = document.querySelector("#products-manager");
   if (!host || !state.organization?.id) return;
+  const orgId=state.organization.id,branchId=state.branch?.id||null,requestId=++productsLoadSequence;
   let products;
   try {
-    const result = await supabase.from("products")
-      .select("id,name,sku,category,cost_price,sale_price,stock_quantity,min_stock,active")
-      .eq("org_id", state.organization.id).order("name").limit(500);
+    let query=supabase.from("products")
+      .select("id,name,sku,category,cost_price,sale_price,stock_quantity,min_stock,active,branch_id")
+      .eq("org_id",orgId);
+    query=branchId?query.eq("branch_id",branchId):query.is("branch_id",null);
+    const result=await query.order("name").limit(500);
     if (result.error) throw result.error;
+    if(requestId!==productsLoadSequence||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId||!host.isConnected)return;
     products = result.data || [];
   } catch (error) {
+    if(requestId!==productsLoadSequence||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId||!host.isConnected)return;
     reportError(error, { context: "Produtos > carregar lista" });
     host.innerHTML = '<div class="empty-state">Não foi possível carregar os produtos. Atualize a página e tente novamente.</div>';
     return;
@@ -117,7 +123,7 @@ export async function loadProductsPage() {
       toggle.disabled = true;
       try {
         const { error } = await supabase.from("products").update({ active: !active })
-          .eq("org_id", state.organization.id).eq("id", toggle.dataset.toggleProduct);
+          .eq("org_id", orgId).eq("id", toggle.dataset.toggleProduct).eq("branch_id", branchId);
         if (error) throw error;
         toast(active ? "Produto desativado." : "Produto reativado.");
         await loadProductsPage();
@@ -149,12 +155,12 @@ export async function loadProductsPage() {
       const productId = form.dataset.productId;
       if (productId) {
         const result = await supabase.from("products").update(payload)
-          .eq("org_id", state.organization.id).eq("id", productId);
+          .eq("org_id", orgId).eq("id", productId).eq("branch_id", branchId);
         if (result.error) throw result.error;
       } else {
         // O saldo inicial também precisa gerar uma movimentação auditável.
         const result = await supabase.from("products")
-          .insert({ ...payload, org_id: state.organization.id, stock_quantity: 0, active: true })
+          .insert({ ...payload, org_id: orgId, branch_id: branchId, stock_quantity: 0, active: true })
           .select("id").single();
         if (result.error) throw result.error;
         if (stock > 0) {
