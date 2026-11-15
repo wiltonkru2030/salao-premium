@@ -28,8 +28,11 @@ export function professionalsPage(){
 export async function loadProfessionalsPage(){
  const host=document.querySelector("#professionals-access");
  if(!host||!state.organization?.id)return;
+ const orgId=state.organization.id,branchId=state.branch?.id||null;
+ let professionalsQuery=supabase.from("professionals").select("id,name,phone,email,active,access_enabled,commission_rate,tax_regime,cnpj,legal_name,trade_name,specialty,branch_id").eq("org_id",orgId);
+ professionalsQuery=branchId?professionalsQuery.eq("branch_id",branchId):professionalsQuery.is("branch_id",null);
  const [professionalResult,serviceResult,membersResult,assignmentResult]=await Promise.all([
-  supabase.from("professionals").select("id,name,phone,email,active,access_enabled,commission_rate,tax_regime,cnpj,legal_name,trade_name,specialty").eq("org_id",state.organization.id).order("name"),
+  professionalsQuery.order("name"),
   supabase.from("services").select("id,name,category,active").eq("org_id",state.organization.id).eq("active",true).order("category").order("name").limit(500),
   supabase.from("org_memberships").select("user_id,role,professional_app_enabled,professional_app_scope").eq("org_id",state.organization.id).eq("status","active").in("role",["owner","admin","receptionist"]),
   supabase.from("professional_services").select("professional_id,service_id").eq("org_id",state.organization.id)
@@ -198,14 +201,14 @@ export async function loadProfessionalsPage(){
   button.disabled=true;button.textContent="Salvando…";
   const payload={name,phone:phone||null,email:email||null,commission_rate:rate,tax_regime:taxRegime,cnpj:taxRegime==="mei"?cnpj:null,legal_name:taxRegime==="mei"?String(v.get("legal_name")||"").trim():null,trade_name:taxRegime==="mei"?String(v.get("trade_name")||"").trim()||null:null,specialty:String(v.get("specialty")||"").trim()||null};
   if(professionalId){
-   const {error:updateError}=await supabase.from("professionals").update(payload).eq("org_id",state.organization.id).eq("id",professionalId);
+   const {error:updateError}=await supabase.from("professionals").update(payload).eq("org_id",orgId).eq("id",professionalId).eq("branch_id",branchId);
    if(updateError){reportError(updateError,{context:"Profissionais > atualizar cadastro"});button.disabled=false;button.textContent="Salvar alterações";return;}
    const previous=new Set((assignments||[]).filter(link=>link.professional_id===professionalId).map(link=>link.service_id));
    const additions=serviceIds.filter(id=>!previous.has(id)),removals=[...previous].filter(id=>!serviceIds.includes(id));
    if(additions.length){const {error}=await supabase.from("professional_services").insert(additions.map(service_id=>({org_id:state.organization.id,professional_id:professionalId,service_id})));if(error){reportError(error,{context:"Profissionais > adicionar serviços"});toast("Cadastro atualizado, mas não foi possível adicionar todos os serviços.");button.disabled=false;button.textContent="Salvar alterações";return;}}
    if(removals.length){const {error}=await supabase.from("professional_services").delete().eq("org_id",state.organization.id).eq("professional_id",professionalId).in("service_id",removals);if(error){reportError(error,{context:"Profissionais > remover serviços"});toast("Cadastro atualizado, mas não foi possível remover alguns vínculos.");button.disabled=false;button.textContent="Salvar alterações";return;}}
   }else{
-   const {data:professional,error:insertError}=await supabase.from("professionals").insert({...payload,org_id:state.organization.id,active:true}).select("id").single();
+   const {data:professional,error:insertError}=await supabase.from("professionals").insert({...payload,org_id:orgId,branch_id:branchId,active:true}).select("id").single();
    if(insertError){reportError(insertError,{context:"Profissionais > inserir cadastro"});button.disabled=false;button.textContent="Salvar profissional";return;}
    const links=serviceIds.map(service_id=>({org_id:state.organization.id,professional_id:professional.id,service_id}));
    const {error:linkError}=await supabase.from("professional_services").insert(links);
