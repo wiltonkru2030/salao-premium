@@ -29,13 +29,15 @@ export async function loadCommissionsPage(){
  cleanupSearch?.();cleanupSearch=null;
  try{
   const orgId=state.organization.id;
+  const branchId=state.branch?.id||null;
+  const scopeBranch=query=>branchId?query.eq("branch_id",branchId):query.is("branch_id",null);
   const [commissionResult,professionalResult,payoutResult,settingsResult,serviceResult,ruleResult]=await Promise.all([
-   supabase.from("commissions").select("id,professional_id,base_amount,rate,amount,status,paid_at,created_at,payout_id,sale_id,appointment_id,item_type,service_order_item_id,service_order_payment_id")
-    .eq("org_id",orgId).order("created_at",{ascending:false}).limit(1000),
+   scopeBranch(supabase.from("commissions").select("id,branch_id,professional_id,base_amount,rate,amount,status,paid_at,created_at,payout_id,sale_id,appointment_id,item_type,service_order_item_id,service_order_payment_id")
+    .eq("org_id",orgId)).order("created_at",{ascending:false}).limit(1000),
    supabase.from("professionals").select("id,name,active").eq("org_id",orgId).order("name").limit(500),
-   supabase.from("commission_payouts").select("id,professional_id,amount,payment_method,paid_at,notes,cash_movement_id")
-    .eq("org_id",orgId).order("paid_at",{ascending:false}).limit(300),
-   supabase.from("app_settings").select("id,setting_value").eq("org_id",orgId).is("branch_id",null).eq("setting_key","product_commission").limit(1),
+   scopeBranch(supabase.from("commission_payouts").select("id,branch_id,professional_id,amount,payment_method,paid_at,notes,cash_movement_id")
+    .eq("org_id",orgId)).order("paid_at",{ascending:false}).limit(300),
+   scopeBranch(supabase.from("app_settings").select("id,branch_id,setting_value").eq("org_id",orgId).eq("setting_key","product_commission")).limit(1),
    supabase.from("services").select("id,name,active").eq("org_id",orgId).eq("active",true).order("name").limit(500),
    supabase.from("commission_rules").select("id,professional_id,service_id,rate,active,item_type").eq("org_id",orgId).eq("item_type","service").eq("active",true).order("created_at",{ascending:false}).limit(1000)
   ]);
@@ -72,7 +74,7 @@ export async function loadCommissionsPage(){
   const professionalMap=new Map(professionals.map(p=>[p.id,p]));
   const visible=selectedProfessionalFilter?commissions.filter(c=>c.professional_id===selectedProfessionalFilter):commissions;
   // Os handlers são registrados uma vez; mantenha os dados atuais da renderização no host.
-  host._commissionConfig={orgId,productSetting,serviceRules,professionalMap,visible};
+  host._commissionConfig={orgId,branchId,productSetting,serviceRules,professionalMap,visible};
   const totals=visible.reduce((acc,c)=>{acc[c.status]=(acc[c.status]||0)+Number(c.amount||0);return acc;},{});
   const pending=Number(totals.pending||0)+Number(totals.approved||0),paid=Number(totals.paid||0);
   const groups=new Map();
@@ -207,7 +209,7 @@ export async function loadCommissionsPage(){
      if(productSetting){
       result=await supabase.from("app_settings").update(payload).eq("org_id",orgId).eq("id",productSetting.id);
      }else{
-      result=await supabase.from("app_settings").insert({org_id:orgId,branch_id:null,setting_key:"product_commission",...payload});
+      result=await supabase.from("app_settings").insert({org_id:orgId,branch_id:current.branchId,setting_key:"product_commission",...payload});
      }
      if(result.error)throw result.error;
      toast(enabled?"Comissão de produtos ativada.":"Comissão de produtos desativada.");
