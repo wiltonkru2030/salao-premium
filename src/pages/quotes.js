@@ -3,6 +3,7 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
 import { reportError } from "../utils/errors.js";
+import { scopeServiceCatalog } from "../modules/services/service-scope.js";
 import { renderQuoteBuilder, renderQuoteList } from "../modules/quotes/components/quote-components.js";
 import { printQuoteDocument, openQuoteSchedule } from "../modules/quotes/services/quote-workflows.js";
 
@@ -51,9 +52,10 @@ export async function loadQuotesPage() {
   try {
     if(!allowed()) throw new Error("Seu perfil não possui acesso ao módulo de orçamentos.");
     const orgId=state.organization.id;
+    const branchId=state.branch?.id||null;
     const [customerResult,serviceResult,professionalResult,professionalServiceResult,quoteResult,settingResult,ruleResult]=await Promise.all([
       supabase.from("customers").select("id,name,phone").eq("org_id",orgId).eq("active",true).order("name").limit(1000),
-      supabase.from("services").select("id,name,price,duration_minutes").eq("org_id",orgId).eq("active",true).order("name").limit(500),
+      scopeServiceCatalog(supabase.from("services").select("id,name,price,duration_minutes,branch_id").eq("org_id",orgId).eq("active",true),branchId).order("name").limit(500),
       supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("active",true).order("name").limit(500),
       supabase.from("professional_services").select("professional_id,service_id").eq("org_id",orgId),
       supabase.from("quotes").select("id,quote_number,customer_id,status,total,created_at").eq("org_id",orgId).order("created_at",{ascending:false}).limit(100),
