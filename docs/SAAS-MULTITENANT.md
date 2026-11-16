@@ -92,3 +92,12 @@ Antes de aplicar as migrations:
 7. Reexecutar os testes automatizados e revisar Supabase Security Advisors após aplicação controlada em ambiente de homologação.
 
 A existência das migrations e da tela não significa que o isolamento por filial já está ativo. O Supabase de produção permanece sem essas alterações até autorização e homologação.
+
+### Dados organizacionais ainda compartilhados entre unidades
+
+A auditoria do schema encontrou tabelas sem `branch_id` que continuam com escopo de organização, e não de unidade. Entre elas:
+
+- Catálogo e regras compartilhadas: `services`, `commission_rules`, `professional_services`, `quote_settings` e `quote_discount_services`.
+- Estruturas administrativas/identidade: `org_memberships`, `notifications`, `audit_events`, `audit_logs` e `recycle_bin`.
+
+Os itens de orçamento, venda, comanda, grupo de agendamento e payout herdam a unidade do respectivo registro-pai. Já o catálogo de serviços ainda é comum à organização; a separação de catálogo, disponibilidade e regras de comissão por filial precisa de uma etapa de modelagem própria, pois não deve ser simulada apenas com filtros de interface.
