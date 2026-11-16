@@ -147,7 +147,7 @@ $;
 
 -- Estoque de produtos de uma Comanda não pode ser debitado/devolvido em
 -- unidade diferente, mesmo quando a operação passa por uma RPC privilegiada.
-DO $
+DO $$
 DECLARE
   v_definition text;
   v_old text;
@@ -178,7 +178,7 @@ BEGIN
     EXECUTE v_definition;
   END IF;
 END;
-$;
+$$;
 
 -- Funções auxiliares SECURITY DEFINER também devem respeitar o escopo ao
 -- responder consultas sobre uma Comanda.
