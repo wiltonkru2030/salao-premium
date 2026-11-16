@@ -35,28 +35,26 @@ export function cashPage(){
 export async function loadCashPage(){
  const host=document.querySelector("#cash-manager");
  if(!host||!state.organization?.id)return;
- if(state.branch?.id){
-  host.innerHTML='<div class="empty-state"><b>Caixa desta filial ainda não está habilitado.</b><small>O banco e as operações transacionais atuais suportam somente o caixa da matriz. Para proteger seus recebimentos, este módulo não exibirá nem alterará o caixa da matriz enquanto outra filial estiver selecionada.</small></div>';
-  return;
- }
+ const branchId=state.branch?.id||null;
  const requestId=++cashLoadSequence;
  try{
   const orgId=state.organization.id;
+  const scopeBranch=query=>branchId?query.eq("branch_id",branchId):query.is("branch_id",null);
   const today=new Date();today.setHours(0,0,0,0);
   const tomorrow=new Date(today);tomorrow.setDate(tomorrow.getDate()+1);
   const [registerResult,movementResult,paymentResult]=await Promise.all([
-   supabase.from("cash_registers").select("id,opening_amount,closing_amount,expected_amount,status,opened_at,closed_at,notes").eq("org_id",orgId).is("branch_id",null).order("opened_at",{ascending:false}).limit(20),
-   supabase.from("cash_movements").select("id,cash_register_id,service_order_id,movement_type,category,description,amount,payment_method,created_at,sale_id").eq("org_id",orgId).is("branch_id",null).order("created_at",{ascending:false}).limit(500),
-   supabase.from("service_order_payments").select("id,order_id,cash_movement_id,amount,payment_method,paid_at").eq("org_id",orgId).is("branch_id",null).not("cash_movement_id","is",null).order("paid_at",{ascending:false}).limit(500)
+   scopeBranch(supabase.from("cash_registers").select("id,branch_id,opening_amount,closing_amount,expected_amount,status,opened_at,closed_at,notes").eq("org_id",orgId)).order("opened_at",{ascending:false}).limit(20),
+   scopeBranch(supabase.from("cash_movements").select("id,branch_id,cash_register_id,service_order_id,movement_type,category,description,amount,payment_method,created_at,sale_id").eq("org_id",orgId)).order("created_at",{ascending:false}).limit(500),
+   scopeBranch(supabase.from("service_order_payments").select("id,branch_id,order_id,cash_movement_id,amount,payment_method,paid_at").eq("org_id",orgId)).not("cash_movement_id","is",null).order("paid_at",{ascending:false}).limit(500)
   ]);
-  if(requestId!==cashLoadSequence||state.organization?.id!==orgId||!host.isConnected||state.page!=="Caixa")return;
+  if(requestId!==cashLoadSequence||state.organization?.id!==orgId||state.branch?.id!==branchId||!host.isConnected||state.page!=="Caixa")return;
   if(registerResult.error)throw registerResult.error;
   if(movementResult.error)throw movementResult.error;
   if(paymentResult.error)throw paymentResult.error;
   const registers=registerResult.data||[],movements=movementResult.data||[];
   const paymentRows=paymentResult.data||[],orderIds=[...new Set([...paymentRows.map(p=>p.order_id),...movements.map(m=>m.service_order_id).filter(Boolean)])];
   const {data:orderRows,error:orderError}=orderIds.length?await supabase.from("service_orders").select("id,order_number,customer_id").eq("org_id",orgId).in("id",orderIds):{data:[],error:null};
-  if(requestId!==cashLoadSequence||state.organization?.id!==orgId||!host.isConnected||state.page!=="Caixa")return;
+  if(requestId!==cashLoadSequence||state.organization?.id!==orgId||state.branch?.id!==branchId||!host.isConnected||state.page!=="Caixa")return;
   if(orderError)throw orderError;
   const customerIds=[...new Set((orderRows||[]).map(o=>o.customer_id).filter(Boolean))];
   const {data:customerRows,error:customerError}=customerIds.length?await supabase.from("customers").select("id,name").eq("org_id",orgId).in("id",customerIds):{data:[],error:null};
@@ -109,7 +107,7 @@ export async function loadCashPage(){
     try{
      const values=new FormData(form);
      if(form.matches("#cash-open-form")){
-      const {data,error}=await openCashRegister({supabase,orgId,openingAmount:values.get("opening_amount")});
+      const {data,error}=await openCashRegister({supabase,orgId,branchId,openingAmount:values.get("opening_amount")});
       if(error)throw error;
       toast("Caixa aberto e registrado.");
      }else{
