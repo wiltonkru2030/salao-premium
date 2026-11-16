@@ -170,10 +170,6 @@ BEGIN
   v_old := 'where org_id=v_order.org_id and id=v_item.product_id;';
   v_new := 'where org_id=v_order.org_id and id=v_item.product_id and branch_id is not distinct from v_order.branch_id;' ||
            ' if not found then raise exception ''O produto não pertence à unidade da Comanda.''; end if;';
-  v_new := 'update public.products set stock_quantity=stock_quantity+v_item.quantity,updated_at=clock_timestamp()' ||
-           ' where org_id=v_order.org_id and id=v_item.product_id' ||
-           ' and branch_id is not distinct from v_order.branch_id;' ||
-           ' if not found then raise exception ''O produto não pertence à unidade da Comanda.''; end if;';
   IF position(v_old IN v_definition) = 0 THEN
     RAISE EXCEPTION 'Não foi possível localizar a devolução de estoque em refund_service_order.';
   END IF;
