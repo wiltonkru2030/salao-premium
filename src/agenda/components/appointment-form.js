@@ -4,6 +4,9 @@ import { mountAutocomplete } from '../../components/autocomplete.js';
 import { supabase } from '../../supabase/client.js';
 import { state } from '../../state.js';
 import { parseBRL } from '../../utils/input-masks.js';
+import { scopeServiceCatalog } from '../../modules/services/service-scope.js';
+
+const scopeBranchRecord=(query,branchId)=>branchId?query.eq('branch_id',branchId):query.is('branch_id',null);
 
 let cleanups=[];
 function clearAppointmentAutocomplete(){cleanups.forEach(fn=>fn());cleanups=[];}
@@ -68,12 +71,13 @@ export function mountAppointmentForm(){
   const duration=form.querySelector('[name="duration"]');
   const price=form.querySelector('[name="price"]');
   const orgId=state.organization.id;
+  const branchId=state.branch?.id||null;
   let selectedServiceId=serviceId.value||null;
 
   cleanups.push(mountAutocomplete(customerInput,{
     search:async term=>{
-      const {data,error}=await supabase.from('customers').select('id,name,phone')
-        .eq('org_id',orgId).eq('active',true).ilike('name','%'+term+
+      const {data,error}=await scopeBranchRecord(supabase.from('customers').select('id,name,phone')
+        .eq('org_id',orgId).eq('active',true),branchId).ilike('name','%'+term+
 '%').order('name').limit(8);
       if(error)throw error;return data||[];
     },
@@ -82,8 +86,8 @@ export function mountAppointmentForm(){
   }));
   cleanups.push(mountAutocomplete(serviceInput,{
     search:async term=>{
-      const {data,error}=await supabase.from('services').select('id,name,price,duration_minutes,category')
-        .eq('org_id',orgId).eq('active',true).ilike('name','%'+term+
+      const {data,error}=await scopeServiceCatalog(supabase.from('services').select('id,name,price,duration_minutes,category,branch_id')
+        .eq('org_id',orgId).eq('active',true),branchId).ilike('name','%'+term+
 '%').order('name').limit(8);
       if(error)throw error;return data||[];
     },
@@ -94,7 +98,7 @@ export function mountAppointmentForm(){
   }));
   cleanups.push(mountAutocomplete(professionalInput,{
     search:async term=>{
-      let query=supabase.from('professionals').select('id,name').eq('org_id',orgId).eq('active',true).ilike('name','%'+term+
+      let query=scopeBranchRecord(supabase.from('professionals').select('id,name').eq('org_id',orgId).eq('active',true),branchId).ilike('name','%'+term+
 '%').order('name').limit(8);
       if(selectedServiceId){
         const {data:links,error:linkError}=await supabase.from('professional_services').select('professional_id').eq('org_id',orgId).eq('service_id',selectedServiceId);
