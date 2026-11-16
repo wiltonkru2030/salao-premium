@@ -63,6 +63,7 @@ export async function loadCashPage(){
   const orderMap=new Map((orderRows||[]).map(o=>[o.id,{...o,customerName:customerNames.get(o.customer_id)||"Cliente"}]));
   const paymentMap=new Map(paymentRows.map(p=>[p.cash_movement_id,{...p,order:orderMap.get(p.order_id)}]));
   const active=registers.find(r=>r.status==="open")||null;
+  host._cashContext={orgId,branchId,active};
   const todayMoves=movements.filter(m=>new Date(m.created_at)>=today&&new Date(m.created_at)<tomorrow);
   const sum=(rows,type)=>rows.filter(m=>m.movement_type===type).reduce((total,m)=>total+Number(m.amount||0),0);
   const income=sum(todayMoves,"income"),expense=sum(todayMoves,"expense"),net=income-expense;
@@ -106,12 +107,13 @@ export async function loadCashPage(){
     button.disabled=true;button.textContent="Salvando…";
     try{
      const values=new FormData(form);
+     const current=host._cashContext||{};
      if(form.matches("#cash-open-form")){
-      const {data,error}=await openCashRegister({supabase,orgId,branchId,openingAmount:values.get("opening_amount")});
+      const {data,error}=await openCashRegister({supabase,orgId:current.orgId,branchId:current.branchId,openingAmount:values.get("opening_amount")});
       if(error)throw error;
       toast("Caixa aberto e registrado.");
      }else{
-      const {data,error}=await closeCashRegister({supabase,cashRegisterId:active?.id,closingAmount:values.get("closing_amount")});
+      const {data,error}=await closeCashRegister({supabase,cashRegisterId:current.active?.id,closingAmount:values.get("closing_amount")});
       if(error)throw error;
       toast("Caixa fechado. Diferença: "+money(data?.difference||0)+
 ".");
