@@ -35,7 +35,7 @@ export async function loadCommissionsPage(){
   const [commissionResult,professionalResult,payoutResult,settingsResult,serviceResult,ruleResult]=await Promise.all([
    scopeBranch(supabase.from("commissions").select("id,branch_id,professional_id,base_amount,rate,amount,status,paid_at,created_at,payout_id,sale_id,appointment_id,item_type,service_order_item_id,service_order_payment_id")
     .eq("org_id",orgId)).order("created_at",{ascending:false}).limit(1000),
-   supabase.from("professionals").select("id,name,active").eq("org_id",orgId).order("name").limit(500),
+   scopeBranch(supabase.from("professionals").select("id,name,active").eq("org_id",orgId)).order("name").limit(500),
    scopeBranch(supabase.from("commission_payouts").select("id,branch_id,professional_id,amount,payment_method,paid_at,notes,cash_movement_id")
     .eq("org_id",orgId)).order("paid_at",{ascending:false}).limit(300),
    scopeBranch(supabase.from("app_settings").select("id,branch_id,setting_value").eq("org_id",orgId).eq("setting_key","product_commission")).limit(1),
