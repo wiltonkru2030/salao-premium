@@ -67,6 +67,7 @@ As migrations abaixo foram adicionadas à branch de recuperação e ainda não f
 - `20261116020000_branch_membership_access_foundation.sql`: cria `org_membership_branch_access` e a função privada `private.has_branch_access(org_id, branch_id)`.
 - `20261116030000_enforce_branch_access_rls.sql`: acrescenta políticas RLS restritivas às tabelas operacionais e às tabelas filhas. As políticas permissivas existentes continuam determinando os papéis e operações permitidos; a nova política exige também o vínculo explícito com a unidade.
 - `20261116040000_manage_membership_branch_access.sql`: disponibiliza a RPC transacional `set_org_membership_branch_access`, exclusiva para owner/admin, para substituir as unidades atribuídas a um membro.
+- `20261116050000_guard_branch_access_in_privileged_rpcs.sql`: adiciona validações de filial dentro das RPCs `SECURITY DEFINER` de caixa, comanda, despesas e atendimento, e limita funções auxiliares que consultam dados financeiros do atendimento.
 
 ### Semântica de acesso
 - Owner/admin ativo: acesso global a todas as unidades da organização.
