@@ -50,8 +50,18 @@ DROP POLICY IF EXISTS branch_access_guard ON public.branches;
 CREATE POLICY branch_access_guard
   ON public.branches AS RESTRICTIVE
   FOR ALL TO authenticated
-  USING (private.has_branch_access(org_id, id))
-  WITH CHECK (private.has_branch_access(org_id, id));
+  USING (
+    private.has_branch_access(
+      org_id,
+      CASE WHEN is_main THEN NULL::uuid ELSE id END
+    )
+  )
+  WITH CHECK (
+    private.has_branch_access(
+      org_id,
+      CASE WHEN is_main THEN NULL::uuid ELSE id END
+    )
+  );
 
 -- Tabelas filhas sem branch_id herdam a autorização da entidade-pai.
 DROP POLICY IF EXISTS branch_access_guard ON public.appointment_group_items;
