@@ -231,7 +231,8 @@ export async function loadCommissionsPage(){
      if(!canManageCommissionSettings()){toast("Você não tem permissão para alterar regras.");return;}
      if(!window.confirm("Excluir esta regra específica? O sistema voltará a usar a comissão padrão do profissional."))return;
      deleteRule.disabled=true;
-     const result=branchId?await supabase.from("commission_rules").delete().eq("org_id",orgId).eq("id",deleteRule.dataset.deleteCommissionRule).eq("branch_id",branchId):await supabase.from("commission_rules").delete().eq("org_id",orgId).eq("id",deleteRule.dataset.deleteCommissionRule).is("branch_id",null);\n     const {error}=result;
+     const result=branchId?await supabase.from("commission_rules").delete().eq("org_id",orgId).eq("id",deleteRule.dataset.deleteCommissionRule).eq("branch_id",branchId):await supabase.from("commission_rules").delete().eq("org_id",orgId).eq("id",deleteRule.dataset.deleteCommissionRule).is("branch_id",null);
+     const {error}=result;
      if(error){reportError(error,{context:"Comissões > excluir regra"});deleteRule.disabled=false;return;}
      toast("Regra removida.");await loadCommissionsPage();return;
     }
