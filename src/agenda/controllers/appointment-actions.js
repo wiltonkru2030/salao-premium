@@ -6,6 +6,7 @@ import { state } from "../../state.js";
 import { $, toast } from "../../utils.js";
 import { parseBRL } from "../../utils/input-masks.js";
 import { reportError } from "../../utils/errors.js";
+import { scopeServiceCatalog } from "../../modules/services/service-scope.js";
 import { render } from "../../layout/render.js";
 import { appointmentDrawer, renderDrawer, openDrawer } from "../../components/drawer.js";
 import { supabase } from "../../supabase/client.js";
@@ -79,9 +80,11 @@ export async function saveAppointment(form) {
   if(!date||!time||!Number.isFinite(duration)||duration<5||!Number.isFinite(price)||price<0)throw new Error('Confira data, horário, duração e valor.');
   const start=makeTimestamp(date,time);
   const end=new Date(start.getTime()+duration*60000);
+  const existing=appointmentActionRow();
+  const appointmentBranchId=existing?.id?(existing.branch_id??null):(state.branch?.id??null);
   const [customerResult,serviceResult,professionalResult]=await Promise.all([
     supabase.from('customers').select('id,name,phone').eq('org_id',state.organization.id).eq('id',customerId).maybeSingle(),
-    supabase.from('services').select('id,name,price,duration_minutes').eq('org_id',state.organization.id).eq('id',serviceId).maybeSingle(),
+    scopeServiceCatalog(supabase.from('services').select('id,name,price,duration_minutes,branch_id').eq('org_id',state.organization.id).eq('id',serviceId),appointmentBranchId).maybeSingle(),
     supabase.from('professionals').select('id,name').eq('org_id',state.organization.id).eq('id',professionalId).maybeSingle()
   ]);
   if(customerResult.error)throw customerResult.error;
@@ -89,7 +92,6 @@ export async function saveAppointment(form) {
   if(professionalResult.error)throw professionalResult.error;
   if(!customerResult.data||!serviceResult.data||!professionalResult.data)throw new Error('Um dos registros selecionados não existe ou está inativo.');
 
-  const existing=appointmentActionRow();
   const payload={
     org_id:state.organization.id,
     branch_id:existing?.id?(existing.branch_id??null):(state.branch?.id??null),
