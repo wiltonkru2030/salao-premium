@@ -110,7 +110,7 @@ $function$;
 
 DROP TRIGGER IF EXISTS commission_rule_branch_validate ON public.commission_rules;
 CREATE TRIGGER commission_rule_branch_validate
-  BEFORE INSERT OR UPDATE OF org_id, branch_id, professional_id, service_id, item_type
+  BEFORE INSERT OR UPDATE OF org_id, branch_id, professional_id, service_id, product_id, item_type
   ON public.commission_rules
   FOR EACH ROW
   EXECUTE FUNCTION private.validate_commission_rule_branch();
