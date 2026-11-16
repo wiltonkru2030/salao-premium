@@ -12,6 +12,7 @@ import { reportError } from "../utils/errors.js";
 import { scopeServiceCatalog } from "../modules/services/service-scope.js";
 
 let modalListenerInstalled = false;
+let servicesLoadSequence = 0;
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function servicesPage() {
@@ -25,6 +26,7 @@ export async function loadServicesPage() {
   if (!host || !state.organization?.id) return;
   const orgId = state.organization.id;
   const branchId = state.branch?.id || null;
+  const requestId = ++servicesLoadSequence;
   let services;
   try {
     const query = supabase.from("services")
@@ -32,6 +34,7 @@ export async function loadServicesPage() {
       .eq("org_id", orgId);
     const result = await scopeServiceCatalog(query, branchId).order("name").limit(500);
     if (result.error) throw result.error;
+    if (requestId !== servicesLoadSequence || state.organization?.id !== orgId || (state.branch?.id || null) !== branchId || !host.isConnected) return;
     services = result.data || [];
   } catch (error) {
     reportError(error, { context: "Serviços > carregar lista" });
