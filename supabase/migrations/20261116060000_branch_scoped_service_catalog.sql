@@ -14,6 +14,23 @@ ALTER TABLE public.commission_rules
   ADD COLUMN IF NOT EXISTS branch_id uuid
   REFERENCES public.branches(id) ON DELETE RESTRICT;
 
+-- FK composta: a unidade precisa pertencer ao mesmo tenant do registro.
+ALTER TABLE public.services
+  DROP CONSTRAINT IF EXISTS services_branch_id_fkey;
+ALTER TABLE public.services
+  ADD CONSTRAINT services_org_branch_fkey
+  FOREIGN KEY (org_id, branch_id)
+  REFERENCES public.branches(org_id, id)
+  ON DELETE RESTRICT;
+
+ALTER TABLE public.commission_rules
+  DROP CONSTRAINT IF EXISTS commission_rules_branch_id_fkey;
+ALTER TABLE public.commission_rules
+  ADD CONSTRAINT commission_rules_org_branch_fkey
+  FOREIGN KEY (org_id, branch_id)
+  REFERENCES public.branches(org_id, id)
+  ON DELETE RESTRICT;
+
 CREATE INDEX IF NOT EXISTS commission_rules_org_branch_service_idx
   ON public.commission_rules(org_id, branch_id, item_type, service_id, professional_id)
   WHERE active = true;
