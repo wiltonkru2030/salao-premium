@@ -18,8 +18,16 @@ async function loadBranchOptions(organizationId){
   if(state.organization?.id!==organizationId)return;
   const rows=data||[];
   const main=rows.find(item=>item.is_main);
-  state.availableBranches=[{id:null,name:main?.name||'Matriz',is_main:true},...rows.filter(item=>!item.is_main)];
-  if(state.branch?.id&&!state.availableBranches.some(item=>item.id===state.branch.id))state.branch=null;
+  state.availableBranches=[
+    ...(main?[{id:null,name:main.name||'Matriz',is_main:true}]:[]),
+    ...rows.filter(item=>!item.is_main)
+  ];
+  const currentBranchId=state.branch?.id||null;
+  const currentIsAllowed=state.availableBranches.some(item=>(item.id||null)===currentBranchId);
+  if(!currentIsAllowed){
+    const firstAllowed=state.availableBranches[0];
+    state.branch=firstAllowed?.id?firstAllowed:null;
+  }
 }
 
 document.addEventListener("change",async event=>{
