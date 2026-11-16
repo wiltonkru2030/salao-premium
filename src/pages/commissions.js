@@ -40,7 +40,7 @@ export async function loadCommissionsPage(){
     .eq("org_id",orgId)).order("paid_at",{ascending:false}).limit(300),
    scopeBranch(supabase.from("app_settings").select("id,branch_id,setting_value").eq("org_id",orgId).eq("setting_key","product_commission")).limit(1),
    scopeServiceCatalog(supabase.from("services").select("id,name,active,branch_id").eq("org_id",orgId).eq("active",true),branchId).order("name").limit(500),
-   supabase.from("commission_rules").select("id,professional_id,service_id,rate,active,item_type").eq("org_id",orgId).eq("item_type","service").eq("active",true).order("created_at",{ascending:false}).limit(1000)
+   scopeBranch(supabase.from("commission_rules").select("id,branch_id,professional_id,service_id,rate,active,item_type").eq("org_id",orgId).eq("item_type","service").eq("active",true)).order("created_at",{ascending:false}).limit(1000)
   ]);
   if(commissionResult.error)throw commissionResult.error;
   if(professionalResult.error)throw professionalResult.error;
