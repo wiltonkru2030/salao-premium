@@ -143,7 +143,45 @@ BEGIN
     EXECUTE v_definition;
   END IF;
 END;
-$$;
+$;
+
+-- Estoque de produtos de uma Comanda não pode ser debitado/devolvido em
+-- unidade diferente, mesmo quando a operação passa por uma RPC privilegiada.
+DO $
+DECLARE
+  v_definition text;
+  v_old text;
+  v_new text;
+BEGIN
+  SELECT pg_get_functiondef('public.register_service_order_payment(uuid,numeric,text)'::regprocedure)
+    INTO v_definition;
+  v_old := 'if not found or v_product.stock_quantity < v_item.quantity then';
+  v_new := 'if not found or v_product.branch_id is distinct from v_order.branch_id or v_product.stock_quantity < v_item.quantity then';
+  IF position(v_old IN v_definition) = 0 THEN
+    RAISE EXCEPTION 'Não foi possível localizar a validação de estoque em register_service_order_payment.';
+  END IF;
+  IF position('v_product.branch_id is distinct from v_order.branch_id' IN v_definition) = 0 THEN
+    v_definition := replace(v_definition, v_old, v_new);
+    EXECUTE v_definition;
+  END IF;
+
+  SELECT pg_get_functiondef('public.refund_service_order(uuid,boolean,text)'::regprocedure)
+    INTO v_definition;
+  v_old := 'update public.products set stock_quantity=stock_quantity+v_item.quantity,updated_at=clock_timestamp()' ||
+           ' where org_id=v_order.org_id and id=v_item.product_id;';
+  v_new := 'update public.products set stock_quantity=stock_quantity+v_item.quantity,updated_at=clock_timestamp()' ||
+           ' where org_id=v_order.org_id and id=v_item.product_id' ||
+           ' and branch_id is not distinct from v_order.branch_id;' ||
+           ' if not found then raise exception ''O produto não pertence à unidade da Comanda.''; end if;';
+  IF position(v_old IN v_definition) = 0 THEN
+    RAISE EXCEPTION 'Não foi possível localizar a devolução de estoque em refund_service_order.';
+  END IF;
+  IF position('and branch_id is not distinct from v_order.branch_id;' IN v_definition) = 0 THEN
+    v_definition := replace(v_definition, v_old, v_new);
+    EXECUTE v_definition;
+  END IF;
+END;
+$;
 
 -- Funções auxiliares SECURITY DEFINER também devem respeitar o escopo ao
 -- responder consultas sobre uma Comanda.
