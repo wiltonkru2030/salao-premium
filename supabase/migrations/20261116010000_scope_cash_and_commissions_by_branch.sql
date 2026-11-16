@@ -240,6 +240,10 @@ BEGIN
     RAISE EXCEPTION 'Filial inválida ou inativa para esta organização.';
   END IF;
 
+  IF NOT private.has_branch_access(p_org_id, p_branch_id) THEN
+    RAISE EXCEPTION 'Sem acesso para abrir o Caixa desta unidade.';
+  END IF;
+
   PERFORM 1 FROM public.organizations WHERE id = p_org_id FOR UPDATE;
 
   IF EXISTS (
@@ -323,6 +327,13 @@ BEGIN
     AND c.id = ANY(p_commission_ids)
   ORDER BY c.created_at, c.id
   LIMIT 1;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Comissões não encontradas para o profissional.';
+  END IF;
+  IF NOT private.has_branch_access(p_org_id, v_branch_id) THEN
+    RAISE EXCEPTION 'Sem acesso para pagar comissões desta unidade.';
+  END IF;
 
   SELECT count(*) INTO v_expected FROM unnest(p_commission_ids);
 
