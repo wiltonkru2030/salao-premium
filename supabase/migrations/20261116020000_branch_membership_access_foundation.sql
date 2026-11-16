@@ -50,6 +50,27 @@ CREATE UNIQUE INDEX IF NOT EXISTS org_membership_branch_access_matrix_unique
 CREATE INDEX IF NOT EXISTS org_membership_branch_access_member_idx
   ON public.org_membership_branch_access(org_id, membership_id);
 
+-- Compatibilidade no rollout: os membros ativos já existentes começam com
+-- as mesmas unidades atualmente visíveis para a organização. O administrador
+-- deve revisar e reduzir essas atribuições pela tela Equipe antes de declarar
+-- o isolamento por unidade homologado. Novos membros não recebem acesso
+-- automaticamente e precisam ser atribuídos explicitamente.
+INSERT INTO public.org_membership_branch_access(
+  org_id, membership_id, branch_id, created_by
+)
+SELECT
+  m.org_id,
+  m.id,
+  CASE WHEN b.is_main THEN NULL::uuid ELSE b.id END,
+  NULL::uuid
+FROM public.org_memberships m
+JOIN public.branches b
+  ON b.org_id = m.org_id
+ AND b.active = true
+WHERE m.status = 'active'
+  AND m.role NOT IN ('owner','admin')
+ON CONFLICT DO NOTHING;
+
 ALTER TABLE public.org_membership_branch_access ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS membership_branch_access_select_self_or_admin
