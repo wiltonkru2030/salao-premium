@@ -71,6 +71,7 @@ As migrations abaixo foram adicionadas à branch de recuperação e ainda não f
 ### Semântica de acesso
 - Owner/admin ativo: acesso global a todas as unidades da organização.
 - Demais membros ativos: acesso somente às filiais explicitamente atribuídas.
+- No rollout inicial, a migration cria atribuições temporárias para todas as unidades ativas dos membros já existentes, preservando o acesso anterior; o administrador deve revisar e reduzir essas permissões na tela Equipe antes de declarar o isolamento homologado. Novos membros exigem atribuição explícita.
 - `branch_id = NULL` na tabela de atribuições representa acesso à matriz.
 - Array vazio enviado à RPC remove as atribuições e bloqueia o acesso operacional do membro às tabelas protegidas.
 - A linha da unidade principal em `branches` é tratada como matriz para fins de RLS, embora possua UUID próprio no cadastro.
