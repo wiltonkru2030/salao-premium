@@ -90,8 +90,11 @@ CREATE POLICY membership_branch_access_select_self_or_admin
     )
   );
 
--- A tabela é somente leitura pelo Data API. Alterações passam exclusivamente
--- pela RPC transacional set_org_membership_branch_access.
+-- A tabela é somente leitura pelo Data API. Remova também privilégios
+-- herdados de default privileges antes de conceder SELECT explicitamente.
+-- Alterações passam exclusivamente pela RPC transacional set_org_membership_branch_access.
+REVOKE ALL ON TABLE public.org_membership_branch_access
+  FROM PUBLIC, anon, authenticated;
 GRANT SELECT
   ON TABLE public.org_membership_branch_access
   TO authenticated;
