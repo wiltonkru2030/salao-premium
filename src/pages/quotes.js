@@ -53,12 +53,13 @@ export async function loadQuotesPage() {
     if(!allowed()) throw new Error("Seu perfil não possui acesso ao módulo de orçamentos.");
     const orgId=state.organization.id;
     const branchId=state.branch?.id||null;
+    const scopeBranch=query=>branchId?query.eq("branch_id",branchId):query.is("branch_id",null);
     const [customerResult,serviceResult,professionalResult,professionalServiceResult,quoteResult,settingResult,ruleResult]=await Promise.all([
-      supabase.from("customers").select("id,name,phone").eq("org_id",orgId).eq("active",true).order("name").limit(1000),
+      scopeBranch(supabase.from("customers").select("id,name,phone,branch_id").eq("org_id",orgId).eq("active",true)).order("name").limit(1000),
       scopeServiceCatalog(supabase.from("services").select("id,name,price,duration_minutes,branch_id").eq("org_id",orgId).eq("active",true),branchId).order("name").limit(500),
-      supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("active",true).order("name").limit(500),
+      scopeBranch(supabase.from("professionals").select("id,name,branch_id").eq("org_id",orgId).eq("active",true)).order("name").limit(500),
       supabase.from("professional_services").select("professional_id,service_id").eq("org_id",orgId),
-      supabase.from("quotes").select("id,quote_number,customer_id,status,total,created_at").eq("org_id",orgId).order("created_at",{ascending:false}).limit(100),
+      scopeBranch(supabase.from("quotes").select("id,branch_id,quote_number,customer_id,status,total,created_at").eq("org_id",orgId)).order("created_at",{ascending:false}).limit(100),
       supabase.from("quote_settings").select("max_discount_percent,allow_fixed_discount").eq("org_id",orgId).maybeSingle(),
       supabase.from("quote_discount_services").select("service_id").eq("org_id",orgId).eq("discount_allowed",true)
     ]);
