@@ -143,7 +143,7 @@ BEGIN
     EXECUTE v_definition;
   END IF;
 END;
-$;
+$$;
 
 -- Estoque de produtos de uma Comanda não pode ser debitado/devolvido em
 -- unidade diferente, mesmo quando a operação passa por uma RPC privilegiada.
