@@ -68,6 +68,7 @@ As migrations abaixo foram adicionadas à branch de recuperação e ainda não f
 - `20261116030000_enforce_branch_access_rls.sql`: acrescenta políticas RLS restritivas às tabelas operacionais e às tabelas filhas. As políticas permissivas existentes continuam determinando os papéis e operações permitidos; a nova política exige também o vínculo explícito com a unidade.
 - `20261116040000_manage_membership_branch_access.sql`: disponibiliza a RPC transacional `set_org_membership_branch_access`, exclusiva para owner/admin, para substituir as unidades atribuídas a um membro.
 - `20261116050000_guard_branch_access_in_privileged_rpcs.sql`: adiciona validações de filial dentro das RPCs `SECURITY DEFINER` de caixa, comanda, despesas e atendimento, restringe funções auxiliares financeiras e impede baixa/devolução de estoque cruzando unidades.
+- `20261116060000_branch_scoped_service_catalog.sql`: permite serviços e regras de comissão compartilhados ou exclusivos por filial, aplica RLS restritiva e valida referências de serviços em agenda, orçamento, comanda e vínculos profissionais.
 
 ### Semântica de acesso
 - Owner/admin ativo: acesso global a todas as unidades da organização.
@@ -97,7 +98,7 @@ A existência das migrations e da tela não significa que o isolamento por filia
 
 A auditoria do schema encontrou tabelas sem `branch_id` que continuam com escopo de organização, e não de unidade. Entre elas:
 
-- Catálogo e regras compartilhadas: `services`, `commission_rules`, `professional_services`, `quote_settings` e `quote_discount_services`.
+- Catálogo e regras: `services` e `commission_rules` agora possuem `branch_id` opcional; `NULL` mantém o item compartilhado e UUID cria item específico da unidade. `professional_services`, `quote_settings` e `quote_discount_services` continuam com configuração no nível da organização.
 - Estruturas administrativas/identidade: `org_memberships`, `notifications`, `audit_events`, `audit_logs` e `recycle_bin`.
 
-Os itens de orçamento, venda, comanda, grupo de agendamento e payout herdam a unidade do respectivo registro-pai. Já o catálogo de serviços ainda é comum à organização; a separação de catálogo, disponibilidade e regras de comissão por filial precisa de uma etapa de modelagem própria, pois não deve ser simulada apenas com filtros de interface.
+Os itens de orçamento, venda, comanda, grupo de agendamento e payout herdam a unidade do respectivo registro-pai. O catálogo agora aceita serviços compartilhados e serviços exclusivos por unidade. Na tela Serviços, um item compartilhado é somente leitura dentro da filial e pode ser copiado para personalização local. As regras de comissão também aceitam escopo por filial, e a RPC de fechamento prioriza a regra local antes da regra compartilhada.
