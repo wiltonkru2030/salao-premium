@@ -73,6 +73,21 @@ BEGIN
     END IF;
   END IF;
 
+  IF NEW.item_type = 'product' AND NEW.product_id IS NOT NULL THEN
+    SELECT p.branch_id INTO v_service_branch
+    FROM public.products p
+    WHERE p.org_id = NEW.org_id AND p.id = NEW.product_id;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Produto da regra de comissão não encontrado nesta organização.';
+    END IF;
+
+    IF v_service_branch IS NOT NULL
+       AND v_service_branch IS DISTINCT FROM NEW.branch_id THEN
+      RAISE EXCEPTION 'A regra de comissão deve pertencer à mesma unidade do produto.';
+    END IF;
+  END IF;
+
   IF NEW.professional_id IS NOT NULL THEN
     SELECT p.branch_id INTO v_professional_branch
     FROM public.professionals p
@@ -207,6 +222,8 @@ DECLARE
                 ' and (cr.branch_id is null or cr.branch_id is not distinct from v_order.branch_id)';
   v_old_order text := '(cr.professional_id is not null) desc,';
   v_new_order text := '(cr.branch_id is not null) desc, (cr.professional_id is not null) desc,';
+  v_old_order_upper text := '(cr.professional_id IS NOT NULL) DESC,';
+  v_new_order_upper text := '(cr.branch_id IS NOT NULL) DESC, (cr.professional_id IS NOT NULL) DESC,';
 BEGIN
   SELECT pg_get_functiondef(
     'private.accrue_partial_service_order_commissions(uuid,uuid,numeric)'::regprocedure
@@ -218,6 +235,7 @@ BEGIN
     END IF;
     v_definition := replace(v_definition, v_old, v_new);
     v_definition := replace(v_definition, v_old_order, v_new_order);
+    v_definition := replace(v_definition, v_old_order_upper, v_new_order_upper);
     EXECUTE v_definition;
   END IF;
 
