@@ -47,14 +47,14 @@ export async function loadCashPage(){
    scopeBranch(supabase.from("cash_movements").select("id,branch_id,cash_register_id,service_order_id,movement_type,category,description,amount,payment_method,created_at,sale_id").eq("org_id",orgId)).order("created_at",{ascending:false}).limit(500),
    scopeBranch(supabase.from("service_order_payments").select("id,branch_id,order_id,cash_movement_id,amount,payment_method,paid_at").eq("org_id",orgId)).not("cash_movement_id","is",null).order("paid_at",{ascending:false}).limit(500)
   ]);
-  if(requestId!==cashLoadSequence||state.organization?.id!==orgId||state.branch?.id!==branchId||!host.isConnected||state.page!=="Caixa")return;
+  if(requestId!==cashLoadSequence||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId||!host.isConnected||state.page!=="Caixa")return;
   if(registerResult.error)throw registerResult.error;
   if(movementResult.error)throw movementResult.error;
   if(paymentResult.error)throw paymentResult.error;
   const registers=registerResult.data||[],movements=movementResult.data||[];
   const paymentRows=paymentResult.data||[],orderIds=[...new Set([...paymentRows.map(p=>p.order_id),...movements.map(m=>m.service_order_id).filter(Boolean)])];
   const {data:orderRows,error:orderError}=orderIds.length?await supabase.from("service_orders").select("id,order_number,customer_id").eq("org_id",orgId).in("id",orderIds):{data:[],error:null};
-  if(requestId!==cashLoadSequence||state.organization?.id!==orgId||state.branch?.id!==branchId||!host.isConnected||state.page!=="Caixa")return;
+  if(requestId!==cashLoadSequence||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId||!host.isConnected||state.page!=="Caixa")return;
   if(orderError)throw orderError;
   const customerIds=[...new Set((orderRows||[]).map(o=>o.customer_id).filter(Boolean))];
   const {data:customerRows,error:customerError}=customerIds.length?await supabase.from("customers").select("id,name").eq("org_id",orgId).in("id",customerIds):{data:[],error:null};
