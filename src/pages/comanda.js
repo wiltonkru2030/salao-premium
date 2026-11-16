@@ -8,6 +8,7 @@ import { parseBRL } from "../utils/input-masks.js";
 import { buildComandaDetails } from "../modules/comanda/components/comanda-detail.js";
 import { currency, statusLabel, paymentStatusLabel, paymentMethodLabel } from "../modules/comanda/comanda.formatters.js";
 import { registerComandaPayment, cancelComanda } from "../modules/comanda/services/comanda-operations.js";
+import { scopeServiceCatalog } from "../modules/services/service-scope.js";
 
 /** @typedef {import("../types/tenant.types").TenantContext} TenantContext */
 /** @typedef {import("../types/operations.types").ServiceOrderRecord} ServiceOrderRecord */
@@ -45,7 +46,7 @@ async function queryDetails(order,orgId){
   supabase.from("service_order_payments").select("id,amount,payment_method,status,paid_at,refunded_at,refund_cash_movement_id").eq("org_id",orgId).eq("order_id",order.id).order("paid_at"),
   order.customer_id?supabase.from("customers").select("id,name,phone").eq("org_id",orgId).eq("id",order.customer_id).maybeSingle():Promise.resolve({data:null,error:null}),
   order.assigned_professional_id?supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("id",order.assigned_professional_id).maybeSingle():Promise.resolve({data:null,error:null}),
-  supabase.from("services").select("id,name,price,duration_minutes").eq("org_id",orgId).eq("active",true).order("name").limit(250),
+  scopeServiceCatalog(supabase.from("services").select("id,name,price,duration_minutes,branch_id").eq("org_id",orgId).eq("active",true),order.branch_id||null).order("name").limit(250),
   supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).eq("active",true).order("name").limit(250),
   supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("active",true).order("name").limit(200),
   supabase.from("professional_services").select("professional_id,service_id").eq("org_id",orgId)
