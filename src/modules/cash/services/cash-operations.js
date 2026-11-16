@@ -2,11 +2,11 @@
  * Operações de aplicação do Caixa.
  * Centraliza validações de entrada e contratos RPC; a atomicidade é garantida pelo Postgres.
  */
-export async function openCashRegister({supabase,orgId,openingAmount}) {
+export async function openCashRegister({supabase,orgId,branchId=null,openingAmount}) {
   const amount=Number(openingAmount);
   if(!orgId)throw new Error("Organização não identificada.");
   if(!Number.isFinite(amount)||amount<0)throw new Error("Informe um valor inicial válido.");
-  return supabase.rpc("open_cash_register",{p_org_id:orgId,p_opening_amount:amount});
+  return supabase.rpc("open_cash_register",{p_org_id:orgId,p_opening_amount:amount,p_branch_id:branchId});
 }
 
 /** Fecha o caixa indicado; o servidor bloqueia a linha e calcula a diferença transacionalmente. */
