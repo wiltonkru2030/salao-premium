@@ -7,6 +7,8 @@ import { $, toast } from "../../utils.js";
 import { parseBRL } from "../../utils/input-masks.js";
 import { reportError } from "../../utils/errors.js";
 import { scopeServiceCatalog } from "../../modules/services/service-scope.js";
+
+const scopeBranchRecord = (query, branchId) => branchId ? query.eq("branch_id", branchId) : query.is("branch_id", null);
 import { render } from "../../layout/render.js";
 import { appointmentDrawer, renderDrawer, openDrawer } from "../../components/drawer.js";
 import { supabase } from "../../supabase/client.js";
@@ -83,9 +85,9 @@ export async function saveAppointment(form) {
   const existing=appointmentActionRow();
   const appointmentBranchId=existing?.id?(existing.branch_id??null):(state.branch?.id??null);
   const [customerResult,serviceResult,professionalResult]=await Promise.all([
-    supabase.from('customers').select('id,name,phone').eq('org_id',state.organization.id).eq('id',customerId).maybeSingle(),
+    scopeBranchRecord(supabase.from('customers').select('id,name,phone').eq('org_id',state.organization.id).eq('id',customerId),appointmentBranchId).maybeSingle(),
     scopeServiceCatalog(supabase.from('services').select('id,name,price,duration_minutes,branch_id').eq('org_id',state.organization.id).eq('id',serviceId),appointmentBranchId).maybeSingle(),
-    supabase.from('professionals').select('id,name').eq('org_id',state.organization.id).eq('id',professionalId).maybeSingle()
+    scopeBranchRecord(supabase.from('professionals').select('id,name').eq('org_id',state.organization.id).eq('id',professionalId),appointmentBranchId).maybeSingle()
   ]);
   if(customerResult.error)throw customerResult.error;
   if(serviceResult.error)throw serviceResult.error;
