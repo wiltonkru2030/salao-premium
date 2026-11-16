@@ -64,6 +64,61 @@ CREATE POLICY branch_access_guard
     OR private.has_branch_access(org_id, branch_id)
   );
 
+-- Tabelas de vínculo sem branch_id herdam o escopo do serviço e do profissional.
+DROP POLICY IF EXISTS branch_access_guard ON public.professional_services;
+CREATE POLICY branch_access_guard
+  ON public.professional_services AS RESTRICTIVE
+  FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.services s
+      JOIN public.professionals p
+        ON p.org_id = professional_services.org_id
+       AND p.id = professional_services.professional_id
+      WHERE s.org_id = professional_services.org_id
+        AND s.id = professional_services.service_id
+        AND (s.branch_id IS NULL OR private.has_branch_access(s.org_id, s.branch_id))
+        AND (p.branch_id IS NULL OR private.has_branch_access(p.org_id, p.branch_id))
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.services s
+      JOIN public.professionals p
+        ON p.org_id = professional_services.org_id
+       AND p.id = professional_services.professional_id
+      WHERE s.org_id = professional_services.org_id
+        AND s.id = professional_services.service_id
+        AND (s.branch_id IS NULL OR private.has_branch_access(s.org_id, s.branch_id))
+        AND (p.branch_id IS NULL OR private.has_branch_access(p.org_id, p.branch_id))
+    )
+  );
+
+DROP POLICY IF EXISTS branch_access_guard ON public.quote_discount_services;
+CREATE POLICY branch_access_guard
+  ON public.quote_discount_services AS RESTRICTIVE
+  FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.services s
+      WHERE s.org_id = quote_discount_services.org_id
+        AND s.id = quote_discount_services.service_id
+        AND (s.branch_id IS NULL OR private.has_branch_access(s.org_id, s.branch_id))
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.services s
+      WHERE s.org_id = quote_discount_services.org_id
+        AND s.id = quote_discount_services.service_id
+        AND (s.branch_id IS NULL OR private.has_branch_access(s.org_id, s.branch_id))
+    )
+  );
+
 -- Não permite regras de comissão que misturem serviço/profissional de unidades
 -- diferentes. Regras de filial podem usar serviços compartilhados ou locais.
 CREATE OR REPLACE FUNCTION private.validate_commission_rule_branch()
