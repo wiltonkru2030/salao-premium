@@ -76,7 +76,9 @@ function renderCurrentPage() {
 function renderBranchControl() {
   const branches = state.availableBranches || [];
   if (!branches.length) {
-    return '<span class="unit-indicator">Sem unidade autorizada</span>';
+    return ["owner", "admin"].includes(state.membership?.role)
+      ? ''
+      : '<span class="unit-indicator">Sem unidade autorizada</span>';
   }
   const selectedId = state.branch?.id || '__main__';
   return '<label class="tenant-switcher branch-switcher"><span>Unidade</span><select id="branch-switcher" aria-label="Selecionar unidade">' +
