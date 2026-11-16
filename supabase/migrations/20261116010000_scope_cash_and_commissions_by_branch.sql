@@ -266,6 +266,9 @@ BEGIN
 END;
 $function$;
 
+REVOKE ALL ON FUNCTION public.open_cash_register(uuid, numeric, uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.open_cash_register(uuid, numeric, uuid) TO authenticated;
+
 -- Paga somente comissões da mesma unidade e exige o caixa exato dessa unidade.
 CREATE OR REPLACE FUNCTION public.pay_professional_commissions(
   p_org_id uuid,
