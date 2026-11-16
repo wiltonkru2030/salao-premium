@@ -72,8 +72,7 @@ function renderOrderDetails(host,order,data,orgId){
  if(editable&&allowEdit){
   selectedService=null;selectedProduct=null;
   cleanup.push(mountAutocomplete(host.querySelector("#comanda-service"),{
-   search:async term=>{const {data,error}=await supabase.from("services").select("id,name,price,duration_minutes").eq("org_id",orgId).eq("active",true).ilike("name","%"+term+
-"%").order("name").limit(8);if(error)throw error;return data||[];},
+   search:async term=>{const {data,error}=await scopeServiceCatalog(supabase.from("services").select("id,name,price,duration_minutes,branch_id").eq("org_id",orgId).eq("active",true),order.branch_id||null).ilike("name","%"+term+"%").order("name").limit(8);if(error)throw error;return data||[];},
    getLabel:item=>item.name+
 " · "+currency(item.price)+
 " · "+Number(item.duration_minutes)+
