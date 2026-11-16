@@ -31,6 +31,8 @@ jobs:
         run: npm run test:comanda
       - name: Run Cash component tests
         run: npm run test:cash
+      - name: Run service catalog scope tests
+        run: npm run test:services
       - name: Run tenant selection tests
         run: npm run test:tenant
       - name: Run agenda regression tests
