@@ -80,8 +80,7 @@ function renderOrderDetails(host,order,data,orgId){
    onSelect:item=>{selectedService=item;const select=host.querySelector("#comanda-service-form [name=professional_id]");if(select){const allowed=new Set(assignments.filter(link=>link.service_id===item.id).map(link=>link.professional_id));select.innerHTML='<option value="">Sem profissional</option>'+professionals.filter(person=>allowed.has(person.id)).map(person=>'<option value="'+person.id+'">'+esc(person.name)+'</option>').join("");}}
   }));
   cleanup.push(mountAutocomplete(host.querySelector("#comanda-product"),{
-   search:async term=>{const {data,error}=await supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).eq("active",true).gt("stock_quantity",0).ilike("name","%"+term+
-"%").order("name").limit(8);if(error)throw error;return data||[];},
+   search:async term=>{const base=supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).eq("active",true).gt("stock_quantity",0);const query=order.branch_id?base.eq("branch_id",order.branch_id):base.is("branch_id",null);const {data,error}=await query.ilike("name","%"+term+"%").order("name").limit(8);if(error)throw error;return data||[];},
    getLabel:item=>item.name+
 " · "+currency(item.sale_price)+
 " · Estoque: "+Number(item.stock_quantity||0),
