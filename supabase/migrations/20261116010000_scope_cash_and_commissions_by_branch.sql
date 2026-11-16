@@ -177,6 +177,30 @@ BEGIN
   END IF;
 
   v_definition := replace(v_definition, v_old, v_new);
+
+  -- Grava a unidade também nas comissões geradas no fechamento da Comanda.
+  -- A segunda substituição cobre a definição histórica que não listava
+  -- service_order_payment_id na comissão de serviço.
+  v_definition := replace(
+    v_definition,
+    'org_id,professional_id,sale_id,appointment_id,service_order_item_id,service_order_payment_id,',
+    'org_id,branch_id,professional_id,sale_id,appointment_id,service_order_item_id,service_order_payment_id,'
+  );
+  v_definition := replace(
+    v_definition,
+    'org_id,professional_id,sale_id,appointment_id,service_order_item_id,',
+    'org_id,branch_id,professional_id,sale_id,appointment_id,service_order_item_id,service_order_payment_id,'
+  );
+  v_definition := replace(
+    v_definition,
+    'v_order.org_id,v_item.professional_id,v_sale_id,',
+    'v_order.org_id,v_order.branch_id,v_item.professional_id,v_sale_id,'
+  );
+
+  IF position('org_id,professional_id,sale_id,appointment_id,service_order_item_id,' IN v_definition) > 0 THEN
+    RAISE EXCEPTION 'Não foi possível adicionar branch_id às comissões do fechamento da Comanda.';
+  END IF;
+
   EXECUTE v_definition;
 END;
 $$;
