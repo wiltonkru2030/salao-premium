@@ -44,11 +44,11 @@ async function queryDetails(order,orgId){
  const [items,payments,customer,professional,services,products,professionals,assignments]=await Promise.all([
   supabase.from("service_order_items").select("id,item_type,service_id,description,quantity,unit_price,discount,total,professional_id,created_at").eq("org_id",orgId).eq("order_id",order.id).order("created_at"),
   supabase.from("service_order_payments").select("id,amount,payment_method,status,paid_at,refunded_at,refund_cash_movement_id").eq("org_id",orgId).eq("order_id",order.id).order("paid_at"),
-  order.customer_id?supabase.from("customers").select("id,name,phone").eq("org_id",orgId).eq("id",order.customer_id).maybeSingle():Promise.resolve({data:null,error:null}),
-  order.assigned_professional_id?supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("id",order.assigned_professional_id).maybeSingle():Promise.resolve({data:null,error:null}),
+  order.customer_id?(order.branch_id?supabase.from("customers").select("id,name,phone").eq("org_id",orgId).eq("branch_id",order.branch_id).eq("id",order.customer_id).maybeSingle():supabase.from("customers").select("id,name,phone").eq("org_id",orgId).is("branch_id",null).eq("id",order.customer_id).maybeSingle()):Promise.resolve({data:null,error:null}),
+  order.assigned_professional_id?(order.branch_id?supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("branch_id",order.branch_id).eq("id",order.assigned_professional_id).maybeSingle():supabase.from("professionals").select("id,name").eq("org_id",orgId).is("branch_id",null).eq("id",order.assigned_professional_id).maybeSingle()):Promise.resolve({data:null,error:null}),
   scopeServiceCatalog(supabase.from("services").select("id,name,price,duration_minutes,branch_id").eq("org_id",orgId).eq("active",true),order.branch_id||null).order("name").limit(250),
-  supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).eq("active",true).order("name").limit(250),
-  supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("active",true).order("name").limit(200),
+  (order.branch_id?supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).eq("branch_id",order.branch_id).eq("active",true):supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).is("branch_id",null).eq("active",true)).order("name").limit(250),
+  (order.branch_id?supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("branch_id",order.branch_id).eq("active",true):supabase.from("professionals").select("id,name").eq("org_id",orgId).is("branch_id",null).eq("active",true)).order("name").limit(200),
   supabase.from("professional_services").select("professional_id,service_id").eq("org_id",orgId)
  ]);
  for(const [label,result] of [["itens",items],["pagamentos",payments],["cliente",customer],["profissional",professional],["serviços",services],["produtos",products],["equipe",professionals],["serviços habilitados",assignments]]) {
