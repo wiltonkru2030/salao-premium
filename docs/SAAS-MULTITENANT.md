@@ -84,7 +84,7 @@ A tela **Equipe e permissões** permite selecionar uma ou várias unidades por u
 
 ### Homologação ainda obrigatória
 Antes de aplicar as migrations:
-1. Validar a sequência e sintaxe das quatro migrations em um banco de teste alinhado ao schema remoto.
+1. Validar a sequência e sintaxe das seis migrations em um banco de teste alinhado ao schema remoto.
 2. Testar owner/admin com acesso global, incluindo a leitura da linha da matriz.
 3. Testar recepção, financeiro, gerente, viewer e profissional com atribuição a uma filial, à matriz, a múltiplas unidades e sem unidade.
 4. Testar SELECT/INSERT/UPDATE/DELETE e RPCs nas tabelas principais e filhas, inclusive tentativa de alterar `branch_id` para unidade não atribuída.
