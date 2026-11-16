@@ -113,6 +113,10 @@ export async function loadServicesPage() {
       if (!currentBranchId) return;
       const source = currentServices.find(item => item.id === copy.dataset.copyService);
       if (!source) return;
+      if (currentServices.some(item => item.branch_id === currentBranchId && item.name.trim().toLocaleLowerCase("pt-BR") === source.name.trim().toLocaleLowerCase("pt-BR"))) {
+        toast("Esta unidade já possui um serviço com esse nome.");
+        return;
+      }
       copy.disabled = true;
       try {
         const { error } = await supabase.from("services").insert({
