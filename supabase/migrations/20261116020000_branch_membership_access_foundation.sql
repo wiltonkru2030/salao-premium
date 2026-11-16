@@ -90,25 +90,9 @@ CREATE POLICY membership_branch_access_select_self_or_admin
     )
   );
 
-DROP POLICY IF EXISTS membership_branch_access_insert_admin
-  ON public.org_membership_branch_access;
-CREATE POLICY membership_branch_access_insert_admin
-  ON public.org_membership_branch_access
-  FOR INSERT TO authenticated
-  WITH CHECK (
-    private.has_org_role(org_id, ARRAY['owner','admin']::text[])
-  );
-
-DROP POLICY IF EXISTS membership_branch_access_delete_admin
-  ON public.org_membership_branch_access;
-CREATE POLICY membership_branch_access_delete_admin
-  ON public.org_membership_branch_access
-  FOR DELETE TO authenticated
-  USING (
-    private.has_org_role(org_id, ARRAY['owner','admin']::text[])
-  );
-
-GRANT SELECT, INSERT, DELETE
+-- A tabela é somente leitura pelo Data API. Alterações passam exclusivamente
+-- pela RPC transacional set_org_membership_branch_access.
+GRANT SELECT
   ON TABLE public.org_membership_branch_access
   TO authenticated;
 
