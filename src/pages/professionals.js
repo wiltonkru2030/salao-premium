@@ -3,6 +3,7 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, toast, esc } from "../utils.js";
 import { reportError } from "../utils/errors.js";
+import { scopeServiceCatalog } from "../modules/services/service-scope.js";
 
 /** Módulo Profissionais: cadastro fiscal, vínculo de serviços e controle de acesso ao App Profissional. */
 
@@ -35,7 +36,7 @@ export async function loadProfessionalsPage(){
  professionalsQuery=branchId?professionalsQuery.eq("branch_id",branchId):professionalsQuery.is("branch_id",null);
  const [professionalResult,serviceResult,membersResult,assignmentResult]=await Promise.all([
   professionalsQuery.order("name"),
-  supabase.from("services").select("id,name,category,active").eq("org_id",state.organization.id).eq("active",true).order("category").order("name").limit(500),
+  scopeServiceCatalog(supabase.from("services").select("id,name,category,active,branch_id").eq("org_id",state.organization.id).eq("active",true),branchId).order("category").order("name").limit(500),
   supabase.from("org_memberships").select("user_id,role,professional_app_enabled,professional_app_scope").eq("org_id",state.organization.id).eq("status","active").in("role",["owner","admin","receptionist"]),
   supabase.from("professional_services").select("professional_id,service_id").eq("org_id",state.organization.id)
  ]);
