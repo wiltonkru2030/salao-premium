@@ -63,7 +63,7 @@ CREATE POLICY branch_access_guard
       SELECT 1
       FROM public.appointment_groups parent
       WHERE parent.org_id = appointment_group_items.org_id
-        AND parent.id = appointment_group_items.group_id
+        AND parent.id = appointment_group_items.appointment_group_id
         AND private.has_branch_access(parent.org_id, parent.branch_id)
     )
   )
@@ -72,7 +72,7 @@ CREATE POLICY branch_access_guard
       SELECT 1
       FROM public.appointment_groups parent
       WHERE parent.org_id = appointment_group_items.org_id
-        AND parent.id = appointment_group_items.group_id
+        AND parent.id = appointment_group_items.appointment_group_id
         AND private.has_branch_access(parent.org_id, parent.branch_id)
     )
   );
