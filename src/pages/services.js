@@ -13,6 +13,7 @@ let modalListenerInstalled = false;
 
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+/** Renderiza a página de Serviços e a ação para abrir o modal de cadastro. */
 export function servicesPage() {
   return head("Serviços", "Cadastre os serviços que aparecem na agenda, nas comandas e no App Profissional.",
     btn("＋ Novo serviço", "open-service-modal", "primary")) +
@@ -20,6 +21,7 @@ export function servicesPage() {
 }
 
 /** Consulta os serviços e conecta os eventos do modal uma única vez. */
+/** Consulta o catálogo de serviços do tenant ativo e conecta o modal de cadastro. */
 export async function loadServicesPage() {
   const host = document.querySelector("#services-manager");
   if (!host || !state.organization?.id) return;
