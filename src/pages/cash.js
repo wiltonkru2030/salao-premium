@@ -8,7 +8,7 @@ import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
 import { reportError } from "../utils/errors.js";
 import { renderCashDashboard } from "../modules/cash/components/cash-dashboard.js";
-import { openCashRegister, closeCashRegister } from "../modules/cash/services/cash-operations.js";
+import { openCashRegister, closeCashRegister, getCashRegisterSummary } from "../modules/cash/services/cash-operations.js";
 
 /** @typedef {import("../types/tenant.types").TenantContext} TenantContext */
 /** @typedef {import("../types/operations.types").CashRegisterRecord} CashRegisterRecord */
@@ -66,7 +66,7 @@ export async function loadCashPage(){
   // O RPC confere organização e papel antes de expor os totais deste caixa.
   let activeNet=0;
   if(active){
-   const {data:cashSummary,error:summaryError}=await supabase.rpc("get_cash_register_summary",{p_cash_register_id:active.id});
+   const {data:cashSummary,error:summaryError}=await getCashRegisterSummary({supabase,cashRegisterId:active.id});
    if(summaryError)throw summaryError;
    activeNet=Number(cashSummary?.cash_income||0)-Number(cashSummary?.cash_expense||0);
   }
