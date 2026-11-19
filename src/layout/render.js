@@ -20,6 +20,7 @@ import { productsPage, loadProductsPage } from '../pages/products.js';
 import { salesPage, loadSalesPage } from '../pages/sales.js';
 import { cashPage, loadCashPage } from '../pages/cash.js';
 import { financePage, loadFinancePage } from '../pages/finance.js';
+import { expensesPage, loadExpensesPage } from '../pages/expenses.js';
 import { commissionsPage, loadCommissionsPage } from '../pages/commissions.js';
 import { reportsPage } from '../pages/reports.js';
 import { branchesPage, loadBranchesPage } from '../pages/branches.js';
@@ -57,6 +58,7 @@ const pageViews = {
   Vendas: salesPage,
   Caixa: cashPage,
   Financeiro: financePage,
+  Despesas: expensesPage,
   Comissões: commissionsPage,
   Relatórios: reportsPage,
   Unidades: branchesPage,
@@ -128,6 +130,7 @@ function loadCurrentPageData() {
     Orçamentos: loadQuotesPage,
     Caixa: loadCashPage,
     Financeiro: loadFinancePage,
+    Despesas: loadExpensesPage,
     Clientes: loadCustomersPage,
     Serviços: loadServicesPage,
     "Produtos e estoque": loadProductsPage,
