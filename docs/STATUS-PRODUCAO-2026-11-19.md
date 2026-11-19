@@ -244,3 +244,14 @@ Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substitu�
 - A migration foi adicionada somente à branch de trabalho da PR. Não foi aplicada ao projeto Supabase; aplicação requer revisão e execução controlada.
 - Ainda pendente: definir snapshot do percentual de comissão. A regra atual é consultada por recebimento; se a administração alterar o percentual durante uma comanda parcialmente paga, as parcelas futuras podem usar o novo percentual. A solução recomendada é congelar o percentual por item da comanda no primeiro recebimento e manter o valor já aplicado nos lançamentos históricos.
 - Teste E2E não executado nesta sessão por ausência de ambiente QA/segredos configurados no executor. O teste foi atualizado, mas ainda não há resultado de execução.
+
+
+### Snapshot de comissão por item — 19/11/2026
+
+- Criada migration aditiva `20261119170000_snapshot_commission_rate_on_first_payment.sql`. O primeiro recebimento confirmado congela, para cada item da Comanda, o percentual e a elegibilidade da comissão.
+- A regra considera a mesma precedência já utilizada pelo cálculo: profissional + serviço/produto específico antes da regra genérica; na ausência de regra, usa o percentual padrão do profissional. Para produtos, respeita também a configuração de comissão habilitada/desabilitada e o percentual padrão por unidade.
+- Um trigger interno aplica o snapshot a todos os lançamentos futuros do item. Se a comissão de produto estava desabilitada no primeiro recebimento, habilitá-la depois não cria comissão retroativa para aquele item. Uma nova Comanda captura a regra vigente no seu primeiro pagamento.
+- Lançamentos históricos não são reescritos. Itens antigos permanecem com snapshot nulo; seus registros de comissão existentes continuam preservados.
+- O teste de integração foi ampliado: após a primeira parcela, altera o percentual do profissional de 40% para 25%; a segunda parcela do mesmo atendimento deve continuar em 40%, enquanto uma nova Comanda deve capturar 25%. Também verifica que produto sem comissão habilitada continua inelegível.
+- A migration e os testes foram adicionados somente à branch de trabalho. **A migration não foi aplicada ao Supabase** e os testes autenticados não foram executados nesta sessão, pois dependem de ambiente QA descartável e credenciais configuradas.
+- Revisão necessária antes da aplicação: validar o trigger em ambiente QA com cenários de serviços, produtos habilitados/desabilitados, mudança de regra entre parcelas, cancelamento e estorno. Não declarar a funcionalidade pronta para produção até essa validação.
