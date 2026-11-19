@@ -1,8 +1,12 @@
 -- Abre caixas independentes por filial e mantém compatibilidade com a chamada legada central.
 -- A chave única impede duas aberturas simultâneas para a mesma organização/unidade.
-create unique index if not exists cash_registers_one_open_per_org_branch
-  on public.cash_registers (org_id, coalesce(branch_id, '00000000-0000-0000-0000-000000000000'::uuid))
-  where status = 'open';
+create unique index if not exists cash_registers_one_open_central_per_org
+  on public.cash_registers (org_id)
+  where status = 'open' and branch_id is null;
+
+create unique index if not exists cash_registers_one_open_per_branch
+  on public.cash_registers (org_id, branch_id)
+  where status = 'open' and branch_id is not null;
 
 create or replace function public.open_cash_register_for_branch(
   p_org_id uuid,
