@@ -51,6 +51,12 @@ A padronização do CSS e as regras de backend foram atualizadas, mas ainda é n
 - Não registrar senhas, tokens, CPF, CNPJ ou dados bancários nos logs.
 - Não marcar fluxo financeiro como concluído sem verificar os vínculos de Caixa, Comanda, pagamento, comissão e estorno.
 
+## Identidade única da cliente por marca
+
+- Modelo aditivo documentado em [docs/CLIENTE-IDENTIDADE-MARCA.md](docs/CLIENTE-IDENTIDADE-MARCA.md).
+- SQL de referência em `docs/sql/cliente-identidade-marca.sql` (rascunho; não aplicado ao banco).
+- Os cadastros atuais são preservados e vinculados somente após confirmação; não há merge automático por telefone.
+
 ## Aplicativo do Cliente
 
 - Entrada independente em `/cliente/`.
