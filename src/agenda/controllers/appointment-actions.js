@@ -88,6 +88,11 @@ export async function saveAppointment(form) {
   if(!customerResult.data||!serviceResult.data||!professionalResult.data)throw new Error('Um dos registros selecionados não existe ou está inativo.');
 
   const existing=appointmentActionRow();
+  if(state.membership?.role==='professional') {
+    const ownProfessionalIds=new Set((state.agendaProfessionals||[]).map(item=>item[3]));
+    if(existing?.id)throw new Error('O perfil profissional não pode editar ou reagendar atendimentos existentes.');
+    if(!ownProfessionalIds.has(professionalId))throw new Error('Você só pode agendar para o seu próprio perfil profissional.');
+  }
   const payload={
     org_id:state.organization.id,
     customer_id:customerId,
@@ -145,6 +150,7 @@ export async function saveAppointment(form) {
 }
 // Atualiza status e timestamps de chegada, cancelamento ou conclusão.
 export async function updateAppointmentStatus(appointment,status) {
+  if(state.membership?.role==='professional')throw new Error('Esta alteração de status deve ser realizada pela recepção ou administração.');
   const changes={status};
   if(status==='arrived')changes.arrived_at=new Date().toISOString();
   if(status==='cancelled')changes.cancelled_at=new Date().toISOString();
@@ -223,6 +229,7 @@ export async function handleAppointmentAction(action) {
     return;
   }
   if(action==='delete') {
+    if(state.membership?.role==='professional')throw new Error('O perfil profissional não pode excluir agendamentos.');
     if(!window.confirm('Excluir este agendamento? Ele ficará disponível em Recuperar por 30 dias.'))return;
     const {error}=await supabase.from('appointments').delete()
       .eq('org_id',state.organization.id).eq('id',appointment.id);
@@ -240,6 +247,7 @@ export async function saveBlockTime(form) {
   const startTime=String(values.get('start')||'');
   const endTime=String(values.get('end')||'');
   const reason=String(values.get('reason')||'').trim();
+  if(state.membership?.role==='professional' && !(state.agendaProfessionals||[]).some(item=>item[3]===professionalId))throw new Error('Você só pode bloquear seus próprios horários.');
   if(!professionalId||!date||!startTime||!endTime||!reason)throw new Error('Preencha todos os campos do bloqueio.');
   const start=makeTimestamp(date,startTime),end=makeTimestamp(date,endTime);
   if(end<=start)throw new Error('O horário final deve ser posterior ao inicial.');
