@@ -65,3 +65,13 @@ Ainda falta verificar todos os fluxos de I/O e confirmar que cada tela oferece r
 ## Estado Git
 
 A branch de recuperação permanece separada de `main`; a PR #1 está aberta em draft e não foi mesclada. Não houve deploy de produção nesta rodada.
+
+
+## Atualização — módulo Financeiro
+- Implementado painel Financeiro de consulta, conectado ao Supabase e ao carregador da rota.
+- Entradas e saídas do caixa são consultadas em `cash_movements`, filtradas por `org_id` e pelo mês atual.
+- Despesas cadastradas são consultadas separadamente em `expenses`; despesas pendentes não são somadas às saídas efetivas do caixa.
+- Consultas limitadas a 500 registros por conjunto. Não há criação, edição, baixa ou estorno nesta tela.
+- Restrições confirmadas no banco: `cash_movements.movement_type` aceita somente `income` e `expense`; despesas aceitam `pending`, `paid` e `cancelled`.
+- Validação de código: import e carregador da rota conferidos no commit `ac72445d9d150fcaea4987fc2dd5087194e8418f`. Nenhuma execução de CI foi retornada para esse commit até a última consulta; build, testes automatizados e E2E permanecem pendentes de confirmação.
+- Não houve alteração de schema, dados financeiros, permissões, branch principal ou deploy.
