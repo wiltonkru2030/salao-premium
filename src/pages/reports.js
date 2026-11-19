@@ -60,7 +60,7 @@ export async function loadReportsPage() {
         .eq("org_id", orgId).gte("starts_at", startIso).lt("starts_at", endIso)
         .order("starts_at", { ascending: false }).limit(2000),
       supabase.from("commissions")
-        .select("id,professional_id,amount,status,created_at")
+        .select("id,professional_id,amount,status,created_at,paid_at")
         .eq("org_id", orgId).gte("created_at", startIso).lt("created_at", endIso)
         .order("created_at", { ascending: false }).limit(2000)
     ]);
@@ -75,11 +75,11 @@ export async function loadReportsPage() {
     const appointments = appointmentsResult.data || [];
     const commissions = commissionsResult.data || [];
     const sum = (rows, predicate) => rows.filter(predicate).reduce((total, row) => total + Number(row.amount || 0), 0);
-    const received = sum(payments, row => row.status === "confirmed");
+    const received = sum(payments, row => ["confirmed", "refunded"].includes(row.status));
     const cashIn = sum(movements, row => row.movement_type === "income");
     const cashOut = sum(movements, row => row.movement_type === "expense");
     const generatedCommission = sum(commissions, () => true);
-    const paidCommission = sum(commissions, row => row.status === "paid");
+    const paidCommission = sum(commissions, row => row.status === "paid" && row.paid_at && new Date(row.paid_at) >= start && new Date(row.paid_at) < end);
     const completedAppointments = appointments.filter(row => row.status === "completed").length;
     const cancelledAppointments = appointments.filter(row => row.status === "cancelled").length;
     const noShows = appointments.filter(row => row.status === "no_show").length;
@@ -103,7 +103,7 @@ export async function loadReportsPage() {
       ["Saídas registradas no Caixa", money(cashOut), "Inclui despesas, comissões e estornos lançados como saída"],
       ["Resultado dos movimentos", money(cashIn - cashOut), "Entradas menos saídas; não é conciliação bancária"],
       ["Comissões geradas", money(generatedCommission), "Lançamentos criados no período, inclusive pendentes e cancelados"],
-      ["Comissões pagas", money(paidCommission), "Lançamentos com status pago criados no período"]
+      ["Comissões pagas", money(paidCommission), "Comissões efetivamente pagas no período, pela data do pagamento"]
     ].map(([label, value, note]) =>
       '<div class="record-card"><span class="record-main"><b>' + esc(label) + '</b><small>' + esc(note) + '</small></span><span class="record-trailing"><b>' + esc(value) + '</b></span></div>'
     ).join("");
@@ -111,7 +111,7 @@ export async function loadReportsPage() {
     host.innerHTML =
       '<div class="list-toolbar reports-toolbar"><label class="search-box reports-month"><span>Período</span><input id="reports-month" type="month" value="' + esc(period) + '"></label><span class="result-count">' + esc(dateLabel(start)) + '</span></div>' +
       '<div class="metrics">' +
-      metric("Recebimentos confirmados", money(received), payments.filter(row => row.status === "confirmed").length + " parcelas", "não inclui parcelas estornadas") +
+      metric("Recebimentos confirmados", money(received), payments.filter(row => row.status === "confirmed").length + " parcelas", "inclui recebimentos depois estornados; estornos aparecem nas saídas do Caixa") +
       metric("Ticket médio das comandas", money(averageTicket), closedOrders.length + " comandas fechadas", "média do total das comandas fechadas criadas no período") +
       metric("Atendimentos concluídos", String(completedAppointments), appointments.length + " agendamentos no período", "por data e hora agendada") +
       metric("Comandas em aberto", String(pendingOrders), "comandas não finalizadas", "inclui parciais e aguardando pagamento") +
