@@ -173,3 +173,16 @@ Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substitu�
 - Não foram alteradas configurações do Supabase, lista de redirects, usuários ou senhas. O envio real do e-mail e o retorno do link ainda precisam ser testados com uma conta QA. Não declarar o fluxo validado em produção até executar esse teste e conferir o provedor SMTP.
 
 - Ajuste adicional: a sessão recebida durante `PASSWORD_RECOVERY` não inicializa o painel administrativo antes de a nova senha ser definida; a tela de redefinição permanece ativa.
+
+
+### Auditoria do App Profissional — 19/11/2026
+
+- Confirmado que a aplicação ainda compartilha o shell administrativo, mas as políticas RLS do banco já limitam profissionais ativos e vinculados aos próprios dados: `professionals` pelo `profile_id=auth.uid()`, `appointments` pelo profissional vinculado, `service_orders` por profissional responsável/itens atribuídos e `commissions`/pagamentos pelos lançamentos do próprio profissional.
+- A função `private.current_professional_id` exige membership ativa com papel `professional`, vínculo `profile_id=auth.uid()` e profissional ativo. `private.professional_app_profile_id` também exige membership ativa, vínculo e acesso habilitado; perfis não profissionais precisam de `professional_app_enabled` e escopo permitido.
+- `private.professional_app_scope` retorna `self` para profissional ativo com acesso habilitado; escopos `calendar_all` e `all` dependem de configuração explícita em membership para outros papéis. Funções auxiliares de Comanda conferem vínculo do profissional antes de permitir leitura por item/responsabilidade.
+- A tabela `appointments` tem SELECT escopado, INSERT de profissional apenas para seu próprio `professional_id`, origem `professional` e `created_by=auth.uid()`. UPDATE fica limitado a owner/admin/manager/receptionist; profissional não altera diretamente agendamentos por update genérico.
+- `service_orders` e `service_order_items` têm políticas de leitura por responsabilidade/itens atribuídos. O profissional não pode efetuar pagamento de Comanda pela tela: ações financeiras são reservadas aos papéis autorizados; pagamento efetivo é feito por RPC transacional.
+- `commissions` e `commission_payouts` permitem ao profissional consultar somente os próprios lançamentos/pagamentos. A tela de Comissões não permite que perfil profissional altere regras ou pague comissões.
+- Falha de interface encontrada: o menu global não filtrava páginas pelo perfil, expondo links administrativos mesmo quando o banco negaria as consultas. Corrigido `src/layout/render.js`: perfil `professional` agora visualiza somente Agenda, Comanda, Comissões e Configurações; acesso direto a outras rotas é redirecionado à Agenda. A restrição é de navegação, não substitui RLS/RPC.
+- O perfil profissional ainda utiliza o shell compartilhado e não tem uma aplicação mobile/PWA independente. A tela Configurações não tem um conjunto específico de preferências do profissional. Esses pontos permanecem pendentes para o App Profissional completo.
+- Commit de código: `87f458e8cdaaac38c04e0ae4ae3cf224f465fbca`. Nenhuma policy, RPC, dado ou configuração Supabase foi alterada. Não foram executados testes E2E com contas profissionais, validação visual/mobile ou teste de tentativas negativas por API; build/CI do novo commit ainda precisa ser confirmado.
