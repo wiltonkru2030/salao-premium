@@ -4,6 +4,8 @@ import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
 import { reportError } from "../utils/errors.js";
 
+/** A gestão de acessos é restrita ao proprietário/administrador, conforme o RPC. */
+const canManageTeam=()=>["owner","admin"].includes(state.membership?.role);
 const roleLabel=role=>({owner:"Proprietário",admin:"Administrador",manager:"Gerente",receptionist:"Recepção",professional:"Profissional",finance:"Financeiro",viewer:"Consulta"})[role]||role;
 /** Renderiza a página de Equipe e permissões e seu estado inicial de carregamento. */
 export function teamPage(){
@@ -42,6 +44,7 @@ export async function loadTeamPage(){
    host.dataset.bound="true";
    host.addEventListener("click",async event=>{
     const button=event.target.closest("[data-reception-access]");if(!button)return;
+    if(!canManageTeam()){toast("Somente proprietário ou administrador pode alterar acessos.");return;}
     const currentlyEnabled=button.dataset.enabled==="true";
     button.disabled=true;button.textContent="Atualizando…";
     try {
