@@ -1,6 +1,6 @@
 /** Testes dos contratos de abertura e fechamento do Caixa com cliente Supabase simulado. */
 import assert from "node:assert/strict";
-import { openCashRegister, closeCashRegister } from "./services/cash-operations.js";
+import { openCashRegister, closeCashRegister, getCashRegisterSummary } from "./services/cash-operations.js";
 
 const calls=[];
 const supabase={rpc:async(name,args)=>{calls.push({name,args});return {data:{ok:true},error:null};}};
