@@ -2,6 +2,7 @@
 import { state } from '../state.js';
 import { records } from '../data/index.js';
 import { head, btn, esc, status, initials } from '../utils.js';
+/** Renderiza listagem genérica baseada em registros locais demonstrativos; não deve ser usada como CRUD persistente. */
 export function cardList(name){let data=records[name]||[];const q=state.query.toLocaleLowerCase('pt-BR');data=data.filter(r=>r.join(' ').toLocaleLowerCase('pt-BR').includes(q));const titleMap={'Clientes':'clientes','Profissionais':'profissionais','Serviços':'serviços','Produtos e estoque':'produtos','Vendas':'vendas','Caixa':'movimentações','Financeiro':'lançamentos','Comissões':'comissões','Relatórios':'indicadores','Unidades':'unidades','Equipe e permissões':'perfis'};let h=head(name,'Consulte e organize '+
 (titleMap[name]||name.toLowerCase())+
 ' da sua unidade.');h+='<div class="list-toolbar"><label class="search-box"><span>⌕</span><input id="record-search" value="'+esc(state.query)+
