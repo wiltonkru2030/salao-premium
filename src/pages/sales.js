@@ -76,10 +76,10 @@ export async function loadSalesPage() {
     }).join("");
 
     host.innerHTML =
-      '<div class="metrics-grid">' +
-      '<article class="metric-card"><small>Vendas no histórico</small><b>' + totalSales + '</b></article>' +
-      '<article class="metric-card"><small>Vendas concluídas</small><b>' + completed + '</b></article>' +
-      '<article class="metric-card"><small>Total listado (não é saldo de caixa)</small><b>' + money(gross) + '</b></article>' +
+      '<div class="metrics">' +
+      metric("Vendas no histórico", String(totalSales), "registros consultados", "até 200 mais recentes") +
+      metric("Vendas pagas", String(completed), "status pago", "sem contar vendas canceladas") +
+      metric("Total listado", money(gross), "vendas não canceladas/estornadas", "não representa saldo de caixa") +
       '</div>' +
       '<div class="list-toolbar"><label class="search-box"><span>⌕</span><input id="sales-search" type="search" placeholder="Buscar por venda ou cliente…"></label>' +
       '<span class="result-count">Até 200 vendas mais recentes</span></div>' +
