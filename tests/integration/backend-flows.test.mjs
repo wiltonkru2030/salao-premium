@@ -103,6 +103,8 @@ await step("8. Recebimento exige Caixa aberto; pagamento parcial gera entrada no
   expectFail(await A.rpc("open_cash_register", { p_org_id: A.orgId, p_opening_amount: 0 }), "caixa duplicado");
   const pay = expectOk(await A.rpc("register_service_order_payment", { p_order_id: ctx.orderId, p_amount: 80, p_payment_method: "pix" }), "parcial");
   assert.equal(Number(pay.balance), 120);
+  // A regra comercial muda após a primeira parcela: este item deve preservar os 40% originais.
+  expectOk(await A.update("professionals", "id=eq." + ctx.pro.id, { commission_rate: 25 }), "alterar regra após primeiro recebimento");
 });
 
 await step("Bloqueia edição/remoção de itens e desconto após recebimento", async () => {
@@ -139,6 +141,10 @@ await step("11. Comissões proporcionais aos recebimentos (40% sobre o serviço 
   const total = comm.reduce((s, c) => s + Number(c.amount), 0);
   assert.equal(Math.round(total * 100) / 100, 40);
   assert.ok(comm.length >= 2, "esperado um lançamento por recebimento");
+  assert.ok(comm.every(c => Number(c.rate) === 40), "todas as parcelas do mesmo item devem preservar os 40% congelados no primeiro recebimento");
+  const snap = expectOk(await A.select("service_order_items", "select=commission_rate_snapshot,commission_enabled_snapshot&order_id=eq." + ctx.orderId), "snapshot");
+  assert.ok(snap.some(i => Number(i.commission_rate_snapshot) === 40 && i.commission_enabled_snapshot === true), "serviço deve guardar o percentual original");
+  assert.ok(snap.some(i => i.commission_enabled_snapshot === false), "produto sem comissão habilitada deve continuar inelegível");
   ctx.commissions = comm;
 });
 
@@ -157,6 +163,9 @@ await step("13. Cancela Comanda com pagamento parcial e gera estorno no Caixa", 
   const started = expectOk(await A.rpc("start_appointment_service_order", { p_appointment_id: appt.id, p_existing_order_id: null, p_force_new: false }), "iniciar 2");
   const orderId = started.order_id || started.service_order_id || started.id;
   expectOk(await A.rpc("register_service_order_payment", { p_order_id: orderId, p_amount: 30, p_payment_method: "debit_card" }), "parcial 2");
+  const itemRows = expectOk(await A.select("service_order_items", "select=id&order_id=eq." + orderId), "itens comanda 2");
+  const freshCommissions = expectOk(await A.select("commissions", "select=rate&service_order_item_id=in.(" + itemRows.map(i => i.id).join(",") + ")"), "comissão com nova regra");
+  assert.ok(freshCommissions.length > 0 && freshCommissions.every(c => Number(c.rate) === 25), "nova comanda deve usar a regra atual de 25%");
   expectFail(await A.rpc("cancel_service_order", { p_order_id: orderId, p_refund_payments: false }), "cancelar sem estorno", /estorno/);
   const res = expectOk(await A.rpc("cancel_service_order", { p_order_id: orderId, p_refund_payments: true }), "cancelar com estorno");
   assert.equal(Number(res.refunded_amount), 30);
