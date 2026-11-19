@@ -73,6 +73,7 @@ export async function loadCashPage(){
 '</b><small>'+esc(m.movement_type==="income"?"Entrada":m.movement_type==="expense"?"Saída":m.movement_type)+(payment?" · Pagamento individual":"")+
 '</small></span></article>';
   }).join("");
+  host.dataset.activeRegisterId=active?.id||"";
   host.innerHTML=renderCashDashboard({
    active,activeNet,income,expense,net,movements,history,registers,branches,selectedBranchId,canOperate:["owner","admin","manager","receptionist","finance"].includes(state.membership?.role)
   });
@@ -102,11 +103,11 @@ export async function loadCashPage(){
     try{
      const values=new FormData(form);
      if(form.matches("#cash-open-form")){
-      const {error}=await openCashRegister({supabase,orgId,branchId:selectedBranchId||null,openingAmount:values.get("opening_amount")});
+      const {error}=await openCashRegister({supabase,orgId,branchId:host.dataset.branchId||null,openingAmount:values.get("opening_amount")});
       if(error)throw error;
       toast("Caixa aberto e registrado nesta unidade.");
      }else{
-      const {data,error}=await closeCashRegister({supabase,cashRegisterId:active?.id,closingAmount:values.get("closing_amount")});
+      const {data,error}=await closeCashRegister({supabase,cashRegisterId:host.dataset.activeRegisterId,closingAmount:values.get("closing_amount")});
       if(error)throw error;
       toast("Caixa fechado. Diferença: "+Number(data?.difference||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})+".");
      }
