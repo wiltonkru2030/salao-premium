@@ -255,3 +255,15 @@ Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substitu�
 - O teste de integração foi ampliado: após a primeira parcela, altera o percentual do profissional de 40% para 25%; a segunda parcela do mesmo atendimento deve continuar em 40%, enquanto uma nova Comanda deve capturar 25%. Também verifica que produto sem comissão habilitada continua inelegível.
 - A migration e os testes foram adicionados somente à branch de trabalho. **A migration não foi aplicada ao Supabase** e os testes autenticados não foram executados nesta sessão, pois dependem de ambiente QA descartável e credenciais configuradas.
 - Revisão necessária antes da aplicação: validar o trigger em ambiente QA com cenários de serviços, produtos habilitados/desabilitados, mudança de regra entre parcelas, cancelamento e estorno. Não declarar a funcionalidade pronta para produção até essa validação.
+
+
+### Auditoria complementar de segurança financeira e RPCs — 19/11/2026
+
+- Reexecutados os Security Advisors do Supabase. Foram encontrados 16 overloads/funções públicas `SECURITY DEFINER` executáveis por usuários autenticados e o alerta de proteção contra senhas vazadas desativada. A lista inclui operações financeiras e administrativas (pagamento, estorno, caixa, estoque, despesas, acesso profissional e início de atendimento).
+- A inspeção das definições confirmou validação de `auth.uid()` e/ou papel da organização em várias RPCs financeiras. As funções de pagamento, cancelamento, devolução e pagamento de comissão validam o papel da organização; as operações de estoque exigem administração. O alerta do advisor, isoladamente, não prova vulnerabilidade.
+- As tabelas `service_order_payments`, `commissions`, `cash_movements`, `commission_payouts` e `commission_payout_items` não exibiram políticas de escrita direta para usuários autenticados na consulta de RLS. O acesso de leitura é limitado por organização/papel ou vínculo do profissional. Não foi ampliada nenhuma policy.
+- A auditoria identificou duas versões sobrecarregadas de algumas RPCs de acesso profissional; devem continuar sendo avaliadas por assinatura e privilégio individual, sem revogação global.
+- Advisors de performance continuam reportando 45 chaves estrangeiras sem índice e duas tabelas com políticas permissivas SELECT sobrepostas (`appointments` e `appointment_blocks`). Não foi criado índice em massa nem removida policy sem análise de carga e equivalência.
+- **Diferença entre branch e produção:** a função `register_service_order_payment` atualmente instalada no Supabase ainda contém a tolerância de R$ 0,01 e não contém a validação explícita de duas casas decimais. A migration de correção está apenas na branch da PR. Portanto, a correção ainda não protege o ambiente de produção.
+- **Configuração pendente:** o advisor reporta desativada a proteção contra senhas vazadas do Supabase Auth. Ativar exige revisão da configuração de autenticação e validação do fluxo de cadastro/troca de senha.
+- Nenhuma RPC, policy, grant, dado financeiro ou configuração de autenticação foi alterada nesta auditoria. Não houve pagamentos, estornos ou fechamento de caixa reais.
