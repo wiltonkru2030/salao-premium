@@ -4,7 +4,7 @@ import {
   normalizeOrganizationSlug,
   validateBirthDate,
   validateCustomerProfile
-} from "./customer-account.js";
+} from "./customer-account-utils.js";
 
 assert.equal(normalizeCustomerName("  Maria   da   Silva "), "Maria da Silva");
 assert.equal(normalizeOrganizationSlug(" Studio-Beleza "), "studio-beleza");
