@@ -6,13 +6,13 @@
  */
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
-import { head, esc } from "../utils.js";
+import { head, esc, metric } from "../utils.js";
 import { reportError } from "../utils/errors.js";
 
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dateTime = value => value ? new Date(value).toLocaleString("pt-BR") : "—";
 const paymentLabels = { pix: "PIX", cash: "Dinheiro", credit_card: "Cartão de crédito", debit_card: "Cartão de débito", transfer: "Transferência", voucher: "Voucher", other: "Outro" };
-const statusLabels = { open: "Em aberto", completed: "Concluída", paid: "Paga", cancelled: "Cancelada", refunded: "Estornada", partially_paid: "Parcialmente paga" };
+const statusLabels = { open: "Em aberto", paid: "Paga", cancelled: "Cancelada", refunded: "Estornada" };
 
 /** Renderiza a estrutura da página Vendas com estado inicial de carregamento. */
 export function salesPage() {
@@ -59,7 +59,7 @@ export async function loadSalesPage() {
     const totalSales = rows.length;
     const gross = rows.filter(row => row.status !== "cancelled" && row.status !== "refunded")
       .reduce((sum, row) => sum + Number(row.total || 0), 0);
-    const completed = rows.filter(row => ["completed", "paid"].includes(row.status)).length;
+    const completed = rows.filter(row => row.status === "paid").length;
     const cards = rows.map(row => {
       const items = itemsBySale.get(row.id) || [];
       const customer = row.customer_id ? customers.get(row.customer_id) || "Cliente não localizado" : "Consumidor não identificado";
