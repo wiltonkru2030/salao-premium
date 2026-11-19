@@ -27,6 +27,7 @@ document.addEventListener('click',async event=>{
 
   const removeBlock=target.closest('[data-remove-block]');
   if(removeBlock) {
+    if(state.membership?.role==='professional'){toast('Somente a administração pode remover bloqueios.');return;}
     if(!window.confirm('Remover este bloqueio de horário?'))return;
     const {error}=await supabase.from('appointment_blocks').delete()
       .eq('org_id',state.organization.id).eq('id',removeBlock.dataset.removeBlock);
@@ -129,6 +130,7 @@ document.addEventListener('dragover',event=>{
 document.addEventListener('dragleave',event=>event.target.closest('[data-slot],[data-month-date]')?.classList.remove('drop-target'));
 document.addEventListener('drop',async event=>{
  try{
+  if(state.membership?.role==='professional')return;
   const slot=event.target.closest('[data-slot],[data-month-date]');
   if(!slot||!state.dragId)return;
   event.preventDefault();
