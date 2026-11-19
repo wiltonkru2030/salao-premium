@@ -186,3 +186,15 @@ Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substitu�
 - Falha de interface encontrada: o menu global não filtrava páginas pelo perfil, expondo links administrativos mesmo quando o banco negaria as consultas. Corrigido `src/layout/render.js`: perfil `professional` agora visualiza somente Agenda, Comanda, Comissões e Configurações; acesso direto a outras rotas é redirecionado à Agenda. A restrição é de navegação, não substitui RLS/RPC.
 - O perfil profissional ainda utiliza o shell compartilhado e não tem uma aplicação mobile/PWA independente. A tela Configurações não tem um conjunto específico de preferências do profissional. Esses pontos permanecem pendentes para o App Profissional completo.
 - Commit de código: `87f458e8cdaaac38c04e0ae4ae3cf224f465fbca`. Nenhuma policy, RPC, dado ou configuração Supabase foi alterada. Não foram executados testes E2E com contas profissionais, validação visual/mobile ou teste de tentativas negativas por API; build/CI do novo commit ainda precisa ser confirmado.
+
+
+### Auditoria de ações da Agenda por perfil — 19/11/2026
+
+- Revisadas as políticas RLS de `appointments` e `appointment_blocks`. O perfil profissional pode inserir agendamentos somente para seu próprio `professional_id`, com `booking_source='professional'` e `created_by=auth.uid()`. UPDATE/DELETE de agendamento ficam para owner/admin/manager/receptionist. Bloqueios podem ser inseridos pelo próprio profissional, mas remoção/edição é administrativa.
+- O backend possui proteção contra sobreposição de agendamentos e bloqueios no trigger `private.prevent_appointment_overlap`; a validação transacional do banco é a proteção final contra conflitos concorrentes.
+- Incompatibilidade de interface corrigida: o drawer de um profissional agora oferece somente iniciar atendimento/abrir comanda, sem confirmação, chegada, reagendamento, cancelamento ou exclusão. Operações sensíveis também têm validações defensivas no controlador/casos de uso. Profissional não pode arrastar e soltar horários nem remover bloqueios.
+- Criação de agendamento pelo profissional valida que o profissional selecionado esteja entre os profissionais retornados no escopo próprio da Agenda; edição de agendamento existente é recusada na camada de aplicação para evitar oferecer uma ação que a RLS rejeita.
+- Bloqueio de horário continua permitido somente para o próprio profissional; a política RLS também exige `created_by=auth.uid()`. A interface não permite remover bloqueios para esse perfil.
+- Fluxo autorizado de iniciar atendimento usa RPC `start_appointment_service_order` / `start_appointment_group_service_order`, que valida autenticação, vínculo do profissional e escopo do atendimento antes de criar/reutilizar a comanda.
+- Commits de correção: `f6fe0ea1cf20eb893afcc29ccff3328bc0fd2a41`, `0cd765b9259ee16abc8faf289e745d35af1bdd53`, `e9b4676f2d5d16b9393bf8707b38656bf747dd89`.
+- Não foi alterada nenhuma policy/RPC/tabela no Supabase. Não foram executados testes E2E com usuários de QA nem build local; as alterações precisam de validação automatizada e manual antes de produção.
