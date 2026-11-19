@@ -10,6 +10,7 @@ import { reportError } from "../utils/errors.js";
 
 let modalListenerInstalled = false;
 
+/** Renderiza a página de Clientes e a ação para abrir o modal de cadastro. */
 export function customersPage() {
   return head("Clientes", "Cadastre e mantenha os dados dos clientes em um único lugar.",
     btn("＋ Novo cliente", "open-customer-modal", "primary")) +
@@ -17,6 +18,7 @@ export function customersPage() {
 }
 
 /** Consulta os clientes e conecta os eventos do modal uma única vez. */
+/** Consulta clientes do tenant ativo e conecta os eventos do modal de cadastro. */
 export async function loadCustomersPage() {
   const host = document.querySelector("#customers-manager");
   if (!host || !state.organization?.id) return;
