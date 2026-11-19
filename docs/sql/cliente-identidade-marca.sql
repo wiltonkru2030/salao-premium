@@ -21,7 +21,7 @@ create table if not exists public.customer_accounts (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint customer_accounts_birth_date_check
-    check (birth_date is null or (birth_date >= date '1900-01-01' and birth_date <= current_date)),
+    check (birth_date is null or birth_date >= date '1900-01-01'),
   constraint customer_accounts_org_id_id_key unique (org_id, id),
   constraint customer_accounts_org_user_key unique (org_id, auth_user_id)
 );
