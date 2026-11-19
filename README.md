@@ -50,3 +50,10 @@ A padronização do CSS e as regras de backend foram atualizadas, mas ainda é n
 - Criar migrations aditivas e manter os arquivos versionados em `supabase/migrations/`.
 - Não registrar senhas, tokens, CPF, CNPJ ou dados bancários nos logs.
 - Não marcar fluxo financeiro como concluído sem verificar os vínculos de Caixa, Comanda, pagamento, comissão e estorno.
+
+## Aplicativo do Cliente
+
+- Entrada independente em `/cliente/`.
+- Autenticação por Google OAuth e chave de acesso (Passkey) do Supabase Auth.
+- Documentação de configuração e limitações em [cliente/README.md](cliente/README.md).
+- O vínculo seguro entre identidade Auth e cadastro de cliente, PIN local e fluxo completo de reservas permanecem em implementação; não liberar como produto final ainda.
