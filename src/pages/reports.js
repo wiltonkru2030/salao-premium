@@ -37,6 +37,7 @@ export async function loadReportsPage() {
   if (!host || !orgId || !monthInput) return;
 
   const period = monthInput.value || dateInputValue(new Date());
+  host.dataset.period = period;
   const { start, end, startIso, endIso } = monthBounds(period);
   host.querySelector(".result-count").textContent = "Consultando " + dateLabel(start) + "…";
 
