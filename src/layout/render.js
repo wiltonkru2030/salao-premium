@@ -127,6 +127,7 @@ function loadCurrentPageData() {
     Comanda: loadComandaPage,
     Orçamentos: loadQuotesPage,
     Caixa: loadCashPage,
+    Financeiro: loadFinancePage,
     Clientes: loadCustomersPage,
     Serviços: loadServicesPage,
     "Produtos e estoque": loadProductsPage,
