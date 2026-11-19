@@ -210,3 +210,15 @@ Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substitu�
 - Outro cuidado de UX: a consulta de pagamentos retorna vazia para profissional comum por desenho da RLS. A tela deve distinguir “histórico financeiro restrito” de “nenhum pagamento registrado”, para não induzir o profissional a interpretar ausência de acesso como ausência de recebimento.
 - Não foram alterados código, políticas, RPCs, dados ou configurações Supabase nesta auditoria. O próximo ajuste deve corrigir a interface de inclusão do serviço próprio e a mensagem de visibilidade financeira, seguido de testes unitários e E2E com conta profissional e conta administrativa.
 - A RPC de pagamento/cancelamento está executável por `authenticated`, não por `anon`; ambas são `SECURITY DEFINER` e validam `auth.uid()` e o papel/escopo antes de executar operações financeiras. A função interna de cálculo de comissão permanece inacessível diretamente a `authenticated` e `anon`.
+
+
+### Correção da interface da Comanda para profissional — 19/11/2026
+
+- A tela agora calcula a permissão de lançamento próprio antes de renderizar os detalhes. Para perfil `professional`, o formulário de serviço aparece somente em comanda aberta/em andamento atribuída ao profissional autenticado e cujo vínculo profissional foi confirmado pela consulta sob RLS.
+- O profissional não escolhe outro responsável no formulário: o `professional_id` é definido a partir da comanda atribuída. A inserção continua passando pela política RLS e pelos triggers do banco, que exigem o profissional autenticado, serviço ativo e elegibilidade profissional-serviço, além de normalizar descrição, quantidade, preço e desconto.
+- Formulário de produto não é renderizado nem inicializado para profissional comum. A consulta do catálogo de produtos é omitida para esse perfil para evitar uma consulta que a RLS corretamente negaria.
+- Consulta de pagamentos é omitida para profissional comum. A seção financeira agora informa explicitamente que pagamentos e saldo são restritos, em vez de exibir falsamente “Nenhum pagamento registrado”.
+- Testes do componente foram ampliados para garantir que o profissional autorizado veja apenas o formulário de serviço próprio, sem produto, pagamento ou informação enganosa de ausência de recebimentos; também cobre profissional sem vínculo elegível.
+- Arquivos alterados: `src/pages/comanda.js`, `src/modules/comanda/components/comanda-detail.js` e `src/modules/comanda/comanda-detail.test.js`.
+- Nenhuma policy, RPC, dado ou configuração do Supabase foi alterada. As proteções de banco existentes continuam sendo a autoridade final.
+- Ainda é necessário executar a suíte de testes no CI e um E2E autenticado com uma conta profissional real/QA; o teste unitário de apresentação não comprova a autorização ponta a ponta nem a elegibilidade de serviços na base real.
