@@ -22,7 +22,7 @@ import { cashPage, loadCashPage } from '../pages/cash.js';
 import { financePage } from '../pages/finance.js';
 import { commissionsPage, loadCommissionsPage } from '../pages/commissions.js';
 import { reportsPage } from '../pages/reports.js';
-import { branchesPage } from '../pages/branches.js';
+import { branchesPage, loadBranchesPage } from '../pages/branches.js';
 import { teamPage, loadTeamPage } from '../pages/team.js';
 import { recycleBinPage, loadRecycleBinPage } from '../pages/recycle-bin.js';
 
