@@ -46,7 +46,7 @@ export async function loadReportsPage() {
   host.querySelector(".result-count").textContent = "Consultando " + dateLabel(start) + "…";
 
   try {
-    const [paymentsResult, movementsResult, ordersResult, appointmentsResult, commissionsResult] = await Promise.all([
+    const [paymentsResult, movementsResult, ordersResult, appointmentsResult, commissionsResult, paidCommissionsResult] = await Promise.all([
       supabase.from("service_order_payments")
         .select("id,order_id,amount,status,paid_at,refunded_at")
         .eq("org_id", orgId).gte("paid_at", startIso).lt("paid_at", endIso)
@@ -66,9 +66,13 @@ export async function loadReportsPage() {
       supabase.from("commissions")
         .select("id,professional_id,amount,status,created_at,paid_at")
         .eq("org_id", orgId).gte("created_at", startIso).lt("created_at", endIso)
-        .order("created_at", { ascending: false }).limit(2000)
+        .order("created_at", { ascending: false }).limit(2000),
+      supabase.from("commissions")
+        .select("id,amount,paid_at")
+        .eq("org_id", orgId).eq("status", "paid").gte("paid_at", startIso).lt("paid_at", endIso)
+        .order("paid_at", { ascending: false }).limit(2000)
     ]);
-    for (const result of [paymentsResult, movementsResult, ordersResult, appointmentsResult, commissionsResult]) {
+    for (const result of [paymentsResult, movementsResult, ordersResult, appointmentsResult, commissionsResult, paidCommissionsResult]) {
       if (result.error) throw result.error;
     }
     if (state.organization?.id !== orgId || host.dataset.period !== period) return;
@@ -83,7 +87,7 @@ export async function loadReportsPage() {
     const cashIn = sum(movements, row => row.movement_type === "income");
     const cashOut = sum(movements, row => row.movement_type === "expense");
     const generatedCommission = sum(commissions, () => true);
-    const paidCommission = sum(commissions, row => row.status === "paid" && row.paid_at && new Date(row.paid_at) >= start && new Date(row.paid_at) < end);
+    const paidCommission = (paidCommissionsResult.data || []).reduce((total, row) => total + Number(row.amount || 0), 0);
     const completedAppointments = appointments.filter(row => row.status === "completed").length;
     const cancelledAppointments = appointments.filter(row => row.status === "cancelled").length;
     const noShows = appointments.filter(row => row.status === "no_show").length;
@@ -115,7 +119,7 @@ export async function loadReportsPage() {
     host.innerHTML =
       '<div class="list-toolbar reports-toolbar"><label class="search-box reports-month"><span>Período</span><input id="reports-month" type="month" value="' + esc(period) + '"></label><span class="result-count">' + esc(dateLabel(start)) + '</span></div>' +
       '<div class="metrics">' +
-      metric("Recebimentos confirmados", money(received), payments.filter(row => row.status === "confirmed").length + " parcelas", "inclui recebimentos depois estornados; estornos aparecem nas saídas do Caixa") +
+      metric("Recebimentos confirmados", money(received), payments.filter(row => ["confirmed", "refunded"].includes(row.status)).length + " parcelas", "inclui recebimentos depois estornados; estornos aparecem nas saídas do Caixa") +
       metric("Ticket médio das comandas", money(averageTicket), closedOrders.length + " comandas fechadas", "média do total das comandas fechadas criadas no período") +
       metric("Atendimentos concluídos", String(completedAppointments), appointments.length + " agendamentos no período", "por data e hora agendada") +
       metric("Comandas em aberto", String(pendingOrders), "comandas não finalizadas", "inclui parciais e aguardando pagamento") +
