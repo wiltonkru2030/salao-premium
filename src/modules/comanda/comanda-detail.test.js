@@ -18,7 +18,6 @@ assert.equal(view.allowEdit,false);
 assert.equal(view.allowPay,false);
 assert.equal(view.canEditItems,false);
 
-process.stdout.write("Testes do componente Comanda: OK\n");
 
 const professionalView = buildComandaDetails(
   { id:"order-pro",order_number:13,status:"in_progress",total:120,subtotal:120,discount:0,created_at:"2026-11-19T10:00:00Z",notes:"",customer_id:null },
@@ -39,3 +38,5 @@ const unauthorizedProfessionalView = buildComandaDetails(
 );
 assert.doesNotMatch(unauthorizedProfessionalView.html,/Adicionar serviço/);
 assert.doesNotMatch(unauthorizedProfessionalView.html,/Adicionar produto/);
+
+process.stdout.write("Testes do componente Comanda: OK\n");
