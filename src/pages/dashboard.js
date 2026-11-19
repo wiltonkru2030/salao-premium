@@ -1,6 +1,7 @@
 /** Dashboard demonstrativo. Responsabilidade: apresentar métricas e compromissos fictícios; não representa dados financeiros reais. */
 import { appts } from '../data/index.js';
 import { head, btn, metric, initials, status, esc } from '../utils.js';
+/** Renderiza o painel inicial demonstrativo; os indicadores apresentados não são dados financeiros reais. */
 export function dashboard(){let a=head('Visão geral','Acompanhe a operação do seu salão em um só lugar.',btn('＋ Novo agendamento','new-appointment','primary'));a+='<div class="metrics">'+metric('Faturamento hoje','R$ 2.840','+12,8%')+metric('Agendamentos','18','+4,2%')+metric('Clientes atendidos','12','+8,1%')+metric('Ticket médio','R$ 236,66','+5,6%')+
 '</div><div class="dashboard-grid"><section class="surface chart-card"><div class="section-heading"><div><h2>Desempenho de vendas</h2><p>Últimos 7 dias · valores demonstrativos</p></div><span class="subtle-tag">Esta semana</span></div><div class="chart-area">'+[42,62,49,78,58,92,70].map((v,i)=>'<div class="chart-column"><div class="chart-bar chart-bar--'+v+
 '"></div><small>'+['S','T','Q','Q','S','S','D'][i]+
