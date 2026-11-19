@@ -35,6 +35,7 @@ function renderList(quotes, customersById) {
   host.innerHTML = renderQuoteList(quotes, customersById);
 }
 
+/** Inicializa a página de Orçamentos e limpa a seleção temporária da proposta. */
 export function quotesPage() {
   selectedCustomer=null; items=[]; activeQuote=null;
   return head("Orçamentos","Crie propostas, apresente valores e acompanhe a decisão dos clientes.")+
@@ -45,6 +46,7 @@ export function quotesPage() {
  * Carrega clientes, serviços, profissionais, regras e orçamentos do tenant ativo.
  * @returns {Promise<void>} Atualiza a interface sem misturar dados de organizações.
  */
+/** Carrega catálogo, regras comerciais e orçamentos do tenant ativo e conecta os fluxos da página. */
 export async function loadQuotesPage() {
   const host=document.querySelector("#quotes-manager");
   if(!host||!state.organization?.id)return;
