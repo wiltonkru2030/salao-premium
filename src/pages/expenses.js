@@ -14,7 +14,7 @@ const canManage = () => ["owner", "admin", "manager", "finance"].includes(state.
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dateLabel = value => value ? new Date(value + (String(value).length === 10 ? "T12:00:00" : "")).toLocaleDateString("pt-BR") : "Sem vencimento";
 const labels = { pending: "Pendente", paid: "Paga", cancelled: "Cancelada" };
-const methods = ["cash", "pix", "credit_card", "debit_card", "transfer", "voucher", "other"];
+const methodOptions = [["cash","Dinheiro"],["pix","PIX"],["credit_card","Cartão de crédito"],["debit_card","Cartão de débito"],["transfer","Transferência"],["voucher","Voucher"],["other","Outro"]];
 
 export function expensesPage() {
   return head("Despesas", "Cadastre compromissos, registre pagamentos e acompanhe vencimentos.",
@@ -61,6 +61,16 @@ export async function loadExpensesPage() {
       '<label>Vencimento<input name="due_date" type="date"></label>' +
       '<label class="sp-span">Observações<textarea name="notes" rows="3" maxlength="1000"></textarea></label>' +
       '</div><footer class="sp-modal-foot"><button class="btn secondary" type="button" data-close-expense-modal>Cancelar</button><button class="btn primary" type="submit">Cadastrar despesa</button></footer></form></div></dialog>' : "") +
+
+      '<dialog class="sp-modal" id="expense-payment-modal" aria-labelledby="expense-payment-title"><div class="sp-modal-shell">' +
+      '<header class="sp-modal-head"><div><h2 id="expense-payment-title">Registrar pagamento</h2><p>Confirme a forma de pagamento e o lançamento no caixa.</p></div>' +
+      '<button class="sp-modal-close" type="button" data-close-payment-modal aria-label="Fechar">×</button></header>' +
+      '<form id="expense-payment-form"><div class="sp-modal-body"><input type="hidden" name="expense_id">' +
+      '<label class="sp-span">Forma de pagamento<select name="payment_method" required>' +
+      methodOptions.map(([value, label]) => '<option value="' + value + '">' + label + '</option>').join("") +
+      '</select></label><label class="sp-span"><span><input type="checkbox" name="use_cash" checked> Registrar a saída também no Caixa</span></label>' +
+      '<p class="demo-note sp-span">Desmarque somente se o pagamento ocorreu fora do caixa do sistema.</p></div>' +
+      '<footer class="sp-modal-foot"><button class="btn secondary" type="button" data-close-payment-modal>Voltar</button><button class="btn primary" type="submit">Confirmar pagamento</button></footer></form></div></dialog>' +
       '<div class="list-toolbar"><span class="result-count">' + rows.length + ' despesa(s)</span></div>' +
       '<div class="record-list">' + (cards || '<div class="empty-state">Nenhuma despesa cadastrada.</div>') + '</div>' +
       '<p class="demo-note">O pagamento usa uma operação transacional do banco. Ao lançar no caixa, a saída é registrada automaticamente uma única vez.</p>';
@@ -70,12 +80,18 @@ export async function loadExpensesPage() {
     if (!modalListenerInstalled) {
       modalListenerInstalled = true;
       document.addEventListener("click", event => {
-        const dialog = document.querySelector("#expense-create-modal");
-        if (!dialog) return;
-        if (event.target.closest('[data-action="open-expense-modal"]') && canManage()) {
-          if (!dialog.open) dialog.showModal();
-        } else if (event.target.closest("[data-close-expense-modal]") || event.target === dialog) {
-          if (dialog.open) dialog.close();
+        const createDialog = document.querySelector("#expense-create-modal");
+        const paymentDialog = document.querySelector("#expense-payment-modal");
+        if (event.target.closest('[data-action="open-expense-modal"]') && canManage() && createDialog) {
+          if (!createDialog.open) createDialog.showModal();
+        } else if (event.target.closest("[data-close-expense-modal]") && createDialog) {
+          if (createDialog.open) createDialog.close();
+        } else if (event.target.closest("[data-close-payment-modal]") && paymentDialog) {
+          if (paymentDialog.open) paymentDialog.close();
+        } else if (event.target === createDialog && createDialog?.open) {
+          createDialog.close();
+        } else if (event.target === paymentDialog && paymentDialog?.open) {
+          paymentDialog.close();
         }
       });
     }
@@ -105,32 +121,48 @@ export async function loadExpensesPage() {
       } catch (err) { reportError(err, { context: "Despesas > cadastrar" }); }
       finally { if (submit.isConnected) submit.disabled = false; }
     });
+    host.addEventListener("submit", async event => {
+      if (!event.target.matches("#expense-payment-form")) return;
+      event.preventDefault();
+      if (!canManage()) { toast("Seu perfil não pode pagar despesas."); return; }
+      const form = event.target, values = new FormData(form);
+      const button = form.querySelector('[type="submit"]');
+      button.disabled = true;
+      try {
+        const { error } = await supabase.rpc("pay_expense", {
+          p_expense_id: String(values.get("expense_id") || ""),
+          p_payment_method: String(values.get("payment_method") || ""),
+          p_use_cash: values.get("use_cash") === "on"
+        });
+        if (error) throw error;
+        host.querySelector("#expense-payment-modal")?.close();
+        toast("Pagamento registrado.");
+        await loadExpensesPage();
+      } catch (err) { reportError(err, { context: "Despesas > pagar" }); }
+      finally { if (button.isConnected) button.disabled = false; }
+    });
     host.addEventListener("click", async event => {
       const pay = event.target.closest("[data-pay-expense]");
       const cancel = event.target.closest("[data-cancel-expense]");
       if (!pay && !cancel) return;
       if (!canManage()) { toast("Seu perfil não pode operar despesas."); return; }
-      const button = pay || cancel, id = button.dataset.payExpense || button.dataset.cancelExpense;
-      if (cancel && !window.confirm("Deseja cancelar esta despesa pendente?")) return;
-      let method = "pix", useCash = true;
       if (pay) {
-        const choice = window.prompt("Forma de pagamento: 1 Dinheiro, 2 PIX, 3 Crédito, 4 Débito, 5 Transferência, 6 Voucher, 7 Outro.", "2");
-        if (choice === null) return;
-        const index = Number(choice) - 1;
-        if (!Number.isInteger(index) || index < 0 || index >= methods.length) { toast("Forma de pagamento inválida."); return; }
-        method = methods[index];
-        useCash = window.confirm("Registrar também a saída no caixa? Se escolher Não, a despesa será paga sem movimentação no caixa.");
+        const dialog = host.querySelector("#expense-payment-modal");
+        const form = host.querySelector("#expense-payment-form");
+        if (!dialog || !form) { toast("Não foi possível abrir o pagamento."); return; }
+        form.elements.expense_id.value = pay.dataset.payExpense;
+        dialog.showModal();
+        return;
       }
-      button.disabled = true;
+      if (!window.confirm("Deseja cancelar esta despesa pendente?")) return;
+      cancel.disabled = true;
       try {
-        const result = pay
-          ? await supabase.rpc("pay_expense", { p_expense_id: id, p_payment_method: method, p_use_cash: useCash })
-          : await supabase.rpc("cancel_expense", { p_expense_id: id });
-        if (result.error) throw result.error;
-        toast(pay ? "Pagamento registrado." : "Despesa cancelada.");
+        const { error } = await supabase.rpc("cancel_expense", { p_expense_id: cancel.dataset.cancelExpense });
+        if (error) throw error;
+        toast("Despesa cancelada.");
         await loadExpensesPage();
-      } catch (err) { reportError(err, { context: pay ? "Despesas > pagar" : "Despesas > cancelar" }); }
-      finally { if (button.isConnected) button.disabled = false; }
+      } catch (err) { reportError(err, { context: "Despesas > cancelar" }); }
+      finally { if (cancel.isConnected) cancel.disabled = false; }
     });
   } catch (err) {
     reportError(err, { context: "Despesas > carregar lista" });
