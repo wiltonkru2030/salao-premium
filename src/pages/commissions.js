@@ -30,15 +30,16 @@ export async function loadCommissionsPage(){
  cleanupSearch?.();cleanupSearch=null;
  try{
   const orgId=state.organization.id;
+  const isProfessional=state.membership?.role==="professional";
   const [commissionResult,professionalResult,payoutResult,settingsResult,serviceResult,ruleResult]=await Promise.all([
    supabase.from("commissions").select("id,professional_id,base_amount,rate,amount,status,paid_at,created_at,payout_id,sale_id,appointment_id,item_type,service_order_item_id,service_order_payment_id")
     .eq("org_id",orgId).order("created_at",{ascending:false}).limit(1000),
    supabase.from("professionals").select("id,name,active").eq("org_id",orgId).order("name").limit(500),
    supabase.from("commission_payouts").select("id,professional_id,amount,payment_method,paid_at,notes,cash_movement_id")
     .eq("org_id",orgId).order("paid_at",{ascending:false}).limit(300),
-   supabase.from("app_settings").select("id,setting_value").eq("org_id",orgId).is("branch_id",null).eq("setting_key","product_commission").limit(1),
+   isProfessional?Promise.resolve({data:[],error:null}):supabase.from("app_settings").select("id,setting_value").eq("org_id",orgId).is("branch_id",null).eq("setting_key","product_commission").limit(1),
    supabase.from("services").select("id,name,active").eq("org_id",orgId).eq("active",true).order("name").limit(500),
-   supabase.from("commission_rules").select("id,professional_id,service_id,rate,active,item_type").eq("org_id",orgId).eq("item_type","service").eq("active",true).order("created_at",{ascending:false}).limit(1000)
+   isProfessional?Promise.resolve({data:[],error:null}):supabase.from("commission_rules").select("id,professional_id,service_id,rate,active,item_type").eq("org_id",orgId).eq("item_type","service").eq("active",true).order("created_at",{ascending:false}).limit(1000)
   ]);
   if(commissionResult.error)throw commissionResult.error;
   if(professionalResult.error)throw professionalResult.error;
@@ -54,7 +55,7 @@ export async function loadCommissionsPage(){
   const commissionPaymentIds=[...new Set(commissions.map(row=>row.service_order_payment_id).filter(Boolean))];
   const [commissionItemsResult,commissionPaymentsResult]=await Promise.all([
    commissionItemIds.length?supabase.from("service_order_items").select("id,order_id,description").eq("org_id",orgId).in("id",commissionItemIds):Promise.resolve({data:[],error:null}),
-   commissionPaymentIds.length?supabase.from("service_order_payments").select("id,amount,paid_at,order_id").eq("org_id",orgId).in("id",commissionPaymentIds):Promise.resolve({data:[],error:null})
+   commissionPaymentIds.length&&!isProfessional?supabase.from("service_order_payments").select("id,amount,paid_at,order_id").eq("org_id",orgId).in("id",commissionPaymentIds):Promise.resolve({data:[],error:null})
   ]);
   if(commissionItemsResult.error)throw commissionItemsResult.error;
   if(commissionPaymentsResult.error)throw commissionPaymentsResult.error;
