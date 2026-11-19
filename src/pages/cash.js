@@ -62,7 +62,9 @@ export async function loadCashPage(){
   const todayMoves=movements.filter(m=>new Date(m.created_at)>=today&&new Date(m.created_at)<tomorrow);
   const sum=(rows,type)=>rows.filter(m=>m.movement_type===type).reduce((total,m)=>total+Number(m.amount||0),0);
   const income=sum(todayMoves,"income"),expense=sum(todayMoves,"expense"),net=income-expense;
-  const activeNet=active?movements.filter(m=>m.cash_register_id===active.id).reduce((s,m)=>s+(m.movement_type==="income"?1:m.movement_type==="expense"?-1:0)*Number(m.amount||0),0):0;
+  // O saldo contado fisicamente considera apenas movimentos em dinheiro.
+  // PIX, cartões e transferências permanecem no resumo geral, sem inflar o gaveteiro.
+  const activeNet=active?movements.filter(m=>m.cash_register_id===active.id&&m.payment_method==="cash").reduce((s,m)=>s+(m.movement_type==="income"?1:m.movement_type==="expense"?-1:0)*Number(m.amount||0),0):0;
   const history=movements.map(m=>{
    const payment=paymentMap.get(m.id),order=payment?.order||orderMap.get(m.service_order_id);
    const label=order?"Comanda #"+order.order_number+
