@@ -135,3 +135,16 @@ Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substitu�
 - A etapa usa as sessões autenticadas de dois salões e do profissional criados pela própria suíte. Nenhum dado real é utilizado.
 - A execução permanece condicionada a um projeto Supabase descartável, com SUPABASE_URL, chave publicável e SUPABASE_SERVICE_ROLE_KEY configuradas. Não executar contra produção.
 - Esta alteração de cobertura foi adicionada ao repositório, mas não foi executada neste ambiente; não declarar o teste aprovado até rodá-lo no projeto de QA.
+
+
+### Auditoria de permissões dos cadastros — 19/11/2026
+
+- Revisadas as políticas RLS e a interface dos módulos Clientes, Profissionais, Serviços, Produtos e estoque, Equipe e Unidades.
+- RLS está habilitada nas tabelas public.customers, professionals, services, products, professional_services, org_memberships, profiles e branches. As consultas da interface de cadastros verificadas filtram pelo org_id ativo; a RLS continua sendo a barreira real contra acesso entre organizações.
+- Clientes: a política de INSERT permite owner, admin, manager e receptionist. A tela agora só exibe e aceita o cadastro para esses perfis.
+- Serviços e produtos: INSERT/UPDATE/DELETE estão limitados pelas políticas de administrador da organização. A tela agora esconde o botão e bloqueia o envio para perfis que não sejam owner/admin.
+- Profissionais e vínculos de serviços: escrita está limitada a owner/admin. A tela agora oculta o cadastro e os controles de acesso para outros perfis e verifica novamente antes do envio/alteração.
+- Equipe: o RPC set_professional_app_access valida owner/admin, o alvo dentro da organização e o escopo permitido. A interface também verifica o perfil antes de chamar o RPC.
+- As categorias de serviços e produtos continuam sendo texto livre nos respectivos cadastros; não foi encontrada uma tela/tabela de gestão de categorias neste escopo. Não foi criada uma tabela fictícia.
+- Nenhuma política RLS, função, dado, usuário ou configuração do Supabase foi alterada nesta etapa. Foram feitas apenas alterações de interface/validação no branch de trabalho.
+- Limitação: não houve execução E2E autenticada para cada perfil nem teste visual no navegador. Os controles de interface melhoram a experiência, mas não substituem RLS/RPC. Não declarar a auditoria completa de segurança nem produção pronta até executar os testes em projeto QA descartável.
