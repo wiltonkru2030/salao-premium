@@ -159,6 +159,28 @@ await step("12. Paga comissão com saída no Caixa e impede pagamento em duplici
   assert.equal(Number(out[0].amount), 40);
 });
 
+await step("12A. Concilia somente dinheiro físico no fechamento e mantém PIX fora do gaveteiro", async () => {
+  // Abertura de R$ 100 + recebimento em dinheiro de R$ 120.
+  // O PIX de R$ 80 e o pagamento de comissão via PIX de R$ 40 não entram na contagem física.
+  expectFail(
+    await A.rpc("close_cash_register", { p_cash_register_id: ctx.cash.cash_register_id, p_closing_amount: 220.001 }),
+    "fechamento com fração de centavo",
+    /duas casas decimais/
+  );
+  const closed = expectOk(
+    await A.rpc("close_cash_register", { p_cash_register_id: ctx.cash.cash_register_id, p_closing_amount: 220 }),
+    "fechar caixa com valor físico contado"
+  );
+  assert.equal(Number(closed.expected_amount), 220);
+  assert.equal(Number(closed.cash_income), 120);
+  assert.equal(Number(closed.non_cash_income), 80);
+  assert.equal(Number(closed.non_cash_expense), 40);
+  assert.equal(Number(closed.difference), 0);
+
+  // Os próximos cenários continuam em um novo caixa, sem reutilizar o caixa fechado.
+  ctx.cash = expectOk(await A.rpc("open_cash_register", { p_org_id: A.orgId, p_opening_amount: 0 }), "reabrir caixa para próximos cenários");
+});
+
 await step("13. Cancela Comanda com pagamento parcial e gera estorno no Caixa", async () => {
   const start = isoAt(4, 13);
   const appt = expectOk(await A.insert("appointments", { ...ctx.base, customer_id: ctx.customer2.id, customer_name: ctx.customer2.name, service_id: ctx.nails.id, service_name: "Manicure QA", starts_at: start, ends_at: plusMinutes(start, 45), price: 100 }), "agendamento 2")[0];
