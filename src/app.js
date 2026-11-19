@@ -1,5 +1,6 @@
 /** Painel administrativo: inicializa sessão, tenant e recursos globais; delega os eventos da Agenda ao controlador de domínio. */
 import { state } from './state.js';
+import { render } from './layout/render.js';
 import { installGlobalMasks } from './utils/input-masks.js';
 import { installGlobalErrorHandlers, reportError } from './utils/errors.js';
 import { startAuth, getCurrentUserContext } from './auth/auth.js';
