@@ -2,17 +2,19 @@
 
 ## Resultado executivo
 
-**Não liberar para produção ou venda ainda.** A validação automatizada do commit de referência passou, mas a auditoria identificou funcionalidades demonstrativas, documentação incompleta e validações reais ainda pendentes.
+**Não liberar para produção ou venda ainda.** As validações automatizadas passaram também no HEAD `cddecb4145d618a25692c32320d300713aca2b3b`. A auditoria ainda identifica funcionalidades demonstrativas, documentação incompleta e validações reais pendentes.
 
 ## Validação automatizada
 
-Commit verificado: `91e7d699820d4e8ea14fe4c39da4c99d3efd6616`.
+Commit de referência da suíte completa: `91e7d699820d4e8ea14fe4c39da4c99d3efd6616`. HEAD validado pelos workflows em 19/11/2026: `cddecb4145d618a25692c32320d300713aca2b3b`.
 
 - Sintaxe de todos os arquivos JavaScript: aprovada.
 - Build de produção e importações: aprovado.
 - Testes de utilitários, tratamento de erros, Orçamentos, Comanda, Caixa, tenant e Agenda: aprovados.
 - Comando agregado `npm run test:all`: aprovado.
-- Workflows `App validation` e `Agenda tests`: concluídos com sucesso.
+- Workflows `App validation` e `Agenda tests`: concluídos com sucesso no commit de referência.
+- No HEAD `cddecb4145d618a25692c32320d300713aca2b3b`, os dois workflows também concluíram com sucesso: [App validation](https://github.com/wiltonkru2030/salao-premium/actions/runs/44562965796) e [Agenda tests](https://github.com/wiltonkru2030/salao-premium/actions/runs/44562965790).
+- Após a auditoria inicial, o Dashboard deixou de usar métricas fictícias e passou a consultar atendimentos futuros do dia e contagens de clientes, serviços e profissionais ativos no Supabase, sempre filtrando a organização ativa. Os campos utilizados foram conferidos no schema atual. Essa alteração ainda não equivale a um teste E2E autenticado.
 
 Esses testes não substituem testes E2E, integração com usuários de teste e validação visual em dispositivos reais.
 
@@ -27,7 +29,7 @@ O verificador ainda é informativo: o CI não falha quando existem apontamentos.
 
 ## Funcionalidades demonstrativas encontradas
 
-- `src/pages/dashboard.js`: declara explicitamente métricas e compromissos demonstrativos.
+- `src/pages/dashboard.js`: foi conectado ao Supabase no commit `7e2fea4` e ajustado no `cddecb4`; falta validar o fluxo com sessão real e dados de QA.
 - `src/pages/records.js`: lista registros locais da estrutura `src/data/index.js`, sem persistência real.
 - `src/pages/settings.js`: declara que as preferências são demonstrativas e não persistem no Supabase.
 - `src/agenda/services/agenda.service.js`: repositório local em memória, descrito no próprio módulo como legado/demonstrativo.
@@ -45,7 +47,7 @@ Ainda falta verificar todos os fluxos de I/O e confirmar que cada tela oferece r
 
 1. Documentar as 35 funções exportadas restantes e revisar a qualidade semântica dos comentários.
 2. Substituir as fontes demonstrativas/localmente simuladas por fluxos reais persistidos, sem criar dados fictícios no ambiente de produção.
-3. Testar E2E Agenda, Comanda, Caixa, Orçamentos, cadastros e App Profissional.
+3. Testar E2E Dashboard, Agenda, Comanda, Caixa, Orçamentos, cadastros e App Profissional.
 4. Validar isolamento entre duas organizações e entre matriz/filial com contas de QA independentes.
 5. Revisar permissões/RLS e alertas do Security Advisor, incluindo proteção contra senhas vazadas.
 6. Validar visual e responsividade em desktop e celular.
