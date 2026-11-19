@@ -53,7 +53,7 @@ export async function loadDashboard() {
       supabase.from('appointments')
         .select('id,customer_name,service_name,professional_name,starts_at,status', { count: 'exact' })
         .eq('org_id', orgId)
-        .gte('starts_at', dayStart.toISOString())
+        .gte('starts_at', now.toISOString())
         .lt('starts_at', dayEnd.toISOString())
         .not('status', 'in', '(cancelled,no_show)')
         .order('starts_at')
@@ -70,7 +70,7 @@ export async function loadDashboard() {
     const appointments = appointmentsResult.data || [];
     const appointmentCount = appointmentsResult.count ?? appointments.length;
     const cards = '<div class="metrics">' +
-      metric('Agendamentos hoje', String(appointmentCount), 'na data de hoje', 'atendimentos não cancelados') +
+      metric('Atendimentos restantes', String(appointmentCount), 'a partir de agora', 'hoje, sem cancelamentos ou faltas') +
       metric('Clientes ativos', String(customersResult.count ?? 0), 'cadastros ativos', 'na organização') +
       metric('Serviços ativos', String(servicesResult.count ?? 0), 'serviços disponíveis', 'na organização') +
       metric('Profissionais ativos', String(professionalsResult.count ?? 0), 'equipe ativa', 'na organização') +
