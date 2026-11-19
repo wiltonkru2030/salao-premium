@@ -20,6 +20,7 @@ const categoryLabel=value=>({service_order:"Recebimento de Comanda",service_orde
 const canOperate=()=>["owner","admin","manager","receptionist","finance"].includes(state.membership?.role);
 
 
+/** Renderiza a estrutura da página de Caixa e seus estados iniciais de carregamento. */
 export function cashPage(){
  return head("Caixa","Abertura, conferência e histórico dos recebimentos e saídas.")+
 
@@ -31,6 +32,7 @@ export function cashPage(){
  * Carrega o caixa padrão da organização ativa e seus movimentos.
  * @returns {Promise<void>} Apenas leitura; abertura e fechamento usam RPC transacional.
  */
+/** Carrega o caixa e movimentos da organização ativa e conecta as ações autorizadas. */
 export async function loadCashPage(){
  const host=document.querySelector("#cash-manager");
  if(!host||!state.organization?.id)return;
