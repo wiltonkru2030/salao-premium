@@ -112,7 +112,7 @@ declare
   v_user_id uuid := (select auth.uid());
   v_org_id uuid;
   v_account_id uuid;
-  v_name text := btrim(regexp_replace(coalesce(p_full_name, ''), '\s+', ' ', 'g'));
+  v_name text := btrim(regexp_replace(coalesce(p_full_name, ''), '[[:space:]]+', ' ', 'g'));
 begin
   if v_user_id is null then
     raise exception 'Autenticação necessária.' using errcode = '28000';
