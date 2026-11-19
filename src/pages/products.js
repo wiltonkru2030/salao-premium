@@ -11,12 +11,15 @@ import { reportError } from "../utils/errors.js";
 
 let modalListenerInstalled = false;
 
+/** As políticas products_insert_admin permitem somente proprietário e administrador. */
+const canManageProducts = () => ["owner", "admin"].includes(state.membership?.role);
+
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 /** Renderiza a página de Produtos e estoque e a ação para abrir o cadastro. */
 export function productsPage() {
   return head("Produtos e estoque", "Cadastre produtos e acompanhe preço e quantidade disponível.",
-    btn("＋ Novo produto", "open-product-modal", "primary")) +
+    (canManageProducts() ? btn("＋ Novo produto", "open-product-modal", "primary") : "")) +
     '<div id="products-manager"><div class="empty-state">Carregando produtos…</div></div>';
 }
 
@@ -80,7 +83,7 @@ export async function loadProductsPage() {
     document.addEventListener("click", event => {
     const dialog = document.querySelector("#product-create-modal");
     if (!dialog) return;
-    if (event.target.closest('[data-action="open-product-modal"]')) {
+    if (event.target.closest('[data-action="open-product-modal"]') && canManageProducts()) {
       if (!dialog.open) dialog.showModal();
     } else if (event.target.closest("[data-close-product-modal]") || event.target === dialog) {
       if (dialog.open) dialog.close();
@@ -91,6 +94,7 @@ export async function loadProductsPage() {
   host.addEventListener("submit", async event => {
     if (!event.target.matches("#product-create-form")) return;
     event.preventDefault();
+    if (!canManageProducts()) { toast("Somente proprietário ou administrador pode cadastrar produtos."); return; }
 
     const form = event.target;
     const values = new FormData(form);
