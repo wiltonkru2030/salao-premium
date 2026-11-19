@@ -171,3 +171,5 @@ Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substitu�
 - O redirect usa a origem e o caminho atuais (`window.location.origin + window.location.pathname`). A URL precisa estar cadastrada na lista de Redirect URLs do Supabase Auth. O fluxo PKCE depende de `detectSessionInUrl: true`, já habilitado no cliente.
 - Commits de implementação: `8ff97adf819effd2f1a2b24d3706de26bb81342e` (lógica), `5411a0189d92b3d18bfcecbb5066a9c187751b55` (telas) e `ad927799c58570f07d2566730991e94eef3b7527` (navegação).
 - Não foram alteradas configurações do Supabase, lista de redirects, usuários ou senhas. O envio real do e-mail e o retorno do link ainda precisam ser testados com uma conta QA. Não declarar o fluxo validado em produção até executar esse teste e conferir o provedor SMTP.
+
+- Ajuste adicional: a sessão recebida durante `PASSWORD_RECOVERY` não inicializa o painel administrativo antes de a nova senha ser definida; a tela de redefinição permanece ativa.
