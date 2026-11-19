@@ -92,3 +92,14 @@ A branch de recuperação permanece separada de `main`; a PR #1 está aberta em 
 - Adicionado modal de pagamento com forma de pagamento explícita e opção de registrar a saída no caixa. A confirmação chama exclusivamente `pay_expense`; não há inserção manual de `cash_movements` no cliente.
 - Cancelamento continua usando `cancel_expense`, restrito pelo banco a despesas pendentes. As RPCs `pay_expense` e `cancel_expense` foram verificadas com EXECUTE para `authenticated` e sem EXECUTE para `anon`.
 - Não foi executado pagamento ou cancelamento real nem alterado dado financeiro. Build/CI e teste autenticado seguem pendentes de confirmação.
+
+
+## Atualização — auditoria do módulo Comissões
+- A página `src/pages/commissions.js` já consulta lançamentos, profissionais, regras, pagamentos e referências de itens/recebimentos da Comanda, sempre filtrando a organização ativa.
+- Corrigida a mensagem vazia da tela: comissões podem ser geradas proporcionalmente durante pagamentos parciais, não apenas quando a Comanda é quitada. Também foi consolidada a documentação JSDoc do carregador.
+- Banco conferido: RLS está habilitado em `commissions`, `commission_rules`, `commission_payouts`, `commission_payout_items` e `app_settings`. As políticas de leitura das comissões limitam a administração/financeiro aos papéis autorizados e o profissional aos próprios lançamentos.
+- A RPC `register_service_order_payment` distribui a base da comissão entre recebimentos parciais e conclui o saldo no pagamento final. A RPC `pay_professional_commissions` valida usuário, organização, profissional, seleção e status, bloqueia duplicidade e grava pagamento + saída no Caixa na mesma transação.
+- A RPC `refund_service_order` cancela comissões pendentes/aprovadas e bloqueia devolução automática quando já há comissão paga, exigindo ajuste financeiro com o profissional.
+- O teste de integração `tests/integration/backend-flows.test.mjs` contém cenários para comissão proporcional, pagamento duplicado, cancelamento com estorno e isolamento entre organizações. Esse teste exige credenciais de QA e **não foi executado nesta etapa**.
+- CI do HEAD anterior `a109fe9a9d3b64af550c8545c19255d9461a2c0a`: App validation (run `44577505988`) e Agenda tests (run `44577506011`) concluídos com sucesso. Após a pequena correção de texto/documentação desta etapa, os workflows precisam ser repetidos no novo commit.
+- Não houve alteração de schema, permissões, dados financeiros, branch principal ou deploy. O módulo foi auditado e recebeu correção de documentação/clareza; o E2E autenticado com contas QA permanece pendente.
