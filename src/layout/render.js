@@ -31,12 +31,21 @@ import { settings, loadSettingsPage } from '../pages/settings.js';
 
 import { renderDrawer } from '../components/drawer.js';
 
+/** Módulos disponíveis no App Profissional; o banco continua impondo as permissões reais via RLS/RPC. */
+const PROFESSIONAL_APP_PAGES = new Set(["Agenda", "Comanda", "Comissões", "Configurações"]);
+
+/** Impede que o perfil profissional navegue para módulos administrativos pela interface. */
+function canOpenCurrentPage(page) {
+  return state.membership?.role !== "professional" || PROFESSIONAL_APP_PAGES.has(page);
+}
+
 /**
- * Gera a navegação a partir dos grupos de menu configurados.
- * @returns {string} HTML dos itens de navegação.
+ * Gera a navegação a partir dos grupos de menu e filtra módulos pelo perfil ativo.
+ * @returns {string} HTML dos itens de navegação autorizados para a interface.
  */
 function renderNavigation() {
-  return groups.map(group => {
+  const visibleGroups = groups.map(([label, ...items]) => [label, ...items.filter(item => canOpenCurrentPage(item))]).filter(group => group.length > 1);
+  return visibleGroups.map(group => {
     const [label, ...items] = group;
     const buttons = items.map(item => `
       <button title="${esc(item)}" aria-label="${esc(item)}"
@@ -68,6 +77,7 @@ const pageViews = {
 
 /** Resolve a função de página para a rota atual sem carregar dados demonstrativos. */
 function renderCurrentPage() {
+  if (!canOpenCurrentPage(state.page)) state.page = "Agenda";
   if (state.page === "Dashboard") return dashboard();
   if (state.page === "Agenda") return agenda();
   if (state.page === "Configurações") return settings();
@@ -167,6 +177,10 @@ export function render() {
 
 /** Troca a rota e limpa filtros, menu móvel e drawer antes de renderizar a página nova. */
 export function changePage(page) {
+  if (!canOpenCurrentPage(page)) {
+    state.page = "Agenda";
+    return render();
+  }
   state.page = page;
   state.query = "";
   state.mobileMenu = false;
