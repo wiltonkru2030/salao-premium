@@ -8,10 +8,13 @@ const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "curr
 const dateTime = value => value ? new Date(value).toLocaleString("pt-BR") : "—";
 
 /**
- * @param {object} data Resumo do caixa, histórico e movimentos do tenant ativo.
+ * @param {object} data Resumo do caixa, unidade selecionada, histórico e permissões.
  * @returns {string} HTML da visão operacional do Caixa.
  */
-export function renderCashDashboard({ active, activeNet, income, expense, net, movements, history, registers, canOperate }) {
+export function renderCashDashboard({ active, activeNet, income, expense, net, movements, history, registers, branches, selectedBranchId, canOperate }) {
+  const branchOptions = (branches || []).map(branch =>
+    '<option value="' + esc(branch.id) + '"' + (branch.id === selectedBranchId ? " selected" : "") + '>' + esc(branch.name) + (branch.is_main ? " · Matriz" : "") + '</option>'
+  ).join("");
   const currentRegister = active
     ? `
       <div class="setting-row"><span>Valor de abertura</span><b>${money(active.opening_amount)}</b></div>
@@ -35,8 +38,8 @@ export function renderCashDashboard({ active, activeNet, income, expense, net, m
         </form>`
       : '<p class="demo-note">Seu perfil não pode abrir ou fechar o caixa.</p>';
 
-  const movementHistory = history || '<div class="empty-state">Nenhuma movimentação registrada. Os pagamentos da Comanda aparecerão aqui, inclusive os parciais.</div>';
-  const registerHistory = registers.map(register => `
+  const movementHistory = history || '<div class="empty-state">Nenhuma movimentação registrada nesta unidade. Os pagamentos da Comanda aparecerão aqui, inclusive os parciais.</div>';
+  const registerHistory = (registers || []).map(register => `
     <article class="record-card">
       <span class="record-main">
         <b>${esc(register.status === "open" ? "Caixa aberto" : "Caixa fechado")}</b>
@@ -46,14 +49,22 @@ export function renderCashDashboard({ active, activeNet, income, expense, net, m
         <b>${money(register.status === "open" ? register.opening_amount : register.closing_amount)}</b>
         <small>${register.status === "open" ? "Em andamento" : "Diferença: " + money(Number(register.closing_amount || 0) - Number(register.expected_amount || 0))}</small>
       </span>
-    </article>`).join("") || '<div class="empty-state">Nenhuma abertura de caixa registrada.</div>';
+    </article>`).join("") || '<div class="empty-state">Nenhuma abertura de caixa registrada nesta unidade.</div>';
 
   return `
+    <section class="settings-card cash-branch-selector">
+      <label for="cash-branch-select">Unidade do caixa</label>
+      <select class="field" id="cash-branch-select">
+        <option value="" ${selectedBranchId ? "" : "selected"}>Caixa central (sem filial)</option>
+        ${branchOptions}
+      </select>
+      <small class="muted">Cada unidade possui abertura, movimentações e fechamento independentes.</small>
+    </section>
     <section class="settings-card">
       <div class="section-title">
         <div>
           <h3>Caixa atual</h3>
-          <small class="muted">${active ? "Aberto desde " + dateTime(active.opened_at) : "Nenhum caixa aberto"}</small>
+          <small class="muted">${active ? "Aberto desde " + dateTime(active.opened_at) : "Nenhum caixa aberto nesta unidade"}</small>
         </div>
         <b class="status">${active ? "Aberto" : "Fechado"}</b>
       </div>
