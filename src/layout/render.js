@@ -139,7 +139,8 @@ function loadCurrentPageData() {
     Comissões: loadCommissionsPage,
     Relatórios: () => { bindReportsPage(); loadReportsPage(); },
     "Equipe e permissões": loadTeamPage,
-    Unidades: loadBranchesPage
+    Unidades: loadBranchesPage,
+    Configurações: loadSettingsPage
   };
   loaders[state.page]?.();
 }
