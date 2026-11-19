@@ -103,8 +103,9 @@ await step("8. Recebimento exige Caixa aberto; pagamento parcial gera entrada no
   expectFail(await A.rpc("open_cash_register", { p_org_id: A.orgId, p_opening_amount: 0 }), "caixa duplicado");
   const pay = expectOk(await A.rpc("register_service_order_payment", { p_order_id: ctx.orderId, p_amount: 80, p_payment_method: "pix" }), "parcial");
   assert.equal(Number(pay.balance), 120);
-  // A regra comercial muda após a primeira parcela: este item deve preservar os 40% originais.
+  // As regras mudam após a primeira parcela: o serviço mantém 40% e o produto continua sem comissão.
   expectOk(await A.update("professionals", "id=eq." + ctx.pro.id, { commission_rate: 25 }), "alterar regra após primeiro recebimento");
+  expectOk(await A.insert("app_settings", { org_id: A.orgId, setting_key: "product_commission", setting_value: { enabled: true, default_rate: 30 } }), "habilitar comissão de produto após snapshot");
 });
 
 await step("Bloqueia edição/remoção de itens e desconto após recebimento", async () => {
@@ -137,11 +138,12 @@ await step("10. Caixa registra uma entrada por recebimento", async () => {
 });
 
 await step("11. Comissões proporcionais aos recebimentos (40% sobre o serviço de R$ 100 = R$ 40; produto sem comissão por padrão)", async () => {
-  const comm = expectOk(await A.select("commissions", "select=id,amount,status,rate&professional_id=eq." + ctx.pro.id), "comissões");
+  const comm = expectOk(await A.select("commissions", "select=id,amount,status,rate,item_type&professional_id=eq." + ctx.pro.id), "comissões");
   const total = comm.reduce((s, c) => s + Number(c.amount), 0);
   assert.equal(Math.round(total * 100) / 100, 40);
   assert.ok(comm.length >= 2, "esperado um lançamento por recebimento");
   assert.ok(comm.every(c => Number(c.rate) === 40), "todas as parcelas do mesmo item devem preservar os 40% congelados no primeiro recebimento");
+  assert.ok(comm.every(c => c.item_type === "service"), "produto que estava sem comissão no primeiro recebimento não pode ganhar comissão retroativa");
   const snap = expectOk(await A.select("service_order_items", "select=commission_rate_snapshot,commission_enabled_snapshot&order_id=eq." + ctx.orderId), "snapshot");
   assert.ok(snap.some(i => Number(i.commission_rate_snapshot) === 40 && i.commission_enabled_snapshot === true), "serviço deve guardar o percentual original");
   assert.ok(snap.some(i => i.commission_enabled_snapshot === false), "produto sem comissão habilitada deve continuar inelegível");
