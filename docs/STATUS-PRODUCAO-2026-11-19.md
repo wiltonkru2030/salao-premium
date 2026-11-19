@@ -281,3 +281,10 @@ Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substitu�
 - Limitação remanescente identificada: a tela calcula o saldo em andamento a partir dos últimos 500 movimentos carregados. Em organizações com mais de 500 movimentos recentes, o valor de prévia pode ficar incompleto. O fechamento no banco recalcula todos os movimentos do caixa e permanece a fonte definitiva; a prévia precisa ser migrada para uma consulta agregada no servidor antes da liberação em alto volume.
 - Também permanece pendente validar o fluxo de caixas por filial: a interface atual lista e abre apenas caixa central (`branch_id IS NULL`), embora operações financeiras já possam selecionar caixa de filial com fallback central. Não considerar o módulo de Caixa multiunidade concluído.
 - Commits desta etapa: migration `c2888a7a067dca74166cad84d746315b6fa529e0`; tela `8349cfec2d26c99f1a0d99a11007292c333425a7`; componente `32660fda1ebca6e291bb46409a1369e0a29b5757`; teste `b404c276f06b1da5e69bd2c81553ec5f1c40c70d`.
+
+
+### Correção de sintaxe identificada pelo CI — 19/11/2026
+
+- A execução de `App validation` no commit `b6fca7409572f6c2de6fb143e5546eb56e711e12` falhou na verificação de sintaxe antes do build e dos testes: `src/auth/auth.js` continha os caracteres literais `\\n` entre duas declarações, causando `SyntaxError: Invalid or unexpected token`.
+- Corrigida a quebra de linha no arquivo `src/auth/auth.js`. A correção foi feita na branch de trabalho; não alterou configuração de autenticação, sessão, dados ou banco.
+- O workflow `Agenda tests` do commit anterior concluiu com sucesso. A nova execução de `App validation` e `Agenda tests` para o commit com a correção de sintaxe precisa ser confirmada antes de declarar CI aprovado.
