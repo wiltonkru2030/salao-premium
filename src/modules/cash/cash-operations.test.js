@@ -4,11 +4,13 @@ import { openCashRegister, closeCashRegister, getCashRegisterSummary } from "./s
 
 const calls=[];
 const supabase={rpc:async(name,args)=>{calls.push({name,args});return {data:{ok:true},error:null};}};
-await openCashRegister({supabase,orgId:"org-1",branchId:"branch-1",openingAmount:"100.50"});\nawait openCashRegister({supabase,orgId:"org-1",branchId:"branch-1",openingAmount:"0.29"});
+await openCashRegister({supabase,orgId:"org-1",branchId:"branch-1",openingAmount:"100.50"});
+await openCashRegister({supabase,orgId:"org-1",branchId:"branch-1",openingAmount:"0.29"});
 assert.equal(calls[0].name,"open_cash_register_for_branch");
 assert.equal(calls[0].args.p_org_id,"org-1");
 assert.equal(calls[0].args.p_branch_id,"branch-1");
-assert.equal(calls[0].args.p_opening_amount,100.5);\nassert.equal(calls[1].args.p_opening_amount,0.29);
+assert.equal(calls[0].args.p_opening_amount,100.5);
+assert.equal(calls[1].args.p_opening_amount,0.29);
 await openCashRegister({supabase,orgId:"org-1",openingAmount:"0"});
 assert.equal(calls[2].args.p_branch_id,null);
 await closeCashRegister({supabase,cashRegisterId:"cash-1",closingAmount:"130"});
