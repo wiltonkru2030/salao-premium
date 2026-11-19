@@ -103,3 +103,12 @@ A branch de recuperação permanece separada de `main`; a PR #1 está aberta em 
 - O teste de integração `tests/integration/backend-flows.test.mjs` contém cenários para comissão proporcional, pagamento duplicado, cancelamento com estorno e isolamento entre organizações. Esse teste exige credenciais de QA e **não foi executado nesta etapa**.
 - CI do HEAD anterior `a109fe9a9d3b64af550c8545c19255d9461a2c0a`: App validation (run `44577505988`) e Agenda tests (run `44577506011`) concluídos com sucesso. Após a pequena correção de texto/documentação desta etapa, os workflows precisam ser repetidos no novo commit.
 - Não houve alteração de schema, permissões, dados financeiros, branch principal ou deploy. O módulo foi auditado e recebeu correção de documentação/clareza; o E2E autenticado com contas QA permanece pendente.
+
+
+## Atualização — módulo Relatórios
+- Substituída a página genérica baseada em `records.js` por um relatório mensal somente leitura, consultando `service_order_payments`, `cash_movements`, `service_orders`, `appointments` e `commissions` do Supabase, sempre com filtro `org_id`.
+- Indicadores apresentados: recebimentos confirmados, ticket médio das comandas fechadas, atendimentos concluídos, comandas em aberto, entradas/saídas do Caixa, resultado dos movimentos, comissões geradas/pagas e distribuição dos atendimentos por status.
+- Mantidos conceitos separados: recebimentos não são somados novamente às entradas do Caixa; estornos de recebimentos aparecem como saídas quando registrados no Caixa. Comissões pagas usam `paid_at`, não `created_at`.
+- Filtro mensal sem reload da aplicação. Proteção de interface para owner/admin/manager/finance; RLS permanece a proteção efetiva no banco. Consultas limitadas a 2.000 registros por conjunto, limite informado na própria tela.
+- O módulo não grava dados nem cria métricas estimadas. Ainda requer validação E2E com sessão autenticada, dados de QA e comparação com extratos do Caixa; não foi executado teste visual nem relatório para grandes volumes.
+- Não houve alteração de schema, permissões, dados financeiros, branch principal ou deploy.
