@@ -35,3 +35,5 @@ jobs:
         run: npm run test:tenant
       - name: Run agenda regression tests
         run: npm run test:agenda
+      - name: Verify aggregate test command
+        run: npm run test:all
