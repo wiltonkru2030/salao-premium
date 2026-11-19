@@ -58,14 +58,14 @@ async function queryDetails(order,orgId){
 // Desenha detalhes e formulários de serviço, produto e pagamento.
 function renderOrderDetails(host,order,data,orgId){
  const editable=["open","in_progress","partially_paid","awaiting_payment"].includes(order.status);
+ const {items,payments,customer,professional,services,products,professionals}=data;
+ const isProfessional=state.membership?.role==="professional";
+ const canAddOwnService=isProfessional&&editable&&Boolean(order.assigned_professional_id)&&professionals.some(item=>item.id===order.assigned_professional_id);
  const view=buildComandaDetails(order,data,{
   canManage:canManage(),canPay:canPay(),canAddOwnService,isProfessional,
   canEditItems:editable&&["owner","admin","manager"].includes(state.membership?.role)&&!data.payments.some(p=>p.status==="confirmed"),
   canRefund:["owner","admin","manager","finance"].includes(state.membership?.role)
  });
- const {items,payments,customer,professional,services,products,professionals}=data;
- const isProfessional=state.membership?.role==="professional";
- const canAddOwnService=isProfessional&&editable&&Boolean(order.assigned_professional_id)&&professionals.some(item=>item.id===order.assigned_professional_id);
  const {paid,balance,allowEdit,allowPay,canEditItems}=view;
  host.innerHTML=view.html;
  clearAutocomplete();
