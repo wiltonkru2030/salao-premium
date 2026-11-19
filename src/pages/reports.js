@@ -35,6 +35,10 @@ export async function loadReportsPage() {
   const orgId = state.organization?.id;
   const monthInput = host?.querySelector("#reports-month");
   if (!host || !orgId || !monthInput) return;
+  if (!["owner", "admin", "manager", "finance"].includes(state.membership?.role)) {
+    host.innerHTML = '<div class="empty-state"><b>Acesso restrito.</b><small>Os relatórios estão disponíveis para proprietário, administrador, gerente e financeiro.</small></div>';
+    return;
+  }
 
   const period = monthInput.value || dateInputValue(new Date());
   host.dataset.period = period;
