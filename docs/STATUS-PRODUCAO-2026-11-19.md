@@ -299,3 +299,15 @@ Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substitu�
 - A migration permanece apenas na branch; não foi aplicada no Supabase. Portanto, a nova RPC ainda não existe no banco de produção e o front atualizado depende da aplicação coordenada dessa migration antes de ser usado. Não executar deploy isolado do front.
 - A interface ainda filtra caixas por `branch_id IS NULL`; abertura, seleção e fechamento de caixa por filial não foram implementados nesta etapa. A seleção de unidade precisa respeitar `state.branch`, permissões e fallback por filial sem misturar caixas entre unidades.
 - Testes locais não foram executados. A validação do CI deve confirmar sintaxe, build, testes do módulo Caixa e compatibilidade do RPC após aplicação em banco QA isolado.
+
+
+### Caixa por filial — 19/11/2026
+
+- A tela Caixa agora lista unidades ativas da organização e permite alternar entre Caixa central (branch_id nulo) e cada filial.
+- Consultas de caixas e movimentos são filtradas simultaneamente por organização e unidade; o histórico de pagamentos é associado somente aos movimentos da unidade selecionada.
+- Abertura passa a chamar a RPC `open_cash_register_for_branch`, informando explicitamente organização, filial (ou nulo para Caixa central) e valor inicial. Fechamento continua vinculado ao ID do caixa ativo selecionado.
+- Migration `20261119200000_branch_aware_cash_registers.sql` cria índice único parcial para impedir dois caixas abertos na mesma organização/unidade, valida filial ativa e pertencente ao tenant, serializa a abertura e mantém a RPC legada de abertura central como wrapper.
+- O banco de produção foi consultado em modo somente leitura: não havia mais de um caixa aberto por organização/unidade; a assinatura instalada da RPC de abertura ainda era somente central. Nenhuma abertura/fechamento foi executada.
+- A migration foi adicionada à branch e **não foi aplicada ao Supabase**. A nova RPC, o índice e a compatibilidade precisam ser verificados em projeto de QA antes de qualquer aplicação.
+- A tela usa atributos do elemento para obter unidade e caixa atuais nos handlers delegados, evitando reutilizar valores capturados antes de uma troca de filial ou abertura.
+- Ainda pendem teste E2E autenticado por perfis, duas organizações e filiais, teste de concorrência para abertura/fechamento e validação visual. A implementação não torna o sistema pronto para produção.
