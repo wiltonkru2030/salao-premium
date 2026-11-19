@@ -22,6 +22,7 @@ let selectedProduct=null;
 let detailLoading=false;
 const escapeHtml=esc;
 function clearAutocomplete(){cleanup.forEach(fn=>fn());cleanup=[];}
+/** Renderiza a estrutura inicial da página de Comandas. */
 export function comandaPage(){
  selectedOrder=null;
  return head("Comanda","Comandas criadas a partir da chegada do cliente, com serviços, produtos e pagamentos.")+
@@ -164,6 +165,7 @@ function renderOrderDetails(host,order,data,orgId){
  * @param {string|null} orderId Identificador da Comanda, quando a tela abre um detalhe.
  * @returns {Promise<void>} Renderiza dados; gravações financeiras são executadas por RPC.
  */
+/** Carrega ou atualiza os detalhes da comanda selecionada, respeitando o tenant ativo. */
 export async function loadComandaPage(orderId=null){
  const host=document.querySelector("#comanda-manager");if(!host)return;
  clearAutocomplete();
