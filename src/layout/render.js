@@ -5,7 +5,7 @@ import { state } from '../state.js';
 
 import { $, esc } from '../utils.js';
 
-import { dashboard } from '../pages/dashboard.js';
+import { dashboard, loadDashboard } from '../pages/dashboard.js';
 
 import { agenda } from '../pages/agenda.js';
 import { loadAgendaPage } from '../agenda/pages/agenda-page.js';
@@ -121,6 +121,7 @@ function renderApplicationShell(navigation, content) {
 /** Aciona somente o carregador do módulo que está visível na rota atual. */
 function loadCurrentPageData() {
   const loaders = {
+    Dashboard: loadDashboard,
     Agenda: loadAgendaPage,
     Profissionais: loadProfessionalsPage,
     Comanda: loadComandaPage,
