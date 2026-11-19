@@ -10,10 +10,13 @@ import { reportError } from "../utils/errors.js";
 
 let modalListenerInstalled = false;
 
+/** Perfis autorizados pela política customers_insert_staff do Supabase. */
+const canCreateCustomers = () => ["owner", "admin", "manager", "receptionist"].includes(state.membership?.role);
+
 /** Renderiza a página de Clientes e a ação para abrir o modal de cadastro. */
 export function customersPage() {
   return head("Clientes", "Cadastre e mantenha os dados dos clientes em um único lugar.",
-    btn("＋ Novo cliente", "open-customer-modal", "primary")) +
+    (canCreateCustomers() ? btn("＋ Novo cliente", "open-customer-modal", "primary") : "")) +
     '<div id="customers-manager"><div class="empty-state">Carregando clientes…</div></div>';
 }
 
@@ -75,7 +78,7 @@ export async function loadCustomersPage() {
     document.addEventListener("click", event => {
     const dialog = document.querySelector("#customer-create-modal");
     if (!dialog) return;
-    if (event.target.closest('[data-action="open-customer-modal"]')) {
+    if (event.target.closest('[data-action="open-customer-modal"]') && canCreateCustomers()) {
       if (!dialog.open) dialog.showModal();
     } else if (event.target.closest("[data-close-customer-modal]") || event.target === dialog) {
       if (dialog.open) dialog.close();
@@ -86,6 +89,7 @@ export async function loadCustomersPage() {
   host.addEventListener("submit", async event => {
     if (!event.target.matches("#customer-create-form")) return;
     event.preventDefault();
+    if (!canCreateCustomers()) { toast("Seu perfil não pode cadastrar clientes."); return; }
 
     const form = event.target;
     const submit = form.querySelector('[type="submit"]');
