@@ -145,7 +145,7 @@ export function startAuth(onAuthenticated) {
     const switcher = event.target.closest("[data-auth-mode]");
     if (!switcher) return;
     event.preventDefault();
-    showAuth(switcher.dataset.authMode === "signup" ? "signup" : "login");
+    const nextMode = ["signup", "recovery-request"].includes(switcher.dataset.authMode) ? switcher.dataset.authMode : "login";\n    showAuth(nextMode);
   });
 
   document.addEventListener("submit", async event => {
