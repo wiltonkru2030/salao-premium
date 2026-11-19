@@ -114,7 +114,7 @@ export async function loadProfessionalsPage(){
   </form>
  </dialog>`;
  if(serviceError||assignmentError){const box=host.querySelector("#professional-service-choices");if(box)box.innerHTML='<p class="empty-state">Não foi possível carregar os serviços.</p>';}
- host.insertAdjacentHTML("beforeend", `
+ if(canManageProfessionals())host.insertAdjacentHTML("beforeend", `
  <details class="settings-card"><summary><b>Acesso ao App para proprietário e recepção</b></summary>
   <p class="demo-note">O proprietário ou administrador pode liberar o próprio acesso completo. A recepção recebe agenda completa e acesso operacional às comandas.</p>
   ${membersError?'<div class="empty-state">Não foi possível carregar as permissões da equipe.</div>':''}
@@ -131,6 +131,7 @@ export async function loadProfessionalsPage(){
   if(event.target.closest("[data-open-professional-modal]") && canManageProfessionals()){const modal=host.querySelector("#professional-create-modal");if(modal&&!modal.open){modal.showModal();modal.querySelector('[name="name"]')?.focus();}return;}
   if(event.target===host.querySelector("#professional-create-modal")||event.target.closest("[data-close-professional-modal]")){host.querySelector("#professional-create-modal")?.close();return;}
   const reset=event.target.closest("[data-professional-reset]");
+  if((reset||event.target.closest("[data-professional-copy]"))&&!canManageProfessionals()){toast("Somente proprietário ou administrador pode gerenciar acessos.");return;}
   if(reset){if(!window.confirm("Gerar uma nova senha temporária para este profissional?"))return;await provision(reset,"reset");return;}
   const copy=event.target.closest("[data-professional-copy]");
   if(copy){const id=copy.dataset.professionalCopy,password=initialPasswords.get(id);if(!password)return;await navigator.clipboard.writeText(password);toast("Senha inicial copiada.");}
