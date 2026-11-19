@@ -11,12 +11,15 @@ import { reportError } from "../utils/errors.js";
 
 let modalListenerInstalled = false;
 
+/** A política services_insert_admin permite somente proprietário e administrador. */
+const canManageServices = () => ["owner", "admin"].includes(state.membership?.role);
+
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 /** Renderiza a página de Serviços e a ação para abrir o modal de cadastro. */
 export function servicesPage() {
   return head("Serviços", "Cadastre os serviços que aparecem na agenda, nas comandas e no App Profissional.",
-    btn("＋ Novo serviço", "open-service-modal", "primary")) +
+    (canManageServices() ? btn("＋ Novo serviço", "open-service-modal", "primary") : "")) +
     '<div id="services-manager"><div class="empty-state">Carregando serviços…</div></div>';
 }
 
@@ -78,7 +81,7 @@ export async function loadServicesPage() {
     document.addEventListener("click", event => {
     const dialog = document.querySelector("#service-create-modal");
     if (!dialog) return;
-    if (event.target.closest('[data-action="open-service-modal"]')) {
+    if (event.target.closest('[data-action="open-service-modal"]') && canManageServices()) {
       if (!dialog.open) dialog.showModal();
     } else if (event.target.closest("[data-close-service-modal]") || event.target === dialog) {
       if (dialog.open) dialog.close();
@@ -89,6 +92,7 @@ export async function loadServicesPage() {
   host.addEventListener("submit", async event => {
     if (!event.target.matches("#service-create-form")) return;
     event.preventDefault();
+    if (!canManageServices()) { toast("Somente proprietário ou administrador pode cadastrar serviços."); return; }
 
     const form = event.target;
     const values = new FormData(form);
