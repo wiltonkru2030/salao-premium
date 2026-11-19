@@ -1,10 +1,22 @@
-/** Regras de conflito da Agenda. Responsabilidade: detectar sobreposição e validar duração/horário no cliente. */
+/**
+ * Regras de conflito da Agenda.
+ * Responsabilidade: detectar sobreposição e validar duração/horário no cliente.
+ * Segurança: a validação definitiva de disponibilidade deve ser repetida no backend.
+ */
 import {timeToMinutes} from './duration.utils.js';
 const releasesSlot=item=>['Cancelado','Falta'].includes(item.status);
+/** Localiza agendamento do mesmo profissional/dia com intervalo sobreposto, ignorando o próprio registro. */
 export function findConflict(items,candidate,ignoreId=candidate.id){
  const start=timeToMinutes(candidate.time),end=start+Number(candidate.duration||0);
  return items.find(item=>item.id!==ignoreId&&!releasesSlot(item)&&item.date===candidate.date&&item.pro===candidate.pro&&start<timeToMinutes(item.time)+Number(item.duration||0)&&end>timeToMinutes(item.time))||null;
 }
+/**
+ * Valida campos obrigatórios, data, horário, duração, profissional, expediente e conflito.
+ * @param {object} candidate Dados do agendamento a validar.
+ * @param {object[]} items Agendamentos usados na verificação de sobreposição.
+ * @param {{opening?: string, closing?: string, allowOverlap?: boolean}} options Expediente e exceção explícita de sobreposição.
+ * @returns {{valid: boolean, errors: string[]}} Resultado e mensagens de validação em português.
+ */
 export function validateAppointment(candidate,items,{opening='08:00',closing='20:00',allowOverlap=false}={}){
  const errors=[];
  if(!String(candidate.name||'').trim())errors.push('Informe o nome do cliente.');
