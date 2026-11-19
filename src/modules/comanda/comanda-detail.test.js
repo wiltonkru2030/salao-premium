@@ -19,3 +19,23 @@ assert.equal(view.allowPay,false);
 assert.equal(view.canEditItems,false);
 
 process.stdout.write("Testes do componente Comanda: OK\n");
+
+const professionalView = buildComandaDetails(
+  { id:"order-pro",order_number:13,status:"in_progress",total:120,subtotal:120,discount:0,created_at:"2026-11-19T10:00:00Z",notes:"",customer_id:null },
+  { items:[],payments:[],customer:{name:"Cliente",phone:""},professional:{name:"Profissional"},services:[],products:[],professionals:[{id:"pro-1",name:"Profissional"}] },
+  { canManage:false,canPay:false,canEditItems:false,canRefund:false,canAddOwnService:true,isProfessional:true }
+);
+assert.match(professionalView.html,/Adicionar serviço/);
+assert.match(professionalView.html,/vinculado automaticamente ao seu perfil profissional/);
+assert.doesNotMatch(professionalView.html,/Adicionar produto/);
+assert.doesNotMatch(professionalView.html,/Registrar pagamento/);
+assert.match(professionalView.html,/histórico de pagamentos e o saldo são restritos/);
+assert.doesNotMatch(professionalView.html,/Nenhum pagamento registrado/);
+
+const unauthorizedProfessionalView = buildComandaDetails(
+  { id:"order-pro-2",order_number:14,status:"in_progress",total:80,subtotal:80,discount:0,created_at:"2026-11-19T10:00:00Z",notes:"",customer_id:null },
+  { items:[],payments:[],customer:null,professional:null,services:[],products:[],professionals:[] },
+  { canManage:false,canPay:false,canEditItems:false,canRefund:false,canAddOwnService:false,isProfessional:true }
+);
+assert.doesNotMatch(unauthorizedProfessionalView.html,/Adicionar serviço/);
+assert.doesNotMatch(unauthorizedProfessionalView.html,/Adicionar produto/);
