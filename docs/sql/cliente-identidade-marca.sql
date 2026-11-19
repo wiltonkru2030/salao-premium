@@ -88,17 +88,13 @@ create policy customer_account_customers_insert_staff
       where account.org_id = customer_account_customers.org_id
         and account.id = customer_account_customers.account_id
     )
+    and linked_by = (select auth.uid())
     and exists (
       select 1 from public.customers customer
       where customer.org_id = customer_account_customers.org_id
         and customer.id = customer_account_customers.customer_id
     )
   );
-
-drop policy if exists customer_account_customers_delete_admin on public.customer_account_customers;
-create policy customer_account_customers_delete_admin
-  on public.customer_account_customers for delete to authenticated
-  using (private.has_org_role(org_id, array['owner','admin']::text[]));
 
 -- Criação idempotente da conta. A função privada nunca aceita auth_user_id como parâmetro:
 -- a identidade vem exclusivamente de auth.uid() validado no token Supabase.
@@ -133,7 +129,7 @@ begin
 
   select org.id into v_org_id
   from public.organizations org
-  where lower(org.slug) = lower(btrim(coalesce(p_org_slug, '')))
+  where org.slug = lower(btrim(coalesce(p_org_slug, '')))
   limit 1;
 
   if v_org_id is null then
@@ -186,8 +182,8 @@ grant execute on function public.register_customer_account(text, text, date) to 
 
 -- O Data API exige GRANT explícito; RLS continua responsável pelo isolamento de linhas.
 grant select on public.customer_accounts to authenticated;
-grant select, insert, delete on public.customer_account_customers to authenticated;
+grant select, insert on public.customer_account_customers to authenticated;
 
 -- Não conceder INSERT/UPDATE direto em customer_accounts: a RPC cria a conta a partir de auth.uid().
--- Não conceder UPDATE em customer_account_customers: refazer vínculo exige fluxo auditado.
+-- Não conceder UPDATE/DELETE em customer_account_customers: desfazer vínculo exige fluxo auditado.
 -- Esta etapa NÃO concede leitura de appointments nem histórico financeiro ao app cliente.
