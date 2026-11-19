@@ -27,7 +27,7 @@ import { branchesPage, loadBranchesPage } from '../pages/branches.js';
 import { teamPage, loadTeamPage } from '../pages/team.js';
 import { recycleBinPage, loadRecycleBinPage } from '../pages/recycle-bin.js';
 
-import { settings } from '../pages/settings.js';
+import { settings, loadSettingsPage } from '../pages/settings.js';
 
 import { renderDrawer } from '../components/drawer.js';
 
