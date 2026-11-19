@@ -5,10 +5,12 @@ import { head, esc, toast } from "../utils.js";
 import { reportError } from "../utils/errors.js";
 
 const roleLabel=role=>({owner:"Proprietário",admin:"Administrador",manager:"Gerente",receptionist:"Recepção",professional:"Profissional",finance:"Financeiro",viewer:"Consulta"})[role]||role;
+/** Renderiza a página de Equipe e permissões e seu estado inicial de carregamento. */
 export function teamPage(){
  return head("Equipe e permissões","Gerencie os usuários do salão e os acessos autorizados ao App Profissional.")+
   '<div id="team-manager"><div class="empty-state">Carregando equipe…</div></div>';
 }
+/** Consulta membros e perfis vinculados à organização ativa. */
 export async function loadTeamPage(){
  const host=document.querySelector("#team-manager");if(!host||!state.organization?.id)return;
  try{
