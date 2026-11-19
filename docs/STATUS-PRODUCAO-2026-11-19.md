@@ -75,3 +75,14 @@ A branch de recuperação permanece separada de `main`; a PR #1 está aberta em 
 - Restrições confirmadas no banco: `cash_movements.movement_type` aceita somente `income` e `expense`; despesas aceitam `pending`, `paid` e `cancelled`.
 - Validação de código: import e carregador da rota conferidos no commit `ac72445d9d150fcaea4987fc2dd5087194e8418f`. Nenhuma execução de CI foi retornada para esse commit até a última consulta; build, testes automatizados e E2E permanecem pendentes de confirmação.
 - Não houve alteração de schema, dados financeiros, permissões, branch principal ou deploy.
+
+
+## Atualização — módulo Despesas
+- Criado `src/pages/expenses.js` com listagem Supabase filtrada por organização, indicadores de pendências e cadastro de despesas com validação de valor e descrição.
+- A baixa utiliza a RPC `pay_expense`, que bloqueia a despesa, valida o perfil e registra a saída no caixa na mesma transação quando solicitado. Não há inserção manual paralela em `cash_movements`.
+- Cancelamento utiliza a RPC `cancel_expense`; a função do banco só permite cancelar despesas pendentes.
+- Schema confirmado: status aceitos `pending`, `paid`, `cancelled`; valores devem ser positivos. RLS de leitura/cadastro/alteração limita a owner, admin, manager e finance; a política de exclusão também permite manager, mas a tela não oferece exclusão.
+- Adicionado item Despesas ao menu Financeiro e conectado à página/carregador no compositor.
+- Commit de código: `c9363f7de84e8063f507f6d23d9e0432ca1bbf0b`. Conferidos import, rota, carregador e navegação.
+- CI para esse commit: App validation (run `44567044249`) e Agenda tests (run `44567044545`) estavam em andamento na última consulta; ainda não declarar aprovação.
+- Não houve alteração de schema, dados, permissões, branch principal ou deploy. Ainda falta E2E autenticado para cadastrar, pagar com/sem caixa, cancelar, testar perfis e validar isolamento por organização.
