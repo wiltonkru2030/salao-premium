@@ -14,6 +14,7 @@ const paymentMethodLabel=value=>({pix:"PIX",cash:"Dinheiro",credit_card:"Cartão
 const canPay=()=>["owner","admin","manager","finance"].includes(state.membership?.role);
 const canManageCommissionSettings=()=>["owner","admin"].includes(state.membership?.role);
 
+/** Renderiza a página de Comissões e o estado inicial de carregamento. */
 export function commissionsPage(){
  selectedProfessionalFilter=null;
  return head("Comissões","Valores gerados pelos atendimentos, histórico e pagamentos aos profissionais.")+
@@ -23,6 +24,7 @@ export function commissionsPage(){
 }
 
 /** Carrega regras, ledger de comissões, pagamentos e referências de Comanda/recebimento. */
+/** Consulta comissões e pagamentos da organização ativa e conecta ações autorizadas. */
 export async function loadCommissionsPage(){
  const host=document.querySelector("#commissions-manager");
  if(!host||!state.organization?.id)return;
