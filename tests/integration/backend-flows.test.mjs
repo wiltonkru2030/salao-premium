@@ -114,6 +114,8 @@ await step("Bloqueia edição/remoção de itens e desconto após recebimento", 
   const st = await A.update("service_orders", "id=eq." + ctx.orderId, { status: "closed" });
   assert.ok(!st.ok, "mudança direta de status deveria falhar");
   expectFail(await A.rpc("register_service_order_payment", { p_order_id: ctx.orderId, p_amount: 500, p_payment_method: "cash" }), "pagamento acima do saldo", /saldo/);
+  expectFail(await A.rpc("register_service_order_payment", { p_order_id: ctx.orderId, p_amount: 120.01, p_payment_method: "cash" }), "pagamento um centavo acima do saldo", /saldo/);
+  expectFail(await A.rpc("register_service_order_payment", { p_order_id: ctx.orderId, p_amount: 0.001, p_payment_method: "cash" }), "fração de centavo", /duas casas decimais/);
 });
 
 await step("9. Pagamento final quita a Comanda e baixa o estoque", async () => {
