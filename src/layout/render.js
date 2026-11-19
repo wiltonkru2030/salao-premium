@@ -17,7 +17,7 @@ import { comandaPage, loadComandaPage } from '../pages/comanda.js';
 import { quotesPage, loadQuotesPage } from '../pages/quotes.js';
 import { servicesPage, loadServicesPage } from '../pages/services.js';
 import { productsPage, loadProductsPage } from '../pages/products.js';
-import { salesPage } from '../pages/sales.js';
+import { salesPage, loadSalesPage } from '../pages/sales.js';
 import { cashPage, loadCashPage } from '../pages/cash.js';
 import { financePage } from '../pages/finance.js';
 import { commissionsPage, loadCommissionsPage } from '../pages/commissions.js';
@@ -130,6 +130,7 @@ function loadCurrentPageData() {
     Clientes: loadCustomersPage,
     Serviços: loadServicesPage,
     "Produtos e estoque": loadProductsPage,
+    Vendas: loadSalesPage,
     Recuperar: loadRecycleBinPage,
     Comissões: loadCommissionsPage,
     "Equipe e permissões": loadTeamPage,
