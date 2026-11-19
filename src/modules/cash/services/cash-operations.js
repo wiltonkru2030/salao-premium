@@ -16,3 +16,9 @@ export async function closeCashRegister({supabase,cashRegisterId,closingAmount})
   if(!Number.isFinite(amount)||amount<0)throw new Error("Informe o valor contado.");
   return supabase.rpc("close_cash_register",{p_cash_register_id:cashRegisterId,p_closing_amount:amount});
 }
+
+/** Consulta totais agregados no banco, sem truncamento do histórico paginado da interface. */
+export async function getCashRegisterSummary({supabase,cashRegisterId}) {
+  if(!cashRegisterId)throw new Error("Caixa não identificado.");
+  return supabase.rpc("get_cash_register_summary",{p_cash_register_id:cashRegisterId});
+}
