@@ -7,6 +7,7 @@ import { reportError } from "../utils/errors.js";
 let selectedGroup=null;
 const actionLabel={INSERT:"Criou",UPDATE:"Atualizou",DELETE:"Excluiu",RESTORE:"Restaurou",PERMANENT_DELETE:"Exclusão permanente"};
 const dateTime=value=>new Date(value).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
+/** Renderiza a página de recuperação e auditoria da organização ativa. */
 export function recycleBinPage(){
  selectedGroup=null;
  return head("Recuperar","Consulte exclusões realizadas nos últimos 30 dias, veja o histórico e restaure registros.")+
@@ -67,6 +68,7 @@ function renderPage(host,groups,events,profiles){
   if(group)host.querySelector("#recycle-modal-root").innerHTML=renderDetailsModal(group,profiles);
  }
 }
+/** Consulta snapshots e eventos de auditoria do tenant e conecta ações seguras de restauração. */
 export async function loadRecycleBinPage(){
  const host=document.querySelector("#recycle-bin-manager");
  if(!host||!state.organization?.id)return;
