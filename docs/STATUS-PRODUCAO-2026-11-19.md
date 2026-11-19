@@ -288,3 +288,14 @@ Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substitu�
 - A execução de `App validation` no commit `b6fca7409572f6c2de6fb143e5546eb56e711e12` falhou na verificação de sintaxe antes do build e dos testes: `src/auth/auth.js` continha os caracteres literais `\\n` entre duas declarações, causando `SyntaxError: Invalid or unexpected token`.
 - Corrigida a quebra de linha no arquivo `src/auth/auth.js`. A correção foi feita na branch de trabalho; não alterou configuração de autenticação, sessão, dados ou banco.
 - O workflow `Agenda tests` do commit anterior concluiu com sucesso. A nova execução de `App validation` e `Agenda tests` para o commit com a correção de sintaxe precisa ser confirmada antes de declarar CI aprovado.
+
+
+### Prévia agregada do saldo do Caixa — 19/11/2026
+
+- Resolvida no código da branch a limitação da prévia do saldo ativo baseada nos últimos 500 movimentos. A página agora consulta `get_cash_register_summary`, que agrega diretamente todos os movimentos vinculados ao `cash_register_id` no PostgreSQL.
+- Criada a migration `20261119190000_add_cash_register_summary_rpc.sql`. A função valida sessão, existência do caixa e papel do usuário na organização; limita a consulta ao registro identificado, agrega entradas/saídas em dinheiro e meios não monetários separadamente e retorna saldo físico esperado.
+- O serviço `src/modules/cash/services/cash-operations.js` centraliza a chamada RPC. O teste unitário `cash-operations.test.js` cobre nome, argumentos e validação de identificador.
+- A listagem/histórico da interface continua limitada a 500 itens por enquanto, mas isso não interfere mais no saldo físico apresentado para o caixa aberto. A paginação do histórico ainda será necessária para navegação de grandes volumes.
+- A migration permanece apenas na branch; não foi aplicada no Supabase. Portanto, a nova RPC ainda não existe no banco de produção e o front atualizado depende da aplicação coordenada dessa migration antes de ser usado. Não executar deploy isolado do front.
+- A interface ainda filtra caixas por `branch_id IS NULL`; abertura, seleção e fechamento de caixa por filial não foram implementados nesta etapa. A seleção de unidade precisa respeitar `state.branch`, permissões e fallback por filial sem misturar caixas entre unidades.
+- Testes locais não foram executados. A validação do CI deve confirmar sintaxe, build, testes do módulo Caixa e compatibilidade do RPC após aplicação em banco QA isolado.
