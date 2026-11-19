@@ -1,63 +1,15 @@
 /**
- * Serviços da identidade de cliente por marca.
- * Uma pessoa tem uma conta por organização, enquanto os cadastros operacionais
- * existentes por filial são vinculados separadamente, sem mesclar histórico automaticamente.
- *
- * O backend correspondente está documentado em docs/sql/cliente-identidade-marca.sql.
- * Não liberar o fluxo na interface antes de aplicar e validar a migration em ambiente de teste.
+ * Serviços de identidade de cliente por marca.
+ * A autenticação deve ocorrer antes via Google ou Passkey.
+ * A RPC usa auth.uid() do token; o navegador não pode escolher a identidade Auth.
  */
 import { supabase } from "../src/supabase/client.js";
-
-const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-/** Normaliza e valida o nome informado pela própria cliente. */
-export function normalizeCustomerName(value) {
-  const name = String(value ?? "").trim().replace(/\s+/g, " ");
-  if (name.length < 2 || name.length > 120) {
-    throw new Error("Informe seu nome completo (de 2 a 120 caracteres).");
-  }
-  return name;
-}
-
-/** Normaliza o slug público da marca, sem aceitar caminhos ou URLs arbitrárias. */
-export function normalizeOrganizationSlug(value) {
-  const slug = String(value ?? "").trim().toLowerCase();
-  if (!SLUG_PATTERN.test(slug) || slug.length > 80) {
-    throw new Error("O link do salão é inválido. Peça o link correto à recepção.");
-  }
-  return slug;
-}
-
-/** Valida data civil sem conversões de fuso horário. A data não autentica a cliente. */
-export function validateBirthDate(value) {
-  if (value === null || value === undefined || value === "") return null;
-  const birthDate = String(value);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
-    throw new Error("Confira a data de nascimento.");
-  }
-  const [year, month, day] = birthDate.split("-").map(Number);
-  const parsed = new Date(Date.UTC(year, month - 1, day));
-  const normalized = parsed.toISOString().slice(0, 10);
-  const today = new Date().toISOString().slice(0, 10);
-  if (normalized !== birthDate || year < 1900 || birthDate > today) {
-    throw new Error("Informe uma data de nascimento válida.");
-  }
-  return birthDate;
-}
-
-/** Valida e prepara o perfil mínimo antes de enviar ao Supabase. */
-export function validateCustomerProfile({ organizationSlug, fullName, birthDate = null }) {
-  return {
-    organizationSlug: normalizeOrganizationSlug(organizationSlug),
-    fullName: normalizeCustomerName(fullName),
-    birthDate: validateBirthDate(birthDate)
-  };
-}
+import { validateCustomerProfile } from "./customer-account-utils.js";
 
 /**
- * Cria (ou recupera) a conta da cliente na marca indicada.
- * A autenticação deve ter sido concluída antes por Google ou Passkey.
- * A RPC do banco associa exclusivamente auth.uid(); não aceita user_id do navegador.
+ * Cria ou recupera a conta da cliente na marca informada.
+ * O backend correspondente está documentado em docs/sql/cliente-identidade-marca.sql.
+ * Não habilitar o fluxo na interface antes da migration ser aplicada e validada em teste.
  */
 export async function registerCustomerAccount(profile) {
   const valid = validateCustomerProfile(profile);
@@ -80,7 +32,7 @@ export async function registerCustomerAccount(profile) {
   return data;
 }
 
-/** Busca apenas a conta da cliente autenticada dentro da marca selecionada (RLS obrigatório). */
+/** Consulta a conta da sessão autenticada na marca selecionada, sempre protegida por RLS. */
 export async function getMyCustomerAccount(organizationId) {
   if (!organizationId) throw new Error("Selecione o salão para continuar.");
   const { data: { user }, error: userError } = await supabase.auth.getUser();
