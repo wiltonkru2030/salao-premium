@@ -127,3 +127,11 @@ Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substitu�
 - A tabela app_settings está vazia e sua chave de unicidade inclui branch_id anulável. Não foi usada para inventar preferências ou gravar valores sem contrato de configuração definido.
 - Preferências de agenda, notificações, plano/assinatura, autenticação e demais políticas ainda não estão conectadas; a tela as identifica explicitamente como pendentes.
 - Não houve teste E2E autenticado ou visual em navegador para esta entrega. A ausência de workflow associado ao commit consultado não permite declarar build ou testes aprovados.
+
+
+### QA adicional das Configurações
+
+- O teste de integração tests/integration/backend-flows.test.mjs ganhou a etapa 18: proprietário atualiza organização e filial; outro tenant e profissional não conseguem alterar esses registros.
+- A etapa usa as sessões autenticadas de dois salões e do profissional criados pela própria suíte. Nenhum dado real é utilizado.
+- A execução permanece condicionada a um projeto Supabase descartável, com SUPABASE_URL, chave publicável e SUPABASE_SERVICE_ROLE_KEY configuradas. Não executar contra produção.
+- Esta alteração de cobertura foi adicionada ao repositório, mas não foi executada neste ambiente; não declarar o teste aprovado até rodá-lo no projeto de QA.
