@@ -15,11 +15,11 @@ export function renderCashDashboard({ active, activeNet, income, expense, net, m
   const currentRegister = active
     ? `
       <div class="setting-row"><span>Valor de abertura</span><b>${money(active.opening_amount)}</b></div>
-      <div class="setting-row"><span>Movimentação líquida do caixa</span><b>${money(activeNet)}</b></div>
-      <div class="setting-row"><span>Saldo esperado</span><b>${money(Number(active.opening_amount || 0) + activeNet)}</b></div>
+      <div class="setting-row"><span>Movimentação líquida em dinheiro</span><b>${money(activeNet)}</b></div>
+      <div class="setting-row"><span>Dinheiro esperado no caixa</span><b>${money(Number(active.opening_amount || 0) + activeNet)}</b></div>
       ${canOperate ? `
         <form id="cash-close-form" class="form-grid">
-          <label>Valor contado no fechamento (R$)
+          <label>Dinheiro contado no fechamento (R$)
             <input class="field" name="closing_amount" type="number" min="0" step="0.01" required>
           </label>
           <button class="btn primary" type="submit">Conferir e fechar caixa</button>
