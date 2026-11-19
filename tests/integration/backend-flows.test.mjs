@@ -265,7 +265,7 @@ await step("16. Profissional vê só a própria agenda e não acessa áreas admi
   expectOk(await A.insert("professional_services", { org_id: A.orgId, professional_id: other.id, service_id: ctx.hair.id }), "vínculo outro");
   const start = isoAt(3, 16);
   expectOk(await A.insert("appointments", { ...ctx.base, professional_id: other.id, professional_name: "Outra QA", service_id: ctx.hair.id, service_name: "Corte QA", starts_at: start, ends_at: plusMinutes(start, 60), price: 150 }), "agenda da outra");
-  const P = await signIn(email, PASSWORD);
+  const P = ctx.P = await signIn(email, PASSWORD);
   const appts = expectOk(await P.select("appointments", "select=professional_id"), "agenda");
   assert.ok(appts.length > 0 && appts.every(a => a.professional_id === ctx.pro.id), "profissional deve ver apenas os próprios atendimentos");
   assert.equal(expectOk(await P.select("cash_movements", "select=id"), "caixa").length, 0);
@@ -281,12 +281,46 @@ await step("16. Profissional vê só a própria agenda e não acessa áreas admi
 });
 
 await step("17. Matriz e filial: filial criada pelo proprietário e invisível a outro salão", async () => {
-  const branch = expectOk(await A.insert("branches", { org_id: A.orgId, name: "Filial QA", is_main: false, address: {} }), "filial")[0];
+  const branch = ctx.branch = expectOk(await A.insert("branches", { org_id: A.orgId, name: "Filial QA", is_main: false, address: {} }), "filial")[0];
   const all = expectOk(await A.select("branches", "select=id,is_main&org_id=eq." + A.orgId), "unidades");
   assert.equal(all.length, 2); assert.equal(all.filter(b => b.is_main).length, 1);
   assert.equal(expectOk(await B.select("branches", "select=id&id=eq." + branch.id), "B").length, 0);
   const c = expectOk(await A.insert("customers", { org_id: A.orgId, branch_id: branch.id, name: "Cliente filial QA", tags: [] }), "cliente filial")[0];
   assert.equal(c.branch_id, branch.id);
+});
+
+
+await step("18. Configurações: proprietário atualiza organização/unidade; outros tenants e profissional não alteram", async () => {
+  const orgUpdate = expectOk(await A.update("organizations", "id=eq." + A.orgId, {
+    name: "Salão QA Atualizado",
+    phone: "(11) 99999-0000",
+    timezone: "America/Sao_Paulo"
+  }), "proprietário atualiza organização");
+  assert.equal(orgUpdate.length, 1);
+  const org = expectOk(await A.select("organizations", "select=name,phone,timezone&id=eq." + A.orgId), "ler organização atualizada")[0];
+  assert.equal(org.name, "Salão QA Atualizado");
+  assert.equal(org.timezone, "America/Sao_Paulo");
+
+  const branchUpdate = expectOk(await A.update("branches", "id=eq." + ctx.branch.id, {
+    name: "Filial QA Atualizada",
+    phone: "(11) 98888-0000"
+  }), "proprietário atualiza filial");
+  assert.equal(branchUpdate.length, 1);
+
+  const tenantOrgUpdate = await B.update("organizations", "id=eq." + A.orgId, { name: "Acesso indevido" });
+  assert.ok(!tenantOrgUpdate.ok || tenantOrgUpdate.data.length === 0, "outro salão não pode alterar organização");
+  const tenantBranchUpdate = await B.update("branches", "id=eq." + ctx.branch.id, { name: "Acesso indevido" });
+  assert.ok(!tenantBranchUpdate.ok || tenantBranchUpdate.data.length === 0, "outro salão não pode alterar filial");
+
+  const proOrgUpdate = await ctx.P.update("organizations", "id=eq." + A.orgId, { name: "Acesso indevido" });
+  assert.ok(!proOrgUpdate.ok || proOrgUpdate.data.length === 0, "profissional não pode alterar organização");
+  const proBranchUpdate = await ctx.P.update("branches", "id=eq." + ctx.branch.id, { name: "Acesso indevido" });
+  assert.ok(!proBranchUpdate.ok || proBranchUpdate.data.length === 0, "profissional não pode alterar filial");
+
+  const finalOrg = expectOk(await A.select("organizations", "select=name&id=eq." + A.orgId), "conferir organização final")[0];
+  const finalBranch = expectOk(await A.select("branches", "select=name&id=eq." + ctx.branch.id), "conferir filial final")[0];
+  assert.equal(finalOrg.name, "Salão QA Atualizado");
+  assert.equal(finalBranch.name, "Filial QA Atualizada");
 });
 
 async function cleanup() {
