@@ -234,3 +234,13 @@ Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substitu�
 - Ponto de atenção funcional: como o percentual é consultado novamente a cada pagamento parcial, uma alteração da regra entre recebimentos pode fazer parcelas do mesmo item usarem percentuais diferentes. O percentual aplicado fica preservado em cada lançamento, mas ainda não há snapshot único da regra no item da comanda. Antes da produção, decidir e testar a regra comercial desejada (congelar percentual no primeiro recebimento ou aplicar percentual vigente em cada parcela).
 - Ponto de atenção de arredondamento: a RPC permite diferença de até R$ 0,01 acima do total por tolerância na validação do saldo. Recomenda-se teste explícito de pagamento excedente de um centavo e, se confirmado no fluxo comercial, endurecer a validação para impedir qualquer recebimento acima do saldo exato.
 - Não foram alterados RPCs, policies, tabelas, dados ou configurações do Supabase nesta etapa. Não foi executado pagamento, estorno ou fechamento real. A validação de ponta a ponta ainda depende de contas QA e testes com pagamentos parciais, quitação, estoque, Caixa e pagamento de comissão.
+
+
+### Precisão de pagamentos — 19/11/2026
+
+- Criada migration aditiva `20261119150000_strict_service_order_payment_amounts.sql` para substituir a tolerância de R$ 0,01 por comparação exata entre valor já recebido + novo pagamento e total da comanda.
+- A RPC passa a rejeitar valores com fração de centavo (mais de duas casas decimais). O fechamento só ocorre quando o total recebido alcança exatamente o total devido.
+- Ampliado o teste de integração para tentar pagar R$ 0,01 acima do saldo e enviar R$ 0,001; ambos devem ser rejeitados sem criar movimento no Caixa.
+- A migration foi adicionada somente à branch de trabalho da PR. Não foi aplicada ao projeto Supabase; aplicação requer revisão e execução controlada.
+- Ainda pendente: definir snapshot do percentual de comissão. A regra atual é consultada por recebimento; se a administração alterar o percentual durante uma comanda parcialmente paga, as parcelas futuras podem usar o novo percentual. A solução recomendada é congelar o percentual por item da comanda no primeiro recebimento e manter o valor já aplicado nos lançamentos históricos.
+- Teste E2E não executado nesta sessão por ausência de ambiente QA/segredos configurados no executor. O teste foi atualizado, mas ainda não há resultado de execução.
