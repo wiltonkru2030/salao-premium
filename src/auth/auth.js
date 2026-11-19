@@ -15,6 +15,7 @@ let authNoticeType = "info";
 let booted = false;
 
 // Resolve todos os tenants acessíveis e exige escolha explícita quando há mais de um.
+/** Resolve associações ativas e organização selecionada; não usa metadados do usuário para conceder permissões. */
 export async function getUserContext(user, selectedOrgId = null) {
   const { data: memberships, error: membershipError } = await supabase
     .from("org_memberships")
@@ -42,6 +43,7 @@ export async function getUserContext(user, selectedOrgId = null) {
 }
 
 /** Recarrega o contexto da sessão para trocar de organização sem misturar estado entre tenants. */
+/** Carrega o contexto de sessão e tenant solicitado após validar a associação ativa. */
 export async function getCurrentUserContext(organizationId) {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error) throw error;
@@ -61,6 +63,7 @@ function showOrganizationSelection(organizations, notice = "") {
 }
 
 // Inicia sessão, resolve o tenant e só então entrega o contexto ao painel.
+/** Inicializa o fluxo de autenticação, observa a sessão e entrega o contexto validado ao painel. */
 export function startAuth(onAuthenticated) {
   if (booted) return;
   booted = true;
