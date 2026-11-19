@@ -96,7 +96,7 @@ export function startAuth(onAuthenticated) {
 
   showAuth("login");
   supabase.auth.onAuthStateChange((event, session) => {
-    if (session?.user && ["SIGNED_IN", "TOKEN_REFRESHED", "USER_UPDATED"].includes(event)) {
+    if (event === "PASSWORD_RECOVERY" && session?.user) {\n      queueMicrotask(() => showAuth("recovery-update", "Defina uma nova senha para sua conta.", "info"));\n    } else if (session?.user && ["SIGNED_IN", "TOKEN_REFRESHED", "USER_UPDATED"].includes(event)) {
       queueMicrotask(() => activateUser(session.user));
     } else if (event === "SIGNED_OUT") {
       pendingUser = null;
@@ -160,7 +160,7 @@ export function startAuth(onAuthenticated) {
     }
     const values = new FormData(form);
     try {
-      if (form.dataset.authForm === "signup") {
+      if (form.dataset.authForm === "recovery-request") {\n        const email = String(values.get("email") || "").trim().toLowerCase();\n        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });\n        if (error) throw error;\n        showAuth("login", "Se o endereço estiver cadastrado, você receberá um link para redefinir sua senha.", "success");\n      } else if (form.dataset.authForm === "recovery-update") {\n        const password = String(values.get("password") || "");\n        const confirmation = String(values.get("password_confirmation") || "");\n        if (password.length < 8) throw new Error("A senha deve ter pelo menos 8 caracteres.");\n        if (password !== confirmation) throw new Error("As senhas informadas não são iguais.");\n        const { error } = await supabase.auth.updateUser({ password });\n        if (error) throw error;\n        await supabase.auth.signOut();\n        showAuth("login", "Senha alterada com sucesso. Entre com sua nova senha.", "success");\n      } else if (form.dataset.authForm === "signup") {
         const fullName = String(values.get("full_name") || "").trim();
         const organizationName = String(values.get("organization_name") || "").trim();
         const email = String(values.get("email") || "").trim().toLowerCase();
