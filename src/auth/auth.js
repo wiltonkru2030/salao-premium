@@ -12,7 +12,8 @@ import { resolveTenantMemberships } from "./tenant-context.js";
 let authMode = "login";
 let authNotice = "";
 let authNoticeType = "info";
-let booted = false;\nlet passwordRecoveryInProgress = false;
+let booted = false;
+let passwordRecoveryInProgress = false;
 
 // Resolve todos os tenants acessíveis e exige escolha explícita quando há mais de um.
 /** Resolve associações ativas e organização selecionada; não usa metadados do usuário para conceder permissões. */
