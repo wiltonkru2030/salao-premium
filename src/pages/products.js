@@ -13,6 +13,7 @@ let modalListenerInstalled = false;
 
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+/** Renderiza a página de Produtos e estoque e a ação para abrir o cadastro. */
 export function productsPage() {
   return head("Produtos e estoque", "Cadastre produtos e acompanhe preço e quantidade disponível.",
     btn("＋ Novo produto", "open-product-modal", "primary")) +
@@ -20,6 +21,7 @@ export function productsPage() {
 }
 
 /** Consulta a lista e mantém os eventos do modal conectados apenas uma vez. */
+/** Consulta produtos do tenant ativo e conecta os eventos do modal. */
 export async function loadProductsPage() {
   const host = document.querySelector("#products-manager");
   if (!host || !state.organization?.id) return;
