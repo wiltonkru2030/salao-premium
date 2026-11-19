@@ -86,3 +86,9 @@ A branch de recuperação permanece separada de `main`; a PR #1 está aberta em 
 - Commit de código: `c9363f7de84e8063f507f6d23d9e0432ca1bbf0b`. Conferidos import, rota, carregador e navegação.
 - CI para o commit de código `c9363f7de84e8063f507f6d23d9e0432ca1bbf0b`: App validation (run `44567044249`) e Agenda tests (run `44567044545`) concluídos com sucesso. A validação inclui sintaxe de todos os JavaScript, build/importações, auditoria estrutural e testes agregados existentes. Isso não substitui E2E autenticado das novas ações de Despesas.
 - Não houve alteração de schema, dados, permissões, branch principal ou deploy. Ainda falta E2E autenticado para cadastrar, pagar com/sem caixa, cancelar, testar perfis e validar isolamento por organização.
+
+## Atualização — fluxo de pagamento de despesas
+- A tela Despesas já possuía cadastro, cancelamento e integração com as RPCs transacionais; nesta etapa, o pagamento deixou de usar caixas de prompt e confirmação para escolher a forma de pagamento.
+- Adicionado modal de pagamento com forma de pagamento explícita e opção de registrar a saída no caixa. A confirmação chama exclusivamente `pay_expense`; não há inserção manual de `cash_movements` no cliente.
+- Cancelamento continua usando `cancel_expense`, restrito pelo banco a despesas pendentes. As RPCs `pay_expense` e `cancel_expense` foram verificadas com EXECUTE para `authenticated` e sem EXECUTE para `anon`.
+- Não foi executado pagamento ou cancelamento real nem alterado dado financeiro. Build/CI e teste autenticado seguem pendentes de confirmação.
