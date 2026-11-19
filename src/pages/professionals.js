@@ -20,11 +20,13 @@ function validCnpj(value){
  const second=calc(cnpj.slice(0,12)+first,[6,5,4,3,2,9,8,7,6,5,4,3,2]);
  return first===Number(cnpj[12])&&second===Number(cnpj[13]);
 }
+/** Renderiza a página de Profissionais e o acesso ao cadastro e permissões. */
 export function professionalsPage(){
  return head("Profissionais","Cadastre profissionais e gerencie o acesso individual por CPF ao App Profissional.")+
   '<p class="demo-note"><a href="../professional/index.html" target="_blank" rel="noopener">Abrir App Profissional ↗</a></p>'+
   '<div id="professionals-access"><div class="empty-state">Carregando profissionais…</div></div>';
 }
+/** Consulta profissionais e serviços habilitados da organização ativa. */
 export async function loadProfessionalsPage(){
  const host=document.querySelector("#professionals-access");
  if(!host||!state.organization?.id)return;
