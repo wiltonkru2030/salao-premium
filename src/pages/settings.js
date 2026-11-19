@@ -7,6 +7,7 @@ import { state } from "../state.js";
 import { config } from "../data/index.js";
 import { head, esc } from "../utils.js";
 
+/** Renderiza grupos de configurações locais demonstrativas; não persiste alterações no Supabase. */
 export function settings() {
   const options = Object.keys(config);
   const selected = config[state.setting] ? state.setting : (options[0] || "Geral");
