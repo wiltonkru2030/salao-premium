@@ -161,3 +161,13 @@ Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substitu�
 - Falha funcional identificada: não existe fluxo de recuperação/redefinição de senha na interface. O listener de autenticação também não trata o evento `PASSWORD_RECOVERY`; portanto, o link de recuperação não tem uma tela própria para salvar a nova senha. A implementação precisa ser feita e testada com os redirects autorizados no Supabase Auth.
 - O Security Advisor continua reportando 16 funções `SECURITY DEFINER` executáveis por `authenticated` e proteção contra senhas vazadas desativada. O primeiro alerta exige revisão individual das validações internas; não foram revogados privilégios automaticamente. A proteção contra senhas vazadas deve ser ativada nas configurações do Supabase Auth.
 - Não foram alterados usuários, senhas, sessões, políticas, funções, dados ou configurações do Supabase nesta auditoria. Não foi executado fluxo E2E de e-mail/recuperação nem teste de login com contas QA.
+
+
+### Implementação do fluxo de recuperação de senha — 19/11/2026
+
+- A tela de autenticação agora oferece `Esqueci minha senha`, formulário de envio do e-mail e formulário para definir/confirmar a nova senha.
+- A solicitação usa `supabase.auth.resetPasswordForEmail` e retorna mensagem neutra para não revelar se o endereço está cadastrado.
+- O listener trata `PASSWORD_RECOVERY` e apresenta o formulário de redefinição. A gravação usa `supabase.auth.updateUser({ password })`, valida mínimo de 8 caracteres e igualdade entre os campos, e encerra a sessão após sucesso.
+- O redirect usa a origem e o caminho atuais (`window.location.origin + window.location.pathname`). A URL precisa estar cadastrada na lista de Redirect URLs do Supabase Auth. O fluxo PKCE depende de `detectSessionInUrl: true`, já habilitado no cliente.
+- Commits de implementação: `8ff97adf819effd2f1a2b24d3706de26bb81342e` (lógica), `5411a0189d92b3d18bfcecbb5066a9c187751b55` (telas) e `ad927799c58570f07d2566730991e94eef3b7527` (navegação).
+- Não foram alteradas configurações do Supabase, lista de redirects, usuários ou senhas. O envio real do e-mail e o retorno do link ainda precisam ser testados com uma conta QA. Não declarar o fluxo validado em produção até executar esse teste e conferir o provedor SMTP.
