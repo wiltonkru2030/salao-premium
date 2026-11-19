@@ -12,8 +12,10 @@ const dateTime = value => value ? new Date(value).toLocaleString("pt-BR") : "—
  * @returns {string} HTML da visão operacional do Caixa.
  */
 export function renderCashDashboard({ active, activeNet, income, expense, net, movements, history, registers, branches, selectedBranchId, canOperate }) {
+  const selectedBranch = (branches || []).find(branch => branch.id === selectedBranchId);
+  const canOpen = canOperate && (!selectedBranchId || selectedBranch?.active === true);
   const branchOptions = (branches || []).map(branch =>
-    '<option value="' + esc(branch.id) + '"' + (branch.id === selectedBranchId ? " selected" : "") + '>' + esc(branch.name) + (branch.is_main ? " · Matriz" : "") + '</option>'
+    '<option value="' + esc(branch.id) + '"' + (branch.id === selectedBranchId ? " selected" : "") + '>' + esc(branch.name) + (branch.is_main ? " · Matriz" : "") + (branch.active ? "" : " · Inativa") + '</option>'
   ).join("");
   const currentRegister = active
     ? `
@@ -28,7 +30,7 @@ export function renderCashDashboard({ active, activeNet, income, expense, net, m
           <button class="btn primary" type="submit">Conferir e fechar caixa</button>
         </form>` : ""}
     `
-    : canOperate
+    : canOpen
       ? `
         <form id="cash-open-form" class="form-grid">
           <label>Valor inicial (R$)
@@ -36,7 +38,7 @@ export function renderCashDashboard({ active, activeNet, income, expense, net, m
           </label>
           <button class="btn primary" type="submit">Abrir caixa</button>
         </form>`
-      : '<p class="demo-note">Seu perfil não pode abrir ou fechar o caixa.</p>';
+      : (!canOperate ? '<p class="demo-note">Seu perfil não pode abrir ou fechar o caixa.</p>' : '<p class="demo-note">Esta unidade está inativa. O caixa não pode ser aberto, mas um caixa já aberto ainda pode ser conferido e fechado.</p>');
 
   const movementHistory = history || '<div class="empty-state">Nenhuma movimentação registrada nesta unidade. Os pagamentos da Comanda aparecerão aqui, inclusive os parciais.</div>';
   const registerHistory = (registers || []).map(register => `
