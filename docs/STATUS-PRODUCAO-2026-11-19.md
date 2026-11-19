@@ -108,7 +108,7 @@ A branch de recuperação permanece separada de `main`; a PR #1 está aberta em 
 ## Atualização — módulo Relatórios
 - Substituída a página genérica baseada em `records.js` por um relatório mensal somente leitura, consultando `service_order_payments`, `cash_movements`, `service_orders`, `appointments` e `commissions` do Supabase, sempre com filtro `org_id`.
 - Indicadores apresentados: recebimentos confirmados, ticket médio das comandas fechadas, atendimentos concluídos, comandas em aberto, entradas/saídas do Caixa, resultado dos movimentos, comissões geradas/pagas e distribuição dos atendimentos por status.
-- Mantidos conceitos separados: recebimentos não são somados novamente às entradas do Caixa; estornos de recebimentos aparecem como saídas quando registrados no Caixa. Comissões pagas usam `paid_at`, não `created_at`.
+- Mantidos conceitos separados: recebimentos não são somados novamente às entradas do Caixa; estornos de recebimentos aparecem como saídas quando registrados no Caixa. Comissões geradas usam `created_at`; comissões pagas são consultadas separadamente por `paid_at`, incluindo lançamentos criados em meses anteriores.
 - Filtro mensal sem reload da aplicação. Proteção de interface para owner/admin/manager, alinhada às políticas de leitura de Comandas e Agenda; RLS permanece a proteção efetiva no banco. Consultas limitadas a 2.000 registros por conjunto, limite informado na própria tela.
 - O módulo não grava dados nem cria métricas estimadas. Ainda requer validação E2E com sessão autenticada, dados de QA e comparação com extratos do Caixa; não foi executado teste visual nem relatório para grandes volumes.
 - Não houve alteração de schema, permissões, dados financeiros, branch principal ou deploy.
