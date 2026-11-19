@@ -1,6 +1,6 @@
 # Testes de integração do backend
 
-O teste `tests/integration/backend-flows.test.mjs` cria dois salões isolados e uma conta profissional em um projeto Supabase dedicado. Ele valida cadastros, Agenda, Comandas, pagamentos parciais e finais, Caixa, comissões, estornos, estoque, concorrência, orçamentos, permissões e isolamento multi-tenant.
+O teste `tests/integration/backend-flows.test.mjs` cria dois salões isolados e uma conta profissional em um projeto Supabase dedicado. Ele valida cadastros, Agenda, Comandas, pagamentos parciais e finais, Caixa, comissões, estornos, estoque, concorrência, orçamentos, permissões, isolamento multi-tenant e proteção das configurações da organização/unidade por papel e tenant.
 
 ## Execução
 
