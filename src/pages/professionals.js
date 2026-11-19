@@ -7,6 +7,8 @@ import { reportError } from "../utils/errors.js";
 /** Módulo Profissionais: cadastro fiscal, vínculo de serviços e controle de acesso ao App Profissional. */
 
 const initialPasswords=new Map();
+/** Escrita em profissionais, vínculos e gestão de acesso exige owner/admin no banco. */
+const canManageProfessionals=()=>["owner","admin"].includes(state.membership?.role);
 const onlyDigits=value=>String(value||"").replace(/\D/g,"");
 function validCpf(value){
  const cpf=onlyDigits(value);if(cpf.length!==11||/^([0-9])\1{10}$/.test(cpf))return false;
@@ -57,7 +59,7 @@ export async function loadProfessionalsPage(){
  host.innerHTML=`
  <div class="professional-page-toolbar">
   <div><span class="professional-kicker">GESTÃO DA EQUIPE</span><h2>Sua equipe</h2><p>Organize especialidades, serviços e acessos em um só lugar.</p></div>
-  <button class="btn primary professional-add-button" type="button" data-open-professional-modal><span>＋</span> Novo profissional</button>
+  <button class="btn primary professional-add-button" type="button" data-open-professional-modal style="${canManageProfessionals()?"":"display:none"}"><span>＋</span> Novo profissional</button>
  </div>
  <div class="professional-roster-heading"><div><b>Sua equipe</b><small>Profissionais cadastrados no salão</small></div><span class="professional-count">${data?.length||0} <small>PROFISSIONAIS</small></span></div>
  <div class="professional-roster">${(data||[]).map(p=>`
@@ -69,7 +71,7 @@ export async function loadProfessionalsPage(){
   </div>
   <div class="professional-person-meta"><span>${esc(p.phone||p.email||"Contato não informado")}</span><span>Comissão <b>${Number(p.commission_rate||0)}%</b></span>${p.tax_regime==="mei"?'<span>CNPJ '+esc(p.cnpj||"—")+'</span>':''}</div>
   <div class="professional-assigned-services"><small>SERVIÇOS HABILITADOS</small><div>${(assignedNames.get(p.id)||[]).length?(assignedNames.get(p.id)||[]).map(name=>'<span>'+esc(name)+'</span>').join(""):'<em>Nenhum serviço vinculado</em>'}</div></div>
-  <div class="professional-person-footer">
+  <div class="professional-person-footer" style="${canManageProfessionals()?"":"display:none"}">
    <label class="professional-app-toggle"><input type="checkbox" data-professional-toggle="${p.id}" ${p.access_enabled?"checked":""} ${!p.active?"disabled":""}><span class="professional-switch"></span><span>App Profissional</span></label>
    <details class="professional-access-details"><summary>Gerenciar acesso</summary>
     <div class="professional-access-fields">
@@ -126,7 +128,7 @@ export async function loadProfessionalsPage(){
  if(host.dataset.bound==="true")return;
  host.dataset.bound="true";
  host.addEventListener("click",async event=>{
-  if(event.target.closest("[data-open-professional-modal]")){const modal=host.querySelector("#professional-create-modal");if(modal&&!modal.open){modal.showModal();modal.querySelector('[name="name"]')?.focus();}return;}
+  if(event.target.closest("[data-open-professional-modal]") && canManageProfessionals()){const modal=host.querySelector("#professional-create-modal");if(modal&&!modal.open){modal.showModal();modal.querySelector('[name="name"]')?.focus();}return;}
   if(event.target===host.querySelector("#professional-create-modal")||event.target.closest("[data-close-professional-modal]")){host.querySelector("#professional-create-modal")?.close();return;}
   const reset=event.target.closest("[data-professional-reset]");
   if(reset){if(!window.confirm("Gerar uma nova senha temporária para este profissional?"))return;await provision(reset,"reset");return;}
@@ -143,6 +145,7 @@ export async function loadProfessionalsPage(){
  });
  host.addEventListener("change",async event=>{
   if(event.target.name==="tax_regime"){const mei=event.target.value==="mei",fields=host.querySelector("#professional-mei-fields");if(fields){fields.hidden=!mei;fields.querySelector('[name="cnpj"]').required=mei;fields.querySelector('[name="legal_name"]').required=mei;}return;}
+  if(!canManageProfessionals()&&(event.target.closest("[data-staff-app-toggle]")||event.target.closest("[data-professional-toggle]"))){toast("Somente proprietário ou administrador pode alterar acessos.");await loadProfessionalsPage();return;}
   const staffToggle=event.target.closest("[data-staff-app-toggle]");
   if(staffToggle){
    const userId=staffToggle.dataset.staffAppToggle,role=staffToggle.dataset.staffRole,enabled=staffToggle.checked;
@@ -164,6 +167,7 @@ export async function loadProfessionalsPage(){
  host.addEventListener("submit",async event=>{
   if(!event.target.matches("#professional-create-form"))return;
   event.preventDefault();
+  if(!canManageProfessionals()){toast("Somente proprietário ou administrador pode cadastrar profissionais.");return;}
   let button;
   try{
   const form=event.target;button=form.querySelector('[type="submit"]');const v=new FormData(form);
