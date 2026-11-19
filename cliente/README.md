@@ -33,3 +33,11 @@ A integração usa `@supabase/supabase-js` 2.119.0 e a opção experimental `aut
 `node cliente/auth-utils.test.js`
 
 A autenticação Google depende de provider configurado no Dashboard. Passkeys dependem da ativação do recurso e do RP ID/origens configurados no Supabase.
+## Identidade única por marca (em preparação)
+
+- O modelo proposto usa `customer_accounts` para uma conta Auth por cliente e organização.
+- `customer_account_customers` liga vários cadastros operacionais de filiais à mesma conta sem apagar histórico.
+- Serviço e validadores em `customer-account.js` e `customer-account-utils.js`.
+- SQL de referência em `docs/sql/cliente-identidade-marca.sql`; documentação em `docs/CLIENTE-IDENTIDADE-MARCA.md`.
+- A RPC ainda não foi aplicada ao banco; o serviço não deve ser chamado pela interface até a migration oficial ser validada em ambiente de teste.
+- Registros antigos não serão associados automaticamente por telefone/data de nascimento: a inspeção encontrou muitos cadastros sem telefone. A recepção terá de confirmar a identidade ou um futuro OTP poderá verificar o número.
