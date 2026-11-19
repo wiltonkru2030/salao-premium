@@ -132,7 +132,8 @@ function loadCurrentPageData() {
     "Produtos e estoque": loadProductsPage,
     Recuperar: loadRecycleBinPage,
     Comissões: loadCommissionsPage,
-    "Equipe e permissões": loadTeamPage
+    "Equipe e permissões": loadTeamPage,
+    Unidades: loadBranchesPage
   };
   loaders[state.page]?.();
 }
