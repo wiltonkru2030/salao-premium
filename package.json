@@ -13,7 +13,7 @@
     "test:cash": "node src/modules/cash/cash-dashboard.test.js && node src/modules/cash/cash-operations.test.js",
     "test:tenant": "node src/auth/tenant-context.test.js",
     "audit:structure": "node scripts/audit-code-structure.mjs",
-    "test:all": "npm run test:utils && npm run test:errors && npm run test:quotes && npm run test:comanda && npm run test:cash && npm run test:tenant && npm run test:agenda && npm run audit:structure",
+    "test:all": "npm run test:utils && npm run test:errors && npm run test:quotes && npm run test:comanda && npm run test:cash && npm run test:tenant && npm run test:customer-auth && npm run test:agenda && npm run audit:structure",
     "test:integration:backend": "node tests/integration/backend-flows.test.mjs",
     "test:customer-auth": "node cliente/auth-utils.test.js"
   },
