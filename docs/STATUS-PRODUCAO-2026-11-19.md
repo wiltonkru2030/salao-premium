@@ -303,7 +303,7 @@ Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substitu�
 
 ### Caixa por filial — 19/11/2026
 
-- A tela Caixa agora lista unidades ativas da organização e permite alternar entre Caixa central (branch_id nulo) e cada filial.
+- A tela Caixa lista unidades ativas e inativas da organização para permitir consulta e conciliação de histórico; permite alternar entre Caixa central (branch_id nulo) e cada filial. Filiais inativas não podem abrir novos caixas, mas caixas já abertos continuam disponíveis para fechamento.
 - Consultas de caixas e movimentos são filtradas simultaneamente por organização e unidade; o histórico de pagamentos é associado somente aos movimentos da unidade selecionada.
 - Abertura passa a chamar a RPC `open_cash_register_for_branch`, informando explicitamente organização, filial (ou nulo para Caixa central) e valor inicial. Fechamento continua vinculado ao ID do caixa ativo selecionado.
 - Migration `20261119200000_branch_aware_cash_registers.sql` cria índice único parcial para impedir dois caixas abertos na mesma organização/unidade, valida filial ativa e pertencente ao tenant, serializa a abertura e mantém a RPC legada de abertura central como wrapper.
@@ -311,3 +311,6 @@ Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substitu�
 - A migration foi adicionada à branch e **não foi aplicada ao Supabase**. A nova RPC, o índice e a compatibilidade precisam ser verificados em projeto de QA antes de qualquer aplicação.
 - A tela usa atributos do elemento para obter unidade e caixa atuais nos handlers delegados, evitando reutilizar valores capturados antes de uma troca de filial ou abertura.
 - Ainda pendem teste E2E autenticado por perfis, duas organizações e filiais, teste de concorrência para abertura/fechamento e validação visual. A implementação não torna o sistema pronto para produção.
+
+
+- A validação CI revelou duas falhas no branch: trechos com sequências literais `\\n` no fluxo de recuperação de senha de `src/auth/auth.js` e, depois, no arquivo de teste do Caixa. As quebras de linha foram corrigidas. Um teste também apontou diferença entre maiúsculas/minúsculas na mensagem de validação; a asserção foi ajustada. A execução automatizada do HEAD final precisa confirmar que todas as etapas passam antes de considerar a entrega validada.
