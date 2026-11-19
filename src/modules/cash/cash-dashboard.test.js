@@ -7,7 +7,7 @@ import { renderCashDashboard } from "./components/cash-dashboard.js";
 
 const closed = renderCashDashboard({
   active:null,activeNet:0,income:0,expense:0,net:0,movements:[],history:"",
-  registers:[],branches:[{id:"branch-1",name:"Unidade Centro",is_main:true}],selectedBranchId:"branch-1",canOperate:false
+  registers:[],branches:[{id:"branch-1",name:"Unidade Centro",is_main:true,active:true}],selectedBranchId:"branch-1",canOperate:false
 });
 assert.match(closed,/Nenhum caixa aberto nesta unidade/);
 assert.match(closed,/Seu perfil não pode abrir ou fechar o caixa/);
