@@ -18,7 +18,7 @@ await getCashRegisterSummary({supabase,cashRegisterId:"cash-1"});
 assert.equal(calls[4].name,"get_cash_register_summary");
 await assert.rejects(()=>openCashRegister({supabase,orgId:"org-1",openingAmount:-1}),/valor inicial válido/);
 await assert.rejects(()=>openCashRegister({supabase,orgId:"org-1",openingAmount:"10.001"}),/duas casas decimais/);
-await assert.rejects(()=>openCashRegister({supabase,orgId:"org-1",branchId:42,openingAmount:10}),/unidade selecionada inválida/);
+await assert.rejects(()=>openCashRegister({supabase,orgId:"org-1",branchId:42,openingAmount:10}),/unidade selecionada inválida/i);
 await assert.rejects(()=>closeCashRegister({supabase,cashRegisterId:"",closingAmount:20}),/caixa aberto/);
 
 process.stdout.write("Testes das operações do Caixa: OK\n");
