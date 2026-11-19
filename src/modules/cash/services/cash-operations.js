@@ -8,7 +8,7 @@ export async function openCashRegister({supabase,orgId,branchId=null,openingAmou
   const amount=Number(openingAmount);
   if(!orgId)throw new Error("Organização não identificada.");
   if(branchId!==null&&typeof branchId!=="string")throw new Error("Unidade selecionada inválida.");
-  if(!Number.isFinite(amount)||amount<0||Math.round(amount*100)!==amount*100)throw new Error("Informe um valor inicial válido, com até duas casas decimais.");
+  if(!Number.isFinite(amount)||amount<0||Number(amount.toFixed(2))!==amount)throw new Error("Informe um valor inicial válido, com até duas casas decimais.");
   return supabase.rpc("open_cash_register_for_branch",{p_org_id:orgId,p_branch_id:branchId,p_opening_amount:amount});
 }
 
@@ -16,7 +16,7 @@ export async function openCashRegister({supabase,orgId,branchId=null,openingAmou
 export async function closeCashRegister({supabase,cashRegisterId,closingAmount}) {
   const amount=Number(closingAmount);
   if(!cashRegisterId)throw new Error("Não há caixa aberto para fechar.");
-  if(!Number.isFinite(amount)||amount<0||Math.round(amount*100)!==amount*100)throw new Error("Informe o valor contado, com até duas casas decimais.");
+  if(!Number.isFinite(amount)||amount<0||Number(amount.toFixed(2))!==amount)throw new Error("Informe o valor contado, com até duas casas decimais.");
   return supabase.rpc("close_cash_register",{p_cash_register_id:cashRegisterId,p_closing_amount:amount});
 }
 
