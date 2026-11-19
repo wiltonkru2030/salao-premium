@@ -112,3 +112,18 @@ A branch de recuperação permanece separada de `main`; a PR #1 está aberta em 
 - Filtro mensal sem reload da aplicação. Proteção de interface para owner/admin/manager, alinhada às políticas de leitura de Comandas e Agenda; RLS permanece a proteção efetiva no banco. Consultas limitadas a 2.000 registros por conjunto, limite informado na própria tela.
 - O módulo não grava dados nem cria métricas estimadas. Ainda requer validação E2E com sessão autenticada, dados de QA e comparação com extratos do Caixa; não foi executado teste visual nem relatório para grandes volumes.
 - Não houve alteração de schema, permissões, dados financeiros, branch principal ou deploy.
+
+
+## Configurações administrativas — implementação inicial
+
+Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substituída por uma tela conectada ao Supabase:
+
+- Consulta os dados da organização autenticada e suas unidades, sempre filtrando pelo identificador do tenant.
+- Permite editar nome, telefone, e-mail, documento e fuso horário da organização; moeda é exibida sem permitir alteração não suportada.
+- Permite selecionar uma unidade e editar nome, telefone, e-mail e documento da unidade.
+- Formulários são apresentados em modais, com validação básica, bloqueio do botão durante gravação e mensagens de erro em português.
+- A interface limita gravações a owner/admin. As políticas RLS verificadas no banco também restringem UPDATE de organizations e branches a administradores da organização; a interface não é a barreira de segurança.
+- Alterações em organizations possuem trigger de auditoria no banco. Não foi realizada alteração de schema, política, dado de produção ou configuração do projeto durante esta implementação.
+- A tabela app_settings está vazia e sua chave de unicidade inclui branch_id anulável. Não foi usada para inventar preferências ou gravar valores sem contrato de configuração definido.
+- Preferências de agenda, notificações, plano/assinatura, autenticação e demais políticas ainda não estão conectadas; a tela as identifica explicitamente como pendentes.
+- Não houve teste E2E autenticado ou visual em navegador para esta entrega. A ausência de workflow associado ao commit consultado não permite declarar build ou testes aprovados.
