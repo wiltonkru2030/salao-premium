@@ -5,7 +5,7 @@
  */
 import { supabase } from "../supabase/client.js";
 import { authScreen, organizationSelectionScreen } from "./auth-screen.js";
-import { userErrorMessage } from "../utils/errors.js";
+import { userErrorMessage, reportError } from "../utils/errors.js";
 import { state } from "../state.js";
 import { resolveTenantMemberships } from "./tenant-context.js";
 
@@ -88,8 +88,9 @@ export function startAuth(onAuthenticated) {
       onAuthenticated(context);
     } catch (error) {
       pendingUser = null;
+      const diagnostic = reportError(error, { context: "Painel > carregar organização após login", notify: false });
       await supabase.auth.signOut();
-      showAuth("login", userErrorMessage(error), "error");
+      showAuth("login", `${diagnostic.message} (Código ${diagnostic.id})`, "error");
     } finally {
       resolvingUserId = null;
     }
@@ -121,7 +122,10 @@ export function startAuth(onAuthenticated) {
   });
 
   supabase.auth.getSession().then(async ({ data, error }) => {
-    if (error) return showAuth("login", userErrorMessage(error), "error");
+    if (error) {
+      const diagnostic = reportError(error, { context: "Painel > restaurar sessão", notify: false });
+      return showAuth("login", `${diagnostic.message} (Código ${diagnostic.id})`, "error");
+    }
     if (data.session?.user && !passwordRecoveryInProgress) await activateUser(data.session.user);
     else if (passwordRecoveryInProgress) showAuth("recovery-update", "Defina uma nova senha para sua conta.", "info");
     else showAuth("login");
@@ -202,7 +206,8 @@ export function startAuth(onAuthenticated) {
         if (error) throw error;
       }
     } catch (error) {
-      showAuth(authMode, userErrorMessage(error), "error");
+      const diagnostic = reportError(error, { context: `Painel > formulário ${form.dataset.authForm}`, notify: false });
+      showAuth(authMode, `${diagnostic.message} (Código ${diagnostic.id})`, "error");
     } finally {
       const current = document.querySelector('[data-auth-form] [type="submit"]');
       if (current) current.disabled = false;
