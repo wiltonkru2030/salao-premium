@@ -4,6 +4,7 @@
 **Data:** 20/11/2026  
 **Migration aplicada:** `20261120065524_customer_coupons_transactional.sql`  
 **Migration de hardening:** `20261120065604_restrict_legacy_hold_private_entrypoints.sql`  
+**Migration de índices/RLS:** `20261120070111_coupon_fk_indexes_and_public_profile_policy_cleanup.sql`  
 **Estado:** estrutura e RPCs implantadas; testes automatizados de contrato e permissões estruturais disponíveis; E2E autenticado com dados de QA ainda pendente.
 
 ## Objetivo
@@ -51,6 +52,8 @@ Mantém a reserva e o resgate:
 ## Segurança
 
 - RLS habilitado nas três tabelas.
+- Índices de cobertura para as FKs compostas e para `auth_user_id` nas tabelas de resgate.
+- As políticas de leitura/escrita da vitrine foram separadas para não manter SELECT permissivo duplicado.
 - Anon não possui SELECT direto nem permissão de escrita.
 - Leitura administrativa de cupons e resgates limitada a owner/admin.
 - Escrita administrativa feita por RPC privada, que exige `auth.uid()` e `private.has_org_role(org_id, ['owner','admin'])`.
