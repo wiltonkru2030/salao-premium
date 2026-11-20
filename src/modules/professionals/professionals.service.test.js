@@ -7,7 +7,7 @@ import {fetchProfessionalWorkspace,setProfessionalActive} from "./professionals.
 
 function mockClient(tables={},error=null) {
   const calls=[];
-  return {calls,from(table) {
+  return {calls,rpc:async(name,args)=>{calls.push({rpc:name,args});return {data:{enabled:args.p_enabled},error};},from(table) {
     const call={table,filters:[],orders:[],limit:null};calls.push(call);
     const query={
       select(columns){call.columns=columns;return query;},
@@ -57,6 +57,14 @@ async function run() {
   assert.deepEqual(activationCall.filters,[["eq","org_id","org-a"],["eq","id","pro-a"]]);
   const failing=mockClient({}, {code:"42501",message:"SQL privado"});
   await assert.rejects(()=>fetchProfessionalWorkspace({client:failing,orgId:"org-a"}),e=>!e.message.includes("SQL privado"));
+  const access=await setTeamProfessionalAppAccess({client,orgId:"org-a",userId:"reception-a",role:"receptionist",enabled:true});
+  assert.equal(access.enabled,true);
+  const accessCall=client.calls.find(call=>call.rpc==="set_professional_app_access");
+  assert.equal(accessCall.args.p_org_id,"org-a");
+  assert.equal(accessCall.args.p_scope,"calendar_all");
+  await revokeProfessionalAppAccess({client,orgId:"org-a",professionalId:"pro-a"});
+  assert.ok(client.calls.some(call=>call.rpc==="revoke_professional_app_access"&&call.args.p_org_id==="org-a"));
+  await assert.rejects(()=>setTeamProfessionalAppAccess({client,orgId:"org-a",userId:"pro-a",role:"professional",enabled:true}),{name:"TypeError"});
   console.log("Testes do serviço de dados dos profissionais: OK");
 }
 run().catch(error=>{process.stderr.write(error.message+"\n");process.exitCode=1;});
