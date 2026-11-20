@@ -39,3 +39,14 @@ export function renderCustomersView(customers,canManage=false) {
     '<div class="record-list">'+(cards||'<div class="empty-state">Nenhum cliente cadastrado.</div>')+'</div>';
 
 }
+
+/**
+ * Renderiza o estado transitório da carteira sem expor dados da unidade anterior.
+ * @param {boolean} failed Indica falha na consulta.
+ * @returns {string} Mensagem acessível e ação de nova tentativa, quando aplicável.
+ */
+export function renderCustomersStatus(failed=false) {
+  return failed
+    ? '<div class="empty-state" role="alert">Não foi possível carregar os clientes. <button type="button" class="btn secondary" data-retry-customers>Tentar novamente</button></div>'
+    : '<div class="empty-state" role="status" aria-live="polite">Carregando clientes…</div>';
+}
