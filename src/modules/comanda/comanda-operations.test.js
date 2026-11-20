@@ -11,6 +11,15 @@ await cancelComanda({supabase,orderId:"order-1",refundPayments:true});
 assert.equal(calls[1].name,"cancel_service_order");
 assert.equal(calls[1].args.p_refund_payments,true);
 await assert.rejects(()=>registerComandaPayment({supabase,orderId:"order-1",amount:0,paymentMethod:"pix"}),/valor de pagamento válido/);
+// Valores fracionários de centavo devem falhar antes de chamar a API.
+const previousCalls=calls.length;
+for(const amount of ["10.001",0.009,NaN,Infinity,-1]) {
+  await assert.rejects(()=>registerComandaPayment({supabase,orderId:"order-1",amount,paymentMethod:"pix"}));
+}
+assert.equal(calls.length,previousCalls);
+await registerComandaPayment({supabase,orderId:"order-1",amount:"0.29",paymentMethod:"cash"});
+assert.equal(calls.at(-1).args.p_amount,0.29);
+
 await assert.rejects(()=>registerComandaPayment({supabase,orderId:"order-1",amount:10,paymentMethod:"invalid"}),/forma de pagamento válida/);
 await assert.rejects(()=>cancelComanda({supabase,orderId:""}),/Comanda não identificada/);
 
