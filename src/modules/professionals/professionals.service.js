@@ -10,7 +10,8 @@ function requireContext(client,orgId) {
 
 /** Converte falhas de leitura em mensagem segura para a interface. */
 function mapWorkspaceError(error) {
-  if(error?.code==="42501")return new Error("Seu perfil não tem permissão para consultar todos os dados da equipe.");
+  if(error?.code==="42501")return new Error("Seu perfil não tem permissão para consultar ou alterar dados da equipe.");
+  if(error?.code==="P0002"||error?.code==="PGRST116")return new Error("O profissional não foi encontrado ou não está mais disponível.");
   if(["PGRST205","42P01"].includes(error?.code))return new Error("Os dados da equipe ainda não estão disponíveis no banco.");
   return new Error("Não foi possível carregar os dados da equipe.");
 }
@@ -49,5 +50,22 @@ export async function fetchProfessionalWorkspace({client,orgId,currentUserId}={}
       profiles=profileResult.data||[];
     }
     return {professionals,services,members,assignments,profiles};
+  } catch(error) { throw mapWorkspaceError(error); }
+}
+
+
+/**
+ * Ativa ou inativa um profissional sem remover seus vínculos históricos.
+ * @param {object} options Cliente Supabase, organização, profissional e estado desejado.
+ * @returns {Promise<void>} Resolve quando o servidor confirma a alteração.
+ */
+export async function setProfessionalActive({client,orgId,professionalId,active}={}) {
+  requireContext(client,orgId);
+  if(!professionalId||typeof active!=="boolean")throw new TypeError("Selecione um profissional e uma situação válidos.");
+  try {
+    const {data,error}=await client.from("professionals").update({active})
+      .eq("org_id",orgId).eq("id",professionalId).select("id").maybeSingle();
+    if(error)throw error;
+    if(!data?.id)throw Object.assign(new Error("Profissional não encontrado."),{code:"P0002"});
   } catch(error) { throw mapWorkspaceError(error); }
 }
