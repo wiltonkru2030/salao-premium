@@ -36,8 +36,9 @@ function normalizeCustomer(input={}) {
     const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);
     const leapYear=year%4===0&&(year%100!==0||year%400===0);
     const daysInMonth=[31,leapYear?29:28,31,30,31,30,31,31,30,31,30,31];
-    if(year<1900||month<1||month>12||day<1||day>daysInMonth[month-1]) {
-      throw new TypeError("Informe uma data de nascimento válida.");
+    if(year<1900||month<1||month>12||day<1||day>daysInMonth[month-1]||
+       birthDate>new Date().toISOString().slice(0,10)) {
+      throw new TypeError("Informe uma data de nascimento válida e não futura.");
     }
   }
   return {name,phone:phone||null,email:email||null,birth_date:birthDate||null};
