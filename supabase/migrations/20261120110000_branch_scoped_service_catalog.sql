@@ -36,6 +36,12 @@ create policy services_select_professional_app on public.services
         where ps.org_id=services.org_id
           and ps.service_id=services.id
           and ps.professional_id=private.current_professional_id(services.org_id)
+          and exists (
+            select 1 from public.professionals p
+            where p.org_id=services.org_id
+              and p.id=ps.professional_id
+              and (services.branch_id is null or services.branch_id=p.branch_id)
+          )
       )
     )
     or (
