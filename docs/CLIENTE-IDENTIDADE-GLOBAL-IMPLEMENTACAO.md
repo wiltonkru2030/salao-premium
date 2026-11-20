@@ -217,3 +217,32 @@ A RPC `get_my_pending_customer_link_requests` retorna somente o contexto mínimo
 O identificador interno do cadastro e o telefone completo não são enviados à interface. Foi criado `cliente/services/customerIdentityLinkService.js` para listar e confirmar solicitações, além de `cliente/utils/customerIdentityLinkUtils.js` para validar e normalizar os dados. Os testes puros desses utilitários foram incluídos em `test:customer-services`.
 
 A interface de confirmação foi conectada ao perfil da cliente e ao compositor principal, com estado vazio, exibição dos dados mínimos e confirmação por botão. A experiência ainda depende da migration aplicada em QA e de teste ponta a ponta com duas contas reais.
+
+
+## Aplicação real no Supabase — 20/11/2026
+
+**Correção de status das seções históricas acima:** as migrations de identidade global foram aplicadas no projeto Supabase conectado após autorização explícita do proprietário. Os registros de histórico retornados pelo Supabase são:
+
+- `20261120041015_customer_global_identity`
+- `20261120041034_customer_identity_link_hardening`
+
+As quatro tabelas foram confirmadas no schema `public`:
+- `customer_profiles`
+- `customer_tenant_memberships`
+- `customer_account_customers`
+- `customer_identity_link_requests`
+
+A verificação pós-aplicação confirmou RLS habilitado em todas as quatro tabelas. Contagem de políticas: perfil global (3), memberships (1), mapeamento legado (1), solicitações (1). A tabela de solicitações possui política explícita de negação de acesso direto para `authenticated`; o acesso é feito somente pelas RPCs destinadas a essa finalidade.
+
+Índices adicionais cobrem as referências `linked_by` e `requested_by`. A aplicação foi registrada nas migrations versionadas no Git.
+
+### Segurança e testes ainda pendentes
+
+- Security Advisors deixou de apontar tabela de solicitações com RLS sem política após a política explícita de negação.
+- Permanecem 16 alertas preexistentes de funções SECURITY DEFINER expostas no schema `public`; não foram alteradas em lote, pois precisam de revisão individual de autorização.
+- Permanece o alerta de proteção de senha comprometida desativada no Supabase Auth.
+- Os testes de integração que exigem duas contas reais, tokens de cliente e owner/admin ainda dependem de ambiente de QA e não foram considerados aprovados.
+- A criação de membership no fluxo de HOLD/reserva ainda precisa ser implementada; abrir um link público não deve criar vínculo.
+- O fluxo de associação legado precisa ser testado ponta a ponta com duas sessões reais antes de ser liberado comercialmente.
+
+**Status correto:** tabelas e hardening aplicados e verificados no Supabase; integração ponta a ponta e auditoria global de segurança ainda em andamento. O sistema completo não está declarado pronto para venda.
