@@ -25,3 +25,6 @@
 
 /* Etapa 01 — escala de legibilidade aplicada por último em todo o painel. */
 @import url('./src/styles/design-readability.css');
+
+/* Módulo 02 — shell e navegação adaptados por largura de tela. */
+@import url('./src/styles/design-shell-responsive.css');
