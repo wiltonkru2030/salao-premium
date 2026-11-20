@@ -356,7 +356,12 @@ async function runAction(action, button = null) {
         professionalId: slot.professional_id, serviceId: slotsState.serviceId, startsAt: slot.starts_at,
         couponCode
       });
-      holdState = { ...createdHold, orgId: salonDetailState.salon.org_id, branchId: salonDetailState.salon.branch_id };
+      holdState = {
+        ...createdHold,
+        orgId: salonDetailState.salon.org_id,
+        branchId: salonDetailState.salon.branch_id,
+        serviceId: slotsState.serviceId
+      };
       renderApp();
       setNotice("Horário reservado temporariamente. Confirme antes do vencimento.", "success");
     } else if (action === "confirm-booking") {
