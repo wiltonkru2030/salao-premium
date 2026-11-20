@@ -1,5 +1,6 @@
 /** Módulo de Orçamentos: propostas comerciais com itens, profissionais e regras de desconto por serviço. */
 import {queryQuoteWorkspace} from "../modules/quotes/services/quote-query.service.js";
+import {renderQuotePreview} from "../modules/quotes/components/quote-preview.js";
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
@@ -156,7 +157,7 @@ export async function loadQuotesPage() {
       if(e.target.closest("#quote-whatsapp")){const phone=activeQuote?.customer?.phone||"";if(!phone){toast("Cadastre o WhatsApp do cliente para compartilhar.");return;}let digits=phone.replace(/\D/g,"");if(digits.length===10||digits.length===11)digits="55"+digits;window.open("https://wa.me/"+digits+
 "?text="+encodeURIComponent("Olá! Seu orçamento do "+(state.organization?.name||"salão")+
 " está pronto. Vou anexar o PDF nesta conversa."),"_blank","noopener");return;}
-      if(e.target.closest("#quote-back")){activeQuote=null;renderBuilder();renderList(host._quoteRows||[],new Map(customers.map(c=>[c.id,c.name])));return;}
+      if(e.target.closest("#quote-back")){detailVersion++;activeQuote=null;await loadQuotesPage();return;}
     });
     host.addEventListener("submit",async e=>{
       if(!current())return;
@@ -196,38 +197,23 @@ async function changeQuoteStatus(id,status,orgId){
   if(error){reportError(error,{context:"Orçamentos > alterar status"});return;}
   toast("Status do orçamento atualizado.");await loadQuotesPage();
 }
+let detailVersion=0;
+/** Consulta proposta e descarta respostas de telas antigas. */
 async function openQuote(id,orgId){
   const host=document.querySelector("#quotes-manager");
+  if(!host||!id||orgId!==state.organization?.id)return;
+  const version=++detailVersion,context=host.dataset.quoteReady,load=loadVersion;
+  const current=()=>host.isConnected&&version===detailVersion&&load===loadVersion&&context===host.dataset.quoteReady&&context===JSON.stringify([state.organization?.id,state.user?.id,state.branch?.id||null,state.membership?.role]);
+  try{
   const [quoteResult,itemResult,professionalResult]=await Promise.all([
     supabase.from("quotes").select("*,customers(id,name,phone)").eq("org_id",orgId).eq("id",id).single(),
     supabase.from("quote_items").select("id,description,quantity,unit_price,discount_amount,total,duration_minutes,professional_id").eq("org_id",orgId).eq("quote_id",id).order("sort_order"),
     supabase.from("professionals").select("id,name").eq("org_id",orgId)
   ]);
   if(quoteResult.error)throw quoteResult.error;if(itemResult.error)throw itemResult.error;if(professionalResult.error)throw professionalResult.error;
+  if(!current())return;
   const professionalNames=new Map((professionalResult.data||[]).map(p=>[p.id,p.name]));
   activeQuote={...quoteResult.data,customer:quoteResult.data.customers,items:(itemResult.data||[]).map(item=>({...item,professionalName:professionalNames.get(item.professional_id)||"Profissional a definir"}))};
-  host.innerHTML='<section class="settings-card quote-preview"><div class="section-title"><div><small class="eyebrow">SALÃO PREMIUM · PROPOSTA COMERCIAL</small><h2>Orçamento #'+activeQuote.quote_number+
-'</h2><small class="muted">'+esc(statusName(activeQuote.status))+
-' · '+new Date(activeQuote.created_at).toLocaleDateString("pt-BR")+
-'</small></div><span class="status">'+esc(statusName(activeQuote.status))+
-'</span></div><h3>Cliente: '+esc(activeQuote.customer?.name||"Cliente")+
-'</h3><div class="record-list">'+activeQuote.items.map(i=>'<div class="setting-row"><span><b>'+esc(i.description)+
-'</b><small>'+i.quantity+
-' × '+money(i.unit_price)+
-' · '+Number(i.duration_minutes)+
-' min · '+esc(i.professionalName)+
-'</small></span><span class="record-trailing"><b>'+money(i.total)+
-'</b>'+(i.discount_amount?'<small>Desconto '+money(i.discount_amount)+
-'</small>':'')+
-'</span></div>').join("")+
-'</div><div class="quote-totals"><div class="setting-row"><span>Subtotal</span><b>'+money(activeQuote.subtotal)+
-'</b></div><div class="setting-row"><span>Desconto</span><b>− '+money(activeQuote.discount_total)+
-'</b></div><div class="setting-row quote-grand-total"><b>Valor final</b><strong>'+money(activeQuote.total)+
-'</strong></div></div><p class="muted">'+esc(activeQuote.notes||"")+
-'</p><div class="quote-actions"><button class="btn secondary" id="quote-back">Voltar</button><button class="btn secondary" id="quote-print">Gerar PDF / Imprimir</button><button class="btn secondary" id="quote-whatsapp">Abrir WhatsApp (anexar PDF)</button>'+(activeQuote.status==="pending"?'<button class="btn primary" data-quote-status="accepted" data-quote-id="'+id+
-'">Marcar como aceito</button><button class="btn secondary" data-quote-status="rejected" data-quote-id="'+id+
-'">Marcar como recusado</button>':"")+(activeQuote.status==="accepted"?'<button class="btn primary" id="quote-schedule" data-quote-id="'+id+
-'">Agendar horários</button><button class="btn secondary" data-quote-status="cancelled" data-quote-id="'+id+
-'">Cancelar orçamento</button>':"")+
-'</div></section>';
+  host.innerHTML=renderQuotePreview(activeQuote);
+  }catch(error){if(current())reportError(error,{context:"Orçamentos > abrir proposta"});}
 }
