@@ -91,6 +91,10 @@ comment on table public.customer_account_customers is
 create index customer_account_customers_customer_idx
   on public.customer_account_customers (org_id, customer_id);
 
+-- A RLS filtra frequentemente por auth_user_id ao listar os salões da cliente.
+create index customer_account_customers_auth_user_idx
+  on public.customer_account_customers (auth_user_id, org_id);
+
 -- RLS: as três tabelas ficam protegidas mesmo se forem expostas pela Data API.
 alter table public.customer_profiles enable row level security;
 alter table public.customer_tenant_memberships enable row level security;
