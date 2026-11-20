@@ -13,6 +13,7 @@ import { reportError } from "../utils/errors.js";
 import { listServices, saveService, setServiceActive } from "../modules/catalog/services.service.js";
 import { listCatalogCategories } from "../modules/catalog/categories.service.js";
 
+import { listBranches } from "../modules/branches/branches.service.js";
 import { createCatalogPageState } from "../modules/catalog/catalog-page-state.js";
 
 const servicePageState=createCatalogPageState();
@@ -35,10 +36,10 @@ export async function loadServicesPage() {
   const orgId=state.organization.id;
   const request=servicePageState.begin(host,orgId);
   host.textContent="Carregando serviços…";
-  let services;
+  let services,branches;
   let serviceCategories=null;
   try {
-    services=await listServices({client:supabase,orgId});
+    [services,branches]=await Promise.all([listServices({client:supabase,orgId}),listBranches({client:supabase,orgId})]);
     try {
       serviceCategories=await listCatalogCategories({
         client:supabase,orgId,categoryType:"service",activeOnly:true
@@ -48,7 +49,7 @@ export async function loadServicesPage() {
       else throw categoryError;
     }
     if(!servicePageState.commit(host,request,state.organization?.id,services))return;
-    host.innerHTML=renderServicesView(services,serviceCategories,canManageServices());
+    host.innerHTML=renderServicesView(services,serviceCategories,canManageServices(),branches);
   } catch(error) {
     if(!servicePageState.isCurrent(host,request,state.organization?.id))return;
     reportError(error,{context:"Serviços > carregar lista"});
