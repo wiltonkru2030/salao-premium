@@ -30,12 +30,14 @@ function requireUuid(client, value, label) {
  * @param {object} error Erro retornado pelo Supabase.
  * @returns {Error} Erro sem detalhes internos de SQL.
  */
-function mapBookingError(error) {
+function mapBookingError(error, couponApplied = false) {
   const code = error?.code;
   const messages = {
     "42501": "Entre na sua conta para continuar com a reserva.",
     "23P01": "Este horário acabou de ficar indisponível. Escolha outro.",
-    "22023": "Os dados ou o horário não estão mais disponíveis. Confira e tente novamente.",
+    "22023": couponApplied
+      ? "O cupom deixou de estar disponível ou as condições mudaram. Valide outro cupom ou tente novamente sem desconto."
+      : "Os dados ou o horário não estão mais disponíveis. Confira e tente novamente.",
     "PGRST202": "A consulta de horários ainda está sendo ativada. Tente novamente mais tarde.",
     "42883": "A consulta de horários ainda está sendo ativada. Tente novamente mais tarde.",
     "42P01": "A consulta de horários ainda está sendo ativada. Tente novamente mais tarde."
@@ -131,7 +133,7 @@ export async function createBookingHold({
     p_starts_at: date.toISOString(),
     p_coupon_code: normalizedCoupon
   });
-  if (error) throw mapBookingError(error);
+  if (error) throw mapBookingError(error, Boolean(normalizedCoupon));
   const row = Array.isArray(data) ? data[0] : data;
   if (!row || !UUID_PATTERN.test(String(row.hold_id || "")) || !Number.isFinite(new Date(row.expires_at).getTime())) {
     throw new Error("O servidor não retornou uma reserva temporária válida.");
