@@ -1,113 +1,148 @@
 /**
- * Entrada independente da Área da Cliente.
- * Oferece OAuth Google e Passkeys do Supabase Auth; não concede acesso a dados do salão
- * até existir vínculo cliente-usuário validado no banco e políticas RLS específicas.
+ * Entrada da Área da Cliente.
+ * Compõe autenticação, navegação e serviços independentes.
+ * Nenhuma tela consulta dados do salão sem passar pelos serviços e pelas permissões do backend.
  */
-import { supabase } from "../src/supabase/client.js";
-import { customerAuthError, safeClientRedirect } from "./auth-utils.js";
+import { getCurrentSession, subscribeToAuthChanges, signInWithGoogle, signInWithPasskey, registerPasskey, signOut } from "./services/authService.js";
+import { getCurrentPosition } from "./services/geoSalonService.js";
+import { getLocalSettings, saveLocalSettings } from "./services/settingsService.js";
+import { renderBottomNavigation } from "./ui/bottomNavigation.js";
+import { getMyProfile } from "./services/customerProfileService.js";
 
 const root = document.querySelector("#cliente-app");
+let currentSession = null;
+let activePage = "home";
 let busy = false;
-
-function icon(name) {
-  const paths = {
-    google: '<path fill="#4285F4" d="M21.6 12.23c0-.72-.06-1.42-.18-2.09H12v3.95h5.38a4.6 4.6 0 0 1-2 3.02v2.52h3.24c1.9-1.75 2.98-4.33 2.98-7.4Z"/><path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.62-2.37l-3.24-2.52c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.75-5.59-4.1H3.06v2.6A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.41 13.97A6 6 0 0 1 6.1 12c0-.68.12-1.34.31-1.97v-2.6H3.06A10 10 0 0 0 2 12c0 1.62.39 3.15 1.06 4.57l3.35-2.6Z"/><path fill="#EA4335" d="M12 5.93c1.47 0 2.8.5 3.84 1.52l2.88-2.88C16.96 2.93 14.7 2 12 2a10 10 0 0 0-8.94 5.43l3.35 2.6c.79-2.35 2.99-4.1 5.59-4.1Z"/>',
-    key: '<path d="M7 14a5 5 0 1 1 4.58-3H22v4h-3v3h-4v-3h-3.42A5 5 0 0 1 7 14Z"/><circle cx="7" cy="9" r="1"/>',
-    shield: '<path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/>'
-  };
-  return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (paths[name] || "") + "</svg>";
-}
-
-function render({ title = "Entre para agendar", description = "Acesse seus agendamentos e tenha seus salões favoritos em um só lugar.", notice = "", noticeType = "info", session = null } = {}) {
-  const signedIn = Boolean(session?.user);
-  root.innerHTML = `
-    <section class="client-panel">
-      <div class="client-brand"><span class="brand-mark">SP</span><div><strong>SALÃO PREMIUM</strong><small>ÁREA DA CLIENTE</small></div></div>
-      <span class="eyebrow">${signedIn ? "ACESSO CONFIRMADO" : "SEU MOMENTO, DO SEU JEITO"}</span>
-      <h1 class="client-title">${signedIn ? "Que bom ter você aqui!" : title}</h1>
-      <p class="client-description">${signedIn ? "Sua identidade foi confirmada. Estamos preparando a vinculação do seu cadastro de cliente." : description}</p>
-      ${notice ? `<div class="client-alert ${noticeType}" role="status">${notice}</div>` : ""}
-      ${signedIn ? `
-        <div class="client-status">
-          <p>${session.user.email ? "Conta Google: " + escapeHtml(session.user.email) : "Conta autenticada com chave de acesso."}</p>
-          <button class="client-button" data-action="register-passkey">${icon("key")} Cadastrar chave de acesso neste aparelho</button>
-          <p class="client-note">O cadastro de cliente, histórico e agendamentos só serão liberados após vincularmos esta conta ao salão correto com segurança.</p>
-          <button class="client-link" data-action="sign-out">Sair da conta</button>
-        </div>` : `
-        <div class="client-actions">
-          <button class="client-button primary" data-action="google">${icon("google")} Continuar com Google</button>
-          <button class="client-button" data-action="passkey">${icon("key")} Entrar com chave de acesso</button>
-        </div>
-        <p class="client-note">${icon("shield")} Seu acesso é protegido. Você não precisa criar uma senha para o SALÃO PREMIUM.</p>
-      `}
-      <div class="client-foot">SALÃO PREMIUM · Acesso simples e protegido</div>
-    </section>`;
-}
+let locationLabel = "Ative a localização ou escolha sua cidade";
+let profileState = null;
 
 function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  return String(value ?? "").replace(/[&<>"']/g, function (char) {
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char];
+  });
 }
-
-async function setBusy(action, value) {
-  busy = value;
-  const button = root.querySelector(`[data-action="${action}"]`);
-  if (button) {
-    button.disabled = value;
-    if (value) button.textContent = "Aguarde…";
+function setNotice(message, type) {
+  const region = root.querySelector("[data-notice]");
+  if (!region) return;
+  region.textContent = message || "";
+  region.className = "client-alert " + (type || "info");
+  region.hidden = !message;
+}
+function renderLogin(notice) {
+  root.innerHTML =
+    '<section class="client-panel login-panel">' +
+      '<div class="client-brand"><span class="brand-mark">SP</span><div><strong>SALÃO PREMIUM</strong><small>ÁREA DA CLIENTE</small></div></div>' +
+      '<span class="eyebrow">SEU MOMENTO, DO SEU JEITO</span>' +
+      '<h1 class="client-title">Encontre seu próximo momento de cuidado.</h1>' +
+      '<p class="client-description">Uma única conta para descobrir salões, acompanhar seus horários e cuidar da sua rotina.</p>' +
+      '<div class="client-alert" data-notice role="status" ' + (notice ? "" : "hidden") + '>' + escapeHtml(notice) + '</div>' +
+      '<div class="client-actions"><button class="client-button primary" data-action="google">Continuar com Google</button><button class="client-button" data-action="passkey">Entrar com chave de acesso</button></div>' +
+      '<p class="client-note">Sua conta é global. Seus agendamentos e dados de cada salão permanecem separados e protegidos.</p>' +
+      '<div class="client-foot">SALÃO PREMIUM · Acesso simples e protegido</div>' +
+    '</section>';
+}
+function renderHome() {
+  return '<section class="page-content">' +
+    '<div class="page-heading"><span class="eyebrow">BEM-VINDA AO SALÃO PREMIUM</span><h1>Seu próximo cuidado começa aqui.</h1><p>Descubra estabelecimentos e acompanhe seus horários em um só lugar.</p></div>' +
+    '<div class="location-card"><div><span class="eyebrow">SUA REGIÃO</span><strong data-location-label>' + escapeHtml(locationLabel) + '</strong></div><button class="client-button compact" data-action="locate">Usar minha localização</button></div>' +
+    '<div class="section-heading"><h2>Descubra salões</h2><span class="muted">Em preparação</span></div>' +
+    '<div class="empty-state"><span class="empty-icon">✦</span><h3>Estamos preparando a vitrine</h3><p>A busca pública será liberada quando o diretório de salões e as regras de privacidade estiverem implantados.</p></div>' +
+    '<div class="section-heading"><h2>Categorias</h2></div><div class="category-grid"><span>Cabelo</span><span>Barbearia</span><span>Unhas</span><span>Estética</span><span>Sobrancelha</span></div>' +
+    '</section>';
+}
+function renderAppointments() {
+  return '<section class="page-content"><div class="page-heading"><span class="eyebrow">SUA ROTINA</span><h1>Agendamentos</h1><p>Seus próximos horários e seu histórico ficarão reunidos aqui.</p></div>' +
+    '<div class="empty-state"><span class="empty-icon">▣</span><h3>Agendamentos em preparação</h3><p>Ainda não há conexão com o serviço de reservas. Nenhum horário será exibido como confirmado antes da validação no banco.</p></div></section>';
+}
+function renderProfile() {
+  const name = profileState && profileState.fullName || currentSession.user.user_metadata && currentSession.user.user_metadata.full_name || "Seu perfil";
+  const email = profileState && profileState.email || currentSession.user.email || "E-mail não informado";
+  const theme = getLocalSettings().theme;
+  return '<section class="page-content"><div class="page-heading"><span class="eyebrow">CONTA GLOBAL</span><h1>Meu perfil</h1><p>Uma identidade para acessar diferentes salões.</p></div>' +
+    '<div class="profile-card"><div class="avatar-mark">' + escapeHtml(name.slice(0,1).toUpperCase()) + '</div><div><strong>' + escapeHtml(name) + '</strong><span>' + escapeHtml(email) + '</span></div></div>' +
+    '<div class="settings-list"><button class="settings-row" data-action="register-passkey"><span><strong>Chaves de acesso</strong><small>Adicionar Passkey neste aparelho</small></span><span>›</span></button>' +
+    '<button class="settings-row" data-action="theme"><span><strong>Aparência</strong><small>Tema: ' + escapeHtml(theme) + '</small></span><span>›</span></button>' +
+    '<button class="settings-row" data-action="sign-out"><span><strong>Sair da conta</strong><small>Encerrar sua sessão neste aparelho</small></span><span>›</span></button></div>' +
+    '<p class="client-note">O perfil global e os vínculos com salões serão ativados após a migration e os testes RLS.</p></section>';
+}
+function applyTheme() {
+  const theme = getLocalSettings().theme;
+  document.documentElement.dataset.theme = theme === "system" ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : theme;
+}
+function renderApp() {
+  const page = activePage === "appointments" ? renderAppointments() : activePage === "profile" ? renderProfile() : renderHome();
+  root.innerHTML = '<div class="client-app-shell"><header class="app-header"><div class="client-brand compact-brand"><span class="brand-mark">SP</span><div><strong>SALÃO PREMIUM</strong><small>ÁREA DA CLIENTE</small></div></div><button class="icon-button" data-action="profile" aria-label="Abrir perfil">○</button></header><div class="client-alert" data-notice role="status" hidden></div><main>' + page + '</main><div data-bottom-nav></div></div>';
+  root.querySelector("[data-bottom-nav]").append(renderBottomNavigation(activePage, function (pageId) {
+    activePage = pageId;
+    if (pageId === "profile") loadProfile().finally(renderApp);
+    else renderApp();
+  }));
+  applyTheme();
+}
+async function loadProfile() {
+  try { profileState = await getMyProfile(); }
+  catch (error) {
+    profileState = null;
+    if (error && error.code !== "CUSTOMER_PROFILE_NOT_READY") console.warn("Falha ao consultar perfil global.", error.code || "PROFILE_ERROR");
   }
 }
-
-root.addEventListener("click", async event => {
-  const button = event.target.closest("[data-action]");
-  if (!button || busy) return;
-  const action = button.dataset.action;
-  await setBusy(action, true);
+async function runAction(action, button) {
+  if (busy) return;
+  busy = true;
+  if (button) button.disabled = true;
   try {
-    if (action === "google") {
-      const redirectTo = safeClientRedirect(window.location.origin);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo, queryParams: { prompt: "select_account" } }
-      });
-      if (error) throw error;
-    } else if (action === "passkey") {
-      const { error } = await supabase.auth.signInWithPasskey();
-      if (error) throw error;
-    } else if (action === "register-passkey") {
-      const { error } = await supabase.auth.registerPasskey();
-      if (error) throw error;
-      const { data } = await supabase.auth.getSession();
-      render({ session: data.session, notice: "Chave de acesso cadastrada com sucesso neste aparelho.", noticeType: "success" });
+    if (action === "google") await signInWithGoogle();
+    else if (action === "passkey") await signInWithPasskey();
+    else if (action === "register-passkey") {
+      await registerPasskey();
+      renderApp();
+      setNotice("Chave de acesso cadastrada com sucesso.", "success");
     } else if (action === "sign-out") {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      render();
+      await signOut();
+      currentSession = null;
+      profileState = null;
+      renderLogin();
+    } else if (action === "locate") {
+      const position = await getCurrentPosition();
+      locationLabel = "Localização obtida (precisão aproximada: " + Math.round(position.accuracy) + " m)";
+      renderApp();
+      setNotice("Localização disponível neste aparelho. Ela ainda não foi enviada ao servidor.", "success");
+    } else if (action === "theme") {
+      const current = getLocalSettings().theme;
+      saveLocalSettings({theme: current === "system" ? "light" : current === "light" ? "dark" : "system"});
+      renderApp();
+      setNotice("Aparência atualizada.", "success");
+    } else if (action === "profile") {
+      activePage = "profile";
+      await loadProfile();
+      renderApp();
     }
   } catch (error) {
-    render({
-      title: "Não foi possível entrar",
-      description: "Escolha outra forma de acesso ou tente novamente.",
-      notice: customerAuthError(error),
-      noticeType: "error"
-    });
+    const message = error && error.message || "Não foi possível concluir esta ação. Tente novamente.";
+    if (!currentSession) renderLogin(message);
+    else { renderApp(); setNotice(message, "error"); }
   } finally {
     busy = false;
-    const current = root.querySelector("[data-action]");
+    const current = root.querySelector('[data-action="' + action + '"]');
     if (current) current.disabled = false;
   }
+}
+root.addEventListener("click", function (event) {
+  const button = event.target.closest("[data-action]");
+  if (button) runAction(button.dataset.action, button);
 });
-
 async function start() {
   try {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) throw error;
-    render({ session: data.session });
-    supabase.auth.onAuthStateChange((_event, session) => {
-      queueMicrotask(() => render({ session }));
+    currentSession = await getCurrentSession();
+    if (currentSession) { await loadProfile(); renderApp(); }
+    else renderLogin();
+    subscribeToAuthChanges(async function (session) {
+      currentSession = session;
+      if (session) { await loadProfile(); renderApp(); }
+      else { profileState = null; renderLogin(); }
     });
-  } catch (error) {
-    render({ title: "Acesso temporariamente indisponível", notice: customerAuthError(error), noticeType: "error" });
+  } catch {
+    renderLogin("Não foi possível verificar sua sessão. Confira sua conexão e tente novamente.");
   }
 }
-
 start();
