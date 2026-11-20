@@ -7,6 +7,7 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, metric } from "../utils.js";
 import { reportError } from "../utils/errors.js";
+import { readFinancePages, sumFinanceAmounts } from "../modules/finance/finance-pagination.js";
 
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dateInputValue = date => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0")].join("-");
@@ -42,58 +43,37 @@ export async function loadReportsPage() {
 
   const period = monthInput.value || dateInputValue(new Date());
   host.dataset.period = period;
+  const request=String(Number(host.dataset.request||0)+1);host.dataset.request=request;
+  const current=()=>host.isConnected&&state.organization?.id===orgId&&host.dataset.period===period&&host.dataset.request===request;
   const { start, end, startIso, endIso } = monthBounds(period);
   host.querySelector(".result-count").textContent = "Consultando " + dateLabel(start) + "…";
 
   try {
-    const [paymentsResult, movementsResult, ordersResult, appointmentsResult, commissionsResult, paidCommissionsResult] = await Promise.all([
-      supabase.from("service_order_payments")
-        .select("id,order_id,amount,status,paid_at,refunded_at")
-        .eq("org_id", orgId).gte("paid_at", startIso).lt("paid_at", endIso)
-        .order("paid_at", { ascending: false }).limit(2000),
-      supabase.from("cash_movements")
-        .select("id,movement_type,category,amount,created_at")
-        .eq("org_id", orgId).gte("created_at", startIso).lt("created_at", endIso)
-        .order("created_at", { ascending: false }).limit(2000),
-      supabase.from("service_orders")
-        .select("id,status,total,closed_at,created_at")
-        .eq("org_id", orgId).gte("created_at", startIso).lt("created_at", endIso)
-        .order("created_at", { ascending: false }).limit(2000),
-      supabase.from("appointments")
-        .select("id,status,starts_at")
-        .eq("org_id", orgId).gte("starts_at", startIso).lt("starts_at", endIso)
-        .order("starts_at", { ascending: false }).limit(2000),
-      supabase.from("commissions")
-        .select("id,professional_id,amount,status,created_at,paid_at")
-        .eq("org_id", orgId).gte("created_at", startIso).lt("created_at", endIso)
-        .order("created_at", { ascending: false }).limit(2000),
-      supabase.from("commissions")
-        .select("id,amount,paid_at")
-        .eq("org_id", orgId).eq("status", "paid").gte("paid_at", startIso).lt("paid_at", endIso)
-        .order("paid_at", { ascending: false }).limit(2000)
+    // Cada fonte utiliza uma data de referência própria; nenhuma lista tem limite silencioso.
+    const query=(table,fields,dateField,configure=q=>q)=>()=>configure(supabase.from(table).select(fields).eq("org_id",orgId).gte(dateField,startIso).lt(dateField,endIso)).order(dateField,{ascending:false}).order("id",{ascending:false});
+    const [payments,refunds,movements,closedOrders,orders,appointments,commissions,paidCommissions]=await Promise.all([
+      readFinancePages(query("service_order_payments","id,amount,status,paid_at","paid_at")),
+      readFinancePages(query("service_order_payments","id,amount,status,refunded_at","refunded_at",q=>q.eq("status","refunded"))),
+      readFinancePages(query("cash_movements","id,movement_type,category,amount,created_at","created_at")),
+      readFinancePages(query("service_orders","id,status,total,closed_at","closed_at",q=>q.eq("status","closed"))),
+      readFinancePages(query("service_orders","id,status,created_at","created_at")),
+      readFinancePages(query("appointments","id,status,starts_at","starts_at")),
+      readFinancePages(query("commissions","id,amount,status,created_at","created_at")),
+      readFinancePages(query("commissions","id,amount,paid_at","paid_at",q=>q.eq("status","paid")))
     ]);
-    for (const result of [paymentsResult, movementsResult, ordersResult, appointmentsResult, commissionsResult, paidCommissionsResult]) {
-      if (result.error) throw result.error;
-    }
-    if (state.organization?.id !== orgId || host.dataset.period !== period) return;
-
-    const payments = paymentsResult.data || [];
-    const movements = movementsResult.data || [];
-    const orders = ordersResult.data || [];
-    const appointments = appointmentsResult.data || [];
-    const commissions = commissionsResult.data || [];
-    const sum = (rows, predicate) => rows.filter(predicate).reduce((total, row) => total + Number(row.amount || 0), 0);
-    const received = sum(payments, row => ["confirmed", "refunded"].includes(row.status));
-    const cashIn = sum(movements, row => row.movement_type === "income");
-    const cashOut = sum(movements, row => row.movement_type === "expense");
-    const generatedCommission = sum(commissions, () => true);
-    const paidCommission = (paidCommissionsResult.data || []).reduce((total, row) => total + Number(row.amount || 0), 0);
-    const completedAppointments = appointments.filter(row => row.status === "completed").length;
-    const cancelledAppointments = appointments.filter(row => row.status === "cancelled").length;
-    const noShows = appointments.filter(row => row.status === "no_show").length;
-    const closedOrders = orders.filter(row => row.status === "closed");
-    const averageTicket = closedOrders.length ? closedOrders.reduce((total, row) => total + Number(row.total || 0), 0) / closedOrders.length : 0;
-    const pendingOrders = orders.filter(row => ["open", "in_progress", "awaiting_payment", "partially_paid"].includes(row.status)).length;
+    if(!current())return;
+    const sum=sumFinanceAmounts;
+    const received=sum(payments,row=>["confirmed","refunded"].includes(row.status));
+    const refunded=sum(refunds);
+    const cashIn=sum(movements,row=>row.movement_type==="income");
+    const cashOut=sum(movements,row=>row.movement_type==="expense");
+    const generatedCommission=sum(commissions,row=>row.status!=="cancelled");
+    const paidCommission=sum(paidCommissions);
+    const completedAppointments=appointments.filter(row=>row.status==="completed").length;
+    const cancelledAppointments=appointments.filter(row=>row.status==="cancelled").length;
+    const noShows=appointments.filter(row=>row.status==="no_show").length;
+    const averageTicket=closedOrders.length?sum(closedOrders,()=>true,"total")/closedOrders.length:0;
+    const pendingOrders=orders.filter(row=>["open","in_progress","awaiting_payment","partially_paid"].includes(row.status)).length;
 
     const appointmentStatus = [
       ["Concluídos", completedAppointments],
@@ -106,11 +86,13 @@ export async function loadReportsPage() {
     ).join("");
 
     const summaryRows = [
-      ["Recebimentos confirmados", money(received), "Pagamentos de Comandas com status confirmado no período"],
+      ["Recebimentos brutos", money(received), "Recebimentos no período, inclusive parcelas estornadas posteriormente"],
+      ["Estornos de recebimentos",money(refunded),"Pela data efetiva da devolução"],
+      ["Recebimentos líquidos",money(received-refunded),"Recebimentos brutos menos estornos do período; não somar ao Caixa"],
       ["Entradas registradas no Caixa", money(cashIn), "Movimentos de entrada registrados no período"],
       ["Saídas registradas no Caixa", money(cashOut), "Inclui despesas, comissões e estornos lançados como saída"],
       ["Resultado dos movimentos", money(cashIn - cashOut), "Entradas menos saídas; não é conciliação bancária"],
-      ["Comissões geradas", money(generatedCommission), "Lançamentos criados no período, inclusive pendentes e cancelados"],
+      ["Comissões geradas", money(generatedCommission), "Lançamentos criados no período, excluindo cancelados"],
       ["Comissões pagas", money(paidCommission), "Comissões efetivamente pagas no período, pela data do pagamento"]
     ].map(([label, value, note]) =>
       '<div class="record-card"><span class="record-main"><b>' + esc(label) + '</b><small>' + esc(note) + '</small></span><span class="record-trailing"><b>' + esc(value) + '</b></span></div>'
@@ -119,16 +101,17 @@ export async function loadReportsPage() {
     host.innerHTML =
       '<div class="list-toolbar reports-toolbar"><label class="search-box reports-month"><span>Período</span><input id="reports-month" type="month" value="' + esc(period) + '"></label><span class="result-count">' + esc(dateLabel(start)) + '</span></div>' +
       '<div class="metrics">' +
-      metric("Recebimentos confirmados", money(received), payments.filter(row => ["confirmed", "refunded"].includes(row.status)).length + " parcelas", "inclui recebimentos depois estornados; estornos aparecem nas saídas do Caixa") +
-      metric("Ticket médio das comandas", money(averageTicket), closedOrders.length + " comandas fechadas", "média do total das comandas fechadas criadas no período") +
+      metric("Recebimentos brutos", money(received), payments.filter(row => ["confirmed", "refunded"].includes(row.status)).length + " parcelas", "inclui recebimentos depois estornados; estornos aparecem nas saídas do Caixa") +
+      metric("Ticket médio das comandas", money(averageTicket), closedOrders.length + " comandas fechadas", "média do total das comandas encerradas no período") +
       metric("Atendimentos concluídos", String(completedAppointments), appointments.length + " agendamentos no período", "por data e hora agendada") +
-      metric("Comandas em aberto", String(pendingOrders), "comandas não finalizadas", "inclui parciais e aguardando pagamento") +
+      metric("Comandas do mês em aberto", String(pendingOrders), "comandas não finalizadas", "inclui parciais e aguardando pagamento") +
       '</div>' +
       '<section class="surface finance-section"><div class="section-heading"><div><h2>Resumo financeiro</h2><p>Valores registrados em ' + esc(dateLabel(start)) + '</p></div></div><div class="record-list">' + summaryRows + '</div></section>' +
       '<section class="surface finance-section"><div class="section-heading"><div><h2>Atendimentos</h2><p>Distribuição dos agendamentos por status</p></div><span class="result-count">' + appointments.length + ' registros</span></div><div class="record-list">' + statusRows + '</div></section>' +
-      '<p class="demo-note">Relatório somente leitura. Cada indicador usa sua própria fonte e data de referência. As consultas consideram até 2.000 registros por conjunto; para períodos com volume maior, será necessário consolidar os dados no banco. Recebimentos não são somados novamente às entradas do Caixa.</p>';
+      '<p class="demo-note">Relatório somente leitura. Cada indicador usa sua própria fonte e data de referência. Todas as páginas são consultadas; mudanças simultâneas podem exigir nova consulta. Recebimentos não são somados novamente às entradas do Caixa.</p>';
     host.dataset.period = period;
   } catch (error) {
+    if(!current())return;
     const diagnostic = reportError(error, { context: "Relatórios > consultar indicadores", notify: false });
     host.innerHTML = '<div class="empty-state"><b>Não foi possível carregar os relatórios.</b><small>Verifique sua conexão e suas permissões. Código ' + esc(diagnostic.id) + '</small></div>';
   }
