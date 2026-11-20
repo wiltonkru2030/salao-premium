@@ -19,7 +19,8 @@
  * CUSTOMER_A_ID, CUSTOMER_B_ID, ORG_A_ID, ORG_B_ID.
  *
  * Variáveis adicionais para testar RPCs:
- * CUSTOMER_A_OWNER_ACCESS_TOKEN, ORG_A_CUSTOMER_ID, ORG_B_CUSTOMER_ID.
+ * CUSTOMER_A_OWNER_ACCESS_TOKEN, CUSTOMER_A_PROFESSIONAL_ACCESS_TOKEN,
+ * ORG_A_CUSTOMER_ID, ORG_B_CUSTOMER_ID.
  */
 
 import assert from "node:assert/strict";
@@ -274,6 +275,21 @@ if (missingRpcEnv.length === 0) {
     body: linkArgs
   });
   expectDenied(customerCannotLink, "Associação de cadastro por conta de cliente");
+
+  const anonymousCannotLink = await request(null, "/rpc/link_customer_legacy", {
+    method: "POST",
+    body: linkArgs
+  });
+  expectDenied(anonymousCannotLink, "Associação de cadastro por sessão anônima");
+
+  if (ENV.CUSTOMER_A_PROFESSIONAL_ACCESS_TOKEN) {
+    const professionalCannotLink = await request(
+      ENV.CUSTOMER_A_PROFESSIONAL_ACCESS_TOKEN,
+      "/rpc/link_customer_legacy",
+      { method: "POST", body: linkArgs }
+    );
+    expectDenied(professionalCannotLink, "Associação de cadastro por profissional");
+  }
 
   const linked = await expectRpcSuccess(ownerA, "link_customer_legacy", linkArgs);
   assert.equal(linked, ENV.ORG_A_CUSTOMER_ID, "A RPC deve retornar o cadastro associado.");
