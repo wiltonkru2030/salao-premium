@@ -14,6 +14,8 @@ assert.match(normalized,/create or replace function public\.create_professional_
 assert.match(normalized,/security definer[\s\S]*?set search_path\s*=\s*''/);
 assert.match(normalized,/security invoker[\s\S]*?private\.create_professional_with_services/);
 assert.match(normalized,/private\.is_org_admin\(p_org_id\)/);
+assert.match(normalized,/p_branch_id is not null/);
+assert.match(normalized,/b\.org_id=p_org_id and b\.id=p_branch_id and b\.active=true/);
 assert.match(normalized,/p_tax_regime is null or p_tax_regime not in \('individual','mei'\)/);
 assert.match(normalized,/p_service_ids is null or cardinality\(p_service_ids\)=0/);
 assert.match(normalized,/count\(distinct service_id\)/);
