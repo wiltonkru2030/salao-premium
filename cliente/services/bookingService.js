@@ -116,6 +116,9 @@ export async function createBookingHold({
   if (typeof startsAt !== "string" || !Number.isFinite(date.getTime()) || date.getTime() <= Date.now()) {
     throw new TypeError("Escolha um horário futuro válido.");
   }
+  if (couponCode !== null && couponCode !== undefined && typeof couponCode !== "string") {
+    throw new TypeError("O código do cupom é inválido.");
+  }
   const normalizedCoupon = typeof couponCode === "string" ? couponCode.trim().toUpperCase() : null;
   if (normalizedCoupon && !/^[A-Z0-9_-]{3,32}$/.test(normalizedCoupon)) {
     throw new TypeError("O código do cupom é inválido.");
@@ -133,12 +136,18 @@ export async function createBookingHold({
   if (!row || !UUID_PATTERN.test(String(row.hold_id || "")) || !Number.isFinite(new Date(row.expires_at).getTime())) {
     throw new Error("O servidor não retornou uma reserva temporária válida.");
   }
+  const discountAmount = Number(row.coupon_discount_amount || 0);
+  const finalAmount = Number(row.coupon_final_amount);
+  if (!Number.isFinite(discountAmount) || discountAmount < 0 || !Number.isFinite(finalAmount) || finalAmount < 0 ||
+      (row.coupon_id && !UUID_PATTERN.test(String(row.coupon_id)))) {
+    throw new Error("O servidor retornou valores inválidos para a reserva.");
+  }
   return {
     holdId: row.hold_id,
     expiresAt: new Date(row.expires_at).toISOString(),
     couponId: row.coupon_id || null,
-    discountAmount: Number(row.coupon_discount_amount || 0),
-    finalAmount: Number(row.coupon_final_amount)
+    discountAmount,
+    finalAmount
   };
 }
 
