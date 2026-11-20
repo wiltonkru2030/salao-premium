@@ -70,13 +70,15 @@ export async function fetchProfessionalCommissions({ client, organizationId, pro
     .select("id,base_amount,rate,amount,status,paid_at,created_at,professional_id,payout_id")
     .eq("org_id", organizationId)
     .eq("professional_id", professionalId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false });
 
   const payoutsQuery = () => client.from("commission_payouts")
     .select("id,professional_id,amount,payment_method,paid_at,notes")
     .eq("org_id", organizationId)
     .eq("professional_id", professionalId)
-    .order("paid_at", { ascending: false });
+    .order("paid_at", { ascending: false })
+    .order("id", { ascending: false });
 
   const [commissions, payouts] = await Promise.all([
     readAllRows(commissionsQuery, "Não foi possível carregar suas comissões. Tente novamente."),
