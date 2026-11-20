@@ -27,14 +27,26 @@ export function teamPage() {
 export async function loadTeamPage() {
   const host=document.querySelector("#team-manager");
   if(!host||!state.organization?.id)return;
+  const orgId=state.organization.id;
+  const context=JSON.stringify([orgId,state.user?.id,state.membership?.role]);
+  const request=String(Number(host.dataset.request||0)+1);
+  host.dataset.request=request;
+  // O resultado de um tenant anterior nunca deve aparecer após troca de conta/rota.
+  const current=()=>host.isConnected&&state.page==="Equipe e permissões"&&
+    host.dataset.request===request&&
+    context===JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role]);
+  host._teamContext=null;
+  host.textContent="Carregando equipe…";
   let members,profiles;
   try {
-    ({members,profiles}=await fetchTeamWorkspace({client:supabase,orgId:state.organization.id}));
+    ({members,profiles}=await fetchTeamWorkspace({client:supabase,orgId}));
   } catch(error) {
+    if(!current())return;
     reportError(error,{context:"Equipe > carregar usuários"});
     host.innerHTML='<div class="empty-state"><b>Não foi possível carregar a equipe.</b><small>Atualize a página e tente novamente.</small></div>';
     return;
   }
+  if(!current())return;
   const profileMap=new Map(profiles.map(profile=>[profile.id,profile]));
   const cards=members.map(member=>{
     const profile=profileMap.get(member.user_id)||{};
@@ -43,7 +55,7 @@ export async function loadTeamPage() {
     const accessLabel=access&&full?"App Profissional · Agenda completa":access?"App Profissional · Acesso individual":"App Profissional · Sem acesso";
     const actionLabel=access&&full?"Revogar acesso":"Liberar agenda completa";
     const action=member.role==="receptionist"
-      ? '<small>'+accessLabel+'</small><button class="btn '+(access&&full?"secondary":"primary")+'" type="button" data-reception-access="'+esc(member.user_id)+'" data-enabled="'+(access&&full?"true":"false")+'">'+actionLabel+'</button>'
+      ? '<small>'+accessLabel+'</small>'+(canManageTeam()?'<button class="btn '+(access&&full?"secondary":"primary")+'" type="button" data-reception-access="'+esc(member.user_id)+'" data-enabled="'+(access&&full?"true":"false")+'">'+actionLabel+'</button>':"")
       : member.role==="owner"||member.role==="admin"
         ? '<small>Acesso completo automático</small>'
         : member.role==="professional"
@@ -58,24 +70,30 @@ export async function loadTeamPage() {
     '<div class="record-list">'+(cards||'<div class="empty-state">Nenhum usuário vinculado ao salão.</div>')+'</div>'+
     '<p class="demo-note">A recepção liberada pode consultar a agenda de todos os profissionais e os dados necessários ao atendimento. Comissões individuais e dados financeiros gerais continuam restritos.</p>';
 
+  host._teamContext={context,orgId};
   if(host.dataset.bound==="true")return;
   host.dataset.bound="true";
   host.addEventListener("click",async event=>{
     const button=event.target.closest("[data-reception-access]");
     if(!button)return;
+    const active=()=>host.isConnected&&state.page==="Equipe e permissões"&&
+      host._teamContext?.context===JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role]);
+    if(!active())return;
     if(!canManageTeam())return toast("Somente proprietário ou administrador pode alterar acessos.");
+    const activeOrgId=host._teamContext.orgId;
     const enabled=button.dataset.enabled!=="true";
     button.disabled=true;
     button.textContent="Atualizando…";
     try {
       const result=await setReceptionAppAccess({
-        client:supabase,orgId:state.organization.id,
+        client:supabase,orgId:activeOrgId,
         userId:button.dataset.receptionAccess,enabled
       });
+      if(!active())return;
       toast(result.enabled?"Agenda completa liberada para a recepção.":"Acesso ao App Profissional revogado.");
       await loadTeamPage();
     } catch(error) {
-      reportError(error,{context:"Equipe > alterar permissão da recepção"});
+      if(active())reportError(error,{context:"Equipe > alterar permissão da recepção"});
     } finally {
       if(button.isConnected)button.disabled=false;
     }

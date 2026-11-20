@@ -5,6 +5,7 @@
  * Escopo: dados cadastrais e expediente têm persistência; notificações, cobrança e outras preferências seguem pendentes.
  */
 import {bindSettingsEvents} from "../modules/settings/settings.controller.js";
+import {resolveSettingsBranch} from "../modules/settings/settings.context.js";
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
@@ -28,9 +29,9 @@ export async function loadSettingsPage() {
   const orgId = state.organization?.id;
   if (!host || !orgId) return;
 
-  const context=JSON.stringify([orgId,state.user?.id,state.membership?.role]);
+  const context=JSON.stringify([orgId,state.user?.id,state.membership?.role,state.branch?.id||null,state.branch?.isAll===true]);
   const request=String(Number(host.dataset.request||0)+1);host.dataset.request=request;
-  const current=()=>host.isConnected&&host.dataset.request===request&&context===JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role]);
+  const current=()=>host.isConnected&&state.page==="Configurações"&&host.dataset.request===request&&context===JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role,state.branch?.id||null,state.branch?.isAll===true]);
   host._settingsContext=null;
   host.textContent="Carregando configurações…";
   try {
@@ -49,11 +50,14 @@ export async function loadSettingsPage() {
     if (branchError) throw branchError;
     if (!organization) throw new Error("Organização não encontrada.");
 
-    const units = branches || [];
-    const selectedBranch = units.find(item => item.id === state.branch?.id) ||
-      units.find(item => item.is_main) || units[0] || null;
+    // Seleção administrativa é independente da unidade operacional do cabeçalho.
+    // A opção 'Todas as unidades' não deve ser transformada silenciosamente em Matriz.
+    const {units,selectedBranch}=resolveSettingsBranch({
+      units:branches||[],selectedBranchId:host.dataset.settingsBranchId||null,
+      operationalBranch:state.branch,role:state.membership?.role
+    });
     if(!current())return;
-    state.branch = selectedBranch;
+    host.dataset.settingsBranchId=selectedBranch?.id||"";
     const canManage = canManageSettings();
     let publicProfile = null;
     let branchPublicProfile = null;
@@ -76,13 +80,22 @@ export async function loadSettingsPage() {
         else throw error;
       }
     }
-    const availability = selectedBranch ? await listAvailabilitySettings(orgId, selectedBranch.id) : null;
+    // Uma falha na consulta de expediente não pode ocultar dados cadastrais já carregados.
+    // Permissões de escrita/consulta continuam impostas no banco via RLS.
+    let availability=null,availabilityError=false;
+    if(selectedBranch&&canManage){
+      try{availability=await listAvailabilitySettings(orgId,selectedBranch.id);}
+      catch(error){
+        availabilityError=true;
+        if(current())reportError(error,{context:"Configurações > consultar expediente",notify:false});
+      }
+    }
 
     if(!current())return;
-    host.innerHTML=renderSettingsView({organization,units,selectedBranch,canManage,publicProfile,branchPublicProfile,publicDirectoryReady,availability});
+    host.innerHTML=renderSettingsView({organization,units,selectedBranch,canManage,publicProfile,branchPublicProfile,publicDirectoryReady,availability,availabilityError});
     host._settingsContext={context,units,orgId};
 
-    bindAvailabilitySettings(host,{orgId,branchId:selectedBranch?.id,canManage,reload:loadSettingsPage});
+    bindAvailabilitySettings(host,{orgId,branchId:selectedBranch?.id,canManage:canManage&&!availabilityError,reload:loadSettingsPage});
 
     bindSettingsEvents({host,state,supabase,toast,reportError,canManageSettings,reload:loadSettingsPage});
   } catch (error) {

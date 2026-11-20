@@ -4,7 +4,7 @@ import {timezones} from "./settings.view.js";
 export function bindSettingsEvents({host,state,supabase,toast,reportError,canManageSettings,reload}){
     if (host.dataset.bound !== "true") {
       host.dataset.bound = "true";
-      const active=()=>host.isConnected&&host._settingsContext?.context===JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role]);
+      const active=()=>host.isConnected&&state.page==="Configurações"&&host._settingsContext?.context===JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role,state.branch?.id||null,state.branch?.isAll===true]);
 
       host.addEventListener("click", event => {
         const opener = event.target.closest("[data-open-settings]");
@@ -24,7 +24,10 @@ export function bindSettingsEvents({host,state,supabase,toast,reportError,canMan
       host.addEventListener("change", event => {
         if (event.target.id !== "settings-branch-select") return;
         if(!active())return;
-        state.branch = host._settingsContext.units.find(unit => unit.id === event.target.value) || null;
+        const selected=host._settingsContext.units.find(unit=>unit.id===event.target.value);
+        if(!selected)return;
+        // Não altera state.branch: esta escolha é exclusiva dos formulários administrativos.
+        host.dataset.settingsBranchId=selected.id;
         reload();
       });
 

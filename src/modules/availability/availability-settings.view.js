@@ -11,8 +11,8 @@ import { toast, esc } from "../../utils.js";
 
 const DAYS=["Domingo","Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"];
 const time=value=>esc(String(value||"").slice(0,5));
-function record(title,detail,table,id){
- return '<article class="record-card"><span class="record-main"><b>'+title+'</b><small>'+detail+'</small></span><button class="btn secondary" type="button" data-delete-availability="'+table+'" data-id="'+esc(id)+'">Excluir</button></article>';
+function record(title,detail,table,id,canManage){
+ return '<article class="record-card"><span class="record-main"><b>'+title+'</b><small>'+detail+'</small></span>'+(canManage?'<button class="btn secondary" type="button" data-delete-availability="'+table+'" data-id="'+esc(id)+'">Excluir</button>':"")+'</article>';
 }
 
 /** Gera a seção de configuração com os registros reais retornados pelo Supabase. */
@@ -20,15 +20,15 @@ export function renderAvailabilitySettings(data,canManage){
  if(!data) return '<section class="surface settings-panel"><div class="empty-state">Cadastre uma unidade para configurar o expediente.</div></section>';
  const professionals=data.professionals||[];
  const professionalOptions=professionals.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join("");
- const branchRows=(data.branchHours||[]).map(h=>record(DAYS[h.weekday],time(h.opens_at)+' às '+time(h.closes_at),'branch_business_hours',h.id)).join("");
+ const branchRows=(data.branchHours||[]).map(h=>record(DAYS[h.weekday],time(h.opens_at)+' às '+time(h.closes_at),'branch_business_hours',h.id,canManage)).join("");
  const proRows=(data.professionalHours||[]).map(h=>{
   const p=professionals.find(x=>x.id===h.professional_id);
-  return record(esc(p?.name||"Profissional")+' · '+DAYS[h.weekday],time(h.starts_at)+' às '+time(h.ends_at),'professional_working_hours',h.id);
+  return record(esc(p?.name||"Profissional")+' · '+DAYS[h.weekday],time(h.starts_at)+' às '+time(h.ends_at),'professional_working_hours',h.id,canManage);
  }).join("");
- const closureRows=(data.closures||[]).map(x=>record('Fechamento · '+esc(x.reason),esc(new Date(x.starts_at).toLocaleString("pt-BR"))+' até '+esc(new Date(x.ends_at).toLocaleString("pt-BR")),'branch_closures',x.id)).join("");
+ const closureRows=(data.closures||[]).map(x=>record('Fechamento · '+esc(x.reason),esc(new Date(x.starts_at).toLocaleString("pt-BR"))+' até '+esc(new Date(x.ends_at).toLocaleString("pt-BR")),'branch_closures',x.id,canManage)).join("");
  const timeOffRows=(data.timeOff||[]).map(x=>{
   const p=professionals.find(y=>y.id===x.professional_id);
-  return record('Afastamento · '+esc(p?.name||"Profissional"),esc(x.reason||"Sem motivo informado")+' · '+esc(new Date(x.starts_at).toLocaleString("pt-BR"))+' até '+esc(new Date(x.ends_at).toLocaleString("pt-BR")),'professional_time_off',x.id);
+  return record('Afastamento · '+esc(p?.name||"Profissional"),esc(x.reason||"Sem motivo informado")+' · '+esc(new Date(x.starts_at).toLocaleString("pt-BR"))+' até '+esc(new Date(x.ends_at).toLocaleString("pt-BR")),'professional_time_off',x.id,canManage);
  }).join("");
  return '<section class="surface settings-panel" style="margin-top:18px">'+
   '<div class="section-heading"><div><h2>Expediente e disponibilidade</h2><p>Reservas online respeitam os horários da unidade, do profissional e as exceções cadastradas.</p></div></div>'+

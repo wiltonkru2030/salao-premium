@@ -65,7 +65,7 @@ const timezoneLabel = value => ({
 
 
 /** Renderiza organização, unidades, vitrine e expediente conforme permissões. */
-export function renderSettingsView({organization,units,selectedBranch,canManage,publicProfile,branchPublicProfile,publicDirectoryReady,availability}){
+export function renderSettingsView({organization,units,selectedBranch,canManage,publicProfile,branchPublicProfile,publicDirectoryReady,availability,availabilityError=false}){
     return `
       <section class="surface settings-panel">
         <div class="section-heading">
@@ -102,7 +102,11 @@ export function renderSettingsView({organization,units,selectedBranch,canManage,
 
       ${renderPublicProfileSettings({organization,branch:selectedBranch,profile:publicProfile,branchProfile:branchPublicProfile,canManage,ready:publicDirectoryReady})}
 
-      ${renderAvailabilitySettings(availability, canManage)}
+      ${availabilityError
+        ? '<section class="surface settings-panel" style="margin-top:18px"><h2>Expediente e disponibilidade</h2><p>Não foi possível consultar os horários desta unidade. Verifique as permissões ou tente novamente.</p></section>'
+        : selectedBranch && !canManage
+          ? '<section class="surface settings-panel" style="margin-top:18px"><h2>Expediente e disponibilidade</h2><p>A alteração de horários é restrita a proprietário e administrador.</p></section>'
+          : renderAvailabilitySettings(availability, canManage)}
 
       <section class="surface settings-panel" style="margin-top:18px">
         <div class="section-heading"><div><h2>Preferências do sistema</h2><p>Recursos que ainda não possuem persistência validada no banco.</p></div></div>
