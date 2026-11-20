@@ -298,3 +298,13 @@ Migrations aplicadas no Supabase conectado:
 Migration `20261120041630_customer_appointment_holds_private_rpc` aplicada. A implementação privilegiada das operações de criar, confirmar e cancelar HOLD foi movida para o schema não exposto `private`. O schema `public` mantém apenas wrappers `SECURITY INVOKER`, com execução para `authenticated`; as funções internas usam `SECURITY DEFINER`, `search_path = ''` e checagem de `auth.uid()`.
 
 A consulta ao Security Advisor deixou de listar as três RPCs de HOLD entre as funções SECURITY DEFINER expostas no schema público. Os alertas restantes são anteriores a esta etapa e exigem auditoria individual. A proteção contra senhas vazadas também segue desativada e precisa ser habilitada nas configurações de Auth.
+
+
+### Contrato de segurança final das operações HOLD
+
+As funções transacionais SECURITY DEFINER foram movidas para `private` pela migration `20261120041630_customer_appointment_holds_private_rpc`. As funções em `public` são wrappers SECURITY INVOKER, sem `search_path` implícito e com EXECUTE concedido somente a `authenticated`. A inspeção de privilégios confirmou:
+- funções internas `private.*`: SECURITY DEFINER, `search_path = ''`, EXECUTE para authenticated e não para anon;
+- wrappers `public.*`: SECURITY INVOKER, EXECUTE para authenticated e não para anon;
+- tabela `appointment_holds`: RLS ligado, política explícita de negação de acesso direto e sem grants diretos.
+
+O Security Advisor deixou de listar as RPCs de HOLD como SECURITY DEFINER expostas em `public`. Ainda há 16 avisos de funções SECURITY DEFINER preexistentes em outros módulos e um aviso de proteção contra senhas vazadas desativada.
