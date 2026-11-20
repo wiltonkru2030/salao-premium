@@ -47,15 +47,15 @@ async function refresh(ctrl){
   const [catalog,waitlist,packages]=await Promise.all([
    loadOfferCatalog(params),listAppointmentWaitlist(params),loadServicePackages(params)
   ]);
-  if(!ctrl.root.isConnected||ctrl.seq!==seq||context(ctrl.state)!==ctx)return;
+  if(!ctrl.root.isConnected||ctrl.seq!==seq||ctrl.data!==st||context(ctrl.state)!==ctx)return;
   Object.assign(st,{...catalog,waitlist,packages,loading:false,loaded:true,error:""});
  }catch(error){
-  if(!ctrl.root.isConnected||ctrl.seq!==seq||context(ctrl.state)!==ctx)return;
+  if(!ctrl.root.isConnected||ctrl.seq!==seq||ctrl.data!==st||context(ctrl.state)!==ctx)return;
   st.error=error.message||"Não foi possível carregar a lista de espera.";
   st.loading=false;
   reportError(error,{context:"Agenda > pacotes e lista de espera",notify:false});
  }
- if(ctrl.root.isConnected&&ctrl.seq===seq&&context(ctrl.state)===ctx)paint(ctrl);
+ if(ctrl.root.isConnected&&ctrl.seq===seq&&ctrl.data===st&&context(ctrl.state)===ctx)paint(ctrl);
 }
 function openDialog(root,id){
  const dialog=root.querySelector("#"+id);
