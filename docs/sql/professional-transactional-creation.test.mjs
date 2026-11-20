@@ -23,6 +23,8 @@ assert.match(normalized,/insert into public\.professional_services/);
 assert.match(normalized,/revoke all on function private\.create_professional_with_services/);
 assert.match(normalized,/grant execute on function private\.create_professional_with_services[\s\S]*?to authenticated/);
 assert.match(normalized,/grant execute on function public\.create_professional_with_services[\s\S]*?to authenticated/);
+assert.match(normalized,/comment on function private\.create_professional_with_services/);
+assert.match(normalized,/comment on function public\.create_professional_with_services/);
 assert.doesNotMatch(normalized,/grant execute on function public\.create_professional_with_services[^;]*to anon/);
 assert.doesNotMatch(normalized,/drop\s+table|truncate\s+table/);
 console.log("Contrato estático da criação transacional de profissionais: OK.");
