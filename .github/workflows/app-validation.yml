@@ -2,7 +2,7 @@ name: App validation
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'sync/lovable-finalization-20261113']
   pull_request:
     branches: [main]
 
