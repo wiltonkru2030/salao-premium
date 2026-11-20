@@ -204,3 +204,16 @@ O teste `tests/integration/customer-global-identity-rls.test.mjs` foi atualizado
 ### Nota técnica de expiração
 
 A RPC de confirmação rejeita solicitações expiradas. Ela não tenta gravar `status='expired'` e lançar exceção na mesma transação, pois a exceção faria rollback da atualização. A listagem oculta pedidos expirados; um novo pedido do owner/admin renova a solicitação pendente existente.
+
+
+### Confirmação na experiência da cliente
+
+A RPC `get_my_pending_customer_link_requests` retorna somente o contexto mínimo para a cliente decidir:
+- nome público do salão;
+- nome do cadastro legado;
+- somente os dois últimos dígitos do telefone, quando disponível;
+- identificador da solicitação, organização e expiração.
+
+O identificador interno do cadastro e o telefone completo não são enviados à interface. Foi criado `cliente/services/customerIdentityLinkService.js` para listar e confirmar solicitações, além de `cliente/utils/customerIdentityLinkUtils.js` para validar e normalizar os dados. Os testes puros desses utilitários foram incluídos em `test:customer-services`.
+
+A interface visual de confirmação ainda precisa ser conectada a esse serviço; criar o serviço não equivale a concluir a experiência ponta a ponta.
