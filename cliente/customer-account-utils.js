@@ -1,33 +1,17 @@
 /**
- * Funções puras para validar os dados de perfil de cliente.
- * Separadas do cliente Supabase para permitir testes locais sem rede.
+ * Utilitários legados de cadastro por marca desativados.
+ * A identidade atual é global e não utiliza organizationSlug nem data de nascimento
+ * como chave de autenticação ou critério automático de associação.
  */
-const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-export function normalizeCustomerName(value) {
-  const name = String(value ?? "").trim().replace(/\s+/g, " ");
-  if (name.length < 2 || name.length > 120) throw new Error("Informe seu nome completo (de 2 a 120 caracteres).");
-  return name;
+export function normalizeCustomerName() {
+  throw new Error("O cadastro legado por salão foi desativado. Utilize o perfil global.");
 }
-export function normalizeOrganizationSlug(value) {
-  const slug = String(value ?? "").trim().toLowerCase();
-  if (!SLUG_PATTERN.test(slug) || slug.length > 80) throw new Error("O link do salão é inválido. Peça o link correto à recepção.");
-  return slug;
+export function normalizeOrganizationSlug() {
+  throw new Error("O vínculo com salões será realizado pelo fluxo global seguro.");
 }
-export function validateBirthDate(value) {
-  if (value === null || value === undefined || value === "") return null;
-  const birthDate = String(value);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) throw new Error("Confira a data de nascimento.");
-  const [year, month, day] = birthDate.split("-").map(Number);
-  const parsed = new Date(Date.UTC(year, month - 1, day));
-  const normalized = parsed.toISOString().slice(0, 10);
-  const today = new Date().toISOString().slice(0, 10);
-  if (normalized !== birthDate || year < 1900 || birthDate > today) throw new Error("Informe uma data de nascimento válida.");
-  return birthDate;
+export function validateBirthDate() {
+  throw new Error("Data de nascimento não é método de autenticação nem prova de identidade.");
 }
-export function validateCustomerProfile({ organizationSlug, fullName, birthDate = null }) {
-  return {
-    organizationSlug: normalizeOrganizationSlug(organizationSlug),
-    fullName: normalizeCustomerName(fullName),
-    birthDate: validateBirthDate(birthDate)
-  };
+export function validateCustomerProfile() {
+  throw new Error("O cadastro por marca foi desativado em favor da identidade global.");
 }
