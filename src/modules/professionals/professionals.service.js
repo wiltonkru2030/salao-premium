@@ -24,13 +24,18 @@ function mapWorkspaceError(error) {
  * @param {object} options Cliente Supabase, organização e usuário atual.
  * @returns {Promise<object>} Profissionais, serviços, vínculos, membros e perfis.
  */
-export async function fetchProfessionalWorkspace({client,orgId,currentUserId}={}) {
+export async function fetchProfessionalWorkspace({client,orgId,currentUserId,branchId=null}={}) {
   requireContext(client,orgId);
   try {
+    if(branchId&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(branchId)) {
+      throw new TypeError("A unidade selecionada não é válida.");
+    }
+    let professionalQuery=client.from("professionals")
+      .select("id,name,phone,email,active,access_enabled,commission_rate,tax_regime,cnpj,legal_name,trade_name,specialty,branch_id")
+      .eq("org_id",orgId);
+    if(branchId)professionalQuery=professionalQuery.eq("branch_id",branchId);
     const [professionalResult,serviceResult,membersResult,assignmentResult]=await Promise.all([
-      client.from("professionals")
-        .select("id,name,phone,email,active,access_enabled,commission_rate,tax_regime,cnpj,legal_name,trade_name,specialty")
-        .eq("org_id",orgId).order("name"),
+      professionalQuery.order("name"),
       client.from("services").select("id,name,category,active")
         .eq("org_id",orgId).eq("active",true).order("category").order("name").limit(500),
       client.from("org_memberships").select("user_id,role,professional_app_enabled,professional_app_scope")
@@ -127,7 +132,7 @@ export async function revokeProfessionalAppAccess({client,orgId,professionalId}=
  * @returns {Promise<string>} ID do profissional criado.
  */
 export async function createProfessionalWithServices({
-  client,orgId,name,phone=null,email=null,commissionRate,taxRegime="individual",
+  client,orgId,branchId=null,name,phone=null,email=null,commissionRate,taxRegime="individual",
   cnpj=null,legalName=null,tradeName=null,specialty=null,serviceIds=[]
 }={}) {
   if(!client?.rpc)throw new TypeError("A conexão com o cadastro profissional não está disponível.");
@@ -145,7 +150,7 @@ export async function createProfessionalWithServices({
   if(!ids.length||new Set(ids).size!==ids.length)throw new TypeError("Selecione serviços válidos sem duplicidade.");
   try {
     const {data,error}=await client.rpc("create_professional_with_services",{
-      p_org_id:orgId,p_name:cleanName,p_phone:phone,p_email:email,
+      p_org_id:orgId,p_branch_id:branchId||null,p_name:cleanName,p_phone:phone,p_email:email,
       p_commission_rate:rate,p_tax_regime:taxRegime,
       p_cnpj:taxRegime==="mei"?String(cnpj).replace(/\D/g,""):null,
       p_legal_name:taxRegime==="mei"?String(legalName).trim():null,
