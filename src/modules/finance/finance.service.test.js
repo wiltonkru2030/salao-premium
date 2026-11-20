@@ -37,6 +37,9 @@ async function run(){
   assert.equal(client.calls.length,2);
   assert.ok(client.calls.every(call=>call.filters.some(([key,value])=>key==="org_id"&&value==="org-a")));
   assert.ok(client.calls.find(call=>call.table==="cash_movements").filters.some(([key,op])=>key==="created_at"&&op===">="));
+  const branchClient=mockClient({cash_movements:[],expenses:[]});
+  await fetchFinanceWorkspace({client:branchClient,orgId:"org-a",branchId:"branch-a",startIso:"2026-11-01",endIso:"2026-12-01"});
+  assert.ok(branchClient.calls.every(call=>call.filters.some(([key,value])=>key==="branch_id"&&value==="branch-a")));
   await assert.rejects(()=>fetchFinanceWorkspace({client,orgId:"org-a",startIso:"invalid",endIso:"2026-12-01"}),{name:"TypeError"});
   await assert.rejects(()=>fetchFinanceWorkspace({client,orgId:"",startIso:"2026-11-01",endIso:"2026-12-01"}),{name:"TypeError"});
   const failing=mockClient({}, {code:"42501",message:"SQL privado"});
