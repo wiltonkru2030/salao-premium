@@ -24,6 +24,14 @@ async function refreshBranchContext() {
   try {
     const branches=await listBranches({client:supabase,orgId:state.organization.id});
     state.availableBranches=branches.filter(branch=>branch.active);
+    if(state.membership?.role==="professional") {
+      const {data:professional,error}=await supabase.from("professionals")
+        .select("branch_id").eq("org_id",state.organization.id)
+        .eq("profile_id",state.user?.id).maybeSingle();
+      if(error)throw error;
+      state.branch=state.availableBranches.find(branch=>branch.id===professional?.branch_id)||null;
+      return;
+    }
     const current=state.availableBranches.find(branch=>branch.id===state.branch?.id);
     state.branch=current||state.availableBranches.find(branch=>branch.is_main)||state.availableBranches[0]||null;
   } catch(error) {
