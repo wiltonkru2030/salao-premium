@@ -1,0 +1,20 @@
+/** Contrato estático da candidata Agenda/Comanda; não substitui teste concorrente real. */
+import assert from "node:assert/strict";
+import {readFile} from "node:fs/promises";
+const sql=(await readFile(new URL("./agenda-order-branch-idempotency.draft.sql",import.meta.url),"utf8")).toLowerCase();
+assert.match(sql,/create or replace function private\.start_appointment_service_order/);
+assert.match(sql,/create or replace function private\.start_appointment_group_service_order/);
+assert.match(sql,/branch_id is not distinct from v_appt\.branch_id/);
+assert.match(sql,/v_target_order_id:=coalesce\(v_item_order_id,v_appt\.service_order_id,p_existing_order_id\)/);
+assert.match(sql,/v_item_order_id<>v_appt\.service_order_id/);
+assert.match(sql,/if v_item_order_id is null then\s+insert into public\.service_order_items/);
+assert.match(sql,/p\.status='confirmed'/);
+assert.match(sql,/elsif v_order\.status='open' then/);
+assert.match(sql,/if v_appt\.appointment_group_id is distinct from v_group_id/);
+assert.match(sql,/where id=v_group_id for update/);
+assert.match(sql,/appointment_group_id=v_first\.appointment_group_id order by id for update/);
+assert.match(sql,/a\.branch_id is distinct from v_first\.branch_id/);
+assert.match(sql,/v_existing:=coalesce\(v_existing,p_existing_order_id\)/);
+assert.match(sql,/if not coalesce\(\(/);
+assert.doesNotMatch(sql,/create or replace function public\./);
+console.log("Contrato de integridade Agenda/Comanda: OK (sem integração).");
