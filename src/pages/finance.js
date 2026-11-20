@@ -39,7 +39,7 @@ export async function loadFinancePage() {
     const endIso = nextMonth.toISOString();
 
     const {movements,expenses}=await fetchFinanceWorkspace({
-      client:supabase,orgId,startIso,endIso,limit:500
+      client:supabase,orgId,branchId:state.branch?.id||null,startIso,endIso,limit:500
     });
 
     const sum = (rows, predicate) => rows.filter(predicate).reduce((total, row) => total + Number(row.amount || 0), 0);
