@@ -5,6 +5,7 @@ import { head, esc, toast } from "../utils.js";
 import { mountAutocomplete } from "../components/autocomplete.js";
 import { reportError } from "../utils/errors.js";
 import { fetchCommissionPageData, fetchCommissionReferences } from "../modules/commissions/commissions.service.js";
+import { summarizeCommissionPayout } from "../modules/commissions/commission-payout-summary.js";
 import { createServiceCommissionRule, updateServiceCommissionRule, deleteServiceCommissionRule, saveProductCommissionSetting, payProfessionalCommissions } from "../modules/commissions/commission-rules.service.js";
 
 let cleanupSearch=null;
@@ -59,7 +60,7 @@ export async function loadCommissionsPage(){
    current.push(commission);groups.set(commission.professional_id,current);
   }
   const sections=[...groups.entries()].map(([professionalId,rows])=>{
-   const professional=professionalMap.get(professionalId),eligible=rows.filter(c=>["pending","approved"].includes(c.status)&&!c.payout_id);
+   const professional=professionalMap.get(professionalId),eligible=rows.filter(c=>["pending","approved"].includes(c.status)&&!c.payout_id&&Number(c.amount)>0);
    return '<section class="settings-card commission-group"><div class="section-title"><div><h3>'+esc(professional?.name||"Profissional")+
 
 '</h3><small class="muted">'+rows.length+
@@ -78,7 +79,7 @@ export async function loadCommissionsPage(){
      '<span><b>'+money(c.amount)+
 
 '</b><small>'+
-(c.item_type==="product"?"Produto":"Serviço")+
+(Number(c.amount)<0?"Débito por estorno":c.item_type==="product"?"Produto":"Serviço")+
 
 ' · Base '+money(c.base_amount)+
 
@@ -222,12 +223,18 @@ export async function loadCommissionsPage(){
 
 '"]')?.value||"pix";
     const name=professionalMap.get(professionalId)?.name||"profissional";
-    const amount=visible.filter(c=>ids.includes(c.id)).reduce((sum,c)=>sum+Number(c.amount||0),0);
-    if(!window.confirm("Confirmar pagamento de "+money(amount)+
-
-" para "+name+
-
-"? O lançamento será registrado como saída no Caixa."))return;
+    let summary;
+    try {
+     summary=summarizeCommissionPayout({rows:visible,professionalId,selectedIds:ids});
+    } catch(error) {
+     reportError(error,{context:"Comissões > conferir repasse"});
+     return;
+    }
+    if(summary.net<=0){toast("Saldo líquido insuficiente. Os débitos permanecem pendentes.");return;}
+    const confirmation=summary.debit>0
+      ? "Créditos: "+money(summary.credit)+"\nDébitos de estorno: "+money(summary.debit)+"\nRepasse líquido: "+money(summary.net)
+      : "Repasse: "+money(summary.net);
+    if(!window.confirm(confirmation+"\nConfirmar pagamento para "+name+"? O valor líquido será registrado como saída no Caixa."))return;
     button.disabled=true;button.textContent="Registrando…";
     let payment;
     try {
