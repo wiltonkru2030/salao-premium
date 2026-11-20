@@ -34,10 +34,12 @@ export async function fetchProfessionalWorkspace({client,orgId,currentUserId,bra
       .select("id,name,phone,email,active,access_enabled,commission_rate,tax_regime,cnpj,legal_name,trade_name,specialty,branch_id")
       .eq("org_id",orgId);
     if(branchId)professionalQuery=professionalQuery.eq("branch_id",branchId);
+    let serviceQuery=client.from("services").select("id,name,category,active,branch_id")
+      .eq("org_id",orgId).eq("active",true);
+    if(branchId)serviceQuery=serviceQuery.or("branch_id.eq."+branchId+",branch_id.is.null");
     const [professionalResult,serviceResult,membersResult,assignmentResult]=await Promise.all([
       professionalQuery.order("name"),
-      client.from("services").select("id,name,category,active")
-        .eq("org_id",orgId).eq("active",true).order("category").order("name").limit(500),
+      serviceQuery.order("category").order("name").limit(500),
       client.from("org_memberships").select("user_id,role,professional_app_enabled,professional_app_scope")
         .eq("org_id",orgId).eq("status","active").in("role",["owner","admin","receptionist"]),
       client.from("professional_services").select("professional_id,service_id").eq("org_id",orgId)
