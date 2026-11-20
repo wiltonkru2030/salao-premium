@@ -58,7 +58,9 @@ const migrationFiles = [
   "20261120064407_public_salon_directory_and_availability.sql",
   "20261120064553_align_public_profiles_with_settings.sql",
   "20261120064639_restrict_private_schema_public_api.sql",
-  "20261120064758_allow_members_read_public_profile_settings.sql"
+  "20261120064758_allow_members_read_public_profile_settings.sql",
+  "20261120070111_coupon_fk_indexes_and_public_profile_policy_cleanup.sql",
+  "20261120070234_audit_public_salon_profiles.sql"
 ];
 const appliedSql = (await Promise.all(migrationFiles.map(file =>
   readFile(new URL(file, migrationDirectory), "utf8")
@@ -82,5 +84,10 @@ assert.ok(!appliedSql.split("\n").some(line =>
 assert.match(appliedSql, /appointment_holds/);
 assert.match(appliedSql, /branch_closures/);
 assert.match(appliedSql, /professional_time_off/);
+assert.match(appliedSql, /create trigger audit_row_change after insert or update or delete on public\\.salon_public_profiles/);
+assert.match(appliedSql, /create trigger audit_row_change after insert or update or delete on public\\.branch_public_profiles/);
+assert.match(appliedSql, /v_data->>'branch_id'/);
+assert.match(appliedSql, /v_data->>'slug'/);
+assert.match(appliedSql, /insert into public\\.recycle_bin/);
 
 console.log("Contrato estático do diretório público e migrations: OK (não equivale à execução no PostgreSQL).");
