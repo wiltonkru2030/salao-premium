@@ -6,10 +6,11 @@
  */
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
-import { head, esc, toast, btn } from "../utils.js";
+import { head, toast, btn } from "../utils.js";
 import { reportError } from "../utils/errors.js";
 import { listCustomers, saveCustomer, setCustomerActive } from "../modules/customers/customers.service.js";
 
+import { renderCustomersView } from "../modules/customers/customers.view.js";
 import { createCustomerPageState } from "../modules/customers/customer-page-state.js";
 
 const customerPageState=createCustomerPageState();
@@ -73,30 +74,7 @@ export async function loadCustomersPage() {
     return;
   }
 
-  const cards=customers.map(customer=>{
-    const actions=canManageCustomers()
-      ? '<button class="btn secondary" type="button" data-edit-customer="'+esc(customer.id)+'">Editar</button>'+
-        '<button class="text-button" type="button" data-toggle-customer="'+esc(customer.id)+'" data-active="'+(customer.active?"true":"false")+'">'+(customer.active?"Inativar":"Reativar")+'</button>'
-      : "";
-    return '<article class="record-card"><span class="record-main"><b>'+esc(customer.name)+'</b>'+
-      '<small>'+esc(customer.phone||"Telefone não informado")+'</small>'+
-      '<small>'+esc(customer.email||"")+'</small></span>'+
-      '<span class="record-trailing"><small class="status-pill '+(customer.active?"active":"inactive")+'">'+(customer.active?"Ativo":"Inativo")+'</small>'+actions+'</span></article>';
-  }).join("");
-
-  host.innerHTML=
-    '<dialog class="sp-modal" id="customer-create-modal" aria-labelledby="customer-modal-title">'+
-      '<div class="sp-modal-shell"><header class="sp-modal-head"><div><h2 id="customer-modal-title">Novo cliente</h2><p>Informe os dados para adicionar à base de clientes.</p></div>'+
-      '<button class="sp-modal-close" type="button" data-close-customer-modal aria-label="Fechar">×</button></header>'+
-      '<form id="customer-create-form"><input type="hidden" name="customer_id"><div class="sp-modal-body">'+
-      '<label class="sp-span">Nome completo<input name="name" required minlength="2" maxlength="120" placeholder="Nome do cliente" autocomplete="name"></label>'+
-      '<label>Telefone<input name="phone" type="tel" data-mask="phone" placeholder="(00) 00000-0000" autocomplete="tel"></label>'+
-      '<label>E-mail<input name="email" type="email" maxlength="254" placeholder="cliente@email.com" autocomplete="email"></label>'+
-      '<label>Data de nascimento<input name="birth_date" type="date"></label>'+
-      '</div><footer class="sp-modal-foot"><button class="btn secondary" type="button" data-close-customer-modal>Cancelar</button>'+
-      '<button class="btn primary" type="submit">Cadastrar cliente</button></footer></form></div></dialog>'+
-    '<div class="list-toolbar"><span class="result-count">'+customers.length+' clientes</span></div>'+
-    '<div class="record-list">'+(cards||'<div class="empty-state">Nenhum cliente cadastrado.</div>')+'</div>';
+  host.innerHTML=renderCustomersView(customers,canManageCustomers());
 
   if(host.dataset.bound==="true")return;
   host.dataset.bound="true";
