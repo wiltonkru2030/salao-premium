@@ -63,11 +63,15 @@ function normalizePayload(input, orgId) {
   if (!customerName || !serviceName || !professionalId || !input.customer_id || !input.service_id) {
     throw new TypeError("Selecione cliente, serviço e profissional válidos.");
   }
+  if (typeof input.branch_id !== "string" || !input.branch_id.trim()) {
+    throw new TypeError("Selecione a unidade do salão antes de agendar.");
+  }
   if (end.getTime()-start.getTime() > 720*60000) throw new TypeError("A duração do atendimento ultrapassa o limite permitido.");
   const price = Number(input.price);
   if (!Number.isFinite(price) || price < 0) throw new TypeError("Informe um valor válido para o serviço.");
   return {
     org_id: orgId,
+    branch_id: input.branch_id.trim(),
     customer_id: input.customer_id,
     professional_id: professionalId,
     service_id: input.service_id,
@@ -241,7 +245,6 @@ export async function previewMoveAppointment(id,changes,context={}) {
   const payload=normalizePayload({...current,...changes},context.orgId);
   const candidate=toCandidate({...payload,id});
   const existing=await readAllAppointments(context.client,context.orgId,{date:candidate.date});
-  const {checkAvailability}=await import("./availability.service.js");
   const validation=checkAvailability(candidate,existing.map(toCandidate),{opening:context.opening||"08:00",closing:context.closing||"20:00"});
   return {ok:validation.valid,errors:validation.errors,preview:payload};
 }
