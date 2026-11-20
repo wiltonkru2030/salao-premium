@@ -19,7 +19,8 @@ function mockClient(response) {
     select(value) { calls.selection = value; return this; },
     eq(...args) { calls.filters.push(args); return this; },
     order(...args) { calls.order = args; return this; },
-    limit(value) { calls.limit = value; return Promise.resolve(response); }
+    limit(value) { calls.limit = value; return this; },
+    then(resolve, reject) { return Promise.resolve(response).then(resolve, reject); }
   };
   return {
     calls,
