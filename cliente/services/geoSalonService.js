@@ -1,3 +1,5 @@
+import { searchPublicSalons } from "./salonDirectoryService.js";
+
 /**
  * Módulo: geoSalonService.js
  * Responsabilidade: obter localização com consentimento e calcular distâncias.
@@ -47,9 +49,19 @@ export function distanceInKm(origin, destination) {
   return 6371 * 2 * Math.asin(Math.sqrt(h));
 }
 
-/** Busca de diretório depende da RPC pública e das políticas de catálogo ainda não implantadas. */
-export async function findNearbySalons() {
-  const error = new Error("A busca de salões será ativada após a implantação segura do diretório público.");
-  error.code = "SALON_DIRECTORY_NOT_READY";
-  throw error;
+/**
+ * Pesquisa unidades publicadas próximas às coordenadas autorizadas pela cliente.
+ * @param {object} options Cliente Supabase, coordenadas e raio.
+ * @returns {Promise<Array<object>>} Unidades publicadas ordenadas por distância.
+ * @throws {TypeError|Error} Para coordenadas inválidas ou falha da RPC pública.
+ */
+export async function findNearbySalons({client,latitude,longitude,radiusKm=30,limit=30}={}) {
+  const coordinates = validateCoordinates(latitude, longitude);
+  return searchPublicSalons({
+    client,
+    latitude: coordinates.latitude,
+    longitude: coordinates.longitude,
+    radiusKm,
+    limit
+  });
 }
