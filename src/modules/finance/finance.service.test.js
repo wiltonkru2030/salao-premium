@@ -15,10 +15,10 @@ function mockClient(tables={},error=null) {
       gte(key,value){call.filters.push([key,">=",value]);return query;},
       lt(key,value){call.filters.push([key,"<",value]);return query;},
       order(key,options){call.order=[key,options];return query;},
-      limit(value){call.limit=value;return query;},
+      range(from,to){call.range=[from,to];return query;},
       then(resolve,reject){
         if(error)return Promise.resolve({data:null,error}).then(resolve,reject);
-        return Promise.resolve({data:tables[table]||[],error:null}).then(resolve,reject);
+        return Promise.resolve({data:(tables[table]||[]).slice(call.range?.[0]||0,(call.range?.[1]??499)+1),error:null}).then(resolve,reject);
       }
     };
     return query;
@@ -37,6 +37,10 @@ async function run(){
   assert.equal(client.calls.length,2);
   assert.ok(client.calls.every(call=>call.filters.some(([key,value])=>key==="org_id"&&value==="org-a")));
   assert.ok(client.calls.find(call=>call.table==="cash_movements").filters.some(([key,op])=>key==="created_at"&&op===">="));
+  const large=mockClient({cash_movements:Array.from({length:501},(_,i)=>({id:"m"+i,amount:1})),expenses:[]});
+  const all=await fetchFinanceWorkspace({client:large,orgId:"org-a",startIso:"2026-11-01",endIso:"2026-12-01"});
+  assert.equal(all.movements.length,501);
+  assert.deepEqual(large.calls.filter(c=>c.table==="cash_movements").map(c=>c.range),[[0,499],[500,999]]);
   const branchClient=mockClient({cash_movements:[],expenses:[]});
   await fetchFinanceWorkspace({client:branchClient,orgId:"org-a",branchId:"branch-a",startIso:"2026-11-01",endIso:"2026-12-01"});
   assert.ok(branchClient.calls.every(call=>call.filters.some(([key,value])=>key==="branch_id"&&value==="branch-a")));
