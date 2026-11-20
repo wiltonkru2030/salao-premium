@@ -58,4 +58,21 @@ create policy services_select_professional_app on public.services
 comment on column public.services.branch_id is
   'Filial proprietária do serviço; NULL representa serviço global compartilhado entre unidades.';
 
+-- Profissional com acesso total só visualiza produtos da própria unidade e produtos globais.
+drop policy if exists products_select_admin_or_full_app on public.products;
+create policy products_select_admin_or_full_app on public.products
+  for select to authenticated
+  using (
+    private.has_org_role(org_id,array['owner','admin','manager','receptionist'])
+    or (
+      private.professional_app_scope(org_id)='all'
+      and exists (
+        select 1 from public.professionals p
+        where p.org_id=products.org_id
+          and p.id=private.current_professional_id(products.org_id)
+          and (products.branch_id is null or products.branch_id=p.branch_id)
+      )
+    )
+  );
+
 commit;
