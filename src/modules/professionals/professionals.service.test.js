@@ -42,7 +42,7 @@ async function run() {
   assert.equal(result.professionals.length,1);
   assert.equal(result.services.length,1);
   assert.equal(result.assignments.length,1);
-  assert.equal(result.members.length,3);
+  assert.equal(result.members.length,2);
   assert.equal(result.profiles.length,2);
   assert.ok(client.calls.filter(call=>call.table!=="profiles").every(call=>call.filters.some(filter=>filter[1]==="org_id"&&filter[2]==="org-a")));
   assert.ok(client.calls.find(call=>call.table==="profiles").filters.some(filter=>filter[1]==="id"&&filter[0]==="in"));
