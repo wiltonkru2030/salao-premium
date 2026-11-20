@@ -5,6 +5,7 @@
 **Migration aplicada:** `20261120065524_customer_coupons_transactional.sql`  
 **Migration de hardening:** `20261120065604_restrict_legacy_hold_private_entrypoints.sql`  
 **Migration de índices/RLS:** `20261120070111_coupon_fk_indexes_and_public_profile_policy_cleanup.sql`  
+**Migration de auditoria da vitrine:** `20261120070234_audit_public_salon_profiles.sql`  
 **Estado:** estrutura e RPCs implantadas; testes automatizados de contrato e permissões estruturais disponíveis; E2E autenticado com dados de QA ainda pendente.
 
 ## Objetivo
@@ -61,7 +62,7 @@ Mantém a reserva e o resgate:
 - As antigas RPCs públicas de HOLD sem cupom foram revogadas para authenticated/anon.
 - O acesso direto às implementações privadas antigas de criação, confirmação e cancelamento de HOLD também foi revogado.
 - A cliente só pode validar e resgatar cupom com sessão autenticada.
-- A auditoria genérica `private.capture_row_audit()` registra alterações nas três tabelas.
+- A auditoria genérica `private.capture_row_audit()` registra alterações nas três tabelas de cupons e nos dois perfis públicos da vitrine. Em DELETE, o snapshot anterior é preservado em `recycle_bin`.
 
 ## RPCs
 
