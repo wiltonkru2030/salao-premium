@@ -10,6 +10,8 @@ import { fetchProfessionalWorkspace, setProfessionalActive, setTeamProfessionalA
 /** Módulo Profissionais: cadastro fiscal, vínculo de serviços e controle de acesso ao App Profissional. */
 
 const initialPasswords=new Map();
+let credentialContext=null;
+let loadVersion=0;
 /** Escrita em profissionais, vínculos e gestão de acesso exige owner/admin no banco. */
 const canManageProfessionals=()=>["owner","admin"].includes(state.membership?.role);
 /** Renderiza a página de Profissionais e o acesso ao cadastro e permissões. */
@@ -22,16 +24,24 @@ export function professionalsPage(){
 export async function loadProfessionalsPage(){
  const host=document.querySelector("#professionals-access");
  if(!host||!state.organization?.id)return;
+ const orgId=state.organization.id,userId=state.user?.id;
+ const version=++loadVersion;
+ const key=JSON.stringify([orgId,userId,state.membership?.role]);
+ if(key!==credentialContext){initialPasswords.clear();credentialContext=key;}
+ const isCurrent=()=>host.isConnected&&version===loadVersion&&state.organization?.id===orgId&&state.user?.id===userId&&JSON.stringify([orgId,userId,state.membership?.role])===key;
+ host.textContent="Carregando profissionais…";
  let workspace;
  try {
   workspace=await fetchProfessionalWorkspace({
-   client:supabase,orgId:state.organization.id,currentUserId:state.user?.id
+   client:supabase,orgId,currentUserId:userId
   });
+  if(!isCurrent())return;
+  host.innerHTML=renderProfessionalsView(workspace,{currentUserId:userId,canManage:canManageProfessionals(),initialPasswords});
  } catch(error) {
+  if(!isCurrent())return;
   reportError(error,{context:"Profissionais > carregar cadastros"});
   host.innerHTML='<div class="empty-state">Não foi possível carregar os dados da equipe. Atualize a página e tente novamente.</div>';
   return;
  }
- host.innerHTML=renderProfessionalsView(workspace,{currentUserId:state.user?.id,canManage:canManageProfessionals(),initialPasswords});
  bindProfessionalEvents({host,client:supabase,state,initialPasswords,canManageProfessionals,toast,reportError,setProfessionalActive,setTeamProfessionalAppAccess,revokeProfessionalAppAccess,createProfessionalWithServices,loadProfessionalsPage});
 }
