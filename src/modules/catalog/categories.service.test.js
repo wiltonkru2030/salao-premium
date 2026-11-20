@@ -25,7 +25,7 @@ function mockClient(tables={},rpcResult={data:"category-a",error:null},queryErro
       };
       return query;
     },
-    rpc:async(name,args)=>{calls.push({rpc:name,args});return rpcResult;}
+    rpc:async(name,args)=>{calls.push({rpc:name,args});return name==="set_catalog_category_active"?{data:true,error:null}:rpcResult;}
   };
   return client;
 }
