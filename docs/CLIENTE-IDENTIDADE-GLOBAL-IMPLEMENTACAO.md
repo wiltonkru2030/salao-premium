@@ -216,4 +216,4 @@ A RPC `get_my_pending_customer_link_requests` retorna somente o contexto mínimo
 
 O identificador interno do cadastro e o telefone completo não são enviados à interface. Foi criado `cliente/services/customerIdentityLinkService.js` para listar e confirmar solicitações, além de `cliente/utils/customerIdentityLinkUtils.js` para validar e normalizar os dados. Os testes puros desses utilitários foram incluídos em `test:customer-services`.
 
-A interface visual de confirmação ainda precisa ser conectada a esse serviço; criar o serviço não equivale a concluir a experiência ponta a ponta.
+A interface de confirmação foi conectada ao perfil da cliente e ao compositor principal, com estado vazio, exibição dos dados mínimos e confirmação por botão. A experiência ainda depende da migration aplicada em QA e de teste ponta a ponta com duas contas reais.
