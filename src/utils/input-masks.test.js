@@ -1,6 +1,6 @@
 /** Testes de regressão das máscaras de CPF/CNPJ, telefone, CEP, moeda e login por e-mail. */
 import assert from "node:assert/strict";
-import { detectInputMask, formatCpf, formatCnpj, formatPhone, formatCep, parseBRL } from "./input-masks.js";
+import { detectInputMask, formatCpf, formatCnpj, formatPhone, formatInternationalPhone, formatCep, parseBRL } from "./input-masks.js";
 
 const field=(name,placeholder="",mask="")=>({name,id:"",placeholder,dataset:{mask}});
 
@@ -18,4 +18,13 @@ assert.equal(formatCep("12345678"),"12345-678");
 assert.equal(parseBRL("R$ 1.234,56"),1234.56);
 assert.equal(parseBRL("79,90"),79.9);
 
+// A máscara nunca deve alterar credenciais, campos numéricos ou DDI.
+assert.equal(detectInputMask({...field("cpf"),type:"email"}),"");
+assert.equal(detectInputMask({...field("phone"),type:"password"}),"");
+assert.equal(detectInputMask({...field("amount","","currency"),type:"number"}),"");
+assert.equal(detectInputMask(field("phone","","none")),"");
+assert.equal(detectInputMask(field("phone","","phone-international")),"phone-international");
+assert.equal(formatPhone("+5511987654321"),"(11) 98765-4321");
+assert.equal(formatInternationalPhone("+1 (415) 555-2671"),"+14155552671");
+assert.equal(formatInternationalPhone("+5567999991234"),"+5567999991234");
 console.log("Testes de máscaras e conversão BRL concluídos.");
