@@ -12,6 +12,8 @@ import { renderHomeView } from "./ui/homeView.js";
 import { renderAppointmentsView } from "./ui/appointmentsView.js";
 import { renderCustomerProfileView } from "./ui/customerProfileView.js";
 import { ensureMyProfile } from "./services/customerProfileService.js";
+import { listMyPendingIdentityLinks, confirmMyIdentityLink } from "./services/customerIdentityLinkService.js";
+import { renderIdentityLinkRequestsView } from "./ui/identityLinkRequestsView.js";
 
 const root = document.querySelector("#cliente-app");
 let currentSession = null;
@@ -19,6 +21,7 @@ let activePage = "home";
 let busy = false;
 let locationLabel = "Ative a localização ou escolha sua cidade";
 let profileState = null;
+let identityLinkRequests = [];
 
 /** Exibe aviso de operação na região acessível por leitor de tela. */
 function setNotice(message, type = "info") {
@@ -46,6 +49,7 @@ function applyTheme() {
 function renderApp() {
   let page;
   if (activePage === "appointments") page = renderAppointmentsView();
+  else if (activePage === "identity-links") page = renderIdentityLinkRequestsView({requests: identityLinkRequests});
   else if (activePage === "profile") {
     page = renderCustomerProfileView({profile: profileState, session: currentSession, theme: getLocalSettings().theme});
   } else page = renderHomeView({locationLabel});
@@ -120,6 +124,17 @@ async function runAction(action, button = null) {
       activePage = "profile";
       await loadProfile();
       renderApp();
+    } else if (action === "identity-links") {
+      activePage = "identity-links";
+      identityLinkRequests = await listMyPendingIdentityLinks();
+      renderApp();
+    } else if (action === "confirm-identity-link") {
+      const requestId = root.querySelector(`[data-action="confirm-identity-link"][data-request-id]`)?.dataset.requestId;
+      if (!requestId) throw new Error("Selecione uma solicitação válida para confirmar.");
+      await confirmMyIdentityLink(requestId);
+      identityLinkRequests = await listMyPendingIdentityLinks();
+      renderApp();
+      setNotice("Vínculo confirmado. O acesso continua limitado aos dados deste salão.", "success");
     }
   } catch (error) {
     const message = error?.message || "Não foi possível concluir esta ação. Tente novamente.";
@@ -164,6 +179,7 @@ async function start() {
         renderApp();
       } else {
         profileState = null;
+        identityLinkRequests = [];
         renderLogin();
       }
     });
