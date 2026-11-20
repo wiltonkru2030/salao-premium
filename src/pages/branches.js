@@ -12,7 +12,6 @@ import {reportError} from "../utils/errors.js";
 import {listBranches,saveBranch,setBranchActive} from "../modules/branches/branches.service.js";
 
 let modalListenerInstalled=false;
-let branchesCache=[];
 
 /** Somente proprietário e administrador podem cadastrar ou alterar unidades. */
 const canManageBranches=()=>["owner","admin"].includes(state.membership?.role);
@@ -53,14 +52,26 @@ export function branchesPage() {
 export async function loadBranchesPage() {
   const host=document.querySelector("#branches-manager");
   if(!host||!state.organization?.id)return;
+  const orgId=state.organization.id;
+  const context=JSON.stringify([orgId,state.user?.id,state.membership?.role]);
+  const request=String(Number(host.dataset.request||0)+1);
+  host.dataset.request=request;
+  const current=()=>host.isConnected&&state.page==="Unidades"&&
+    host.dataset.request===request&&
+    context===JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role]);
+  host._branchesContext=null;
+  host.textContent="Carregando unidades…";
+  let branchesCache;
   try {
-    branchesCache=await listBranches({client:supabase,orgId:state.organization.id});
+    branchesCache=await listBranches({client:supabase,orgId});
   } catch(error) {
+    if(!current())return;
     reportError(error,{context:"Unidades > carregar filiais"});
     host.innerHTML='<div class="empty-state"><b>Não foi possível carregar as unidades.</b><small>Verifique sua conexão e suas permissões. Tente novamente.</small></div>';
     return;
   }
 
+  if(!current())return;
   const cards=branchesCache.map(branch=>{
     const actions=canManageBranches()&&!branch.is_main
       ? '<button class="btn secondary" type="button" data-edit-branch="'+esc(branch.id)+'">Editar</button>'+
@@ -87,6 +98,7 @@ export async function loadBranchesPage() {
     '<div class="record-list">'+(cards||'<div class="empty-state">Nenhuma unidade cadastrada.</div>')+'</div>'+
     '<p class="demo-note">A matriz é preservada e deve ser alterada no cadastro da organização.</p>';
 
+  host._branchesContext={context,orgId,branchesCache};
   if(host.dataset.bound==="true")return;
   host.dataset.bound="true";
 
@@ -102,11 +114,15 @@ export async function loadBranchesPage() {
     });
   }
 
+  // Cada ação consulta o contexto atualizado do host, não caches globais de outros tenants.
+  const active=()=>host.isConnected&&state.page==="Unidades"&&
+    host._branchesContext?.context===JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role]);
   host.addEventListener("click",async event=>{
+    if(!active())return;
     const edit=event.target.closest("[data-edit-branch]");
     if(edit) {
       if(!canManageBranches())return toast("Seu perfil não pode editar unidades.");
-      openBranchModal(branchesCache.find(branch=>branch.id===edit.dataset.editBranch)||null);
+      openBranchModal(host._branchesContext.branchesCache.find(branch=>branch.id===edit.dataset.editBranch)||null);
       return;
     }
     const toggle=event.target.closest("[data-toggle-branch]");
@@ -116,11 +132,12 @@ export async function loadBranchesPage() {
     if(!window.confirm(nextActive?"Reativar esta unidade?":"Inativar esta unidade? O histórico será preservado."))return;
     toggle.disabled=true;
     try {
-      await setBranchActive({client:supabase,orgId:state.organization.id,branchId:toggle.dataset.toggleBranch,active:nextActive});
+      await setBranchActive({client:supabase,orgId:host._branchesContext.orgId,branchId:toggle.dataset.toggleBranch,active:nextActive});
+      if(!active())return;
       toast(nextActive?"Unidade reativada.":"Unidade inativada.");
       await loadBranchesPage();
     } catch(error) {
-      reportError(error,{context:"Unidades > alterar situação"});
+      if(active())reportError(error,{context:"Unidades > alterar situação"});
     } finally {
       if(toggle.isConnected)toggle.disabled=false;
     }
@@ -130,6 +147,7 @@ export async function loadBranchesPage() {
     const form=event.target;
     if(!form.matches("#branch-create-form"))return;
     event.preventDefault();
+    if(!active())return;
     if(!canManageBranches())return toast("Seu perfil não pode cadastrar unidades.");
     const values=new FormData(form);
     const submit=form.querySelector('[type="submit"]');
@@ -139,15 +157,16 @@ export async function loadBranchesPage() {
     try {
       const branchId=String(values.get("branch_id")||"").trim()||null;
       await saveBranch({
-        client:supabase,orgId:state.organization.id,branchId,
+        client:supabase,orgId:host._branchesContext.orgId,branchId,
         name:values.get("name"),phone:values.get("phone"),
         email,document:values.get("document")
       });
+      if(!active())return;
       document.querySelector("#branch-create-modal")?.close();
       toast(branchId?"Unidade atualizada.":"Unidade cadastrada.");
       await loadBranchesPage();
     } catch(error) {
-      reportError(error,{context:"Unidades > salvar filial"});
+      if(active())reportError(error,{context:"Unidades > salvar filial"});
     } finally {
       if(submit.isConnected)submit.disabled=false;
     }
