@@ -23,10 +23,11 @@ import { renderCustomerProfileView } from "./ui/customerProfileView.js";
 import { renderFavoritesView } from "./ui/favoritesView.js";
 import { renderNotificationsView } from "./ui/notificationsView.js";
 import { ensureMyProfile, updateMyProfile } from "./services/customerProfileService.js";
-import { formatCustomerPhoneInput } from "./customer-profile-utils.js";
+import { installGlobalMasks } from "../src/utils/input-masks.js";
 import { listMyPendingIdentityLinks, confirmMyIdentityLink } from "./services/customerIdentityLinkService.js";
 import { renderIdentityLinkRequestsView } from "./ui/identityLinkRequestsView.js";
 
+installGlobalMasks();
 const root = document.querySelector("#cliente-app");
 let currentSession = null;
 let activePage = "home";
@@ -561,17 +562,6 @@ async function runAction(action, button = null) {
     if(isCurrent(epoch)){busy=false;if(button?.isConnected)button.disabled=false;}
   }
 }
-
-/** Aplica máscara brasileira ao telefone sem alterar o valor limpo salvo no banco. */
-root.addEventListener("input", event => {
-  if (event.target.matches("#customer-profile-phone")) {
-    const start = event.target.selectionStart;
-    const previousLength = event.target.value.length;
-    event.target.value = formatCustomerPhoneInput(event.target.value);
-    const nextPosition = Math.max(0, (start ?? event.target.value.length) + event.target.value.length - previousLength);
-    event.target.setSelectionRange(nextPosition, nextPosition);
-  }
-});
 
 /** Intercepta envio do fallback de cidade e encaminha o evento ao serviço de preferências. */
 root.addEventListener("submit", event => {
