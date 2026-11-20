@@ -200,14 +200,14 @@ async function onSubmit(ctrl,event){
     fromDate:form.elements.from_date.value,untilDate:form.elements.until_date.value,
     fromTime:form.elements.from_time.value,untilTime:form.elements.until_time.value,
     notes:form.elements.notes.value});
-   if(context(ctrl.state)===st.ctx)toast("Cliente incluída na lista de espera.");
+   if(context(ctrl.state)===st.ctx&&ctrl.data===st)toast("Cliente incluída na lista de espera.");
   }else if(form.id==="offer-package-form"){
    if(!managementRoles.has(ctrl.state.membership?.role))throw new Error("Sem permissão para salvar combos.");
    const data=new FormData(form);
    await saveServicePackage({...opts,packageId:st.editingPackageId,
     name:data.get("name"),description:data.get("description"),
     referencePrice:data.get("reference_price"),items:packageRows(form)});
-   if(context(ctrl.state)===st.ctx)toast("Combo salvo no catálogo.");
+   if(context(ctrl.state)===st.ctx&&ctrl.data===st)toast("Combo salvo no catálogo.");
   }else if(form.id==="offer-book-form"){
    const match=st.selectedMatch;
    if(!match||!st.matches.some(x=>x.waitlist_id===match.waitlist_id&&x.starts_at===match.starts_at))
@@ -222,20 +222,20 @@ async function onSubmit(ctrl,event){
    if(!st.pendingStatus)throw new Error("Selecione a solicitação para alterar.");
    await setAppointmentWaitlistStatus({...opts,waitlistId:st.pendingStatus.id,
     status:st.pendingStatus.status});
-   if(context(ctrl.state)===st.ctx)toast("Situação da espera atualizada.");
+   if(context(ctrl.state)===st.ctx&&ctrl.data===st)toast("Situação da espera atualizada.");
   }else if(form.id==="offer-package-status-form"){
    if(!st.pendingPackage||!managementRoles.has(ctrl.state.membership?.role))
     throw new Error("Pacote não selecionado.");
    await setServicePackageActive({...opts,packageId:st.pendingPackage.id,active:!st.pendingPackage.active});
-   if(context(ctrl.state)===st.ctx)toast("Situação do combo atualizada.");
+   if(context(ctrl.state)===st.ctx&&ctrl.data===st)toast("Situação do combo atualizada.");
   }
-  if(context(ctrl.state)!==st.ctx||!ctrl.root.isConnected)return;
+  if(context(ctrl.state)!==st.ctx||ctrl.data!==st||!ctrl.root.isConnected)return;
   form.closest("dialog")?.close();st.busy=false;
   st.pendingStatus=null;st.pendingPackage=null;st.selectedMatch=null;
   await refresh(ctrl);
   if(form.id==="offer-book-form")await ctrl.onBooked?.();
  }catch(error){
-  if(context(ctrl.state)===st.ctx&&ctrl.root.isConnected){
+  if(context(ctrl.state)===st.ctx&&ctrl.data===st&&ctrl.root.isConnected){
    reportError(error,{context:"Agenda > salvar pacotes e encaixes",notify:false});
    st.error=error.message||"Não foi possível concluir a operação.";
    // Preserva o formulário para que o usuário possa corrigir os dados.
