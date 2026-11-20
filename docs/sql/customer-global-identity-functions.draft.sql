@@ -41,6 +41,7 @@ declare
   v_target_user_exists boolean;
   v_membership_status text;
   v_existing_customer_id uuid;
+  v_inserted_rows integer := 0;
 begin
   -- A identidade do operador sempre vem da sessão autenticada.
   v_actor_id := (select auth.uid());
@@ -176,7 +177,27 @@ begin
     'staff_confirmed',
     pg_catalog.now(),
     v_actor_id
-  );
+  )
+  on conflict do nothing;
+
+  get diagnostics v_inserted_rows = row_count;
+
+  -- Se outra chamada concorrente já gravou exatamente o mesmo vínculo,
+  -- retornar sucesso sem duplicar a auditoria. Conflitos diferentes são negados.
+  if v_inserted_rows = 0 then
+    select mapping.customer_id
+      into v_existing_customer_id
+      from public.customer_account_customers as mapping
+     where mapping.org_id = p_org_id
+       and mapping.auth_user_id = p_auth_user_id;
+
+    if found and v_existing_customer_id = p_customer_id then
+      return p_customer_id;
+    end if;
+
+    raise exception 'Este cadastro ou esta conta já está associado a outro registro.'
+      using errcode = '23505';
+  end if;
 
   -- A auditoria registra somente IDs e ação; não duplica dados pessoais.
   insert into public.audit_logs (
