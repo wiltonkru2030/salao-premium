@@ -4,14 +4,14 @@
  * Ecossistema: hooks/serviços da Agenda administrativa.
  */
 
+import { agendaRepository, previewCreateAppointment } from "../services/agenda.service.js";
+
 /**
  * Lista agendamentos persistidos da organização ativa.
  * @param {object} filters Filtros de data, profissional, status e busca.
  * @param {object} context Cliente Supabase e orgId.
  * @returns {Promise<Array<object>>} Registros reais.
  */
-import { agendaRepository, previewCreateAppointment } from "../services/agenda.service.js";
-
 export function useAppointments(filters={},context={}) {
   return agendaRepository.list(filters,context);
 }
