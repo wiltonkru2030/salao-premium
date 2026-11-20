@@ -10,7 +10,7 @@ export function startClientSession({subscribeToAuthChanges,getCurrentUser,signOu
     resetAccountState(id);setSession(session);
     if(!id){renderLogin();return;}
     const epoch=getEpoch();
-    root.innerHTML='<main class="page-content"><div class="empty-state"><span class="spinner"></span><p>Verificando sua conta…</p></div></main>';
+    renderLoading();
     setTimeout(async()=>{
       try{
         if(!isCurrent(epoch))return;
