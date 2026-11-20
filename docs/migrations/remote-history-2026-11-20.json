@@ -361,6 +361,10 @@
     {
       "version": "20261120205923",
       "name": "prioritize_agenda_cash_query_indexes"
+    },
+    {
+      "version": "20261120211409",
+      "name": "enforce_exact_centavo_service_order_payment"
     }
   ]
 }
