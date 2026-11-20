@@ -28,6 +28,8 @@ async function readAllAppointments(client) {
   try {
     for (let offset = 0; ; offset += PAGE_SIZE) {
       const { data, error } = await client.rpc("get_my_customer_appointments")
+        .order("starts_at", { ascending: false })
+        .order("appointment_id", { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
       if (error) {
         if (["PGRST202", "42883", "42P01"].includes(error.code)) {
