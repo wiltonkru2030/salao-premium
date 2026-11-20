@@ -86,9 +86,10 @@ export async function saveCustomer({client,orgId,branchId=null,customerId=null,.
   requireBranchId(branchId);
   const payload=normalizeCustomer(input);
   try {
+    // A filial é atribuída na criação; editar dados pessoais não transfere o cadastro de unidade.
     const result=customerId
       ? await client.from("customers").update(payload).eq("org_id",orgId).eq("id",customerId).select("id").maybeSingle()
-      : await client.from("customers").insert({org_id:orgId,...payload}).select("id").single();
+      : await client.from("customers").insert({org_id:orgId,...(branchId?{branch_id:branchId}:{}),...payload}).select("id").single();
     if(result.error)throw result.error;
     if(!result.data?.id)throw Object.assign(new Error("Cliente não encontrado."),{code:"P0002"});
   } catch(error) { throw mapCustomerError(error); }
