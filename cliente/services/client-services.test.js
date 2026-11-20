@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { distanceInKm, validateCoordinates } from "./geoSalonService.js";
+import { distanceInKm, validateCoordinates, findNearbySalons } from "./geoSalonService.js";
+import { searchPublicSalons } from "./salonDirectoryService.js";
 import { validateBookingSelection } from "./bookingService.js";
 import { normalizeCouponCode } from "./couponService.js";
 import { getLocalSettings, saveLocalSettings } from "./settingsService.js";
@@ -17,4 +18,17 @@ assert.throws(() => validateBookingSelection({orgId:"org-1",branchId:"branch-1",
 assert.equal(normalizeCouponCode(" primeira-visita "), "PRIMEIRA-VISITA");
 assert.throws(() => normalizeCouponCode("!"), /código promocional válido/i);
 assert.equal(getLocalSettings().theme, "system");
+
+const nearbyClient = {
+  rpc(name, args) {
+    assert.equal(name, "search_public_salons");
+    assert.equal(args.p_latitude, -20.7849);
+    assert.equal(args.p_longitude, -51.7007);
+    return Promise.resolve({data:[{slug:"salon-nearby"}],error:null});
+  }
+};
+assert.deepEqual(await findNearbySalons({
+  client: nearbyClient, latitude: -20.7849, longitude: -51.7007, radiusKm: 20
+}), [{slug:"salon-nearby"}]);
+
 console.log("Testes dos serviços-base da cliente concluídos.");
