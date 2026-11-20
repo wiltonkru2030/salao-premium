@@ -5,6 +5,7 @@
  * Escopo: dados cadastrais e expediente têm persistência; notificações, cobrança e outras preferências seguem pendentes.
  */
 import {bindSettingsEvents} from "../modules/settings/settings.controller.js";
+import {resolveSettingsBranch} from "../modules/settings/settings.context.js";
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
@@ -28,9 +29,9 @@ export async function loadSettingsPage() {
   const orgId = state.organization?.id;
   if (!host || !orgId) return;
 
-  const context=JSON.stringify([orgId,state.user?.id,state.membership?.role]);
+  const context=JSON.stringify([orgId,state.user?.id,state.membership?.role,state.branch?.id||null,state.branch?.isAll===true]);
   const request=String(Number(host.dataset.request||0)+1);host.dataset.request=request;
-  const current=()=>host.isConnected&&host.dataset.request===request&&context===JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role]);
+  const current=()=>host.isConnected&&state.page==="Configurações"&&host.dataset.request===request&&context===JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role,state.branch?.id||null,state.branch?.isAll===true]);
   host._settingsContext=null;
   host.textContent="Carregando configurações…";
   try {
@@ -49,11 +50,14 @@ export async function loadSettingsPage() {
     if (branchError) throw branchError;
     if (!organization) throw new Error("Organização não encontrada.");
 
-    const units = branches || [];
-    const selectedBranch = units.find(item => item.id === state.branch?.id) ||
-      units.find(item => item.is_main) || units[0] || null;
+    // Seleção administrativa é independente da unidade operacional do cabeçalho.
+    // A opção 'Todas as unidades' não deve ser transformada silenciosamente em Matriz.
+    const {units,selectedBranch}=resolveSettingsBranch({
+      units:branches||[],selectedBranchId:host.dataset.settingsBranchId||null,
+      operationalBranch:state.branch,role:state.membership?.role
+    });
     if(!current())return;
-    state.branch = selectedBranch;
+    host.dataset.settingsBranchId=selectedBranch?.id||"";
     const canManage = canManageSettings();
     let publicProfile = null;
     let branchPublicProfile = null;
