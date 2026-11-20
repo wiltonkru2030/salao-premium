@@ -384,5 +384,17 @@ Tabelas de vitrine e cupons foram confirmadas com RLS habilitado. As RPCs públi
 ### Verificações e limites
 - Schema real de \`customers\`, \`services\` e \`products\` foi consultado somente para leitura; os campos usados pelos serviços foram conferidos. As políticas RLS de \`customers\` permitem as operações conforme os papéis Owner/Admin/Manager/Recepção.
 - Nenhuma migration foi aplicada e nenhum dado de produção foi alterado por estas tarefas.
-- CI dos commits desta continuação apresentou execuções em andamento e algumas falhas transitórias de sintaxe/teste durante a edição. Só considerar esta etapa aprovada quando App validation e Agenda tests passarem no mesmo SHA final do branch.
+- No SHA 6f4b4ba6584b557b8cc9409e065eaa8d883005ac, App validation e Agenda tests concluíram com sucesso. O App validation confirmou sintaxe, build/imports, auditoria estrutural e execução do comando agregado test:all.
 - O catálogo ainda não implementa o fluxo completo de movimentação de estoque, nem a separação de catálogo por filial. A tabela atual de serviços não possui \`branch_id\`; essa separação exige desenho/migration e revisão das integrações com agenda, comanda e app público, não apenas filtro na tela.
+
+
+### Unidades e filiais
+- Criado src/modules/branches/branches.service.js com listagem paginada, cadastro, edição e inativação/reativação, sempre filtrando org_id.
+- A tela src/pages/branches.js foi conectada ao serviço e agora permite editar filiais; matriz não pode ser inativada nem alterada por esta tela.
+- Testes em src/modules/branches/branches.service.test.js, incluídos no test:all.
+- Schema da tabela branches conferido em leitura somente; nenhuma escrita ou migration executada.
+
+### CI da continuação
+- App validation: sucesso no SHA 6f4b4ba6584b557b8cc9409e065eaa8d883005ac.
+- Agenda tests: sucesso no mesmo SHA.
+- O sucesso de CI não substitui QA visual/E2E autenticado nem valida execução de migrations ainda não aplicadas.
