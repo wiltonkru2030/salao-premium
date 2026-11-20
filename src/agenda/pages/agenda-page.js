@@ -39,7 +39,7 @@ function toCalendarAppointment(row,professionalIndex) {
     date:start.date,time:start.time,duration,price:row.price,
     status:dbStatus(row.status),dbStatus:row.status,notes:row.notes||'',
     booking_source:row.booking_source,created_by_name:row.created_by_name||'',
-    service_order_id:row.service_order_id,appointment_group_id:row.appointment_group_id||null,arrived_at:row.arrived_at||null
+    service_order_id:row.service_order_id,comanda_strategy:row.comanda_strategy,appointment_group_id:row.appointment_group_id||null,arrived_at:row.arrived_at||null
   };
 }
 // Compõe filtros, resumo e calendário sem executar consultas ao banco.
