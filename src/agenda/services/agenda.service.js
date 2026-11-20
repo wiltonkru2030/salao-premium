@@ -114,6 +114,7 @@ async function readAllAppointments(client, orgId, filters = {}) {
   try {
     for (let offset=0; ; offset+=PAGE_SIZE) {
       let query = client.from("appointments").select("*").eq("org_id",orgId);
+      if (filters.branchId) query = query.eq("branch_id", filters.branchId);
       if (filters.date) {
         const start = new Date(filters.date + "T00:00:00");
         if (!Number.isFinite(start.getTime())) throw new TypeError("Data de filtro inválida.");
