@@ -114,8 +114,7 @@ begin
   end if;
   update public.service_orders set status='cancelled',updated_at=clock_timestamp() where id=v_order.id;
   return jsonb_build_object('order_id',v_order.id,'status','cancelled','refunded_amount',v_total,'refunded_payments',v_count,'returned_products',v_returned);
-end $function$
-
+end $function$;
 
 create or replace function public.refund_service_order(
   p_order_id uuid,
@@ -241,8 +240,7 @@ begin
     'commission_count',v_count,'paid_at',clock_timestamp()
   );
 end;
-$function$
-
+$function$;
 
 create or replace function public.pay_professional_commissions(
   p_org_id uuid,
