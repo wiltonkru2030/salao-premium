@@ -104,7 +104,7 @@ export async function getAvailableSlots({
 /**
  * Cria HOLD temporário para um serviço/profissional escolhido.
  * @param {object} options Dados do HOLD e cliente Supabase.
- * @returns {Promise<{holdId:string,expiresAt:string}>} Reserva temporária criada no banco.
+ * @returns {Promise<{holdId:string,expiresAt:string,couponId:string|null,discountAmount:number,finalAmount:number|null}>} Reserva criada; finalAmount é null quando o preço permanece no catálogo e não há cupom.
  * @throws {TypeError|Error} Se a seleção for inválida ou o banco rejeitar o horário.
  */
 export async function createBookingHold({
