@@ -246,3 +246,18 @@ A verificação pós-aplicação confirmou RLS habilitado em todas as quatro tab
 - O fluxo de associação legado precisa ser testado ponta a ponta com duas sessões reais antes de ser liberado comercialmente.
 
 **Status correto:** tabelas e hardening aplicados e verificados no Supabase; integração ponta a ponta e auditoria global de segurança ainda em andamento. O sistema completo não está declarado pronto para venda.
+
+
+### Verificação efetiva de privilégios — 20/11/2026
+
+Consulta de privilégios efetivos no PostgreSQL confirmou:
+
+- `authenticated` possui USAGE em `private`; `anon` não possui.
+- `authenticated` pode consultar o próprio perfil, sujeito à RLS.
+- `authenticated` não pode inserir diretamente em `customer_tenant_memberships` nem em `customer_account_customers`.
+- `authenticated` não pode consultar diretamente `customer_identity_link_requests`.
+- `authenticated` não pode atualizar a coluna `customer_profiles.phone_verified_at`.
+- As três RPCs públicas possuem wrapper `SECURITY INVOKER`, executável por authenticated e não executável por anon.
+- As funções internas privilegiadas ficam em `private`, com `SECURITY DEFINER`, `search_path = ''` e execução negada a anon.
+
+Essa verificação confirma grants e configuração do banco, mas não substitui teste de comportamento com JWTs reais de duas clientes e uma conta owner/admin.
