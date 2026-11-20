@@ -12,4 +12,7 @@ assert.equal(canRegisterProfessionalService(contexts[0],{status:"partially_paid"
 assert.equal(canRegisterProfessionalService(contexts[0],{status:"open"}),true);
 assert.equal(canRegisterProfessionalService(contexts[1],{status:"open"}),false);
 assert.deepEqual(summarizeProfessionalCommissions([{status:"pending",amount:100},{status:"approved",amount:-40},{status:"cancelled",amount:20},{status:"paid",amount:12}],[{amount:12}]),{credit:100,debit:40,open:60,paid:12,received:12});
+assert.throws(()=>summarizeProfessionalCommissions([{status:"pending",amount:"NaN"}],[]),/inválido/);
+assert.throws(()=>summarizeProfessionalCommissions([{status:"approved",amount:10.001}],[]),/inválido/);
+assert.throws(()=>summarizeProfessionalCommissions([], [{amount:Infinity}]),/inválido/);
 console.log("Escopo e extrato profissional: OK");
