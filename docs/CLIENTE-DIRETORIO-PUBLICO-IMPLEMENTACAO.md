@@ -128,4 +128,4 @@ A lista é uma fotografia da disponibilidade no momento da consulta. A criação
 - Smoke test sob role `anon` executou a busca e catálogo sem erro de permissão após ajustar USAGE/EXECUTE do schema privado.
 - Security Advisor continua apontando 16 funções SECURITY DEFINER preexistentes em `public`; não foram alteradas em lote nesta etapa.
 
-**Critério de conclusão:** a vitrine só será considerada pronta após testes E2E com dados de QA, revisão de autorização com múltiplos papéis e confirmação de que o fluxo completo da cliente funciona sem cupons e, depois, com cupons.
+**Critério de conclusão:** a vitrine e a reserva só serão consideradas prontas após testes E2E com dados de QA, revisão de autorização com múltiplos papéis e confirmação do fluxo completo, com e sem cupom.
