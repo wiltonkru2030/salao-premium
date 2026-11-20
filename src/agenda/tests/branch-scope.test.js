@@ -41,4 +41,26 @@ await assert.rejects(
   /Selecione a unidade do salão antes de agendar/
 );
 assert.equal(writes, 0, "Nenhuma gravação pode ocorrer sem filial");
+
+// Com filial, a prévia deve incluir o identificador na gravação preparada.
+// O mock implementa paginação sem depender de conexão real com o banco.
+const branchId = "66666666-6666-4666-8666-666666666666";
+const { previewCreateAppointment } = await import("../services/agenda.service.js");
+const paginatedClient = {
+  from(table) {
+    assert.equal(table, "appointments");
+    const query = {
+      select() { return this; }, eq() { return this; },
+      gte() { return this; }, lt() { return this; },
+      order() { return this; },
+      async range() { return { data: [], error: null }; }
+    };
+    return query;
+  }
+};
+const preview = await previewCreateAppointment(
+  { ...record, branch_id: branchId },
+  { client: paginatedClient, orgId }
+);
+assert.equal(preview.preview.branch_id, branchId, "A filial precisa chegar ao payload de persistência");
 console.log("Agenda: filial obrigatória validada em criação e edição.");
