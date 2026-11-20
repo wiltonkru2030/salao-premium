@@ -17,6 +17,7 @@ import {
 } from "./utils/formatters.js";
 import { renderProfessionalPasswordChangeView, renderProfessionalLoginView } from "./views/auth.views.js";
 import { renderAgendaView } from "./views/agenda.views.js";
+import { handleAgendaClick } from "./agenda.controller.js";
 
 // Aplicação PWA do profissional: autenticação, navegação, Agenda, Comandas e Comissões.
 installGlobalErrorHandlers();
@@ -222,21 +223,14 @@ function bindAutocomplete(){
 }
 root.addEventListener("click",async event=>{
  try{
- const page=event.target.closest("[data-page]");
+  // O controlador especializado consome eventos da Agenda antes das ações gerais.
+  if(await handleAgendaClick({event,state,loadAppointments,render}))return;
+  const page=event.target.closest("[data-page]");
  if(page){state.page=page.dataset.page;state.selectedOrder=null;state.selectedAppointment=null;state.notice="";render();return;}
- const date=event.target.closest("[data-date]");
- if(date){
-  const next=new Date(date.dataset.date+"T12:00:00"),changed=next.getMonth()!==state.month.getMonth()||next.getFullYear()!==state.month.getFullYear();
-  state.selectedDate=next;if(changed){state.month=new Date(next.getFullYear(),next.getMonth(),1);await loadAppointments();}render();return;
- }
- const appointment=event.target.closest("[data-appointment]");
- if(appointment){state.selectedAppointment=state.appointments.find(a=>a.id===appointment.dataset.appointment)||null;render();return;}
  const order=event.target.closest("[data-order]");
  if(order){await chooseOrder(order.dataset.order);return;}
  const action=event.target.closest("[data-action]")?.dataset.action;
- if(action==="prev-month"||action==="next-month"){state.month=new Date(state.month.getFullYear(),state.month.getMonth()+(action==="next-month"?1:-1),1);state.selectedDate=new Date(state.month.getFullYear(),state.month.getMonth(),1);await loadAppointments();render();}
  if(action==="back-orders"){state.selectedOrder=null;state.orderItems=[];render();}
- if(action==="close-appointment"){state.selectedAppointment=null;render();}
  if(action==="logout"){await supabase.auth.signOut();state.user=null;state.professional=null;loginView();}
  if(action==="save-profile"){
   const name=String(document.querySelector("#profile-name")?.value||"").trim(),phone=String(document.querySelector("#profile-phone")?.value||"").trim();
