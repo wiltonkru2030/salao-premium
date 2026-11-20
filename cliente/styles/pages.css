@@ -10,3 +10,13 @@
 .profile-form input{width:100%;min-width:0;padding:12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);color:var(--color-text);font:inherit;font-size:13px}
 .profile-form input:focus-visible{outline:2px solid var(--color-gold);outline-offset:2px}
 .profile-form .client-note{margin:3px 0 7px}
+
+/* Histórico da cliente: cards de agenda com hierarquia visual discreta. */
+.appointment-list{display:grid;gap:12px}
+.appointment-card{padding:16px;border:1px solid var(--color-border);border-radius:15px;background:var(--color-surface);box-shadow:var(--shadow-card)}
+.appointment-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.appointment-card-heading strong{font-size:14px}
+.appointment-card .tag{flex:none;padding:5px 8px;border-radius:99px;background:var(--color-gold-soft);color:var(--color-text);font-size:10px}
+.appointment-salon{margin:9px 0 4px;font-size:12px;font-weight:600}
+.appointment-meta{margin:4px 0;color:var(--color-muted);font-size:11px}
+.appointment-price{display:block;margin-top:12px;font-size:13px}
