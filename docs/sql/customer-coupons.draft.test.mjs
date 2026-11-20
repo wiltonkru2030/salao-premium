@@ -82,13 +82,14 @@ for (const table of ["salon_coupons", "salon_coupon_services", "customer_coupon_
   assert.match(appliedSql, new RegExp("alter table public\\." + table + " enable row level security"));
 }
 for (const rpc of [
-  "save_salon_coupon","deactivate_salon_coupon","validate_public_coupon",
-  "create_customer_appointment_hold_with_coupon","confirm_customer_appointment_hold_with_coupon",
-  "cancel_customer_appointment_hold_with_coupon"
+  "save_salon_coupon","deactivate_salon_coupon","create_customer_appointment_hold_with_coupon",
+  "confirm_customer_appointment_hold_with_coupon","cancel_customer_appointment_hold_with_coupon"
 ]) {
   assert.match(appliedSql, new RegExp("create or replace function public\\." + rpc + "\\b"));
   assert.match(appliedSql, new RegExp("create or replace function private\\." + rpc + "\\b"));
 }
+assert.match(appliedSql, /create or replace function public\\.validate_public_coupon\\b/);
+assert.match(appliedSql, /create or replace function private\\.compute_customer_coupon\\b/);
 assert.match(appliedSql, /private\\.has_org_role\(p_org_id,array\['owner','admin'\]::text\[\]\)/);
 assert.match(appliedSql, /for update/);
 assert.match(appliedSql, /set price=v_hold\.coupon_final_amount/);
