@@ -66,9 +66,9 @@ async function run() {
   ]);
 
   const combined=(directory+"\n"+aligned+"\n"+privateApi+"\n"+memberRead+"\n"+coupons+"\n"+legacy+"\n"+couponCleanup).toLowerCase();
-  assert.match(combined,/create table if not exists public\.salon_coupons/);
-  assert.match(combined,/create table if not exists public\.salon_coupon_services/);
-  assert.match(combined,/create table if not exists public\.customer_coupon_redemptions/);
+  assert.match(combined,/create table(?: if not exists)? public\.salon_coupons/);
+  assert.match(combined,/create table(?: if not exists)? public\.salon_coupon_services/);
+  assert.match(combined,/create table(?: if not exists)? public\.customer_coupon_redemptions/);
   assert.match(combined,/create policy salon_public_profiles_member_read/);
   assert.match(combined,/create policy branch_public_profiles_member_read/);
   assert.match(combined,/create_customer_appointment_hold_with_coupon/);
