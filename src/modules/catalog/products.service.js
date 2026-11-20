@@ -19,6 +19,13 @@ function requireContext(client,orgId) {
   if(typeof orgId!=="string"||!orgId.trim())throw new TypeError("A organização ativa não foi identificada.");
 }
 
+/** Valida o identificador de filial antes de compor um filtro PostgREST. */
+function requireBranchId(branchId) {
+  if(branchId&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(branchId)) {
+    throw new TypeError("A unidade selecionada não é válida.");
+  }
+}
+
 /**
  * Consulta todas as páginas de produtos do tenant.
  * @param {object} options Cliente Supabase e organização.
@@ -26,6 +33,7 @@ function requireContext(client,orgId) {
  */
 export async function listProducts({client,orgId,branchId=null}={}) {
   requireContext(client,orgId);
+  requireBranchId(branchId);
   const rows=[];
   try {
     for(let offset=0;;offset+=PAGE_SIZE) {
@@ -53,6 +61,7 @@ export async function saveProduct({
   costPrice,salePrice,stockQuantity=0,minStock=0
 }={}) {
   requireContext(client,orgId);
+  requireBranchId(branchId);
   const cleanName=String(name??"").trim();
   const cost=Number(costPrice),sale=Number(salePrice),stock=Number(stockQuantity),minimum=Number(minStock);
   if(cleanName.length<2||cleanName.length>120)throw new TypeError("Informe um nome de produto entre 2 e 120 caracteres.");
