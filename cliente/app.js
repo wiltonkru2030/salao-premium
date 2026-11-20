@@ -11,7 +11,8 @@ import { renderLoginView } from "./ui/loginView.js";
 import { renderHomeView } from "./ui/homeView.js";
 import { renderAppointmentsView } from "./ui/appointmentsView.js";
 import { renderCustomerProfileView } from "./ui/customerProfileView.js";
-import { ensureMyProfile } from "./services/customerProfileService.js";
+import { ensureMyProfile, updateMyProfile } from "./services/customerProfileService.js";
+import { formatCustomerPhoneInput } from "./customer-profile-utils.js";
 import { listMyPendingIdentityLinks, confirmMyIdentityLink } from "./services/customerIdentityLinkService.js";
 import { renderIdentityLinkRequestsView } from "./ui/identityLinkRequestsView.js";
 
@@ -115,6 +116,13 @@ async function runAction(action, button = null) {
       locationLabel = neighborhood ? city + " · " + neighborhood : city;
       renderApp();
       setNotice("Região padrão salva neste aparelho.", "success");
+    } else if (action === "save-profile") {
+      const form = root.querySelector("[data-profile-form]");
+      const fullName = form?.elements.fullName.value || "";
+      const phone = form?.elements.phone.value || "";
+      profileState = await updateMyProfile({ fullName, phone, email: profileState?.email || currentSession?.user?.email || null });
+      renderApp();
+      setNotice("Seus dados foram atualizados.", "success");
     } else if (action === "theme") {
       const current = getLocalSettings().theme;
       const next = current === "system" ? "light" : current === "light" ? "dark" : "system";
@@ -151,12 +159,25 @@ async function runAction(action, button = null) {
   }
 }
 
+/** Aplica máscara brasileira ao telefone sem alterar o valor limpo salvo no banco. */
+root.addEventListener("input", event => {
+  if (event.target.matches("#customer-profile-phone")) {
+    const start = event.target.selectionStart;
+    const previousLength = event.target.value.length;
+    event.target.value = formatCustomerPhoneInput(event.target.value);
+    const nextPosition = Math.max(0, (start ?? event.target.value.length) + event.target.value.length - previousLength);
+    event.target.setSelectionRange(nextPosition, nextPosition);
+  }
+});
+
 /** Intercepta envio do fallback de cidade e encaminha o evento ao serviço de preferências. */
 root.addEventListener("submit", event => {
-  const form = event.target.closest("[data-location-form]");
-  if (!form) return;
+  const locationForm = event.target.closest("[data-location-form]");
+  const profileForm = event.target.closest("[data-profile-form]");
+  if (!locationForm && !profileForm) return;
   event.preventDefault();
-  runAction("save-location", form.querySelector('button[type="submit"]'));
+  if (profileForm) runAction("save-profile", profileForm.querySelector('button[type="submit"]'));
+  else runAction("save-location", locationForm.querySelector('button[type="submit"]'));
 });
 
 /** Centraliza os cliques das telas sem registrar listeners a cada renderização. */
