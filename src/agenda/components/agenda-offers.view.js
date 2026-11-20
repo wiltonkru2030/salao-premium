@@ -10,24 +10,24 @@ const selectOptions=(rows,selected="",placeholder="Selecione")=>
  '<option value="">'+e(placeholder)+'</option>'+
  rows.map(r=>'<option value="'+e(r.id)+'"'+(r.id===selected?' selected':'')+'>'+e(r.name)+'</option>').join("");
 /** Estrutura geral com abas, mensagem de estado e conteúdo da unidade. */
-export function renderAgendaOffers({tab="waitlist",loading=false,error="",waitlist=[],matches=[],packages=[],services=[],professionals=[],isManager=false,date="",searched=false}={}){
+export function renderAgendaOffers({tab="waitlist",loading=false,error="",waitlist=[],matches=[],packages=[],services=[],professionals=[],isManager=false,date="",searched=false,timezone="America/Sao_Paulo"}={}){
  return '<div class="agenda-offers-head"><div><h2>Pacotes e lista de espera</h2><p>Organize ofertas e acompanhe solicitações de encaixe da unidade.</p></div></div>'+
  '<div class="agenda-offers-tabs" role="group" aria-label="Módulos complementares da Agenda">'+
  '<button type="button" class="btn '+(tab==="waitlist"?"primary":"secondary")+'" data-offer-tab="waitlist">Lista de espera</button>'+
  '<button type="button" class="btn '+(tab==="packages"?"primary":"secondary")+'" data-offer-tab="packages">Pacotes e combos</button></div>'+
  (error?'<p class="offer-error" role="alert">'+e(error)+'</p>':'')+
  (loading?'<p class="offer-loading">Consultando informações da unidade…</p>':'')+
- (tab==="packages"?renderPackages({packages,services,isManager}):renderWaitlist({waitlist,matches,services,professionals,date,searched}));
+ (tab==="packages"?renderPackages({packages,services,isManager}):renderWaitlist({waitlist,matches,services,professionals,date,searched,timezone}));
 }
 /** Lista os pedidos em ordem de criação e permite consultar vagas sem reserva automática. */
-export function renderWaitlist({waitlist=[],matches=[],services=[],professionals=[],date="",searched=false}={}){
+export function renderWaitlist({waitlist=[],matches=[],services=[],professionals=[],date="",searched=false,timezone="America/Sao_Paulo"}={}){
  return '<div class="offer-toolbar"><button class="btn primary" type="button" data-offer-action="new-waitlist">＋ Adicionar à lista</button>'+
  '<div class="offer-date"><label for="offer-match-date">Vagas para o dia</label><input id="offer-match-date" type="date" value="'+e(date)+'"><button type="button" class="btn secondary" data-offer-action="search-openings">Buscar encaixes</button></div></div>'+
  (searched?'<div class="offer-matches"><h3>Horários encontrados</h3>'+
  (matches.length?'<div class="offer-match-grid">'+matches.map((m,i)=>
  '<button type="button" class="offer-match" data-offer-action="preview-match" data-match-index="'+i+'">'+
  '<strong>'+e(m.customer_name)+'</strong><span>'+e(m.service_name)+' · '+e(m.professional_name||"Profissional")+'</span>'+
- '<small>'+e(formatTime(m.starts_at))+' · Clique para conferir e agendar</small></button>').join("")+'</div>':
+ '<small>'+e(formatTime(m.starts_at,timezone))+' · Clique para conferir e agendar</small></button>').join("")+'</div>':
  '<p>Nenhuma vaga compatível encontrada. Confira a publicação da unidade, o expediente e os bloqueios.</p>')+'</div>':'')+
  '<div class="offer-list"><h3>Solicitações ('+waitlist.length+')</h3>'+
  (waitlist.length?waitlist.map(w=>
@@ -38,7 +38,7 @@ export function renderWaitlist({waitlist=[],matches=[],services=[],professionals
  (w.status==="waiting"?'<button type="button" class="btn secondary" data-offer-action="contacted" data-waitlist-id="'+e(w.waitlist_id)+'">Marcar contato</button>':'')+
  (["waiting","contacted"].includes(w.status)?'<button type="button" class="btn secondary" data-offer-action="cancel" data-waitlist-id="'+e(w.waitlist_id)+'">Cancelar solicitação</button>':'')+
  '</div></article>').join(""):'<p>Nenhuma solicitação cadastrada nesta unidade.</p>')+'</div>'+
- renderWaitlistModal({services,professionals})+renderBookingModal();
+ renderWaitlistModal({services,professionals})+renderBookingModal()+renderStatusModal();
 }
 /** Modal nativo de inclusão de preferências na lista de espera. */
 export function renderWaitlistModal({services=[],professionals=[]}={}){
@@ -66,6 +66,14 @@ export function renderBookingModal(){
  '<p>O sistema consultará a disponibilidade novamente e criará o agendamento. A solicitação sairá da fila na mesma transação.</p></div>'+
  '<footer class="sp-modal-foot"><button class="btn secondary" data-offer-action="close-dialog" type="button">Voltar</button>'+
  '<button class="btn primary" type="submit">Confirmar agendamento</button></footer></form></div></dialog>';
+}
+/** Confirma alteração de situação antes de alterar o banco. */
+export function renderStatusModal(){
+ return '<dialog class="sp-modal offer-dialog" id="offer-status-dialog" aria-labelledby="offer-status-title"><div class="sp-modal-shell">'+
+ '<header class="sp-modal-head"><h2 id="offer-status-title">Confirmar alteração</h2><button class="sp-modal-close" data-offer-action="close-dialog" type="button" aria-label="Fechar">×</button></header>'+
+ '<form id="offer-status-form"><div class="sp-modal-body"><p id="offer-status-summary"></p></div>'+
+ '<footer class="sp-modal-foot"><button class="btn secondary" data-offer-action="close-dialog" type="button">Voltar</button>'+
+ '<button class="btn primary" type="submit">Confirmar</button></footer></form></div></dialog>';
 }
 /** Relação dos pacotes. O preço é informativo: não se trata de venda automática. */
 export function renderPackages({packages=[],services=[],isManager=false}={}){
@@ -96,18 +104,22 @@ export function renderPackageModal({services=[],name="",description="",reference
  '<label>Preço de referência (R$)<input name="reference_price" type="number" min="0" step="0.01" inputmode="decimal" value="'+e(referencePrice)+'"></label>'+
  '<p class="client-note">Preço apenas informativo. Não aplica cupons, não debita estoque e não abre comandas.</p>'+
  '<h3>Sequência de serviços</h3>'+
- '<div id="offer-package-items">'+items.map((item,i)=>
- '<div class="offer-package-entry"><label>Serviço '+(i+1)+'<select name="service_'+i+'" required>'+selectOptions(services,item.service_id)+'</select></label>'+
- '<div class="offer-form-two"><label>Quantidade<input name="quantity_'+i+'" type="number" min="1" max="20" step="1" value="'+e(item.quantity)+'" required></label>'+
- '<label>Pausa após (min)<input name="pause_'+i+'" type="number" min="0" max="720" step="1" value="'+e(item.pause_after_minutes)+'" required></label></div>'+
- (items.length>1?'<button class="btn secondary" data-offer-action="remove-package-item" data-item-index="'+i+'" type="button">Remover etapa</button>':'')+'</div>').join("")+'</div>'+
+ '<div id="offer-package-items">'+renderPackageItemRows({services,items})+'</div>'+
  '<button type="button" class="btn secondary" data-offer-action="add-package-item">＋ Adicionar etapa</button>'+
  '</div><footer class="sp-modal-foot"><button class="btn secondary" data-offer-action="close-dialog" type="button">Voltar</button>'+
  '<button class="btn primary" type="submit">Salvar combo</button></footer></form></div></dialog>';
 }
-function formatTime(value){
+/** Etapas do formulário de combo, atualizáveis sem fechar o diálogo. */
+export function renderPackageItemRows({services=[],items=[]}={}){
+ return items.map((item,i)=>
+ '<div class="offer-package-entry"><label>Serviço '+(i+1)+'<select name="service_'+i+'" required>'+selectOptions(services,item.service_id)+'</select></label>'+
+ '<div class="offer-form-two"><label>Quantidade<input name="quantity_'+i+'" type="number" min="1" max="20" step="1" value="'+e(item.quantity)+'" required></label>'+
+ '<label>Pausa após (min)<input name="pause_'+i+'" type="number" min="0" max="720" step="1" value="'+e(item.pause_after_minutes)+'" required></label></div>'+
+ (items.length>1?'<button class="btn secondary" data-offer-action="remove-package-item" data-item-index="'+i+'" type="button">Remover etapa</button>':'')+'</div>').join("");
+}
+function formatTime(value,timezone){
  const d=new Date(value);
- return Number.isFinite(d.getTime())?new Intl.DateTimeFormat("pt-BR",{dateStyle:"short",timeStyle:"short"}).format(d):"Horário inválido";
+ return Number.isFinite(d.getTime())?new Intl.DateTimeFormat("pt-BR",{dateStyle:"short",timeStyle:"short",timeZone:timezone}).format(d):"Horário inválido";
 }
 function formatDate(value){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(value)))return String(value||"");
