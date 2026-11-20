@@ -66,6 +66,7 @@ export async function createExpense({
   const cleanDescription=String(description??"").trim(),value=Number(amount);
   if(cleanDescription.length<2||cleanDescription.length>200)throw new TypeError("Informe uma descrição entre 2 e 200 caracteres.");
   if(!Number.isFinite(value)||value<=0)throw new TypeError("O valor da despesa deve ser maior que zero.");
+  if(value>9999999999.99||Number(value.toFixed(2))!==value)throw new TypeError("Informe um valor com até duas casas decimais, dentro do limite permitido.");
   if(!validDate(String(dueDate??"")))throw new TypeError("Informe uma data de vencimento válida.");
   if(String(category??"").length>80||String(supplier??"").length>160||String(notes??"").length>1000) {
     throw new TypeError("Um dos campos de texto ultrapassou o limite permitido.");
