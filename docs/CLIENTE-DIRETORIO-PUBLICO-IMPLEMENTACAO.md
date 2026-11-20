@@ -113,6 +113,8 @@ A lista é uma fotografia da disponibilidade no momento da consulta. A criação
 
 ## Verificações executadas nesta etapa
 
+- `docs/sql/customer-public-directory.draft.test.mjs` também confere estaticamente as quatro migrations versionadas, os contratos das RPCs e a ausência de execução anônima na RPC de publicação. Esse teste é estrutural e não substitui execução PostgreSQL/E2E.
+
 - Migration de diretório aplicada e registrada no Supabase.
 - Migration de alinhamento com Configurações aplicada e registrada.
 - Migration de grants mínimos aplicada e registrada.
