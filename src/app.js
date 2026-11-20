@@ -6,13 +6,44 @@ import { installGlobalErrorHandlers, reportError } from './utils/errors.js';
 import { startAuth, getCurrentUserContext } from './auth/auth.js';
 import { installAgendaController } from './agenda/controllers/agenda-controller.js';
 import { render as renderApp } from './layout/render.js';
+import { supabase } from './supabase/client.js';
+import { listBranches } from './modules/branches/branches.service.js';
 
 // Inicializa máscaras, mensagens de erro e eventos da Agenda antes do primeiro render.
 installGlobalMasks();
 installGlobalErrorHandlers();
 installAgendaController();
 
+// Carrega unidades ativas da organização e escolhe a matriz como contexto inicial.
+async function refreshBranchContext() {
+  if(!state.organization?.id) {
+    state.availableBranches=[];
+    state.branch=null;
+    return;
+  }
+  try {
+    const branches=await listBranches({client:supabase,orgId:state.organization.id});
+    state.availableBranches=branches.filter(branch=>branch.active);
+    const current=state.availableBranches.find(branch=>branch.id===state.branch?.id);
+    state.branch=current||state.availableBranches.find(branch=>branch.is_main)||state.availableBranches[0]||null;
+  } catch(error) {
+    state.availableBranches=[];
+    state.branch=null;
+    reportError(error,{context:"SaaS > carregar unidades"});
+  }
+}
+
 document.addEventListener("change",async event=>{
+  if(event.target?.id==="branch-switcher") {
+    const selected=state.availableBranches.find(branch=>branch.id===String(event.target.value||""));
+    if(!selected)return;
+    state.branch=selected;
+    state.agendaAppointments=[];
+    state.agendaProfessionals=[];
+    state.dbBlockedTimes=[];
+    renderApp();
+    return;
+  }
   if(event.target?.id!=="tenant-switcher")return;
   const select=event.target,organizationId=String(select.value||"");
   if(!organizationId||organizationId===state.organization?.id)return;
@@ -25,6 +56,7 @@ document.addEventListener("change",async event=>{
     state.membership=context.membership;
     state.availableOrganizations=context.availableOrganizations||[];
     state.branch=null;
+    await refreshBranchContext();
     state.page="Dashboard";
     state.drawer=null;
     state.query="";
@@ -43,13 +75,14 @@ document.addEventListener("change",async event=>{
   }
 });
 
-startAuth(context=>{
+startAuth(async context=>{
   state.user=context.user;
   state.profile=context.profile;
   state.organization=context.organization;
   state.membership=context.membership;
   state.availableOrganizations=context.availableOrganizations||[];
   state.branch=null;
+  await refreshBranchContext();
   renderApp();
   // A tela inicial foi montada; erros posteriores pertencem ao tratamento global da aplicação.
   window.__SALAO_PREMIUM_BOOTED__=true;
