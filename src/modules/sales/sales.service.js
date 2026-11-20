@@ -20,13 +20,15 @@ function mapSalesError(error) {
  * @param {object} options Cliente Supabase, organização e limite opcional.
  * @returns {Promise<object>} Vendas, nomes de clientes e itens agrupados por venda.
  */
-export async function fetchSalesWorkspace({client,orgId,limit=200}={}) {
+export async function fetchSalesWorkspace({client,orgId,branchId=null,limit=200}={}) {
   requireContext(client,orgId);
   if(!Number.isInteger(limit)||limit<1||limit>500)throw new TypeError("O limite de consulta deve ficar entre 1 e 500.");
   try {
-    const {data:sales,error:salesError}=await client.from("sales")
+    let salesQuery=client.from("sales")
       .select("id,sale_number,status,subtotal,discount,total,payment_method,notes,sold_at,customer_id,branch_id")
-      .eq("org_id",orgId).order("sold_at",{ascending:false}).limit(limit);
+      .eq("org_id",orgId);
+    if(branchId)salesQuery=salesQuery.eq("branch_id",branchId);
+    const {data:sales,error:salesError}=await salesQuery.order("sold_at",{ascending:false}).limit(limit);
     if(salesError)throw salesError;
     const rows=Array.isArray(sales)?sales:[];
     const customerIds=[...new Set(rows.map(row=>row.customer_id).filter(Boolean))];
