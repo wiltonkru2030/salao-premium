@@ -21,7 +21,7 @@ export function renderCustomerProfileView({profile = null, session, theme = "sys
     '<div class="profile-card"><div class="avatar-mark">' + escapeClientHtml(name.slice(0,1).toUpperCase() || "C") + '</div><div><strong>' + escapeClientHtml(name || "Seu perfil") + '</strong><span>' + escapeClientHtml(email) + '</span></div></div>' +
     '<form class="detail-card profile-form" data-profile-form novalidate>' +
       '<label class="field-label" for="customer-profile-name">Nome completo</label><input id="customer-profile-name" name="fullName" maxlength="120" autocomplete="name" required value="' + escapeClientHtml(name) + '">' +
-      '<label class="field-label" for="customer-profile-phone">Celular com DDD</label><input id="customer-profile-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel-national" maxlength="16" placeholder="(67) 99999-9999" value="' + escapeClientHtml(phone) + '">' +
+      '<label class="field-label" for="customer-profile-phone">Celular com DDD ou DDI</label><input id="customer-profile-phone" name="phone" type="tel" data-mask="phone-international" inputmode="tel" autocomplete="tel" maxlength="32" placeholder="(67) 99999-9999" value="' + escapeClientHtml(phone) + '">' +
       '<p class="client-note">O e-mail é o contato da conta. O telefone informado não é considerado verificado até passar por confirmação própria.</p>' +
       '<button class="client-button" type="submit" data-action="save-profile">Salvar alterações</button>' +
     '</form>' +
