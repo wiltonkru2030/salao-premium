@@ -17,7 +17,7 @@ Os arquivos marcados como draft são documentos de revisão, não migrations apl
 
 ## Rascunhos ainda pendentes
 1. docs/sql/audit-composite-record-identifiers.draft.sql — auditoria/lixeira das tabelas globais e identificadores de chaves compostas; depende das tabelas de identidade global já aplicadas.
-2. docs/sql/customer-appointment-history.draft.sql — histórico da própria identidade global autenticada.
+2. supabase/migrations/20261120072000_customer_appointment_history.sql — RPC de histórico da própria identidade global autenticada (versionada, ainda não aplicada); docs/sql/customer-appointment-history.draft.sql permanece como referência.
 3. docs/sql/customer-engagement.draft.sql — favoritos, notificações internas por trigger e preferências globais.
 4. supabase/migrations/20261119170000_snapshot_commission_rate_on_first_payment.sql — congela a regra de comissão no primeiro pagamento do item. Está versionada, mas não consta no histórico do Supabase conectado.
 5. docs/sql/commission-refund-reversals.draft.sql — débito de comissões já pagas, compensação automática no próximo repasse e wrappers SECURITY INVOKER.
