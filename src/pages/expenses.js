@@ -8,6 +8,7 @@ import { state } from "../state.js";
 import { head, esc, toast, btn } from "../utils.js";
 import { parseBRL } from "../utils/input-masks.js";
 import { reportError } from "../utils/errors.js";
+import { listExpenses, createExpense, payExpense, cancelExpense } from "../modules/expenses/expenses.service.js";
 
 let modalListenerInstalled = false;
 const canManage = () => ["owner", "admin", "manager", "finance"].includes(state.membership?.role);
@@ -32,11 +33,7 @@ export async function loadExpensesPage() {
   const orgId = state.organization?.id;
   if (!host || !orgId) return;
   try {
-    const { data, error } = await supabase.from("expenses")
-      .select("id,description,category,amount,due_date,paid_at,status,supplier,notes")
-      .eq("org_id", orgId).order("due_date", { ascending: true, nullsFirst: false }).limit(500);
-    if (error) throw error;
-    const rows = data || [];
+    const rows = await listExpenses({client:supabase,orgId,limit:500});
     const pending = rows.filter(row => row.status === "pending");
     const pendingTotal = pending.reduce((sum, row) => sum + Number(row.amount || 0), 0);
     const actions = row => canManage() && row.status === "pending"
@@ -110,15 +107,11 @@ export async function loadExpensesPage() {
       const submit = form.querySelector('[type="submit"]');
       submit.disabled = true;
       try {
-        const { error: insertError } = await supabase.from("expenses").insert({
-          org_id: orgId, branch_id: state.branch?.id || null, description,
-          category: String(values.get("category") || "").trim() || null,
-          supplier: String(values.get("supplier") || "").trim() || null,
-          amount, due_date: String(values.get("due_date") || "") || null,
-          notes: String(values.get("notes") || "").trim() || null, status: "pending",
-          created_by: state.user?.id || null
+        await createExpense({
+          client:supabase,orgId,branchId:state.branch?.id||null,createdBy:state.user?.id||null,
+          description,category:values.get("category"),supplier:values.get("supplier"),
+          amount,dueDate:values.get("due_date"),notes:values.get("notes")
         });
-        if (insertError) throw insertError;
         host.querySelector("#expense-create-modal")?.close();
         toast("Despesa cadastrada.");
         await loadExpensesPage();
@@ -133,12 +126,10 @@ export async function loadExpensesPage() {
       const button = form.querySelector('[type="submit"]');
       button.disabled = true;
       try {
-        const { error } = await supabase.rpc("pay_expense", {
-          p_expense_id: String(values.get("expense_id") || ""),
-          p_payment_method: String(values.get("payment_method") || ""),
-          p_use_cash: values.get("use_cash") === "on"
+        await payExpense({
+          client:supabase,orgId,expenseId:String(values.get("expense_id")||""),
+          paymentMethod:String(values.get("payment_method")||""),useCash:values.get("use_cash")==="on"
         });
-        if (error) throw error;
         host.querySelector("#expense-payment-modal")?.close();
         toast("Pagamento registrado.");
         await loadExpensesPage();
@@ -161,8 +152,7 @@ export async function loadExpensesPage() {
       if (!window.confirm("Deseja cancelar esta despesa pendente?")) return;
       cancel.disabled = true;
       try {
-        const { error } = await supabase.rpc("cancel_expense", { p_expense_id: cancel.dataset.cancelExpense });
-        if (error) throw error;
+        await cancelExpense({client:supabase,orgId,expenseId:cancel.dataset.cancelExpense});
         toast("Despesa cancelada.");
         await loadExpensesPage();
       } catch (err) { reportError(err, { context: "Despesas > cancelar" }); }
