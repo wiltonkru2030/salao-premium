@@ -58,7 +58,7 @@ document.addEventListener('click',async event=>{
   }
 
   const rec=target.closest('[data-record]');
-  if(rec){recordDrawer(rec.dataset.recordType,Number(rec.dataset.record));return;}
+  if(rec){recordDrawer(rec.dataset.recordType,rec.dataset.record);return;}
 
   const setting=target.closest('[data-setting]');
   if(setting){state.setting=setting.dataset.setting;render();return;}
