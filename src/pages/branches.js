@@ -53,9 +53,17 @@ export function branchesPage() {
 export async function loadBranchesPage() {
   const host=document.querySelector("#branches-manager");
   if(!host||!state.organization?.id)return;
+  const orgId=state.organization.id,userId=state.user?.id,role=state.membership?.role;
+  const request=String(Number(host.dataset.request||0)+1);host.dataset.request=request;
+  // Descarta respostas obsoletas ao trocar página, usuário ou organização.
+  const current=()=>host.isConnected&&state.page==='Unidades'&&state.organization?.id===orgId&&state.user?.id===userId&&state.membership?.role===role&&host.dataset.request===request;
+  let branches;
   try {
-    branchesCache=await listBranches({client:supabase,orgId:state.organization.id});
+    branches=await listBranches({client:supabase,orgId});
+    if(!current())return;
+    branchesCache=branches;
   } catch(error) {
+    if(!current())return;
     reportError(error,{context:"Unidades > carregar filiais"});
     host.innerHTML='<div class="empty-state"><b>Não foi possível carregar as unidades.</b><small>Verifique sua conexão e suas permissões. Tente novamente.</small></div>';
     return;
