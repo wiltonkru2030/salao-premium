@@ -19,7 +19,7 @@
  * CUSTOMER_A_ID, CUSTOMER_B_ID, ORG_A_ID, ORG_B_ID.
  *
  * Variáveis adicionais para testar RPCs:
- * CUSTOMER_A_OWNER_ACCESS_TOKEN, ORG_A_SLUG, ORG_A_CUSTOMER_ID.
+ * CUSTOMER_A_OWNER_ACCESS_TOKEN, ORG_A_CUSTOMER_ID, ORG_B_CUSTOMER_ID.
  */
 
 import assert from "node:assert/strict";
@@ -248,66 +248,74 @@ const verifiedPhoneWrite = await request(
 expectDenied(verifiedPhoneWrite, "Alteração direta de phone_verified_at");
 
 // ---------------------------------------------------------------------------
-// 5. RPCs controladas: ativação idempotente e associação auditada.
-//    Esta etapa só roda quando os dados adicionais de QA estão configurados.
+// 5. RPC controlada: associação assistida, autorizada e idempotente.
+//    A ativação de membership por reserva será testada junto da RPC transacional
+//    de HOLD/agendamento, quando esse fluxo estiver implementado.
 // ---------------------------------------------------------------------------
 const RPC_ENV = [
   "CUSTOMER_A_OWNER_ACCESS_TOKEN",
-  "ORG_A_SLUG",
-  "ORG_A_CUSTOMER_ID"
+  "ORG_A_CUSTOMER_ID",
+  "ORG_B_CUSTOMER_ID"
 ];
 const missingRpcEnv = RPC_ENV.filter((key) => !ENV[key]);
 
 if (missingRpcEnv.length === 0) {
-  const joined = await expectRpcSuccess(customerA, "join_customer_tenant", {
-    p_org_slug: ENV.ORG_A_SLUG
-  });
-  const joinedRow = Array.isArray(joined) ? joined[0] : joined;
-  assert.equal(joinedRow.org_id, ENV.ORG_A_ID, "O slug deve resolver somente a organização esperada.");
-  assert.equal(joinedRow.membership_status, "active", "O vínculo pelo link deve ficar ativo.");
-
-  // A segunda chamada comprova idempotência, sem duplicar a linha.
-  await expectRpcSuccess(customerA, "join_customer_tenant", {
-    p_org_slug: ENV.ORG_A_SLUG
-  });
-  const membershipAfterJoin = await request(
-    customerA,
-    "/customer_tenant_memberships?select=org_id,auth_user_id&org_id=eq." +
-      orgAId +
-      "&auth_user_id=eq." +
-      customerAId
-  );
-  assert.equal(membershipAfterJoin.ok, true, "Membership criado deve ser consultável.");
-  assert.equal(membershipAfterJoin.body.length, 1, "A entrada repetida não pode duplicar membership.");
-
   const ownerA = ENV.CUSTOMER_A_OWNER_ACCESS_TOKEN;
   const linkArgs = {
     p_org_id: ENV.ORG_A_ID,
     p_customer_id: ENV.ORG_A_CUSTOMER_ID,
     p_auth_user_id: ENV.CUSTOMER_A_ID
   };
+
+  // A cliente não pode invocar a função reservada à equipe do salão.
+  const customerCannotLink = await request(customerA, "/rpc/link_customer_legacy", {
+    method: "POST",
+    body: linkArgs
+  });
+  expectDenied(customerCannotLink, "Associação de cadastro por conta de cliente");
+
   const linked = await expectRpcSuccess(ownerA, "link_customer_legacy", linkArgs);
   assert.equal(linked, ENV.ORG_A_CUSTOMER_ID, "A RPC deve retornar o cadastro associado.");
 
-  // A associação repetida ao mesmo cadastro também deve ser idempotente.
+  // Repetir a mesma associação não pode criar uma segunda linha.
   const linkedAgain = await expectRpcSuccess(ownerA, "link_customer_legacy", linkArgs);
   assert.equal(linkedAgain, ENV.ORG_A_CUSTOMER_ID);
+
+  const mapping = await request(
+    customerA,
+    "/customer_account_customers?select=org_id,auth_user_id,customer_id&org_id=eq." +
+      orgAId +
+      "&auth_user_id=eq." +
+      customerAId
+  );
+  assert.equal(mapping.ok, true, "A cliente deve consultar sua associação confirmada.");
+  assert.equal(mapping.body.length, 1, "A associação idempotente deve existir uma única vez.");
+  assert.equal(mapping.body[0].customer_id, ENV.ORG_A_CUSTOMER_ID);
 
   const crossTenantLink = await request(ownerA, "/rpc/link_customer_legacy", {
     method: "POST",
     body: {
       p_org_id: ENV.ORG_B_ID,
-      p_customer_id: ENV.CUSTOMER_B_ID,
+      p_customer_id: ENV.ORG_B_CUSTOMER_ID,
       p_auth_user_id: ENV.CUSTOMER_A_ID
     }
   });
   expectDenied(crossTenantLink, "Associação de cliente em organização alheia");
+
+  const mismatchedCustomerLink = await request(ownerA, "/rpc/link_customer_legacy", {
+    method: "POST",
+    body: {
+      p_org_id: ENV.ORG_A_ID,
+      p_customer_id: ENV.ORG_B_CUSTOMER_ID,
+      p_auth_user_id: ENV.CUSTOMER_A_ID
+    }
+  });
+  expectDenied(mismatchedCustomerLink, "Associação de cadastro pertencente a outro salão");
 } else {
   console.log(
-    "Testes das RPCs controladas não executados: faltam variáveis de QA (" +
+    "Teste da RPC de associação não executado: faltam variáveis de QA (" +
       missingRpcEnv.join(", ") +
       ")."
   );
 }
-
 console.log("Testes RLS da identidade global concluídos.");
