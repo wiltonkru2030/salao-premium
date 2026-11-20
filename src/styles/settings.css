@@ -42,3 +42,15 @@ color:#bbb}
 .settings-foot{padding-top:15px;
 font-size:9px;
 color:#aaa}
+
+
+/* Disponibilidade da agenda: formulários responsivos e listas administrativas. */
+.availability-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}
+.availability-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:start;padding:15px;border:1px solid var(--border,#e8e5df);border-radius:12px;background:var(--surface,#fff)}
+.availability-form h3{grid-column:1/-1;margin:0 0 4px;font-size:14px}
+.availability-form label{display:grid;gap:5px;font-size:12px;color:var(--text-muted,#666)}
+.availability-form input,.availability-form select{width:100%;min-width:0;min-height:40px;padding:8px 10px;border:1px solid var(--border,#ddd);border-radius:8px;background:#fff;color:inherit;font:inherit}
+.availability-form .sp-span,.availability-form button{grid-column:1/-1}
+.availability-lists{margin-top:18px}
+.availability-lists h3{font-size:14px;margin:0 0 10px}
+@media(max-width:760px){.availability-grid{grid-template-columns:1fr}.availability-form{grid-template-columns:1fr}.availability-form h3,.availability-form .sp-span,.availability-form button{grid-column:1}}
