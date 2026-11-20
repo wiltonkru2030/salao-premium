@@ -3,6 +3,7 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, toast, esc } from "../utils.js";
 import { reportError } from "../utils/errors.js";
+import { fetchProfessionalWorkspace } from "../modules/professionals/professionals.service.js";
 
 /** Módulo Profissionais: cadastro fiscal, vínculo de serviços e controle de acesso ao App Profissional. */
 
@@ -32,27 +33,26 @@ export function professionalsPage(){
 export async function loadProfessionalsPage(){
  const host=document.querySelector("#professionals-access");
  if(!host||!state.organization?.id)return;
- const [professionalResult,serviceResult,membersResult,assignmentResult]=await Promise.all([
-  supabase.from("professionals").select("id,name,phone,email,active,access_enabled,commission_rate,tax_regime,cnpj,legal_name,trade_name,specialty").eq("org_id",state.organization.id).order("name"),
-  supabase.from("services").select("id,name,category,active").eq("org_id",state.organization.id).eq("active",true).order("category").order("name").limit(500),
-  supabase.from("org_memberships").select("user_id,role,professional_app_enabled,professional_app_scope").eq("org_id",state.organization.id).eq("status","active").in("role",["owner","admin","receptionist"]),
-  supabase.from("professional_services").select("professional_id,service_id").eq("org_id",state.organization.id)
- ]);
- const {data,error}=professionalResult,{data:services, error:serviceError}=serviceResult,{data:members,error:membersError}=membersResult,{data:assignments,error:assignmentError}=assignmentResult;
- const serviceNames=new Map((services||[]).map(s=>[s.id,s.name]));
- const assignedNames=new Map();
- (assignments||[]).forEach(link=>{if(!assignedNames.has(link.professional_id))assignedNames.set(link.professional_id,[]);const name=serviceNames.get(link.service_id);if(name)assignedNames.get(link.professional_id).push(name);});
- if(error||serviceError||membersError||assignmentError){
-  const failure=error||serviceError||membersError||assignmentError;
-  reportError(failure,{context:"Profissionais > carregar cadastros"});
-  host.innerHTML='<div class="empty-state">Não foi possível carregar os dados da equipe. Atualize a página e tente novamente.</div>';return;
+ let workspace;
+ try {
+  workspace=await fetchProfessionalWorkspace({
+   client:supabase,orgId:state.organization.id,currentUserId:state.user?.id
+  });
+ } catch(error) {
+  reportError(error,{context:"Profissionais > carregar cadastros"});
+  host.innerHTML='<div class="empty-state">Não foi possível carregar os dados da equipe. Atualize a página e tente novamente.</div>';
+  return;
  }
- const targets=(members||[]).filter(m=>m.role==="receptionist"||m.user_id===state.user?.id);
- const targetIds=targets.map(m=>m.user_id);
- const profileResult=targetIds.length?await supabase.from("profiles").select("id,full_name").in("id",targetIds):{data:[],error:null};
-  if(profileResult.error){reportError(profileResult.error,{context:"Profissionais > carregar perfis"});host.innerHTML='<div class="empty-state">Não foi possível carregar os perfis de acesso.</div>';return;}
-  const profiles=profileResult.data;
- const profileNames=new Map((profiles||[]).map(p=>[p.id,p.full_name]));
+ const {professionals:data,services,members,assignments,profiles}=workspace;
+ const serviceNames=new Map((services||[]).map(service=>[service.id,service.name]));
+ const assignedNames=new Map();
+ (assignments||[]).forEach(link=>{
+  if(!assignedNames.has(link.professional_id))assignedNames.set(link.professional_id,[]);
+  const name=serviceNames.get(link.service_id);
+  if(name)assignedNames.get(link.professional_id).push(name);
+ });
+ const targets=(members||[]).filter(member=>member.role==="receptionist"||member.user_id===state.user?.id);
+ const profileNames=new Map((profiles||[]).map(profile=>[profile.id,profile.full_name]));
  const groups=new Map();
  (services||[]).forEach(s=>{const category=s.category||"Outros";if(!groups.has(category))groups.set(category,[]);groups.get(category).push(s);});
  const serviceChoices=[...groups.entries()].map(([category,items])=>'<section class="professional-service-group"><b>'+esc(category)+'</b><div class="professional-service-options">'+items.map(s=>'<label><input type="checkbox" name="service_ids" value="'+s.id+'"><span>'+esc(s.name)+'</span></label>').join("")+'</div></section>').join("");
@@ -113,11 +113,10 @@ export async function loadProfessionalsPage(){
    <footer class="professional-modal-foot sp-modal-foot"><button type="button" class="btn secondary" data-close-professional-modal>Cancelar</button><button class="btn primary" type="submit">Salvar profissional</button></footer>
   </form>
  </dialog>`;
- if(serviceError||assignmentError){const box=host.querySelector("#professional-service-choices");if(box)box.innerHTML='<p class="empty-state">Não foi possível carregar os serviços.</p>';}
  if(canManageProfessionals())host.insertAdjacentHTML("beforeend", `
  <details class="settings-card"><summary><b>Acesso ao App para proprietário e recepção</b></summary>
   <p class="demo-note">O proprietário ou administrador pode liberar o próprio acesso completo. A recepção recebe agenda completa e acesso operacional às comandas.</p>
-  ${membersError?'<div class="empty-state">Não foi possível carregar as permissões da equipe.</div>':''}
+  
   <div class="record-list">${targets.map(m=>`
    <article class="record-card">
     <span class="record-main"><b>${esc(profileNames.get(m.user_id)|| (m.user_id===state.user?.id?"Minha conta":"Usuário da recepção"))}</b>
