@@ -359,3 +359,30 @@ Tabelas de vitrine e cupons foram confirmadas com RLS habilitado. As RPCs públi
 - PR #1 permanece draft e com estado de merge dirty; não foi feito merge/rebase automático.
 - main não foi alterada por esta etapa.
 - O sistema ainda não deve ser anunciado como pronto para venda até concluir as pendências, QA real e autorização das migrations/configurações restantes.
+
+
+---
+
+## Continuação da implementação — catálogo e carteira de clientes (20/11/2026)
+
+### Catálogo
+- Criados serviços de domínio para serviços, produtos e categorias em \`src/modules/catalog/\`.
+- Listagens paginadas por \`org_id\`; cadastro, edição e inativação sem exclusão física.
+- Telas de serviços, produtos e categorias usam modais e mensagens em pt-BR.
+- Edição de produto não altera o saldo de estoque; saldo inicial só é enviado no cadastro. Ajustes futuros devem passar por movimentações auditáveis.
+- Categorias têm migration versionada \`supabase/migrations/20261120074000_catalog_categories.sql\`, com RLS de leitura por membros, gravação por RPC com autorização owner/admin, índice único case-insensitive, sincronização de nomes legados e auditoria.
+- Testes dos três serviços foram incluídos no \`test:all\`.
+- A migration de categorias ainda NÃO foi aplicada ao Supabase conectado; o catálogo mantém fallback temporário para categoria textual até a ativação em ambiente de QA.
+
+### Carteira local de clientes
+- Criado \`src/modules/customers/customers.service.js\` com paginação completa, cadastro, edição, inativação e reativação.
+- A página \`src/pages/customers.js\` usa o serviço, oferece edição e inativação sem apagar histórico.
+- A carteira local da organização permanece separada da identidade global da cliente.
+- Validação de nome, e-mail e data real de nascimento; datas futuras são rejeitadas.
+- Testes em \`src/modules/customers/customers.service.test.js\`, incluídos no \`test:all\`.
+
+### Verificações e limites
+- Schema real de \`customers\`, \`services\` e \`products\` foi consultado somente para leitura; os campos usados pelos serviços foram conferidos. As políticas RLS de \`customers\` permitem as operações conforme os papéis Owner/Admin/Manager/Recepção.
+- Nenhuma migration foi aplicada e nenhum dado de produção foi alterado por estas tarefas.
+- CI dos commits desta continuação apresentou execuções em andamento e algumas falhas transitórias de sintaxe/teste durante a edição. Só considerar esta etapa aprovada quando App validation e Agenda tests passarem no mesmo SHA final do branch.
+- O catálogo ainda não implementa o fluxo completo de movimentação de estoque, nem a separação de catálogo por filial. A tabela atual de serviços não possui \`branch_id\`; essa separação exige desenho/migration e revisão das integrações com agenda, comanda e app público, não apenas filtro na tela.
