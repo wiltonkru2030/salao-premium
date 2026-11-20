@@ -229,6 +229,7 @@ async function runAction(action, button = null) {
         renderApp();
       }
     } else if (action === "create-hold") {
+      if (holdState?.holdId) { try { await cancelAppointmentHold(holdState.holdId); } catch { /* A reserva anterior expira automaticamente no banco. */ } }
       const index = Number(button?.dataset.slotIndex);
       const slot = slotsState.items[index];
       if (!slot || !slotsState.serviceId) throw new Error("Selecione um horário válido.");
@@ -255,10 +256,10 @@ async function runAction(action, button = null) {
       renderApp();
       setNotice("Agendamento confirmado com sucesso.", "success");
     } else if (action === "cancel-hold") {
-      if (holdState?.holdId) await cancelAppointmentHold(holdState.holdId);
+      const cancelled = holdState?.holdId ? await cancelAppointmentHold(holdState.holdId) : false;
       holdState = null;
       renderApp();
-      setNotice("Reserva temporária cancelada.", "success");
+      setNotice(cancelled ? "Reserva temporária cancelada." : "A reserva já estava encerrada ou havia expirado.", cancelled ? "success" : "info");
     } else if (action === "reload-appointments") {
       await loadAppointments();
     } else if (action === "theme") {
