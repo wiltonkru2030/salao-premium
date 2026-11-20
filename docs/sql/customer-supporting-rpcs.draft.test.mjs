@@ -42,6 +42,17 @@ async function run() {
   assert.match(history,/membership\.status\s*=\s*'active'/i);
   assert.doesNotMatch(history,/p_customer_id/i);
 
+  const historyMigration=await readFile(
+    new URL("../../supabase/migrations/20261120072000_customer_appointment_history.sql",import.meta.url),"utf8"
+  );
+  checkDelimiters(historyMigration,"Migration de histórico");
+  const migratedHistoryFunctions=checkFunctionSecurity(historyMigration,2);
+  assert.deepEqual(migratedHistoryFunctions,[
+    "private.get_my_customer_appointments","public.get_my_customer_appointments"
+  ]);
+  assert.match(historyMigration,/membership\.status\s*=\s*'active'/i);
+  assert.match(historyMigration,/revoke all on function private\.get_my_customer_appointments\(\) from public, anon, authenticated/i);
+
   const availability=await read("customer-availability-slots.draft.sql");
   checkDelimiters(availability,"Disponibilidade");
   const availabilityFunctions=checkFunctionSecurity(availability,2);
