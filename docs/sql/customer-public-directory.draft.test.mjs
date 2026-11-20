@@ -84,8 +84,8 @@ assert.ok(!appliedSql.split("\n").some(line =>
 assert.match(appliedSql, /appointment_holds/);
 assert.match(appliedSql, /branch_closures/);
 assert.match(appliedSql, /professional_time_off/);
-assert.match(appliedSql, /create trigger audit_row_change after insert or update or delete on public\.salon_public_profiles/);
-assert.match(appliedSql, /create trigger audit_row_change after insert or update or delete on public\.branch_public_profiles/);
+assert.match(appliedSql, /create trigger audit_row_change\\s+after insert or update or delete on public\\.salon_public_profiles/);
+assert.match(appliedSql, /create trigger audit_row_change\\s+after insert or update or delete on public\\.branch_public_profiles/);
 assert.match(appliedSql, /v_data->>'branch_id'/);
 assert.match(appliedSql, /v_data->>'slug'/);
 assert.match(appliedSql, /insert into public\.recycle_bin/);
