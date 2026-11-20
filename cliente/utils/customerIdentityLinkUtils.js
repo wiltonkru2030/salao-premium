@@ -32,7 +32,7 @@ export function normalizePendingIdentityLinkRequest(row) {
   if (!salonName || !customerName || !Number.isFinite(Date.parse(expiresAt))) {
     throw new TypeError("Os dados da solicitação estão incompletos.");
   }
-  if (phoneSuffix !== null && !/^\\d{2}$/.test(phoneSuffix)) {
+  if (phoneSuffix !== null && !/^\d{2}$/.test(phoneSuffix)) {
     throw new TypeError("O telefone de confirmação possui formato inválido.");
   }
   return { requestId, orgId, salonName, customerName, phoneSuffix, expiresAt };
