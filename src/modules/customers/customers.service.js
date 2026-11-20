@@ -21,6 +21,13 @@ function requireContext(client,orgId) {
   if(typeof orgId!=="string"||!orgId.trim())throw new TypeError("A organização ativa não foi identificada.");
 }
 
+/** Valida o identificador de filial antes de compor filtros de consulta. */
+function requireBranchId(branchId) {
+  if(branchId&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(branchId)) {
+    throw new TypeError("A unidade selecionada não é válida.");
+  }
+}
+
 /** Normaliza e valida dados do cadastro local sem alterar identidade global. */
 function normalizeCustomer(input={}) {
   const name=String(input.name??"").trim();
@@ -49,14 +56,17 @@ function normalizeCustomer(input={}) {
  * @param {object} options Cliente Supabase e ID da organização.
  * @returns {Promise<Array<object>>} Clientes ativos e inativos.
  */
-export async function listCustomers({client,orgId}={}) {
+export async function listCustomers({client,orgId,branchId=null}={}) {
   requireContext(client,orgId);
+  requireBranchId(branchId);
   const rows=[];
   try {
     for(let offset=0;;offset+=PAGE_SIZE) {
-      const {data,error}=await client.from("customers")
-        .select("id,name,phone,email,birth_date,active")
-        .eq("org_id",orgId).order("name").range(offset,offset+PAGE_SIZE-1);
+      let query=client.from("customers")
+        .select("id,name,phone,email,birth_date,active,branch_id")
+        .eq("org_id",orgId);
+      if(branchId)query=query.or("branch_id.eq."+branchId+",branch_id.is.null");
+      const {data,error}=await query.order("name").range(offset,offset+PAGE_SIZE-1);
       if(error)throw error;
       const page=Array.isArray(data)?data:[];
       rows.push(...page);
@@ -71,8 +81,9 @@ export async function listCustomers({client,orgId}={}) {
  * @param {object} options Cliente, organização, dados e ID opcional para edição.
  * @returns {Promise<void>} Resolve após a gravação.
  */
-export async function saveCustomer({client,orgId,customerId=null,...input}={}) {
+export async function saveCustomer({client,orgId,branchId=null,customerId=null,...input}={}) {
   requireContext(client,orgId);
+  requireBranchId(branchId);
   const payload=normalizeCustomer(input);
   try {
     const result=customerId
