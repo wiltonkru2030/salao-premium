@@ -4,6 +4,8 @@
 
 begin;
 
+grant usage on schema private to authenticated;
+
 alter table public.commissions
   add column if not exists reversal_of_commission_id uuid;
 
@@ -206,6 +208,7 @@ begin
       from public.commissions c
      where c.org_id=p_org_id and c.professional_id=p_professional_id
        and (c.id=any(p_commission_ids) or (c.amount<0 and c.reversal_of_commission_id is not null))
+       and c.status in ('pending','approved') and c.payout_id is null
      order by c.created_at,c.id
   loop
     insert into public.commission_payout_items(org_id,payout_id,commission_id,amount)
