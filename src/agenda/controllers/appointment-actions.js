@@ -13,10 +13,23 @@ import { loadAgendaPage, refreshAgendaContent, findAppointmentView } from "../pa
 import { dateKey, addDays } from "../utils/date.utils.js";
 
 // Conversores de data/horário usados pelos formulários da Agenda.
+/**
+ * Converte uma chave de data da agenda em objeto Date local.
+ * @param {string} key Data no formato AAAA-MM-DD.
+ * @returns {Date} Data local correspondente.
+ * @throws {TypeError} Quando a chave não representa uma data válida.
+ */
 export function dateFromKey(key) {
   const parts=String(key).split('-').map(Number);
   return new Date(parts[0],parts[1]-1,parts[2]);
 }
+/**
+ * Combina data e hora locais em um timestamp ISO.
+ * @param {string} date Data no formato AAAA-MM-DD.
+ * @param {string} time Hora no formato HH:mm.
+ * @returns {string} Timestamp ISO para persistência.
+ * @throws {TypeError} Quando data ou hora são inválidas.
+ */
 export function makeTimestamp(date,time) {
   const value=new Date(String(date)+'T'+String(time)+':00');
   if(Number.isNaN(value.getTime())) throw new Error('Data ou horário inválido.');
@@ -25,6 +38,10 @@ export function makeTimestamp(date,time) {
 function durationBetween(start,end) {
   return Math.max(5,Math.round((end.getTime()-start.getTime())/60000));
 }
+/**
+ * Renderiza a linha de ações disponíveis para um agendamento selecionado.
+ * @returns {string} HTML dos botões de ação autorizados.
+ */
 export function appointmentActionRow() {
   return state.drawer?.appointment || null;
 }
@@ -63,6 +80,12 @@ async function selectExistingOrder(orders) {
   return {orderId:chosen.id,forceNew:false};
 }
 // Valida e persiste criação/edição de agendamento no Supabase.
+/**
+ * Valida e persiste um agendamento novo ou editado.
+ * @param {HTMLFormElement} form Formulário com os dados do agendamento.
+ * @returns {Promise<void>} Conclui a gravação e atualiza a agenda.
+ * @throws {Error} Em falha de validação ou persistência, tratada pela interface.
+ */
 export async function saveAppointment(form) {
   const values=new FormData(form);
   const customerId=String(values.get('customer_id')||'');
@@ -155,6 +178,13 @@ export async function saveAppointment(form) {
   toast('Agendamento criado. Nenhuma comanda foi aberta.');
 }
 // Atualiza status e timestamps de chegada, cancelamento ou conclusão.
+/**
+ * Altera o status de um agendamento com validação de transição.
+ * @param {object} appointment Agendamento selecionado.
+ * @param {string} status Novo status permitido.
+ * @returns {Promise<void>} Atualiza o registro e a agenda.
+ * @throws {Error} Quando a transição não é permitida ou o banco falha.
+ */
 export async function updateAppointmentStatus(appointment,status) {
   if(state.membership?.role==='professional')throw new Error('Esta alteração de status deve ser realizada pela recepção ou administração.');
   const changes={status};
@@ -168,6 +198,12 @@ export async function updateAppointmentStatus(appointment,status) {
   await loadAgendaPage();
 }
 // Solicita ao backend a abertura transacional da comanda.
+/**
+ * Localiza ou inicia a comanda vinculada ao agendamento sem duplicá-la.
+ * @param {object} appointment Agendamento que será atendido.
+ * @returns {Promise<void>} Abre a comanda existente ou recém-criada.
+ * @throws {Error} Quando o vínculo ou a abertura da comanda falhar.
+ */
 export async function openAppointmentOrder(appointment) {
   if(appointment.dbStatus==='cancelled'||appointment.dbStatus==='completed'||appointment.dbStatus==='no_show') {
     throw new Error('Este agendamento não pode abrir uma comanda.');
@@ -206,6 +242,11 @@ export async function openAppointmentOrder(appointment) {
   toast('Comanda #'+result.order_number+' aberta com '+count+' serviço(s).');
 }
 // Roteia ações do drawer para os fluxos de Agenda correspondentes.
+/**
+ * Despacha uma ação solicitada no drawer do agendamento.
+ * @param {string} action Código da ação clicada.
+ * @returns {Promise<void>} Executa a ação e atualiza a interface.
+ */
 export async function handleAppointmentAction(action) {
   const appointment=appointmentActionRow();
   if(!appointment)return;
@@ -246,6 +287,12 @@ export async function handleAppointmentAction(action) {
   }
 }
 // Valida conflitos e persiste bloqueios de disponibilidade.
+/**
+ * Valida e grava um bloqueio de horário ou intervalo do profissional.
+ * @param {HTMLFormElement} form Formulário com data, horário e motivo.
+ * @returns {Promise<void>} Persiste o bloqueio e atualiza a agenda.
+ * @throws {Error} Quando o período conflita ou a gravação falha.
+ */
 export async function saveBlockTime(form) {
   const values=new FormData(form);
   const professionalId=String(values.get('professional_id')||'');
