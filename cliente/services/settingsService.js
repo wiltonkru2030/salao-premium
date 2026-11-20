@@ -3,7 +3,14 @@
  * Responsabilidade: preferências locais não sensíveis do aplicativo.
  * Dados locais não substituem autorização do backend nem armazenamento seguro nativo.
  */
-const STORAGE_KEY = "salao-premium:client-settings:v1";
+const STORAGE_PREFIX = "salao-premium:client-settings:v2:";
+let accountScope = "guest";
+
+/** Isola preferências por conta; não reaproveita a cidade de outra cliente no mesmo aparelho. */
+export function setSettingsAccount(userId = null) {
+  accountScope = typeof userId === "string" && userId.trim() ? encodeURIComponent(userId) : "guest";
+}
+function storageKey() { return STORAGE_PREFIX + accountScope; }
 const DEFAULTS = Object.freeze({
   theme: "system",
   reminders: true,
@@ -16,7 +23,7 @@ const DEFAULTS = Object.freeze({
 
 export function getLocalSettings() {
   try {
-    const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
+    const raw = globalThis.localStorage?.getItem(storageKey());
     const stored = raw ? JSON.parse(raw) : {};
     return { ...DEFAULTS, ...(stored && typeof stored === "object" ? stored : {}) };
   } catch {
@@ -39,7 +46,7 @@ export function saveLocalSettings(patch = {}) {
   const next = { ...getLocalSettings(), ...allowed };
   try {
     if (!globalThis.localStorage) throw new Error("storage-unavailable");
-    globalThis.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    globalThis.localStorage.setItem(storageKey(), JSON.stringify(next));
   } catch {
     throw new Error("Não foi possível salvar as preferências neste aparelho.");
   }
