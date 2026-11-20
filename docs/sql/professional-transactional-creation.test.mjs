@@ -20,6 +20,7 @@ assert.match(normalized,/p_tax_regime is null or p_tax_regime not in \('individu
 assert.match(normalized,/p_service_ids is null or cardinality\(p_service_ids\)=0/);
 assert.match(normalized,/count\(distinct service_id\)/);
 assert.match(normalized,/s\.org_id=p_org_id and s\.id=any\(p_service_ids\) and s\.active=true/);
+assert.match(normalized,/p_branch_id is null or s\.branch_id is null or s\.branch_id=p_branch_id/);
 assert.match(normalized,/insert into public\.professionals/);
 assert.match(normalized,/insert into public\.professional_services/);
 assert.match(normalized,/revoke all on function private\.create_professional_with_services/);
