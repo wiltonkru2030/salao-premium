@@ -20,6 +20,7 @@ import { renderAgendaView } from "./views/agenda.views.js";
 import { handleAgendaClick } from "./agenda.controller.js";
 import { fetchProfessionalAppointments } from "./appointments.service.js";
 import { fetchProfessionalOrders, fetchProfessionalOrderItems } from "./orders.service.js";
+import { addProfessionalServiceToOrder } from "./order-items.service.js";
 
 // Aplicação PWA do profissional: autenticação, navegação, Agenda, Comandas e Comissões.
 installGlobalErrorHandlers();
@@ -212,16 +213,25 @@ function bindAutocomplete(){
   onSelect:item=>{selected=item;button.disabled=!item;}
  });
  button.addEventListener("click",async()=>{
-  if(!selected||!state.selectedOrder||!state.professional)return;
+  if(!selected||!state.selectedOrder||!state.professional||!state.user)return;
+  const orderId=state.selectedOrder.id;
+  const service=selected;
   button.disabled=true;button.textContent="Registrando…";
-  const price=Number(selected.price||0);
-  const {error}=await supabase.from("service_order_items").insert({
-   org_id:state.orgId,order_id:state.selectedOrder.id,item_type:"service",service_id:selected.id,
-   professional_id:state.professional.id,description:selected.name,quantity:1,unit_price:price,total:price,
-   performed_at:new Date().toISOString(),created_by:state.user.id
-  });
-  if(error){reportError(error,{context:"App Profissional > registrar serviço realizado"});button.disabled=false;button.textContent="Registrar serviço";showNotice("Não foi possível registrar o serviço. Tente novamente.");return;}
-  await loadOrders();await chooseOrder(state.selectedOrder.id);showNotice("Serviço registrado na comanda.");
+  try{
+   await addProfessionalServiceToOrder({
+    client:supabase,organizationId:state.orgId,orderId,service,
+    professionalId:state.professional.id,userId:state.user.id
+   });
+   await loadOrders();await chooseOrder(orderId);
+   showNotice("Serviço registrado na comanda.");
+  }catch(error){
+   reportError(error,{context:"App Profissional > registrar serviço realizado"});
+   showNotice(error?.message||"Não foi possível registrar o serviço. Tente novamente.");
+  }finally{
+   // Garante que o botão não permaneça travado após falhas de gravação ou atualização.
+   button.disabled=!selected;
+   button.textContent="Registrar serviço";
+  }
  });
 }
 root.addEventListener("click",async event=>{
