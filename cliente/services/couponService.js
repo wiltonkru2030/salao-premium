@@ -44,7 +44,7 @@ function mapCouponError(error) {
 /**
  * Valida cupom, filial e serviço e retorna uma prévia de preço.
  * @param {object} input Cliente Supabase, IDs e código.
- * @returns {Promise<object>} Dados de desconto retornados pelo banco.
+ * @returns {Promise<{couponId:string,code:string,title:string,discountType:string,discountValue:number,originalAmount:number,discountAmount:number,finalAmount:number}>} Prévia calculada pelo banco; nunca é usada como fonte de verdade na gravação.
  * @throws {TypeError|Error} Para entrada inválida, cupom inelegível ou falha de rede.
  */
 export async function validatePublicCoupon(input={}) {
