@@ -30,8 +30,7 @@ export function renderFinanceWorkspace({movements,expenses,monthStart,nextMonth}
       '<span class="record-trailing"><b>' + money(row.amount) + '</b><small>' + esc(expenseStatus(row.status)) + '</small></span></article>'
     ).join("");
 
-    return
-      '<div class="metrics">' +
+    return '<div class="metrics">' +
       metric("Entradas no caixa", money(incoming), "movimentos efetivos", "mês atual") +
       metric("Saídas no caixa", money(outgoing), "movimentos efetivos", "mês atual") +
       metric("Resultado dos movimentos", money(incoming - outgoing), "entradas menos saídas", "não é conciliação bancária") +
