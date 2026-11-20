@@ -12,8 +12,8 @@ Os arquivos marcados como draft são documentos de revisão, não migrations apl
 1. docs/sql/customer-public-directory.draft.sql — tabelas de perfil público e filial, RLS, busca, catálogo e gravação owner/admin.
 2. docs/sql/customer-availability-slots.draft.sql — consulta de horários, limitada a salões e unidades publicados.
 3. docs/sql/customer-appointment-history.draft.sql — histórico da própria identidade global.
-4. docs/sql/customer-engagement.draft.sql — favoritos, notificações internas por trigger e preferências globais.
-5. docs/sql/customer-coupons.draft.sql — gestão de cupons pelo owner/admin, validação, reserva transacional no HOLD e resgate na confirmação.
+5. docs/sql/customer-engagement.draft.sql — favoritos, notificações internas por trigger e preferências globais.
+6. docs/sql/customer-coupons.draft.sql — gestão de cupons pelo owner/admin, validação, reserva transacional no HOLD e resgate na confirmação.
 
 A etapa 1 é dependência das etapas 2, 4 e 5. O histórico depende das tabelas de identidade global já existentes no ambiente. A etapa 5 depende também de appointments, appointment_holds e dos serviços ativos.
 
