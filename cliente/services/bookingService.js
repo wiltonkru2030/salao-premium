@@ -125,42 +125,28 @@ export async function createBookingHold({
   if (normalizedCoupon && !/^[A-Z0-9_-]{3,32}$/.test(normalizedCoupon)) {
     throw new TypeError("O código do cupom é inválido.");
   }
-  // Sem cupom, usa a RPC base já implantada. O valor é apresentado pelo catálogo público.
-  // Com cupom, usa a RPC transacional específica, que será ativada junto ao módulo de cupons.
-  const rpcName = normalizedCoupon
-    ? "create_customer_appointment_hold_with_coupon"
-    : "create_customer_appointment_hold";
-  const rpcArgs = {
+  // Toda reserva usa a mesma RPC transacional, com ou sem cupom.
+  // A RPC antiga é revogada pelo SQL de publicação para impedir bypass das validações públicas.
+  const { data, error } = await client.rpc("create_customer_appointment_hold_with_coupon", {
     p_org_id: orgId,
     p_branch_id: branchId,
     p_professional_id: professionalId,
     p_service_id: serviceId,
-    p_starts_at: date.toISOString()
-  };
-  if (normalizedCoupon) rpcArgs.p_coupon_code = normalizedCoupon;
-
-  const { data, error } = await client.rpc(rpcName, rpcArgs);
+    p_starts_at: date.toISOString(),
+    p_coupon_code: normalizedCoupon
+  });
   if (error) throw mapBookingError(error, Boolean(normalizedCoupon));
   const row = Array.isArray(data) ? data[0] : data;
   if (!row || !UUID_PATTERN.test(String(row.hold_id || "")) || !Number.isFinite(new Date(row.expires_at).getTime())) {
     throw new Error("O servidor não retornou uma reserva temporária válida.");
   }
 
-  // A RPC base não devolve preço; não inventamos um valor financeiro no navegador.
-  if (!normalizedCoupon) {
-    return {
-      holdId: row.hold_id,
-      expiresAt: new Date(row.expires_at).toISOString(),
-      couponId: null,
-      discountAmount: 0,
-      finalAmount: null
-    };
-  }
-
   const discountAmount = Number(row.coupon_discount_amount || 0);
   const finalAmount = Number(row.coupon_final_amount);
-  if (!Number.isFinite(discountAmount) || discountAmount < 0 || !Number.isFinite(finalAmount) || finalAmount < 0 ||
-      (row.coupon_id && !UUID_PATTERN.test(String(row.coupon_id)))) {
+  if (!Number.isFinite(discountAmount) || discountAmount < 0 ||
+      !Number.isFinite(finalAmount) || finalAmount < 0 ||
+      (row.coupon_id && !UUID_PATTERN.test(String(row.coupon_id))) ||
+      (!normalizedCoupon && (row.coupon_id || discountAmount !== 0))) {
     throw new Error("O servidor retornou valores inválidos para a reserva.");
   }
   return {
