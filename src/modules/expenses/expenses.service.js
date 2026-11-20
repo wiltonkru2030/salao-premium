@@ -39,13 +39,15 @@ function validDate(value) {
  * @param {object} options Cliente Supabase, organização e limite opcional.
  * @returns {Promise<Array<object>>} Despesas recentes.
  */
-export async function listExpenses({client,orgId,limit=PAGE_SIZE}={}) {
+export async function listExpenses({client,orgId,branchId=null,limit=PAGE_SIZE}={}) {
   requireContext(client,orgId);
   if(!Number.isInteger(limit)||limit<1||limit>PAGE_SIZE)throw new TypeError("Limite de consulta inválido.");
   try {
-    const {data,error}=await client.from("expenses")
+    let query=client.from("expenses")
       .select("id,description,category,amount,due_date,paid_at,status,supplier,notes")
-      .eq("org_id",orgId).order("due_date",{ascending:true,nullsFirst:false}).limit(limit);
+      .eq("org_id",orgId);
+    if(branchId)query=query.eq("branch_id",branchId);
+    const {data,error}=await query.order("due_date",{ascending:true,nullsFirst:false}).limit(limit);
     if(error)throw error;
     return Array.isArray(data)?data:[];
   } catch(error) { throw mapExpenseError(error); }
