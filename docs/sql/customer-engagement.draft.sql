@@ -241,7 +241,7 @@ begin
       raise exception 'Uma preferência enviada não é permitida.' using errcode='22023';
     end if;
   end loop;
-  if p_preferences ? 'theme' and p_preferences->>'theme' not in ('system','light','dark') then
+  if p_preferences ? 'theme' and (jsonb_typeof(p_preferences->'theme')<>'string' or p_preferences->>'theme' not in ('system','light','dark')) then
     raise exception 'Tema inválido.' using errcode='22023';
   end if;
   foreach v_key in array array['reminders','appointmentChanges','coupons','promotions'] loop
