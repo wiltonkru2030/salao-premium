@@ -172,6 +172,12 @@ begin
     and (c.branch_id is null or c.branch_id=p_branch_id);
 
   if not found then raise exception 'Cupom inválido, expirado ou indisponível para esta unidade.' using errcode='22023'; end if;
+  if not exists (
+    select 1 from public.salon_public_profiles sp
+    join public.branch_public_profiles bp on bp.org_id=sp.org_id and bp.branch_id=p_branch_id and bp.is_published
+    join public.branches b on b.org_id=bp.org_id and b.id=bp.branch_id and b.active
+    where sp.org_id=p_org_id and sp.is_published
+  ) then raise exception 'Este salão ainda não está disponível para agendamento público.' using errcode='22023'; end if;
 
   select s.price into v_price
   from public.services s
@@ -273,9 +279,9 @@ begin
     select s.price into v_price from public.services s
     where s.org_id=p_org_id and s.id=p_service_id and s.active;
     if not found then raise exception 'O serviço selecionado não está mais disponível.' using errcode='22023'; end if;
-    v_calc.coupon_id:=null;
-    v_calc.discount_amount:=0;
-    v_calc.final_amount:=v_price;
+    select null::uuid as coupon_id, 0::numeric as discount_amount,
+           v_price::numeric as final_amount, v_price::numeric as original_amount
+      into v_calc;
   end if;
 
   select h.hold_id,h.expires_at into v_hold_id,v_expires
