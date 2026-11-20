@@ -4,7 +4,7 @@
  * Executar com: node src/agenda/tests/branch-scope.test.js
  */
 import assert from "node:assert/strict";
-import { createAppointment, updateAppointment } from "../services/agenda.service.js";
+import { createAppointment, updateAppointment, previewCreateAppointment } from "../services/agenda.service.js";
 
 const orgId = "11111111-1111-4111-8111-111111111111";
 const record = {
@@ -45,7 +45,6 @@ assert.equal(writes, 0, "Nenhuma gravação pode ocorrer sem filial");
 // Com filial, a prévia deve incluir o identificador na gravação preparada.
 // O mock implementa paginação sem depender de conexão real com o banco.
 const branchId = "66666666-6666-4666-8666-666666666666";
-const { previewCreateAppointment } = await import("../services/agenda.service.js");
 const paginatedClient = {
   from(table) {
     assert.equal(table, "appointments");
@@ -63,4 +62,31 @@ const preview = await previewCreateAppointment(
   { client: paginatedClient, orgId }
 );
 assert.equal(preview.preview.branch_id, branchId, "A filial precisa chegar ao payload de persistência");
-console.log("Agenda: filial obrigatória validada em criação e edição.");
+// A escrita real precisa receber branch_id em INSERT e UPDATE, não só na prévia.
+const writesWithBranch = [];
+const writeClient = {
+  from(table) {
+    assert.equal(table, "appointments");
+    const query = {
+      select() { return this; }, eq() { return this; },
+      gte() { return this; }, lt() { return this; },
+      order() { return this; },
+      async range() { return { data: [], error: null }; },
+      async maybeSingle() { return { data: { ...record, branch_id: branchId }, error: null }; },
+      insert(payload) { writesWithBranch.push(["insert", payload]); return this; },
+      update(payload) { writesWithBranch.push(["update", payload]); return this; },
+      single: async () => ({ data: { ...record, branch_id: branchId }, error: null })
+    };
+    return query;
+  }
+};
+const creation = await createAppointment(
+  { ...record, branch_id: branchId }, { client: writeClient, orgId }
+);
+assert.equal(creation.ok, true);
+const edition = await updateAppointment(record.id, { notes: "Revisão" }, { client: writeClient, orgId });
+assert.equal(edition.ok, true);
+assert.deepEqual(writesWithBranch.map(([method, payload]) => [method, payload.branch_id]), [
+  ["insert", branchId], ["update", branchId]
+]);
+console.log("Agenda: filial obrigatória preservada na prévia, criação e edição.");
