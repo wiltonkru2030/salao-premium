@@ -102,19 +102,18 @@ export async function loadAgendaPage() {
       start=new Date(state.date.getFullYear(),state.date.getMonth(),1);
       end=new Date(state.date.getFullYear(),state.date.getMonth()+1,1);
     }
-    const [proResult,appointmentResult,blockResult]=await Promise.all([
+    const [proResult,appointmentRows,blockResult]=await Promise.all([
       supabase.from('professionals').select('id,name,color,active').eq('org_id',state.organization.id).eq('active',true).order('name'),
-      supabase.from('appointments').select('id,customer_id,professional_id,customer_name,customer_phone,service_id,service_name,professional_name,starts_at,ends_at,status,price,booking_source,created_by_name,notes,service_order_id,appointment_group_id,arrived_at').eq('org_id',state.organization.id).gte('starts_at',start.toISOString()).lt('starts_at',end.toISOString()).order('starts_at').limit(1000),
+      listAppointments({client:supabase,orgId:state.organization.id,startAt:start.toISOString(),endAt:end.toISOString()}),
       supabase.from('appointment_blocks').select('id,professional_id,starts_at,ends_at,reason').eq('org_id',state.organization.id).lt('starts_at',end.toISOString()).gt('ends_at',start.toISOString()).limit(500)
     ]);
     if(proResult.error)throw proResult.error;
-    if(appointmentResult.error)throw appointmentResult.error;
     if(blockResult.error)throw blockResult.error;
     const dbProfessionals=proResult.data||[];
     state.agendaProfessionals=dbProfessionals.map(p=>[initials(p.name||'?'),p.name,'Profissional',p.id]);
     if(!state.agendaProfessionals.length){state.agendaAppointments=[];state.dbBlockedTimes=[];buildContent();return;}
     const indexById=new Map(dbProfessionals.map((p,i)=>[p.id,i]));
-    state.agendaAppointments=(appointmentResult.data||[]).filter(a=>indexById.has(a.professional_id)).map(a=>toCalendarAppointment(a,indexById.get(a.professional_id)));
+    state.agendaAppointments=(appointmentRows||[]).filter(a=>indexById.has(a.professional_id)).map(a=>toCalendarAppointment(a,indexById.get(a.professional_id)));
     state.dbBlockedTimes=(blockResult.data||[]).flatMap(b=>{
       const startDate=asLocalDateTime(b.starts_at),endDate=asLocalDateTime(b.ends_at);
       const indices=b.professional_id?[indexById.get(b.professional_id)].filter(i=>i!==undefined):dbProfessionals.map((_,i)=>i);
