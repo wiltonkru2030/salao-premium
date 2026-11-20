@@ -3,7 +3,7 @@
  * Responsabilidade: controlar sessão, navegação, ações e estados globais simples.
  * Cada tela, serviço, componente e estilo fica em arquivo próprio.
  */
-import {validateBookingSelection,isHoldExpired} from "./utils/booking-rules.js";
+import {validateBookingSelection,isHoldExpired,prepareAppointmentChange,selectRescheduleStart} from "./utils/booking-rules.js";
 import {startClientSession} from "./services/client-session.js";
 import { getCurrentUser, subscribeToAuthChanges, signInWithGoogle, signInWithPasskey, registerPasskey, signOut } from "./services/authService.js";
 import { supabase } from "../src/supabase/client.js";
@@ -403,12 +403,12 @@ async function runAction(action, button = null) {
           branchId:salonDetailState.salon.branch_id,serviceId,code
         });
         requireCurrent(epoch);couponState.preview=preview;
-        setNotice("Cupom válido. O desconto será reservado junto com o horário.","success");
+
       } catch(error) {
         if(!isCurrent(epoch))return;
         couponState.error=error?.message||"Não foi possível validar o cupom.";
       } finally {
-        if(isCurrent(epoch)){couponState.loading=false;renderApp();}
+        if(isCurrent(epoch)){couponState.loading=false;renderApp();if(couponState.preview)setNotice("Cupom válido. O desconto será reservado junto com o horário.","success");}
       }
     } else if (action === "view-slots") {
       const serviceId = button?.dataset.serviceId;
@@ -433,7 +433,8 @@ async function runAction(action, button = null) {
         if(isCurrent(epoch)){slotsState.loading=false;renderApp();}
       }
     } else if (action === "create-hold") {
-      const index=Number(button?.dataset.slotIndex);
+      const rawIndex=button?.dataset.slotIndex;
+      const index=rawIndex==null||rawIndex.trim()===""?NaN:Number(rawIndex);
       const serviceCard=slotsState.serviceId?root.querySelector('[data-service-card="'+CSS.escape(slotsState.serviceId)+'"]'):null;
       const {slot,couponCode}=validateBookingSelection({index,slotsState,date:serviceCard?.querySelector('input[name="date"]')?.value,professionalId:serviceCard?.querySelector('select[name="professionalId"]')?.value,enteredCode:serviceCard?.querySelector('input[name="couponCode"]')?.value.trim().toUpperCase()||"",couponState});
       if (holdState?.holdId) { await cancelAppointmentHold(holdState.holdId); requireCurrent(epoch);holdState=null; }
@@ -480,11 +481,7 @@ async function runAction(action, button = null) {
       setNotice(cancelled ? "Reserva temporária cancelada." : "A reserva já estava encerrada ou havia expirado.", cancelled ? "success" : "info");
     } else if (action === "open-cancel-appointment" || action === "open-reschedule-appointment") {
       const id=button?.dataset.appointmentId;
-      const item=appointmentsState.items.find(row=>row.appointment_id===id);
-      const allowed=changeOptions.find(row=>row.appointment_id===id);
-      const cancel=action==="open-cancel-appointment";
-      if(!item||!allowed||(cancel?!allowed.can_cancel:!allowed.can_reschedule))throw new Error("Este agendamento não pode ser alterado pelo aplicativo.");
-      appointmentChange={appointmentId:id,action:cancel?"cancel":"reschedule",expectedStart:item.starts_at,timezone:allowed.timezone,date:"",slots:[],newStart:null,searched:false};
+      appointmentChange=prepareAppointmentChange({id,items:appointmentsState.items,options:changeOptions,action:action==="open-cancel-appointment"?"cancel":"reschedule"});
       renderApp();
     } else if(action==="close-appointment-change"){
       appointmentChange=null;renderApp();
@@ -503,10 +500,7 @@ async function runAction(action, button = null) {
         if(isCurrent(epoch)&&appointmentChange===change){change.loading=false;renderApp();}
       }
     } else if(action==="select-reschedule-slot"){
-      const change=appointmentChange,index=Number(button?.dataset.slotIndex);
-      if(!change||!Number.isInteger(index)||!change.slots[index])throw new Error("Escolha um horário válido.");
-      if(root.querySelector('input[name="rescheduleDate"]')?.value!==change.date)throw new Error("A data mudou. Consulte os horários novamente.");
-      change.newStart=change.slots[index].starts_at;renderApp();
+      appointmentChange.newStart=selectRescheduleStart(appointmentChange,button?.dataset.slotIndex,root.querySelector('input[name="rescheduleDate"]')?.value);renderApp();
     } else if(action==="submit-appointment-change"){
       const change=appointmentChange;
       if(!change)throw new Error("Selecione um agendamento.");
