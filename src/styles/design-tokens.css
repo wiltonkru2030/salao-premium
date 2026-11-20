@@ -1,0 +1,29 @@
+/* SALÃO PREMIUM — tokens compartilhados por painel, app profissional e app cliente.
+   Sem seletores de layout. Alterações de marca devem começar neste arquivo.
+   A fonte de título usa fallback até que o arquivo licenciado esteja disponível. */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+:root{
+ --sp-font-ui:'Poppins',Arial,sans-serif;
+ --sp-font-heading:'Body Grotesque Fit','Poppins',Arial,sans-serif;
+ --sp-ink:#242320;
+ --sp-muted:#68655f;
+ --sp-soft:#f7f6f3;
+ --sp-paper:#fff;
+ --sp-line:#e9e6df;
+ --sp-line-strong:#dcd7cc;
+ --sp-gold:#a58b5c;
+ --sp-gold-text:#806438;
+ --sp-gold-soft:#f5f1e8;
+ --sp-green:#396447;
+ --sp-red:#a23f36;
+ --sp-radius:9px;
+ --sp-control-radius:7px;
+ --sp-shadow:0 18px 55px rgba(25,22,16,.12);
+ --sp-focus:0 0 0 3px rgba(165,139,92,.22);
+ --sp-focus-ring:#806438;
+ --sp-control-height:44px;
+ --sp-content:1440px;
+ --sp-text-size:14px;
+ --sp-label-size:12px;
+ --sp-caption-size:12px;
+}
