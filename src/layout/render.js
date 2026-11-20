@@ -111,7 +111,8 @@ function renderBranchControl() {
     return '<span class="unit-indicator">'+esc(branches[0].name)+'</span>';
   }
   return '<label class="branch-switcher"><span>Unidade</span><select id="branch-switcher" aria-label="Trocar unidade">'+
-    branches.map(branch=>'<option value="'+esc(branch.id)+'" '+(branch.id===state.branch?.id?"selected":"")+'>'+
+    '<option value="__all__" '+(state.branch?.isAll?"selected":"")+'>Todas as unidades</option>'+
+    branches.map(branch=>'<option value="'+esc(branch.id)+'" '+(branch.id===state.branch?.id&&!state.branch?.isAll?"selected":"")+'>'+
       esc(branch.name)+(branch.is_main?" · Matriz":"")+'</option>').join("")+
     '</select></label>';
 }
