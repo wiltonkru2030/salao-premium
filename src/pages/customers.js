@@ -10,6 +10,9 @@ import { head, esc, toast, btn } from "../utils.js";
 import { reportError } from "../utils/errors.js";
 import { listCustomers, saveCustomer, setCustomerActive } from "../modules/customers/customers.service.js";
 
+import { createCustomerPageState } from "../modules/customers/customer-page-state.js";
+
+const customerPageState=createCustomerPageState();
 let modalListenerInstalled=false;
 
 /** Papéis autorizados pelas políticas de leitura, inclusão e atualização da tabela customers. */
@@ -51,10 +54,14 @@ export function customersPage() {
 export async function loadCustomersPage() {
   const host=document.querySelector("#customers-manager");
   if(!host||!state.organization?.id)return;
+  const orgId=state.organization.id;
+  const request=customerPageState.begin(host,orgId);
   let customers;
   try {
-    customers=await listCustomers({client:supabase,orgId:state.organization.id});
+    customers=await listCustomers({client:supabase,orgId});
+    if(!customerPageState.commit(host,request,state.organization?.id,customers))return;
   } catch(error) {
+    if(!customerPageState.isCurrent(host,request,state.organization?.id))return;
     reportError(error,{context:"Clientes > carregar lista"});
     host.innerHTML='<div class="empty-state">Não foi possível carregar os clientes. Atualize a página e tente novamente.</div>';
     return;
@@ -93,7 +100,10 @@ export async function loadCustomersPage() {
     document.addEventListener("click",event=>{
       const dialog=document.querySelector("#customer-create-modal");
       if(!dialog)return;
-      if(event.target.closest('[data-action="open-customer-modal"]')&&canManageCustomers())openCustomerModal();
+      if(event.target.closest('[data-action="open-customer-modal"]')&&canManageCustomers()) {
+        const currentHost=document.querySelector("#customers-manager");
+        if(customerPageState.current(currentHost,state.organization?.id))openCustomerModal();
+      }
       else if(event.target.closest("[data-close-customer-modal]")||event.target===dialog) {
         if(dialog.open)dialog.close();
       }
@@ -104,21 +114,28 @@ export async function loadCustomersPage() {
     const edit=event.target.closest("[data-edit-customer]");
     if(edit) {
       if(!canManageCustomers())return toast("Seu perfil não pode editar clientes.");
-      openCustomerModal(customers.find(customer=>customer.id===edit.dataset.editCustomer)||null);
+      const snapshot=customerPageState.current(host,state.organization?.id);
+      const customer=snapshot?.customers.find(row=>row.id===edit.dataset.editCustomer);
+      if(!customer)return toast("Cliente não encontrado. Atualize a lista.");
+      openCustomerModal(customer);
       return;
     }
     const toggle=event.target.closest("[data-toggle-customer]");
     if(!toggle)return;
     if(!canManageCustomers())return toast("Seu perfil não pode alterar clientes.");
-    const nextActive=toggle.dataset.active!=="true";
+    const snapshot=customerPageState.current(host,state.organization?.id);
+    const customer=snapshot?.customers.find(row=>row.id===toggle.dataset.toggleCustomer);
+    if(!customer||toggle.disabled)return;
+    const nextActive=!customer.active;
     if(!window.confirm(nextActive?"Reativar este cliente?":"Inativar este cliente? O histórico de atendimentos será preservado."))return;
     toggle.disabled=true;
     try {
-      await setCustomerActive({client:supabase,orgId:state.organization.id,customerId:toggle.dataset.toggleCustomer,active:nextActive});
+      await setCustomerActive({client:supabase,orgId:snapshot.orgId,customerId:customer.id,active:nextActive});
+      if(!customerPageState.isCurrent(host,snapshot,state.organization?.id))return;
       toast(nextActive?"Cliente reativado.":"Cliente inativado.");
       await loadCustomersPage();
     } catch(error) {
-      reportError(error,{context:"Clientes > alterar situação"});
+      if(customerPageState.isCurrent(host,snapshot,state.organization?.id))reportError(error,{context:"Clientes > alterar situação"});
     } finally {
       if(toggle.isConnected)toggle.disabled=false;
     }
@@ -132,18 +149,22 @@ export async function loadCustomersPage() {
     const values=new FormData(form);
     const submit=form.querySelector('[type="submit"]');
     const customerId=String(values.get("customer_id")||"").trim()||null;
+    const snapshot=customerPageState.current(host,state.organization?.id);
+    if(!snapshot||!submit||submit.disabled)return;
+    if(customerId&&!snapshot.customers.some(row=>row.id===customerId))return toast("Cliente não encontrado. Atualize a lista.");
     submit.disabled=true;
     try {
       await saveCustomer({
-        client:supabase,orgId:state.organization.id,customerId,
+        client:supabase,orgId:snapshot.orgId,customerId,
         name:values.get("name"),phone:values.get("phone"),
         email:values.get("email"),birthDate:values.get("birth_date")
       });
-      document.querySelector("#customer-create-modal")?.close();
+      if(!customerPageState.isCurrent(host,snapshot,state.organization?.id))return;
+      host.querySelector("#customer-create-modal")?.close();
       toast(customerId?"Cliente atualizado.":"Cliente cadastrado.");
       await loadCustomersPage();
     } catch(error) {
-      reportError(error,{context:"Clientes > salvar cadastro"});
+      if(customerPageState.isCurrent(host,snapshot,state.organization?.id))reportError(error,{context:"Clientes > salvar cadastro"});
     } finally {
       if(submit.isConnected)submit.disabled=false;
     }
