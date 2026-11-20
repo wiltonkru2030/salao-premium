@@ -129,7 +129,7 @@ async function runAction(action, button = null) {
       identityLinkRequests = await listMyPendingIdentityLinks();
       renderApp();
     } else if (action === "confirm-identity-link") {
-      const requestId = root.querySelector(`[data-action="confirm-identity-link"][data-request-id]`)?.dataset.requestId;
+      const requestId = button?.dataset.requestId;
       if (!requestId) throw new Error("Selecione uma solicitação válida para confirmar.");
       await confirmMyIdentityLink(requestId);
       identityLinkRequests = await listMyPendingIdentityLinks();
