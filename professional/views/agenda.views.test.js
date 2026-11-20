@@ -22,4 +22,17 @@ assert.match(html, /Nenhum agendamento neste dia/);
 assert.match(html, /data-date="2026-11-20"/);
 assert.match(html, /Somente sua agenda/);
 
+// Valores externos usados nos títulos devem ser escapados antes de entrar no HTML.
+const unsafeHtml = renderAgendaView({
+  state: { ...state, month: new Date(2026, 10, 1) },
+  dateKey: date => date instanceof Date ? `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}` : "",
+  monthLabel: () => '<img src=x onerror="alert(1)">',
+  dateLabel: () => '<script>alert(1)</script>',
+  appointmentCard: () => "",
+  appointmentDetails: () => ""
+});
+assert.doesNotMatch(unsafeHtml, /<img src=x/);
+assert.doesNotMatch(unsafeHtml, /<script>/);
+assert.match(unsafeHtml, /&lt;script&gt;/);
+
 console.log("Testes da view de agenda do App Profissional concluídos.");
