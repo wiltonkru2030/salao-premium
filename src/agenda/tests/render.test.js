@@ -4,6 +4,10 @@ import { renderWeekCalendar } from "../components/week-calendar.js";
 import { renderMonthCalendar } from "../components/month-calendar.js";
 import { renderProfessionalSelector } from "../components/professional-selector.js";
 
+/**
+ * Executa verificações de renderização dos componentes da Agenda.
+ * @returns {{passed:number,total:number,checks:Array}} Resultado detalhado das verificações.
+ */
 export function runAgendaRenderChecks(){
   const date=new Date(2026,10,12);
   const professionals=[["MC","Mariana Costa","Cabeleireira","pro-1"],["AL","Ana Lima","Manicure","pro-2"]];

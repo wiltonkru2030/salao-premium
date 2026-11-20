@@ -1,7 +1,13 @@
 /** Componente: drawer de agendamento. Responsabilidade: apresentar detalhes e ações, incluindo o formulário de edição. */
 import { esc, status, initials, field } from '../../utils.js';
 import { renderAppointmentForm } from './appointment-form.js';
+import { state } from '../../state.js';
 
+/**
+ * Renderiza o painel lateral de detalhes do agendamento.
+ * @param {object} d Agendamento selecionado e permissões de ações disponíveis.
+ * @returns {string} HTML do drawer de detalhes.
+ */
 export function renderAppointmentDrawer(d) {
   const a=d.appointment;
   if(d.editing||!a){
@@ -26,12 +32,14 @@ export function renderAppointmentDrawer(d) {
       field('Observações',a.notes||'—')+
     '</div>'+
     '<div class="drawer-section"><h3>Ações do agendamento</h3><div class="action-grid">'+
-      actionButton('Confirmar','confirm')+
-      actionButton('Cliente chegou','arrived')+
-      actionButton(a.service_order_id?'Abrir comanda vinculada':'Abrir comanda','open-order')+
-      actionButton('Reagendar','reschedule')+
-      actionButton('Cancelar horário','cancel')+
-      actionButton('Excluir agendamento','delete')+
+      (state.membership?.role==='professional'
+        ?actionButton(a.service_order_id?'Abrir comanda vinculada':'Iniciar atendimento e abrir comanda','open-order')
+        :actionButton('Confirmar','confirm')+
+         actionButton('Cliente chegou','arrived')+
+         actionButton(a.service_order_id?'Abrir comanda vinculada':'Abrir comanda','open-order')+
+         actionButton('Reagendar','reschedule')+
+         actionButton('Cancelar horário','cancel')+
+         actionButton('Excluir agendamento','delete'))+
     '</div></div>'+
     '<p class="demo-note">Comandas são abertas somente no atendimento. Cancelar o horário também cancela a comanda vinculada quando não houver outro agendamento ativo nela.</p>';
 }

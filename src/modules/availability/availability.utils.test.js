@@ -1,0 +1,12 @@
+import assert from "node:assert/strict";
+import {requireUuid,validateWeeklyInterval,validateDateRange} from "./availability.utils.js";
+const id="123e4567-e89b-42d3-a456-426614174000";
+assert.equal(requireUuid(id),id);
+assert.throws(()=>requireUuid("abc"));
+assert.deepEqual(validateWeeklyInterval({weekday:1,opensAt:"08:00",closesAt:"12:00"}),{weekday:1,opens_at:"08:00",closes_at:"12:00",active:true});
+assert.deepEqual(validateWeeklyInterval({weekday:2,startsAt:"13:00",endsAt:"18:00"},{professional:true}),{weekday:2,starts_at:"13:00",ends_at:"18:00",active:true});
+assert.throws(()=>validateWeeklyInterval({weekday:7,opensAt:"08:00",closesAt:"09:00"}));
+assert.throws(()=>validateWeeklyInterval({weekday:1,opensAt:"12:00",closesAt:"08:00"}));
+assert.deepEqual(validateDateRange({startsAt:"2026-11-21T08:00:00-04:00",endsAt:"2026-11-21T09:00:00-04:00"}),{starts_at:"2026-11-21T12:00:00.000Z",ends_at:"2026-11-21T13:00:00.000Z"});
+assert.throws(()=>validateDateRange({startsAt:"2026-11-21T09:00:00Z",endsAt:"2026-11-21T08:00:00Z"}));
+console.log("Disponibilidade: validações aprovadas.");

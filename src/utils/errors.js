@@ -1,18 +1,19 @@
 /**
  * SALÃO PREMIUM — tratamento centralizado de erros.
- * Responsabilidade: converter erros técnicos em mensagens seguras, registrar contexto
- * para diagnóstico e impedir rejeições assíncronas sem tratamento.
+ * Responsabilidade: converter falhas técnicas em mensagens seguras, registrar contexto
+ * sanitizado para diagnóstico e capturar erros globais sem interromper a aplicação.
  */
 import { toast } from "../utils.js";
 
 let sequence = 0;
 let installed = false;
 
+/** Normaliza o código PostgreSQL/PostgREST ou o status HTTP recebido. */
 function errorCode(error) {
   return String(error?.code || error?.status || "").toUpperCase();
 }
 
-/** Retorna uma mensagem adequada ao usuário sem expor SQL, tokens ou detalhes internos. */
+/** Traduz falhas conhecidas e nunca expõe detalhes técnicos desconhecidos ao usuário. */
 export function userErrorMessage(error, fallback = "Não foi possível concluir esta operação. Tente novamente.") {
   const code = errorCode(error);
   if (code === "23505") return "Este registro já existe. Confira os dados informados.";
@@ -21,9 +22,12 @@ export function userErrorMessage(error, fallback = "Não foi possível concluir 
   if (code === "23514") return "Os dados informados não atendem às regras deste cadastro.";
   if (code === "22P02" || code === "22003") return "Confira o formato e os valores informados.";
   if (code === "40001" || code === "40P01") return "A operação coincidiu com outra alteração. Atualize os dados e tente novamente.";
-  if (code === "57014") return "A operação demorou mais que o esperado. Tente novamente.";
-  if (code === "42501" || code === "401" || code === "403" || code === "PGRST301") return "Sua sessão pode ter expirado ou você não tem permissão para realizar esta operação.";
+  if (code === "57014" || code === "408" || code === "504") return "A operação demorou mais que o esperado. Verifique sua conexão e tente novamente.";
+  if (code === "429") return "Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.";
+  if (["401", "403", "42501", "PGRST301"].includes(code)) return "Sua sessão pode ter expirado ou você não tem permissão para realizar esta operação.";
   if (code === "PGRST116") return "O registro não foi encontrado ou não está disponível.";
+  if (/^5\d{2}$/.test(code)) return "O serviço está temporariamente indisponível. Tente novamente em alguns instantes.";
+
   const raw = String(error?.message || error || "").trim();
   if (/invalid login credentials|invalid email or password/i.test(raw)) return "E-mail ou senha incorretos.";
   if (/email not confirmed/i.test(raw)) return "Confirme seu e-mail antes de entrar.";
@@ -33,41 +37,42 @@ export function userErrorMessage(error, fallback = "Não foi possível concluir 
   if (/refresh token.*(not found|invalid)|invalid.*refresh token|session.*not found/i.test(raw)) return "Sua sessão expirou. Entre novamente no sistema.";
   if (/user not found/i.test(raw)) return "Não encontramos uma conta com esses dados.";
   if (/forbidden|not authorized|permission denied/i.test(raw)) return "Você não tem permissão para realizar esta operação.";
-  if (/fetch|network|timeout|failed to fetch|load failed/i.test(raw)) {
+  if (/fetch|network|timeout|failed to fetch|load failed|networkerror/i.test(raw)) {
     return "Falha de conexão. Verifique sua internet e tente novamente.";
   }
-  // Mensagens de domínio escritas em português podem ser mostradas; mensagens técnicas
-  // desconhecidas (frequentemente em inglês) permanecem ocultas para não confundir o usuário.
+
+  // Mensagens de domínio em português podem ser exibidas; mensagens técnicas desconhecidas ficam ocultas.
   const safePortuguese = raw && raw.length <= 180 &&
     /[ãõáéíóúâêôç]|\b(não|nao|informe|selecione|escolha|preencha|confira|inválid|inval|permissão|comanda|profissional|registro|saldo|horário|serviço|pagamento|estoque|cancelad|encontrad|já existe|já foi)\b/i.test(raw) &&
     !/sql|postgres|supabase|jwt|token|policy|stack| at /i.test(raw);
-  if (safePortuguese) return raw;
-  return fallback;
+  return safePortuguese ? raw : fallback;
 }
 
 /**
- * Registra erro com identificador pesquisável no console e, por padrão,
- * mostra uma mensagem segura ao usuário. Não registrar dados pessoais/senhas.
+ * Registra um erro com identificador de suporte e contexto sanitizado.
+ * Não registrar o objeto bruto, dados pessoais, senhas, tokens ou conteúdo de formulários.
+ * @param {unknown} error Falha original recebida do navegador, Supabase ou regra de negócio.
+ * @param {{context?: string, notify?: boolean, fallback?: string}} options Contexto e comportamento da notificação.
+ * @returns {{id: string, message: string}} Identificador pesquisável e mensagem segura.
  */
 export function reportError(error, { context = "Aplicação", notify = true, fallback } = {}) {
   const id = "SP-" + Date.now().toString(36).toUpperCase() + "-" + (++sequence).toString().padStart(3, "0");
-  // O console recebe metadados sanitizados; o objeto bruto pode conter dados pessoais.
+  const message = userErrorMessage(error, fallback);
   console.error("[SALAO PREMIUM][" + id + "]", {
     context,
     name: String(error?.name || "Error"),
     code: errorCode(error) || null,
-    message: userErrorMessage(error, fallback)
+    message
   });
-  if (notify && document.body) {
-    const message = userErrorMessage(error, fallback);
+  if (notify && typeof document !== "undefined" && document.body) {
     toast(message + " (Código " + id + ")");
   }
-  return { id, message: userErrorMessage(error, fallback) };
+  return { id, message };
 }
 
-/** Instala uma única vez a captura de erros assíncronos não tratados. */
+/** Instala uma única vez os ouvintes globais; pode ser chamada em ambientes sem DOM. */
 export function installGlobalErrorHandlers() {
-  if (installed) return;
+  if (installed || typeof window === "undefined" || typeof window.addEventListener !== "function") return;
   installed = true;
 
   window.addEventListener("unhandledrejection", event => {

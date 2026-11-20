@@ -4,6 +4,9 @@ import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
 import { mountAutocomplete } from "../components/autocomplete.js";
 import { reportError } from "../utils/errors.js";
+import { fetchCommissionPageData, fetchCommissionReferences } from "../modules/commissions/commissions.service.js";
+import { summarizeCommissionPayout } from "../modules/commissions/commission-payout-summary.js";
+import { createServiceCommissionRule, updateServiceCommissionRule, deleteServiceCommissionRule, saveProductCommissionSetting, payProfessionalCommissions } from "../modules/commissions/commission-rules.service.js";
 
 let cleanupSearch=null;
 let selectedProfessionalFilter=null;
@@ -14,6 +17,7 @@ const paymentMethodLabel=value=>({pix:"PIX",cash:"Dinheiro",credit_card:"Cartão
 const canPay=()=>["owner","admin","manager","finance"].includes(state.membership?.role);
 const canManageCommissionSettings=()=>["owner","admin"].includes(state.membership?.role);
 
+/** Renderiza a página de Comissões e o estado inicial de carregamento. */
 export function commissionsPage(){
  selectedProfessionalFilter=null;
  return head("Comissões","Valores gerados pelos atendimentos, histórico e pagamentos aos profissionais.")+
@@ -22,51 +26,26 @@ export function commissionsPage(){
   '<div id="commissions-manager"><div class="empty-state">Carregando comissões do banco…</div></div>';
 }
 
-/** Carrega regras, ledger de comissões, pagamentos e referências de Comanda/recebimento. */
+/** Carrega regras, lançamentos, pagamentos e referências de Comanda/recebimento da organização ativa; conecta somente ações autorizadas. */
 export async function loadCommissionsPage(){
  const host=document.querySelector("#commissions-manager");
  if(!host||!state.organization?.id)return;
  cleanupSearch?.();cleanupSearch=null;
  try{
   const orgId=state.organization.id;
-  const [commissionResult,professionalResult,payoutResult,settingsResult,serviceResult,ruleResult]=await Promise.all([
-   supabase.from("commissions").select("id,professional_id,base_amount,rate,amount,status,paid_at,created_at,payout_id,sale_id,appointment_id,item_type,service_order_item_id,service_order_payment_id")
-    .eq("org_id",orgId).order("created_at",{ascending:false}).limit(1000),
-   supabase.from("professionals").select("id,name,active").eq("org_id",orgId).order("name").limit(500),
-   supabase.from("commission_payouts").select("id,professional_id,amount,payment_method,paid_at,notes,cash_movement_id")
-    .eq("org_id",orgId).order("paid_at",{ascending:false}).limit(300),
-   supabase.from("app_settings").select("id,setting_value").eq("org_id",orgId).is("branch_id",null).eq("setting_key","product_commission").limit(1),
-   supabase.from("services").select("id,name,active").eq("org_id",orgId).eq("active",true).order("name").limit(500),
-   supabase.from("commission_rules").select("id,professional_id,service_id,rate,active,item_type").eq("org_id",orgId).eq("item_type","service").eq("active",true).order("created_at",{ascending:false}).limit(1000)
-  ]);
-  if(commissionResult.error)throw commissionResult.error;
-  if(professionalResult.error)throw professionalResult.error;
-  if(payoutResult.error)throw payoutResult.error;
-  if(settingsResult.error)throw settingsResult.error;
-  if(serviceResult.error)throw serviceResult.error;
-  if(ruleResult.error)throw ruleResult.error;
-  const commissions=commissionResult.data||[],professionals=professionalResult.data||[],payouts=payoutResult.data||[];
-  const services=serviceResult.data||[],serviceRules=ruleResult.data||[];
+  const isProfessional=state.membership?.role==="professional";
+  const pageData=await fetchCommissionPageData({
+   client:supabase,organizationId:orgId,isProfessional
+  });
+  const {commissions,professionals,payouts,productSetting,services,serviceRules}=pageData;
   const serviceMap=new Map(services.map(item=>[item.id,item]));
-  // Liga cada parcela de comissão ao item da Comanda e ao recebimento que a originou.
-  const commissionItemIds=[...new Set(commissions.map(row=>row.service_order_item_id).filter(Boolean))];
-  const commissionPaymentIds=[...new Set(commissions.map(row=>row.service_order_payment_id).filter(Boolean))];
-  const [commissionItemsResult,commissionPaymentsResult]=await Promise.all([
-   commissionItemIds.length?supabase.from("service_order_items").select("id,order_id,description").eq("org_id",orgId).in("id",commissionItemIds):Promise.resolve({data:[],error:null}),
-   commissionPaymentIds.length?supabase.from("service_order_payments").select("id,amount,paid_at,order_id").eq("org_id",orgId).in("id",commissionPaymentIds):Promise.resolve({data:[],error:null})
-  ]);
-  if(commissionItemsResult.error)throw commissionItemsResult.error;
-  if(commissionPaymentsResult.error)throw commissionPaymentsResult.error;
-  const commissionItems=commissionItemsResult.data||[],commissionPayments=commissionPaymentsResult.data||[];
-  const commissionOrderIds=[...new Set([...commissionItems.map(item=>item.order_id),...commissionPayments.map(payment=>payment.order_id)].filter(Boolean))];
-  const {data:commissionOrders,error:commissionOrdersError}=commissionOrderIds.length
-   ?await supabase.from("service_orders").select("id,order_number").eq("org_id",orgId).in("id",commissionOrderIds)
-   :{data:[],error:null};
-  if(commissionOrdersError)throw commissionOrdersError;
+  const references=await fetchCommissionReferences({
+   client:supabase,organizationId:orgId,commissions,isProfessional
+  });
+  const {commissionItems,commissionPayments,commissionOrders}=references;
   const commissionItemMap=new Map(commissionItems.map(item=>[item.id,item]));
   const commissionPaymentMap=new Map(commissionPayments.map(payment=>[payment.id,payment]));
-  const commissionOrderMap=new Map((commissionOrders||[]).map(order=>[order.id,order]));
-  const productSetting=settingsResult.data?.[0]||null;
+  const commissionOrderMap=new Map(commissionOrders.map(order=>[order.id,order]));
   const productCommissionEnabled=productSetting?.setting_value?.enabled===true;
   const productCommissionRate=Number(productSetting?.setting_value?.default_rate||0);
   const professionalMap=new Map(professionals.map(p=>[p.id,p]));
@@ -81,7 +60,7 @@ export async function loadCommissionsPage(){
    current.push(commission);groups.set(commission.professional_id,current);
   }
   const sections=[...groups.entries()].map(([professionalId,rows])=>{
-   const professional=professionalMap.get(professionalId),eligible=rows.filter(c=>["pending","approved"].includes(c.status)&&!c.payout_id);
+   const professional=professionalMap.get(professionalId),eligible=rows.filter(c=>["pending","approved"].includes(c.status)&&!c.payout_id&&Number(c.amount)>0);
    return '<section class="settings-card commission-group"><div class="section-title"><div><h3>'+esc(professional?.name||"Profissional")+
 
 '</h3><small class="muted">'+rows.length+
@@ -100,7 +79,7 @@ export async function loadCommissionsPage(){
      '<span><b>'+money(c.amount)+
 
 '</b><small>'+
-(c.item_type==="product"?"Produto":"Serviço")+
+(Number(c.amount)<0?"Débito por estorno":c.item_type==="product"?"Produto":"Serviço")+
 
 ' · Base '+money(c.base_amount)+
 
@@ -151,7 +130,7 @@ export async function loadCommissionsPage(){
   host.innerHTML=`
    ${serviceRulesCard}
    ${productSettingsCard}
-   <section class="settings-card commission-summary"><div><small class="eyebrow">A PAGAR</small><h2>${money(pending)}</h2></div><div><small class="eyebrow">PAGO</small><h2>${money(paid)}</h2></div><div><small class="eyebrow">LANÇAMENTOS</small><h2>${visible.length}</h2></div></section><div class="list-toolbar"><label class="search-box"><span>⌕</span><input id="commission-professional-search" placeholder="Filtrar por profissional" autocomplete="off"></label><button class="btn secondary" data-clear-commission-filter>Todos</button></div><div id="commission-groups">${sections||'<div class="empty-state">Nenhuma comissão foi gerada. As comissões são criadas quando uma comanda é quitada.</div>'}</div><div class="section-title section-title--spaced"><h2>Histórico de pagamentos</h2><span class="result-count">${payouts.length} pagamento(s)</span></div><div class="record-list">${payoutHistory||'<div class="empty-state">Nenhum pagamento de comissão registrado.</div>'}</div>`;
+   <section class="settings-card commission-summary"><div><small class="eyebrow">A PAGAR</small><h2>${money(pending)}</h2></div><div><small class="eyebrow">PAGO</small><h2>${money(paid)}</h2></div><div><small class="eyebrow">LANÇAMENTOS</small><h2>${visible.length}</h2></div></section><div class="list-toolbar"><label class="search-box"><span>⌕</span><input id="commission-professional-search" placeholder="Filtrar por profissional" autocomplete="off"></label><button class="btn secondary" data-clear-commission-filter>Todos</button></div><div id="commission-groups">${sections||'<div class="empty-state">Nenhuma comissão foi gerada. Os lançamentos são criados proporcionalmente conforme os pagamentos da Comanda são recebidos.</div>'}</div><div class="section-title section-title--spaced"><h2>Histórico de pagamentos</h2><span class="result-count">${payouts.length} pagamento(s)</span></div><div class="record-list">${payoutHistory||'<div class="empty-state">Nenhum pagamento de comissão registrado.</div>'}</div>`;
 
   const searchInput=host.querySelector("#commission-professional-search");
   if(searchInput){
@@ -177,8 +156,7 @@ export async function loadCommissionsPage(){
      if(serviceRules.some(rule=>rule.id!==ruleId&&rule.professional_id===professionalId&&rule.service_id===serviceId)){toast("Já existe outra regra para este profissional e serviço.");return;}
      button.disabled=true;button.textContent="Salvando…";
      try{
-      const {error}=await supabase.from("commission_rules").update({professional_id:professionalId,service_id:serviceId,rate}).eq("org_id",orgId).eq("id",ruleId);
-      if(error)throw error;
+      await updateServiceCommissionRule({client:supabase,orgId,ruleId,professionalId,serviceId,rate});
       toast("Regra atualizada.");await loadCommissionsPage();
      }catch(error){reportError(error,{context:"Comissões > editar regra por serviço"});}
      finally{if(button.isConnected){button.disabled=false;button.textContent="Salvar";}}
@@ -190,8 +168,7 @@ export async function loadCommissionsPage(){
      if(serviceRules.some(rule=>rule.professional_id===professionalId&&rule.service_id===serviceId)){toast("Já existe uma regra para este profissional e serviço. Exclua a regra anterior antes de cadastrar outra.");return;}
      button.disabled=true;button.textContent="Salvando…";
      try{
-      const {error}=await supabase.from("commission_rules").insert({org_id:orgId,professional_id:professionalId,service_id:serviceId,item_type:"service",rate,active:true});
-      if(error)throw error;
+      await createServiceCommissionRule({client:supabase,orgId,professionalId,serviceId,rate});
       toast("Regra de comissão salva.");
       await loadCommissionsPage();
      }catch(error){reportError(error,{context:"Comissões > cadastrar regra por serviço"});}
@@ -202,14 +179,10 @@ export async function loadCommissionsPage(){
     if(!Number.isFinite(rate)||rate<0||rate>100||(enabled&&rate<=0)){toast("Informe uma comissão entre 0,01% e 100% quando a regra estiver ativa.");return;}
     button.disabled=true;button.textContent="Salvando…";
     try{
-     const payload={setting_value:{enabled,default_rate:rate},updated_by:state.user?.id||null};
-     let result;
-     if(productSetting){
-      result=await supabase.from("app_settings").update(payload).eq("org_id",orgId).eq("id",productSetting.id);
-     }else{
-      result=await supabase.from("app_settings").insert({org_id:orgId,branch_id:null,setting_key:"product_commission",...payload});
-     }
-     if(result.error)throw result.error;
+     await saveProductCommissionSetting({
+      client:supabase,orgId,settingId:productSetting?.id||null,
+      userId:state.user?.id||null,enabled,rate
+     });
      toast(enabled?"Comissão de produtos ativada.":"Comissão de produtos desativada.");
      await loadCommissionsPage();
     }catch(error){reportError(error,{context:"Comissões > configurar comissão de produtos"});}
@@ -228,9 +201,16 @@ export async function loadCommissionsPage(){
      if(!canManageCommissionSettings()){toast("Você não tem permissão para alterar regras.");return;}
      if(!window.confirm("Excluir esta regra específica? O sistema voltará a usar a comissão padrão do profissional."))return;
      deleteRule.disabled=true;
-     const {error}=await supabase.from("commission_rules").delete().eq("org_id",orgId).eq("id",deleteRule.dataset.deleteCommissionRule);
-     if(error){reportError(error,{context:"Comissões > excluir regra"});deleteRule.disabled=false;return;}
-     toast("Regra removida.");await loadCommissionsPage();return;
+     try {
+      await deleteServiceCommissionRule({client:supabase,orgId,ruleId:deleteRule.dataset.deleteCommissionRule});
+      toast("Regra removida.");
+      await loadCommissionsPage();
+     } catch(error) {
+      reportError(error,{context:"Comissões > excluir regra"});
+     } finally {
+      if(deleteRule.isConnected)deleteRule.disabled=false;
+     }
+     return;
     }
     const button=event.target.closest("[data-pay-commissions]");
     if(!button)return;
@@ -243,20 +223,25 @@ export async function loadCommissionsPage(){
 
 '"]')?.value||"pix";
     const name=professionalMap.get(professionalId)?.name||"profissional";
-    const amount=visible.filter(c=>ids.includes(c.id)).reduce((sum,c)=>sum+Number(c.amount||0),0);
-    if(!window.confirm("Confirmar pagamento de "+money(amount)+
-
-" para "+name+
-
-"? O lançamento será registrado como saída no Caixa."))return;
+    let summary;
+    try {
+     summary=summarizeCommissionPayout({rows:visible,professionalId,selectedIds:ids});
+    } catch(error) {
+     reportError(error,{context:"Comissões > conferir repasse"});
+     return;
+    }
+    if(summary.net<=0){toast("Saldo líquido insuficiente. Os débitos permanecem pendentes.");return;}
+    const confirmation=summary.debit>0
+      ? "Créditos: "+money(summary.credit)+"\nDébitos de estorno: "+money(summary.debit)+"\nRepasse líquido: "+money(summary.net)
+      : "Repasse: "+money(summary.net);
+    if(!window.confirm(confirmation+"\nConfirmar pagamento para "+name+"? O valor líquido será registrado como saída no Caixa."))return;
     button.disabled=true;button.textContent="Registrando…";
     let payment;
     try {
-     payment=await supabase.rpc("pay_professional_commissions",{
-      p_org_id:orgId,p_professional_id:professionalId,p_commission_ids:ids,
-      p_payment_method:method,p_notes:"Pagamento de comissões"
-     });
-     if(payment.error)throw payment.error;
+     payment={data:await payProfessionalCommissions({
+      client:supabase,orgId,professionalId,commissionIds:ids,
+      paymentMethod:method,notes:"Pagamento de comissões"
+     })};
     } catch(error) {
      reportError(error,{context:"Comissões > registrar pagamento"});
      button.disabled=false;button.textContent="Pagar selecionadas";return;

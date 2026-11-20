@@ -4,10 +4,16 @@ import { mountAutocomplete } from '../../components/autocomplete.js';
 import { supabase } from '../../supabase/client.js';
 import { state } from '../../state.js';
 import { parseBRL } from '../../utils/input-masks.js';
+import { reportError } from '../../utils/errors.js';
 
 let cleanups=[];
 function clearAppointmentAutocomplete(){cleanups.forEach(fn=>fn());cleanups=[];}
 
+/**
+ * Renderiza o formulário de criação ou edição de agendamento.
+ * @param {object} options Agendamento existente ou valores iniciais de data, hora e profissional.
+ * @returns {string} HTML do formulário com campos e estados iniciais.
+ */
 export function renderAppointmentForm({appointment=null,date='',time='',pro=null}={}) {
   const a=appointment||{};
   const selectedDate=a.date||date;
@@ -16,6 +22,7 @@ export function renderAppointmentForm({appointment=null,date='',time='',pro=null
   const selectedProfessionalName=a.professionalName||(state.agendaProfessionals||[]).find(item=>item[3]===professionalId)?.[1]||'';
   return '<form class="agenda-form" data-agenda-form>'+
 
+    '<label class="form-field"><span>Unidade</span><select name="branch_id" data-selected="'+esc(a.branch_id||state.branch?.id||'')+'" required><option value="">Carregando unidades…</option></select></label>'+
     '<label class="form-field"><span>Cliente</span><input id="appointment-customer-search" value="'+esc(a.name||'')+
 '" placeholder="Digite para buscar o cliente" autocomplete="off" required></label>'+
 
@@ -54,6 +61,10 @@ export function renderAppointmentForm({appointment=null,date='',time='',pro=null
     '<p class="demo-note">A comanda não é aberta no agendamento. Ela será criada quando o cliente chegar e o atendimento for iniciado.</p></form>';
 }
 
+/**
+ * Instala máscaras, autocomplete e eventos do formulário de agendamento.
+ * @returns {void} Não retorna valor; registra os comportamentos no DOM atual.
+ */
 export function mountAppointmentForm(){
   clearAppointmentAutocomplete();
   const form=document.querySelector('[data-agenda-form]');
@@ -68,7 +79,28 @@ export function mountAppointmentForm(){
   const duration=form.querySelector('[name="duration"]');
   const price=form.querySelector('[name="price"]');
   const orgId=state.organization.id;
+  const branchSelect=form.querySelector('[name="branch_id"]');
+  let branchOptions=[];
   let selectedServiceId=serviceId.value||null;
+  const preferredBranchId=branchSelect.dataset.selected||state.branch?.id||'';
+  professionalInput.disabled=true;
+  supabase.from('branches').select('id,name,is_main').eq('org_id',orgId).eq('active',true).order('name')
+    .then(({data,error})=>{
+      if(error)throw error;
+      branchOptions=data||[];
+      const selected=preferredBranchId|| (branchOptions.length===1?branchOptions[0].id:'');
+      branchSelect.innerHTML='<option value="">Selecione a unidade</option>'+branchOptions.map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+(b.is_main?' · Principal':'')+'</option>').join('');
+      if(selected&&branchOptions.some(b=>b.id===selected))branchSelect.value=selected;
+      state.branch=branchOptions.find(b=>b.id===branchSelect.value)||null;
+      professionalInput.disabled=!branchSelect.value;
+      if(!branchOptions.length)branchSelect.innerHTML='<option value="">Nenhuma unidade ativa cadastrada</option>';
+    })
+    .catch(error=>{branchSelect.innerHTML='<option value="">Falha ao carregar unidades</option>';reportError(error,{context:'Agenda > carregar unidades'});});
+  branchSelect.addEventListener('change',()=>{
+    state.branch=branchOptions.find(b=>b.id===branchSelect.value)||null;
+    professionalInput.disabled=!branchSelect.value;
+    professionalId.value='';professionalInput.value='';
+  });
 
   cleanups.push(mountAutocomplete(customerInput,{
     search:async term=>{
@@ -94,8 +126,9 @@ export function mountAppointmentForm(){
   }));
   cleanups.push(mountAutocomplete(professionalInput,{
     search:async term=>{
-      let query=supabase.from('professionals').select('id,name').eq('org_id',orgId).eq('active',true).ilike('name','%'+term+
+      let query=supabase.from('professionals').select('id,name,branch_id').eq('org_id',orgId).eq('active',true).ilike('name','%'+term+
 '%').order('name').limit(8);
+      if(branchSelect.value)query=query.or('branch_id.eq.'+branchSelect.value+',branch_id.is.null');
       if(selectedServiceId){
         const {data:links,error:linkError}=await supabase.from('professional_services').select('professional_id').eq('org_id',orgId).eq('service_id',selectedServiceId);
         if(linkError)throw linkError;
@@ -110,4 +143,8 @@ export function mountAppointmentForm(){
     onSelect:item=>{professionalId.value=item?.id||'';}
   }));
 }
+/**
+ * Remove recursos de autocomplete ao fechar o formulário.
+ * @returns {void} Libera listeners e referências temporárias.
+ */
 export function unmountAppointmentForm(){clearAppointmentAutocomplete();}

@@ -13,8 +13,10 @@ let authMode = "login";
 let authNotice = "";
 let authNoticeType = "info";
 let booted = false;
+let passwordRecoveryInProgress = false;
 
 // Resolve todos os tenants acessíveis e exige escolha explícita quando há mais de um.
+/** Resolve associações ativas e organização selecionada; não usa metadados do usuário para conceder permissões. */
 export async function getUserContext(user, selectedOrgId = null) {
   const { data: memberships, error: membershipError } = await supabase
     .from("org_memberships")
@@ -42,6 +44,7 @@ export async function getUserContext(user, selectedOrgId = null) {
 }
 
 /** Recarrega o contexto da sessão para trocar de organização sem misturar estado entre tenants. */
+/** Carrega o contexto de sessão e tenant solicitado após validar a associação ativa. */
 export async function getCurrentUserContext(organizationId) {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error) throw error;
@@ -61,6 +64,7 @@ function showOrganizationSelection(organizations, notice = "") {
 }
 
 // Inicia sessão, resolve o tenant e só então entrega o contexto ao painel.
+/** Inicializa o fluxo de autenticação, observa a sessão e entrega o contexto validado ao painel. */
 export function startAuth(onAuthenticated) {
   if (booted) return;
   booted = true;
@@ -93,7 +97,10 @@ export function startAuth(onAuthenticated) {
 
   showAuth("login");
   supabase.auth.onAuthStateChange((event, session) => {
-    if (session?.user && ["SIGNED_IN", "TOKEN_REFRESHED", "USER_UPDATED"].includes(event)) {
+    if (event === "PASSWORD_RECOVERY" && session?.user) {
+      passwordRecoveryInProgress = true;
+      queueMicrotask(() => showAuth("recovery-update", "Defina uma nova senha para sua conta.", "info"));
+    } else if (session?.user && ["SIGNED_IN", "TOKEN_REFRESHED", "USER_UPDATED"].includes(event)) {
       queueMicrotask(() => activateUser(session.user));
     } else if (event === "SIGNED_OUT") {
       pendingUser = null;
@@ -115,7 +122,8 @@ export function startAuth(onAuthenticated) {
 
   supabase.auth.getSession().then(async ({ data, error }) => {
     if (error) return showAuth("login", userErrorMessage(error), "error");
-    if (data.session?.user) await activateUser(data.session.user);
+    if (data.session?.user && !passwordRecoveryInProgress) await activateUser(data.session.user);
+    else if (passwordRecoveryInProgress) showAuth("recovery-update", "Defina uma nova senha para sua conta.", "info");
     else showAuth("login");
   });
 
@@ -142,7 +150,8 @@ export function startAuth(onAuthenticated) {
     const switcher = event.target.closest("[data-auth-mode]");
     if (!switcher) return;
     event.preventDefault();
-    showAuth(switcher.dataset.authMode === "signup" ? "signup" : "login");
+    const nextMode = ["signup", "recovery-request"].includes(switcher.dataset.authMode) ? switcher.dataset.authMode : "login";
+    showAuth(nextMode);
   });
 
   document.addEventListener("submit", async event => {
@@ -157,7 +166,22 @@ export function startAuth(onAuthenticated) {
     }
     const values = new FormData(form);
     try {
-      if (form.dataset.authForm === "signup") {
+      if (form.dataset.authForm === "recovery-request") {
+        const email = String(values.get("email") || "").trim().toLowerCase();
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+        if (error) throw error;
+        showAuth("login", "Se o endereço estiver cadastrado, você receberá um link para redefinir sua senha.", "success");
+      } else if (form.dataset.authForm === "recovery-update") {
+        const password = String(values.get("password") || "");
+        const confirmation = String(values.get("password_confirmation") || "");
+        if (password.length < 8) throw new Error("A senha deve ter pelo menos 8 caracteres.");
+        if (password !== confirmation) throw new Error("As senhas informadas não são iguais.");
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+        passwordRecoveryInProgress = false;
+        await supabase.auth.signOut();
+        showAuth("login", "Senha alterada com sucesso. Entre com sua nova senha.", "success");
+      } else if (form.dataset.authForm === "signup") {
         const fullName = String(values.get("full_name") || "").trim();
         const organizationName = String(values.get("organization_name") || "").trim();
         const email = String(values.get("email") || "").trim().toLowerCase();
@@ -187,6 +211,11 @@ export function startAuth(onAuthenticated) {
 }
 
 // Encerra a sessão Supabase e propaga falhas ao chamador.
+/**
+ * Encerra a sessão autenticada no Supabase.
+ * @returns {Promise<void>} Resolve após encerrar a sessão.
+ * @throws {Error} Quando o Supabase não consegue encerrar a sessão.
+ */
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) throw error;

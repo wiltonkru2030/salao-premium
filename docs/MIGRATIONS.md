@@ -54,3 +54,11 @@ As 33 versões sem arquivo local são:
 5. Manter apenas migrations novas e verificadas versionadas corretamente a partir deste ponto.
 
 As migrations recentes de Caixa/Comanda/Agenda/Orçamentos e tenant access estão versionadas localmente; a divergência histórica anterior permanece aberta.
+
+
+## Migrations de integridade financeira (13/11/2026)
+
+- `20261113034347_dbd6acb8-12c0-4a49-9e33-93a41fb61d2e.sql`: restringe escrita direta em tabelas financeiras e de estoque; adiciona proteções de itens e totais da Comanda, alterações diretas de estoque e despesas; disponibiliza RPCs para movimentação manual de Caixa, pagamento/cancelamento de despesas, ajuste de estoque e reembolso de Comanda. A migration altera permissões e políticas RLS existentes; revisar o contrato das telas/RPCs antes de aplicá-la em produção.
+- `20261113034736_f0d60118-12f4-43ef-9e1c-ee2d42dd82cf.sql`: corrige a RPC `register_service_order_payment` e usa uma função privada de estado financeiro para proteger itens da Comanda sem exigir que o profissional leia a tabela de pagamentos.
+
+Essas migrations foram recuperadas do commit Lovable `1f2db25dc2c61cda566885752000eb4c5f4b6e3c`. Não foram aplicadas ao banco durante a sincronização. Aplicação em produção depende de revisão e teste em banco isolado.

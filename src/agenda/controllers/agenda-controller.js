@@ -14,6 +14,10 @@ import { dateKey, addDays } from "../utils/date.utils.js";
 import { signOut } from "../../auth/auth.js";
 import { dateFromKey, makeTimestamp, appointmentActionRow, saveAppointment, updateAppointmentStatus, openAppointmentOrder, handleAppointmentAction, saveBlockTime } from "./appointment-actions.js";
 
+/**
+ * Registra os eventos da agenda e conecta os componentes às ações do domínio.
+ * @returns {void} Instala listeners no contêiner da agenda atual.
+ */
 export function installAgendaController() {
 document.addEventListener('click',async event=>{
  try{
@@ -27,6 +31,7 @@ document.addEventListener('click',async event=>{
 
   const removeBlock=target.closest('[data-remove-block]');
   if(removeBlock) {
+    if(state.membership?.role==='professional'){toast('Somente a administração pode remover bloqueios.');return;}
     if(!window.confirm('Remover este bloqueio de horário?'))return;
     const {error}=await supabase.from('appointment_blocks').delete()
       .eq('org_id',state.organization.id).eq('id',removeBlock.dataset.removeBlock);
@@ -57,7 +62,7 @@ document.addEventListener('click',async event=>{
   }
 
   const rec=target.closest('[data-record]');
-  if(rec){recordDrawer(rec.dataset.recordType,Number(rec.dataset.record));return;}
+  if(rec){recordDrawer(rec.dataset.recordType,rec.dataset.record);return;}
 
   const setting=target.closest('[data-setting]');
   if(setting){state.setting=setting.dataset.setting;render();return;}
@@ -129,6 +134,7 @@ document.addEventListener('dragover',event=>{
 document.addEventListener('dragleave',event=>event.target.closest('[data-slot],[data-month-date]')?.classList.remove('drop-target'));
 document.addEventListener('drop',async event=>{
  try{
+  if(state.membership?.role==='professional')return;
   const slot=event.target.closest('[data-slot],[data-month-date]');
   if(!slot||!state.dragId)return;
   event.preventDefault();

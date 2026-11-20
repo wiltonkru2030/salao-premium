@@ -1,0 +1,1 @@
+*{box-sizing:border-box}html,body{margin:0;min-width:320px;min-height:100%;background:var(--color-bg);color:var(--color-text)}body{min-height:100vh}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}a{color:inherit}img{max-width:100%;display:block}:focus-visible{outline:3px solid #c5a775;outline-offset:3px}

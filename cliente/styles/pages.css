@@ -1,0 +1,65 @@
+.location-card,.profile-card{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px;border:1px solid var(--color-border);border-radius:15px;background:var(--color-surface);box-shadow:var(--shadow-card)}.location-card strong,.profile-card strong,.profile-card span{display:block}.location-card strong{margin-top:5px;font-size:12px}.section-heading{display:flex;align-items:center;justify-content:space-between;margin:28px 0 13px}.section-heading h2{margin:0;font-size:17px}.muted{color:var(--color-muted);font-size:11px}.empty-state{padding:30px 20px;text-align:center;border:1px dashed var(--color-border);border-radius:16px;background:var(--color-surface)}.empty-icon{color:var(--color-gold);font-size:28px}.empty-state h3{margin:10px 0 7px;font-size:15px}.empty-state p{max-width:420px;margin:0 auto;color:var(--color-muted);font-size:12px;line-height:1.65}.category-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.category-grid span{padding:13px 8px;border:1px solid var(--color-border);border-radius:12px;text-align:center;font-size:11px}.profile-card{justify-content:flex-start}.avatar-mark{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;background:var(--color-gold-soft);color:var(--color-gold);font-size:20px}.profile-card span{margin-top:4px;color:var(--color-muted);font-size:11px}.settings-list{margin-top:18px;border-top:1px solid var(--color-border)}.settings-row{width:100%;display:flex;justify-content:space-between;align-items:center;padding:17px 4px;border:0;border-bottom:1px solid var(--color-border);background:transparent;color:var(--color-text);text-align:left}.settings-row strong,.settings-row small{display:block}.settings-row strong{font-size:13px}.settings-row small{margin-top:4px;color:var(--color-muted);font-size:11px}.settings-row>span:last-child{font-size:22px;color:var(--color-gold)}.pin-input-field{display:grid;gap:8px;font-size:12px}.pin-input-field input{width:140px;padding:12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);color:var(--color-text);letter-spacing:8px}
+.manual-location-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.manual-location-form input{min-width:0;width:100%;padding:11px 12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);color:var(--color-text);font-size:12px}.manual-location-form button{grid-column:1/-1}@media(max-width:420px){.manual-location-form{grid-template-columns:1fr}}
+
+/* Cartões de consentimento do vínculo legado mantêm leitura confortável em telas estreitas. */
+.identity-link-card{align-items:flex-start;flex-direction:column;margin:12px 0}.identity-link-card>div{display:grid;gap:6px}.identity-link-card small{color:var(--color-muted);font-size:11px}
+
+/* Formulário do perfil global: campos consistentes com os demais controles da cliente. */
+.profile-form{display:grid;gap:9px;margin-top:18px;padding:17px;border:1px solid var(--color-border);border-radius:15px;background:var(--color-surface)}
+.profile-form .field-label{margin-top:4px;color:var(--color-muted);font-size:11px;font-weight:600}
+.profile-form input{width:100%;min-width:0;padding:12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);color:var(--color-text);font:inherit;font-size:13px}
+.profile-form input:focus-visible{outline:2px solid var(--color-gold);outline-offset:2px}
+.profile-form .client-note{margin:3px 0 7px}
+
+/* Histórico da cliente: cards de agenda com hierarquia visual discreta. */
+.appointment-list{display:grid;gap:12px}
+.appointment-card{padding:16px;border:1px solid var(--color-border);border-radius:15px;background:var(--color-surface);box-shadow:var(--shadow-card)}
+.appointment-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.appointment-card-heading strong{font-size:14px}
+.appointment-card .tag{flex:none;padding:5px 8px;border-radius:99px;background:var(--color-gold-soft);color:var(--color-text);font-size:10px}
+.appointment-salon{margin:9px 0 4px;font-size:12px;font-weight:600}
+.appointment-meta{margin:4px 0;color:var(--color-muted);font-size:11px}
+.appointment-price{display:block;margin-top:12px;font-size:13px}
+
+/* Diretório público e catálogo: cartões responsivos com identidade visual discreta. */
+.salon-search-form{display:grid;gap:8px;margin:18px 0}
+.salon-search-form label,.service-result-card label{font-size:11px;font-weight:600;color:var(--color-muted)}
+.salon-search-form>div{display:flex;gap:8px}
+.salon-search-form input,.service-result-card input,.service-result-card select{width:100%;min-width:0;padding:12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);color:var(--color-text);font:inherit;font-size:13px}
+.salon-result-list,.service-result-list{display:grid;gap:11px}
+.salon-result-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid var(--color-border);border-radius:14px;background:var(--color-surface)}
+.salon-result-main{display:flex;align-items:center;gap:11px;min-width:0}
+.salon-result-main>div{display:grid;gap:3px;min-width:0}
+.salon-result-main strong{font-size:13px}
+.salon-result-main span:not(.salon-avatar),.salon-result-main small{font-size:11px;color:var(--color-muted)}
+.salon-avatar{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:12px;background:var(--color-gold-soft);font-weight:700}
+.service-result-card{display:grid;gap:11px;padding:15px;border:1px solid var(--color-border);border-radius:15px;background:var(--color-surface)}
+.service-result-heading{display:flex;justify-content:space-between;gap:12px}
+.service-result-heading>div{display:grid;gap:4px}
+.service-result-heading strong{font-size:14px}
+.service-result-heading small{font-size:11px;color:var(--color-muted)}
+.service-result-heading>b{white-space:nowrap;font-size:13px}
+.service-result-card>p{margin:0;color:var(--color-muted);font-size:12px}
+.service-result-card label{display:grid;gap:6px}
+.available-slot-list{display:flex;flex-wrap:wrap;gap:8px}
+.slot-option{padding:9px 12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);color:var(--color-text);font:inherit;font-size:12px}
+.slot-option:active{border-color:var(--color-gold)}
+.booking-confirm-card{display:grid;gap:10px;margin-top:18px;padding:16px;border:1px solid var(--color-gold);border-radius:15px;background:var(--color-surface)}
+.booking-confirm-card h3,.booking-confirm-card p{margin:0}
+.client-error-text{margin:0;color:var(--color-danger);font-size:12px}
+.text-button{padding:8px 0;border:0;background:transparent;color:var(--color-muted);font:inherit;font-size:12px;text-align:left}
+
+/* Favoritos e notificações da identidade global. */
+.favorite-card-actions{display:grid;gap:5px;justify-items:end;flex:none}
+.notification-list{display:grid;gap:10px}
+.notification-card{display:grid;gap:10px;padding:14px;border:1px solid var(--color-border);border-radius:13px;background:var(--color-surface)}
+.notification-card.unread{border-color:var(--color-gold);background:var(--color-gold-soft)}
+.notification-card strong{font-size:13px}
+.notification-card p{margin:5px 0;color:var(--color-muted);font-size:12px;line-height:1.5}
+.notification-card small,.notification-read-label{color:var(--color-muted);font-size:10px}
+.notification-card .text-button{justify-self:start}
+
+.coupon-input-row{display:flex;align-items:end;gap:8px;margin:10px 0}
+.coupon-input-row label{flex:1;min-width:0}
+.coupon-input-row .text-button{white-space:nowrap;padding:10px 0}
+.coupon-preview{padding:9px 11px;border:1px solid var(--color-gold);border-radius:9px;background:var(--color-gold-soft);font-size:12px;font-weight:600}

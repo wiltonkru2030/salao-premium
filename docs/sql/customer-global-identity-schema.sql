@@ -1,0 +1,5 @@
+-- SUPERADO — NÃO EXECUTAR.
+-- O schema foi consolidado na migration versionada:
+-- supabase/migrations/20261120050000_customer_global_identity.sql
+-- Esta cópia foi mantida apenas para preservar o histórico documental.
+-- A migration deve ser testada em Supabase local/QA antes de qualquer promoção.

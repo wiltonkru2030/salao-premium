@@ -1,0 +1,6 @@
+-- SUPERADO — NÃO EXECUTAR.
+-- Este rascunho implementava associação imediata sem confirmação explícita da cliente.
+-- O fluxo antigo foi substituído pela solicitação do salão e confirmação autenticada
+-- pela cliente na migration:
+-- supabase/migrations/20261120050000_customer_global_identity.sql
+-- Esta cópia foi mantida apenas para preservar o histórico documental.

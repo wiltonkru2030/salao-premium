@@ -22,6 +22,7 @@ let selectedProduct=null;
 let detailLoading=false;
 const escapeHtml=esc;
 function clearAutocomplete(){cleanup.forEach(fn=>fn());cleanup=[];}
+/** Renderiza a estrutura inicial da página de Comandas. */
 export function comandaPage(){
  selectedOrder=null;
  return head("Comanda","Comandas criadas a partir da chegada do cliente, com serviços, produtos e pagamentos.")+
@@ -41,11 +42,11 @@ function canPay(){return canManage()||state.membership?.professional_app_scope==
 async function queryDetails(order,orgId){
  const [items,payments,customer,professional,services,products,professionals]=await Promise.all([
   supabase.from("service_order_items").select("id,item_type,description,quantity,unit_price,discount,total,professional_id,created_at").eq("org_id",orgId).eq("order_id",order.id).order("created_at"),
-  supabase.from("service_order_payments").select("id,amount,payment_method,status,paid_at,refunded_at,refund_cash_movement_id").eq("org_id",orgId).eq("order_id",order.id).order("paid_at"),
+  canPay()?supabase.from("service_order_payments").select("id,amount,payment_method,status,paid_at,refunded_at,refund_cash_movement_id").eq("org_id",orgId).eq("order_id",order.id).order("paid_at"):Promise.resolve({data:[],error:null}),
   order.customer_id?supabase.from("customers").select("id,name,phone").eq("org_id",orgId).eq("id",order.customer_id).maybeSingle():Promise.resolve({data:null,error:null}),
   order.assigned_professional_id?supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("id",order.assigned_professional_id).maybeSingle():Promise.resolve({data:null,error:null}),
   supabase.from("services").select("id,name,price,duration_minutes").eq("org_id",orgId).eq("active",true).order("name").limit(250),
-  supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).eq("active",true).order("name").limit(250),
+  canManage()||canPay()?supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).eq("active",true).order("name").limit(250):Promise.resolve({data:[],error:null}),
   supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("active",true).order("name").limit(200)
  ]);
  for(const [label,result] of [["itens",items],["pagamentos",payments],["cliente",customer],["profissional",professional],["serviços",services],["produtos",products],["equipe",professionals]]) {
@@ -57,16 +58,18 @@ async function queryDetails(order,orgId){
 // Desenha detalhes e formulários de serviço, produto e pagamento.
 function renderOrderDetails(host,order,data,orgId){
  const editable=["open","in_progress","partially_paid","awaiting_payment"].includes(order.status);
+ const {items,payments,customer,professional,services,products,professionals}=data;
+ const isProfessional=state.membership?.role==="professional";
+ const canAddOwnService=isProfessional&&editable&&Boolean(order.assigned_professional_id)&&professionals.some(item=>item.id===order.assigned_professional_id);
  const view=buildComandaDetails(order,data,{
-  canManage:canManage(),canPay:canPay(),
+  canManage:canManage(),canPay:canPay(),canAddOwnService,isProfessional,
   canEditItems:editable&&["owner","admin","manager"].includes(state.membership?.role)&&!data.payments.some(p=>p.status==="confirmed"),
   canRefund:["owner","admin","manager","finance"].includes(state.membership?.role)
  });
- const {items,payments,customer,professional,services,products,professionals}=data;
  const {paid,balance,allowEdit,allowPay,canEditItems}=view;
  host.innerHTML=view.html;
  clearAutocomplete();
- if(editable&&allowEdit){
+ if(editable&&(allowEdit||canAddOwnService)){
   selectedService=null;selectedProduct=null;
   cleanup.push(mountAutocomplete(host.querySelector("#comanda-service"),{
    search:async term=>{const {data,error}=await supabase.from("services").select("id,name,price,duration_minutes").eq("org_id",orgId).eq("active",true).ilike("name","%"+term+
@@ -77,7 +80,7 @@ function renderOrderDetails(host,order,data,orgId){
 " min",
    onSelect:item=>selectedService=item
   }));
-  cleanup.push(mountAutocomplete(host.querySelector("#comanda-product"),{
+  if(allowEdit)cleanup.push(mountAutocomplete(host.querySelector("#comanda-product"),{
    search:async term=>{const {data,error}=await supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).eq("active",true).gt("stock_quantity",0).ilike("name","%"+term+
 "%").order("name").limit(8);if(error)throw error;return data||[];},
    getLabel:item=>item.name+
@@ -109,14 +112,15 @@ function renderOrderDetails(host,order,data,orgId){
    }catch(error){reportError(error,{context:"Comanda > excluir item"});button.disabled=false;}
   }));
  }
- if(editable&&allowEdit){
+ if(editable&&(allowEdit||canAddOwnService)){
   host.querySelector("#comanda-service-form").addEventListener("submit",async e=>{
    e.preventDefault();const form=e.currentTarget,submit=form.querySelector('[type="submit"]');
    if(!selectedService){toast("Selecione um serviço na lista.");return;}
    if(!form.reportValidity())return;
    submit.disabled=true;submit.textContent="Adicionando…";
    try{
-    const {user}=await tenant(),professionalId=String(new FormData(form).get("professional_id")||""),price=Number(selectedService.price||0);
+    const {user}=await tenant(),professionalId=isProfessional?order.assigned_professional_id:String(new FormData(form).get("professional_id")||""),price=Number(selectedService.price||0);
+    if(isProfessional&&professionalId!==professionals.find(item=>item.id===professionalId)?.id)throw new Error("Você só pode lançar serviços no seu próprio atendimento.");
 
     const {error}=await supabase.from("service_order_items").insert({org_id:orgId,order_id:order.id,item_type:"service",service_id:selectedService.id,professional_id:professionalId||null,description:selectedService.name,quantity:1,unit_price:price,total:price,created_by:user.id});
     if(error)throw error;
@@ -124,7 +128,7 @@ function renderOrderDetails(host,order,data,orgId){
    }catch(error){reportError(error,{context:"Comanda > adicionar serviço"});}
    finally{if(submit.isConnected){submit.disabled=false;submit.textContent="Adicionar serviço";}}
   });
-  host.querySelector("#comanda-product-form").addEventListener("submit",async e=>{
+  if(allowEdit)host.querySelector("#comanda-product-form").addEventListener("submit",async e=>{
    e.preventDefault();const form=e.currentTarget,submit=form.querySelector('[type="submit"]');
    if(!selectedProduct){toast("Selecione um produto na lista.");return;}
    if(!form.reportValidity())return;
@@ -164,6 +168,7 @@ function renderOrderDetails(host,order,data,orgId){
  * @param {string|null} orderId Identificador da Comanda, quando a tela abre um detalhe.
  * @returns {Promise<void>} Renderiza dados; gravações financeiras são executadas por RPC.
  */
+/** Carrega ou atualiza os detalhes da comanda selecionada, respeitando o tenant ativo. */
 export async function loadComandaPage(orderId=null){
  const host=document.querySelector("#comanda-manager");if(!host)return;
  clearAutocomplete();

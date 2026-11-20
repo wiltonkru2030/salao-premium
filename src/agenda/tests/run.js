@@ -7,7 +7,7 @@ import {runAgendaRenderChecks} from './render.test.js';
 const suites=[
   ['Datas e duração',runAgendaUnitChecks()],
   ['Conflitos e validações',runConflictUnitChecks()],
-  ['Serviço da agenda',runAgendaServiceChecks()],
+  ['Serviço da agenda',await runAgendaServiceChecks()],
   ['Renderização da tela',runAgendaRenderChecks()]
 ];
 let failed=0;

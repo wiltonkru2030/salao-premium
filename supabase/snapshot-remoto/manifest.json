@@ -1,0 +1,527 @@
+{
+  "project": "salao-premium",
+  "project_ref": "vlifbvzlyzoncefvfgol",
+  "migrations": [
+    {
+      "version": "20261112161153",
+      "name": "initial_salao_premium_schema",
+      "file": "migrations/20261112161153_initial_salao_premium_schema.sql",
+      "sha256": "1607d0fbb2284e187f74e15affee8f1b32f60acd74886717fc2f156e129d2978"
+    },
+    {
+      "version": "20261112161333",
+      "name": "refine_role_based_access_and_indexes",
+      "file": "migrations/20261112161333_refine_role_based_access_and_indexes.sql",
+      "sha256": "2eb17457aed803b7caa4695bc97da3d978985079c0a016fcae4c48ae97cc3d75"
+    },
+    {
+      "version": "20261112162027",
+      "name": "professional_app_and_service_orders",
+      "file": "migrations/20261112162027_professional_app_and_service_orders.sql",
+      "sha256": "40edfb43d98e213cccc2973bb887da1ba32d3f31d5b0bc662ca14532ccad6e65"
+    },
+    {
+      "version": "20261112162105",
+      "name": "secure_professional_cpf_auth",
+      "file": "migrations/20261112162105_secure_professional_cpf_auth.sql",
+      "sha256": "0db9075a0e76903a2c691d1b80ace6da137d789812d70b8430e6684c3a382982"
+    },
+    {
+      "version": "20261112162115",
+      "name": "professional_login_provisioning_rpc",
+      "file": "migrations/20261112162115_professional_login_provisioning_rpc.sql",
+      "sha256": "ca48eb2c0a2bf9228b9df48f332d771e521e725aca306ce511c78e50593c5402"
+    },
+    {
+      "version": "20261112162202",
+      "name": "service_order_total_recalculation",
+      "file": "migrations/20261112162202_service_order_total_recalculation.sql",
+      "sha256": "2500656de96fdfcb48d03acdf146992147e2cf0b1252674bee23ce1644a1c411"
+    },
+    {
+      "version": "20261112162406",
+      "name": "fix_service_order_totals_trigger",
+      "file": "migrations/20261112162406_fix_service_order_totals_trigger.sql",
+      "sha256": "3fb47821f2ef6427d493e892921243435eee8cbcaca63a2773267e03a75cef6c"
+    },
+    {
+      "version": "20261112162610",
+      "name": "tighten_professional_data_access",
+      "file": "migrations/20261112162610_tighten_professional_data_access.sql",
+      "sha256": "1e138a841f33c3000e4255bf11d1257db59515b12d68139c400c2fa5c028d659"
+    },
+    {
+      "version": "20261112162757",
+      "name": "restrict_professional_module_permissions",
+      "file": "migrations/20261112162757_restrict_professional_module_permissions.sql",
+      "sha256": "8f1a739691cfd3666745d8796aeb90f9c83db87398aee314230d68378f076b19"
+    },
+    {
+      "version": "20261112162841",
+      "name": "enforce_professional_comanda_limits",
+      "file": "migrations/20261112162841_enforce_professional_comanda_limits.sql",
+      "sha256": "a025416004905198e86a97ef34b096f7bb2e99329e1a38c6ecd362df4be946bc"
+    },
+    {
+      "version": "20261112163107",
+      "name": "vault_professional_cpf_pepper_access",
+      "file": "migrations/20261112163107_vault_professional_cpf_pepper_access.sql",
+      "sha256": "686a95a4cdf52293849df8c064b0f67ce612773d45f2fe0292a11cd64e0a62fa"
+    },
+    {
+      "version": "20261112163653",
+      "name": "allow_professional_read_own_order_items",
+      "file": "migrations/20261112163653_allow_professional_read_own_order_items.sql",
+      "sha256": "82bd38c099cb2120b027361948e2a4d585a654c41d036141256dd751ff9e9d24"
+    },
+    {
+      "version": "20261112165404",
+      "name": "audit_history_and_recovery_bin",
+      "file": "migrations/20261112165404_audit_history_and_recovery_bin.sql",
+      "sha256": "2fdfc8556659af2f7d26f80a87a9b26d05d6da59cc618ac33106425f2989bb59"
+    },
+    {
+      "version": "20261112165526",
+      "name": "professional_app_access_and_comanda_workflow",
+      "file": "migrations/20261112165526_professional_app_access_and_comanda_workflow.sql",
+      "sha256": "afb1debecbf9aed251feb43d78c1883bd8fa94dac766f16b7fe23c50075a6758"
+    },
+    {
+      "version": "20261112170155",
+      "name": "appointment_checkin_payment_and_commission_workflow",
+      "file": "migrations/20261112170155_appointment_checkin_payment_and_commission_workflow.sql",
+      "sha256": "59cb9f1bc8d2332e7df721fab54f5f2094f9e6f14be5da8f3e7e51a77040726f"
+    },
+    {
+      "version": "20261112170218",
+      "name": "secure_professional_cpf_pepper_lookup",
+      "file": "migrations/20261112170218_secure_professional_cpf_pepper_lookup.sql",
+      "sha256": "d415512161edc496b13933ca64d37381ba83b58f3bb567e559dca6adefbd3d3b"
+    },
+    {
+      "version": "20261112170347",
+      "name": "recycle_bin_retention_and_documentation",
+      "file": "migrations/20261112170347_recycle_bin_retention_and_documentation.sql",
+      "sha256": "fd2726237226396d842a5c2625b65b0833b3b5af37319ebfcf3a3c0083f274db"
+    },
+    {
+      "version": "20261112170907",
+      "name": "appointment_creator_snapshot",
+      "file": "migrations/20261112170907_appointment_creator_snapshot.sql",
+      "sha256": "c62a51ca7913ce34d063db57412c623233131dc1f74ce793ffb4b4f58e363037"
+    },
+    {
+      "version": "20261112171759",
+      "name": "app_scope_reception_and_audit_completion",
+      "file": "migrations/20261112171759_app_scope_reception_and_audit_completion.sql",
+      "sha256": "75d3ceb8c6e2bdcecacde30eab2186425b399caf972159fcca7a20535a44a73e"
+    },
+    {
+      "version": "20261112171813",
+      "name": "reception_calendar_all_rls",
+      "file": "migrations/20261112171813_reception_calendar_all_rls.sql",
+      "sha256": "0bad35450373044d0d04c7163bbeb306cebd05bc1acb50c38958cb5f96bfe970"
+    },
+    {
+      "version": "20261112171935",
+      "name": "reception_command_operational_access",
+      "file": "migrations/20261112171935_reception_command_operational_access.sql",
+      "sha256": "ee2b476df74541cb52601037233e9410187292bbd2f0b264585680046e6d351c"
+    },
+    {
+      "version": "20261112172256",
+      "name": "professional_access_revocation_and_comanda_strategy",
+      "file": "migrations/20261112172256_professional_access_revocation_and_comanda_strategy.sql",
+      "sha256": "c699633db8f793374e358a3073d7ca654e990ccf8068f4e87a84439de3583993"
+    },
+    {
+      "version": "20261112172630",
+      "name": "fix_comanda_sale_status_on_payment",
+      "file": "migrations/20261112172630_fix_comanda_sale_status_on_payment.sql",
+      "sha256": "7c25ae214ea418cb92820e4839d5741638173dc70993a50965ee5b306540796d"
+    },
+    {
+      "version": "20261112173203",
+      "name": "payment_safe_cancellation_and_security_cleanup",
+      "file": "migrations/20261112173203_payment_safe_cancellation_and_security_cleanup.sql",
+      "sha256": "c89fe2792b0a9bb847da904d5096771cce4233948c2d348ce54c859310c8f419"
+    },
+    {
+      "version": "20261112173311",
+      "name": "commission_payout_schema_and_history",
+      "file": "migrations/20261112173311_commission_payout_schema_and_history.sql",
+      "sha256": "1028a9c79d1a02e96bfbb2c928ab0e8a3b523739a8708623eea9dfee18c38fd1"
+    },
+    {
+      "version": "20261112173328",
+      "name": "commission_payout_rpc_and_sales_cash_link",
+      "file": "migrations/20261112173328_commission_payout_rpc_and_sales_cash_link.sql",
+      "sha256": "8c4d34b75b518a781b13097ef8443cd662e6904e5563ef63253eae746e946a65"
+    },
+    {
+      "version": "20261112173534",
+      "name": "professional_auth_bootstrap_without_tenant_creation",
+      "file": "migrations/20261112173534_professional_auth_bootstrap_without_tenant_creation.sql",
+      "sha256": "406a48d428d8bdb574c276c0d3782c1c57ff6b800beb03b0775a5e992a67c428"
+    },
+    {
+      "version": "20261112182318",
+      "name": "professional_app_scope_hardening",
+      "file": "migrations/20261112182318_professional_app_scope_hardening.sql",
+      "sha256": "5484863ae346509d65d6eb02423d742fdf76bfe4fba9eb434ad8fade93ff8ad2"
+    },
+    {
+      "version": "20261112182427",
+      "name": "professional_app_scope_role_guard",
+      "file": "migrations/20261112182427_professional_app_scope_role_guard.sql",
+      "sha256": "a347b5eba383e1d25d68ecd0f42c8625b74391faf07ab8d7dfdffa09cd9a0aeb"
+    },
+    {
+      "version": "20261112182626",
+      "name": "professional_order_rls_no_recursion",
+      "file": "migrations/20261112182626_professional_order_rls_no_recursion.sql",
+      "sha256": "1fbb88d0f1cdc9019df1256b1a5596b2dd6db0cc1f122670a80ad2f0e72c3858"
+    },
+    {
+      "version": "20261112182739",
+      "name": "professional_app_owner_and_reception_access",
+      "file": "migrations/20261112182739_professional_app_owner_and_reception_access.sql",
+      "sha256": "96ef0ba2edcb2d3fb7e044ceb95c81e1011fb156f763d6ff75b9c066f764feed"
+    },
+    {
+      "version": "20261112182809",
+      "name": "reception_app_scope_safe_until_separate_identity",
+      "file": "migrations/20261112182809_reception_app_scope_safe_until_separate_identity.sql",
+      "sha256": "998ba0c8e72c995e6db19a75db8474cffad18a99a03c4588da63b6df570510d5"
+    },
+    {
+      "version": "20261112202823",
+      "name": "professional_fiscal_profile_and_service_assignments",
+      "file": "migrations/20261112202823_professional_fiscal_profile_and_service_assignments.sql",
+      "sha256": "155c3c4112d717b7412616f24791cbfdb4737693d46fd07dcb740f8be375e478"
+    },
+    {
+      "version": "20261112202951",
+      "name": "enforce_professional_service_assignments",
+      "file": "migrations/20261112202951_enforce_professional_service_assignments.sql",
+      "sha256": "146c214fd7044fa7bc8dce305b6836ce2c621ec6bca58316ce96c483e4bd88c5"
+    },
+    {
+      "version": "20261112203122",
+      "name": "professional_services_policy_optimization",
+      "file": "migrations/20261112203122_professional_services_policy_optimization.sql",
+      "sha256": "681490b455c6fb0738dac4302dd263a4fee4df62d601bcdb655be5f795b05973"
+    },
+    {
+      "version": "20261112203202",
+      "name": "preserve_legacy_appointments_service_links",
+      "file": "migrations/20261112203202_preserve_legacy_appointments_service_links.sql",
+      "sha256": "1f12104ee02bbf3db7803ece334cc8dc46a865c112cfc2abc029dc0150c82f3e"
+    },
+    {
+      "version": "20261113002700",
+      "name": "product_commission_rules_and_payment_flow",
+      "file": "migrations/20261113002700_product_commission_rules_and_payment_flow.sql",
+      "sha256": "997fbeb03913851a5cce15b32ae7c9d0d9b19eb5ad7bc3dc882b376e63e3367f"
+    },
+    {
+      "version": "20261113002910",
+      "name": "index_product_commission_rule_foreign_key",
+      "file": "migrations/20261113002910_index_product_commission_rule_foreign_key.sql",
+      "sha256": "ba672a86dd0561e5aed8181177df7c2096ee32fc38a65848ec309313520120c6"
+    },
+    {
+      "version": "20261113003842",
+      "name": "quotes_and_grouped_appointments",
+      "file": "migrations/20261113003842_quotes_and_grouped_appointments.sql",
+      "sha256": "fac987e343c5ed1bd58153b4b4ff3ade9e4b954624e0a6f0c70b553d46dbd852"
+    },
+    {
+      "version": "20261113004028",
+      "name": "enforce_quote_discount_rules_and_totals",
+      "file": "migrations/20261113004028_enforce_quote_discount_rules_and_totals.sql",
+      "sha256": "814ea037ad9ab6581dbf77cf235eeba8df756452bfd6dc0c88e4570b29013fd2"
+    },
+    {
+      "version": "20261113004223",
+      "name": "support_fixed_value_quote_discounts",
+      "file": "migrations/20261113004223_support_fixed_value_quote_discounts.sql",
+      "sha256": "b61b6134bac8beb7e6570357b3b14d6fa48a7957ce97b75164cb2f41857adf2a"
+    },
+    {
+      "version": "20261113004247",
+      "name": "index_quote_group_foreign_keys_and_lock_discount_settings",
+      "file": "migrations/20261113004247_index_quote_group_foreign_keys_and_lock_discount_settings.sql",
+      "sha256": "574733344c5f3853bcf1bce7ac82e3e448c1c5fe321acfa085121daa383f09e3"
+    },
+    {
+      "version": "20261113004409",
+      "name": "atomic_quote_appointment_group_booking",
+      "file": "migrations/20261113004409_atomic_quote_appointment_group_booking.sql",
+      "sha256": "fd4bc83135bc6485982d17e53e51855c2522c53d7e7b52650b83ba6ca3b79c0a"
+    },
+    {
+      "version": "20261113004419",
+      "name": "atomic_grouped_quote_scheduling_and_quote_item_lifecycle",
+      "file": "migrations/20261113004419_atomic_grouped_quote_scheduling_and_quote_item_lifecycle.sql",
+      "sha256": "8f18304619a98fc99acd04df490185190a2157beec4b5876fd3bbc7581fe36e5"
+    },
+    {
+      "version": "20261113004537",
+      "name": "split_quote_rls_read_and_write_policies",
+      "file": "migrations/20261113004537_split_quote_rls_read_and_write_policies.sql",
+      "sha256": "ebd0ea3b17e4e2ab8b9ac08233623cd30426a77c9f150a98c12925a4729a8648"
+    },
+    {
+      "version": "20261113004807",
+      "name": "quote_quantity_aware_appointment_duration",
+      "file": "migrations/20261113004807_quote_quantity_aware_appointment_duration.sql",
+      "sha256": "00e77ea9e4b9a5ec8d64d5eaff42372b2f4f4d8a40325bc7e8c6445f6d63f491"
+    },
+    {
+      "version": "20261113010050",
+      "name": "integrate_partial_commissions_cash_and_grouped_comandas",
+      "file": "migrations/20261113010050_integrate_partial_commissions_cash_and_grouped_comandas.sql",
+      "sha256": "91cd7d64c8d490c3d4456eb5f3121e10c2fa02951bcba75a31d82fa17c43ddfe"
+    },
+    {
+      "version": "20261113010144",
+      "name": "require_open_cash_for_payments_and_refunds",
+      "file": "migrations/20261113010144_require_open_cash_for_payments_and_refunds.sql",
+      "sha256": "7854b9fc93a23f0fdeb6da791d33fd9f77ba3570d0e8a34f3914136283c93fac"
+    },
+    {
+      "version": "20261113010244",
+      "name": "serialize_cash_register_movements",
+      "file": "migrations/20261113010244_serialize_cash_register_movements.sql",
+      "sha256": "c064c622c003f346a7c195924af715568dd5b1aebcba2e66c76aa2f0ea28a204"
+    },
+    {
+      "version": "20261113010311",
+      "name": "fix_grouped_order_existing_uuid_lookup",
+      "file": "migrations/20261113010311_fix_grouped_order_existing_uuid_lookup.sql",
+      "sha256": "c500eacbc20c4afbec5c30a4c61ed841f06ba5e2ce57fae04bf15bc983eae208"
+    },
+    {
+      "version": "20261113010319",
+      "name": "index_financial_refund_foreign_keys",
+      "file": "migrations/20261113010319_index_financial_refund_foreign_keys.sql",
+      "sha256": "2c088f37feb8456f1b8ee32b1dd23c7a3c9098a3f6474dcc6d340adb84f5d0fb"
+    },
+    {
+      "version": "20261113010559",
+      "name": "document_financial_and_agenda_database_contracts",
+      "file": "migrations/20261113010559_document_financial_and_agenda_database_contracts.sql",
+      "sha256": "7cc049ebc4a8e131133385e39e43f9b997b92cfef192b39b197e8d0af0a554e3"
+    },
+    {
+      "version": "20261113010702",
+      "name": "use_default_cash_register_for_branch_transactions",
+      "file": "migrations/20261113010702_use_default_cash_register_for_branch_transactions.sql",
+      "sha256": "957ed812d813e6dac1bbcb1078ea88b4f9e60e102f260dfa6516a6addf530260"
+    },
+    {
+      "version": "20261113010729",
+      "name": "enforce_unique_professional_service_commission_rules",
+      "file": "migrations/20261113010729_enforce_unique_professional_service_commission_rules.sql",
+      "sha256": "5260a0b6e8f75b46ce8c8ce558e5dfcf1c2824be5d896719a670352c0ac127e8"
+    },
+    {
+      "version": "20261113011533",
+      "name": "create_quotes_atomically_with_tenant_validation",
+      "file": "migrations/20261113011533_create_quotes_atomically_with_tenant_validation.sql",
+      "sha256": "85e0af6f38fd8ce2538c2c12a98e49bfcca3692f52fbc7333f25ca1034101441"
+    },
+    {
+      "version": "20261113011612",
+      "name": "save_quote_discount_settings_atomically",
+      "file": "migrations/20261113011612_save_quote_discount_settings_atomically.sql",
+      "sha256": "741edd4de7505ded34591c3abf908780a19243f74c860c28f355f901a732816f"
+    },
+    {
+      "version": "20261113011915",
+      "name": "scope_professional_app_access_to_explicit_tenant",
+      "file": "migrations/20261113011915_scope_professional_app_access_to_explicit_tenant.sql",
+      "sha256": "1b9a2e583361f4b9d63fd4c5076f34f89f4f046f34103711330cfff576eff16b"
+    },
+    {
+      "version": "20261113012733",
+      "name": "enforce_professional_service_on_quote_scheduling",
+      "file": "migrations/20261113012733_enforce_professional_service_on_quote_scheduling.sql",
+      "sha256": "00890c1414c8c076358b67b1e91cb388930b16369a0d3ac02e3792f28d77a740"
+    },
+    {
+      "version": "20261113034347",
+      "name": "dbd6acb8-12c0-4a49-9e33-93a41fb61d2e",
+      "file": "migrations/20261113034347_dbd6acb8-12c0-4a49-9e33-93a41fb61d2e.sql",
+      "sha256": "805ee8014d832e44af211b9363d67c4b4940f4438712d5b517159182de963780"
+    },
+    {
+      "version": "20261113034736",
+      "name": "f0d60118-12f4-43ef-9e1c-ee2d42dd82cf",
+      "file": "migrations/20261113034736_f0d60118-12f4-43ef-9e1c-ee2d42dd82cf.sql",
+      "sha256": "626a1b30191b140b673d6572e465a92ceb5b120be4a02d86e6f96d869d217cc4"
+    },
+    {
+      "version": "20261113121938",
+      "name": "fix_expense_payment_branch_cash_register",
+      "file": "migrations/20261113121938_fix_expense_payment_branch_cash_register.sql",
+      "sha256": "d243a16cd4cad8f8185cb9ff762bbdd709b5eb656327d161c9fbc7dbff2321d5"
+    },
+    {
+      "version": "20261120041015",
+      "name": "customer_global_identity",
+      "file": "migrations/20261120041015_customer_global_identity.sql",
+      "sha256": "54c3b1ff6625b2a96dec6af60f318504da1aacc2888914d18b6560ef9bd376ff"
+    },
+    {
+      "version": "20261120041034",
+      "name": "customer_identity_link_hardening",
+      "file": "migrations/20261120041034_customer_identity_link_hardening.sql",
+      "sha256": "028c435f985db7fb00a96884742b3ad46194f9c25d41727797977c3f81be1dcf"
+    },
+    {
+      "version": "20261120041443",
+      "name": "customer_appointment_holds",
+      "file": "migrations/20261120041443_customer_appointment_holds.sql",
+      "sha256": "40c1082dc691131cf164433c8db9e79df1870657a047c04004c7d2b96a50d333"
+    },
+    {
+      "version": "20261120041450",
+      "name": "customer_appointment_holds_rpc_security",
+      "file": "migrations/20261120041450_customer_appointment_holds_rpc_security.sql",
+      "sha256": "24857185b4dd30da5742956f660dd08c76d77b1bb374c0abee1bd92c258bd542"
+    },
+    {
+      "version": "20261120041537",
+      "name": "customer_appointment_hold_cancellation",
+      "file": "migrations/20261120041537_customer_appointment_hold_cancellation.sql",
+      "sha256": "dacf97ab1bf54e7e38fa3a3f6755b660b37ed259c66bf6a1085b89d96d370627"
+    },
+    {
+      "version": "20261120041630",
+      "name": "customer_appointment_holds_private_rpc",
+      "file": "migrations/20261120041630_customer_appointment_holds_private_rpc.sql",
+      "sha256": "50b72a5af495bbd1d97e5733a4131e4de99f2cc1dd6d3e5dee578780457e1b30"
+    },
+    {
+      "version": "20261120041928",
+      "name": "customer_booking_business_and_professional_availability",
+      "file": "migrations/20261120041928_customer_booking_business_and_professional_availability.sql",
+      "sha256": "c9f8006327914927850b160f2a696ef82f337b7939021768dcbc6d8586e15134"
+    },
+    {
+      "version": "20261120063615",
+      "name": "enforce_availability_on_admin_appointments",
+      "file": "migrations/20261120063615_enforce_availability_on_admin_appointments.sql",
+      "sha256": "3cf2760ad1ae672551e18f74d6fe6ca5e733fc2eb6b354df3445a120b1ffa699"
+    },
+    {
+      "version": "20261120064407",
+      "name": "20261120070000_public_salon_directory_and_availability",
+      "file": "migrations/20261120064407_20261120070000_public_salon_directory_and_availability.sql",
+      "sha256": "ebb92e63c553b75104d2800c551e68595ec71af3a2b4589792905f1fa1dbfa3b"
+    },
+    {
+      "version": "20261120064553",
+      "name": "20261120071000_align_public_profiles_with_settings",
+      "file": "migrations/20261120064553_20261120071000_align_public_profiles_with_settings.sql",
+      "sha256": "c07532ab0888dd6ee9048c99296605e4fe8a8fabe53f1ab5ad3d59aec9a4fb81"
+    },
+    {
+      "version": "20261120064639",
+      "name": "20261120072000_restrict_private_schema_public_api",
+      "file": "migrations/20261120064639_20261120072000_restrict_private_schema_public_api.sql",
+      "sha256": "a19fc5f304c77537f1c2b964f3287a0d9fe8b3aae0c39ec416db193275745bc6"
+    },
+    {
+      "version": "20261120064758",
+      "name": "20261120073000_allow_members_read_public_profile_settings",
+      "file": "migrations/20261120064758_20261120073000_allow_members_read_public_profile_settings.sql",
+      "sha256": "3b928cbe35470de8a6cdf2185fc9c1c3956d1f038b8c50349fc608ed0a914904"
+    },
+    {
+      "version": "20261120065524",
+      "name": "20261120065000_customer_coupons_transactional",
+      "file": "migrations/20261120065524_20261120065000_customer_coupons_transactional.sql",
+      "sha256": "94493f2bcfc02f2c980db944ffec73dfd53d8aeecf00d869d04c766f343a0b56"
+    },
+    {
+      "version": "20261120065604",
+      "name": "20261120065600_restrict_legacy_hold_private_entrypoints",
+      "file": "migrations/20261120065604_20261120065600_restrict_legacy_hold_private_entrypoints.sql",
+      "sha256": "fbaeafe31cddf370411f527de5477a9552183f8872f423e0b1daffcba0631163"
+    },
+    {
+      "version": "20261120070111",
+      "name": "20261120065700_coupon_fk_indexes_and_public_profile_policy_cleanup",
+      "file": "migrations/20261120070111_20261120065700_coupon_fk_indexes_and_public_profile_policy_cleanup.sql",
+      "sha256": "a04f0b70803883b309a529e7476a7f6189268613f845d38c3cf2cc389fdcf5b3"
+    },
+    {
+      "version": "20261120070234",
+      "name": "20261120070200_audit_public_salon_profiles",
+      "file": "migrations/20261120070234_20261120070200_audit_public_salon_profiles.sql",
+      "sha256": "1e516fcd98d80cb1b0a67bc4f1c0740b07f2869c6d96df35b7d273fcf1fcdd98"
+    },
+    {
+      "version": "20261120072329",
+      "name": "consolidate_agenda_availability_rls_policies",
+      "file": "migrations/20261120072329_consolidate_agenda_availability_rls_policies.sql",
+      "sha256": "11c7cc89bd2d73f32b96a726e4db9f872027be5e0632972bf6572c300df60ca1"
+    },
+    {
+      "version": "20261120072618",
+      "name": "move_privileged_financial_and_workflow_rpcs_private",
+      "file": "migrations/20261120072618_move_privileged_financial_and_workflow_rpcs_private.sql",
+      "sha256": "37925a4e5e6f518203622344d74ccd4438befb48a67933b3fe02e5b8497009b7"
+    },
+    {
+      "version": "20261120073222",
+      "name": "complete_branch_cash_register_and_cash_summary",
+      "file": "migrations/20261120073222_complete_branch_cash_register_and_cash_summary.sql",
+      "sha256": "5190479e1182e77b68c14f5a133ed191168576cac14e78f25da3b45b8ebe2a7c"
+    }
+  ],
+  "functions": [
+    {
+      "slug": "manage-professional-access",
+      "version": 9,
+      "verify_jwt": true,
+      "import_map": false,
+      "files": [
+        {
+          "file": "functions/manage-professional-access/index.ts",
+          "sha256": "9277875bc5741ab91a401aca1951d4d5d2afe326e11d831653f854fe3c945249",
+          "matchesGit": true
+        }
+      ]
+    },
+    {
+      "slug": "professional-cpf-login",
+      "version": 5,
+      "verify_jwt": false,
+      "import_map": false,
+      "files": [
+        {
+          "file": "functions/professional-cpf-login/index.ts",
+          "sha256": "0ac873e0799d4d791abd35732ab152fd8e6b5f2edf8c5943d573d38ea150935a",
+          "matchesGit": true
+        }
+      ]
+    },
+    {
+      "slug": "respond-to-quote",
+      "version": 3,
+      "verify_jwt": false,
+      "import_map": false,
+      "files": [
+        {
+          "file": "functions/respond-to-quote/index.ts",
+          "sha256": "fe8fcdb2c54ad125b6a595e6b858229657d67c85e0dff37d67902c40eb68843a",
+          "matchesGit": true
+        }
+      ]
+    }
+  ]
+}

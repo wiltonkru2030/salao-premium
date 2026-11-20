@@ -32,7 +32,7 @@ function toCalendarAppointment(row,professionalIndex) {
     id:row.id,name:row.customer_name,phone:row.customer_phone||'',service:row.service_name,
     pro:professionalIndex,professional_id:row.professional_id,
     professionalName:row.professional_name||'Profissional',
-    customer_id:row.customer_id,service_id:row.service_id,
+    customer_id:row.customer_id,service_id:row.service_id,branch_id:row.branch_id||null,
     date:start.date,time:start.time,duration,price:row.price,
     status:dbStatus(row.status),dbStatus:row.status,notes:row.notes||'',
     booking_source:row.booking_source,created_by_name:row.created_by_name||'',
@@ -70,6 +70,10 @@ function buildContent() {
   html+='<div class="agenda-help">Selecione um atendimento para confirmar, reagendar, registrar chegada, abrir uma comanda ou cancelar. Alterações são registradas no banco e na auditoria.</div>';
   host.innerHTML=html;
 }
+/**
+ * Renderiza o shell da página de Agenda e seu estado inicial de carregamento.
+ * @returns {string} HTML da página administrativa.
+ */
 export function agenda() {
   return head('Agenda','Gerencie horários, atendimentos e disponibilidade dos profissionais.',btn('＋ Novo agendamento','new-appointment','primary'))+
 
@@ -102,19 +106,27 @@ export async function loadAgendaPage() {
       start=new Date(state.date.getFullYear(),state.date.getMonth(),1);
       end=new Date(state.date.getFullYear(),state.date.getMonth()+1,1);
     }
-    const [proResult,appointmentResult,blockResult]=await Promise.all([
-      supabase.from('professionals').select('id,name,color,active').eq('org_id',state.organization.id).eq('active',true).order('name'),
-      supabase.from('appointments').select('id,customer_id,professional_id,customer_name,customer_phone,service_id,service_name,professional_name,starts_at,ends_at,status,price,booking_source,created_by_name,notes,service_order_id,appointment_group_id,arrived_at').eq('org_id',state.organization.id).gte('starts_at',start.toISOString()).lt('starts_at',end.toISOString()).order('starts_at').limit(1000),
-      supabase.from('appointment_blocks').select('id,professional_id,starts_at,ends_at,reason').eq('org_id',state.organization.id).lt('starts_at',end.toISOString()).gt('ends_at',start.toISOString()).limit(500)
+    const branchId=state.branch?.id||null;
+    let professionalQuery=supabase.from('professionals').select('id,name,color,active,branch_id')
+      .eq('org_id',state.organization.id).eq('active',true);
+    let blockQuery=supabase.from('appointment_blocks').select('id,professional_id,starts_at,ends_at,reason')
+      .eq('org_id',state.organization.id).lt('starts_at',end.toISOString()).gt('ends_at',start.toISOString());
+    if(branchId) {
+      professionalQuery=professionalQuery.eq('branch_id',branchId);
+      blockQuery=blockQuery.eq('branch_id',branchId);
+    }
+    const [proResult,appointmentRows,blockResult]=await Promise.all([
+      professionalQuery.order('name'),
+      listAppointments({client:supabase,orgId:state.organization.id,branchId,startAt:start.toISOString(),endAt:end.toISOString()}),
+      blockQuery.limit(500)
     ]);
     if(proResult.error)throw proResult.error;
-    if(appointmentResult.error)throw appointmentResult.error;
     if(blockResult.error)throw blockResult.error;
     const dbProfessionals=proResult.data||[];
     state.agendaProfessionals=dbProfessionals.map(p=>[initials(p.name||'?'),p.name,'Profissional',p.id]);
     if(!state.agendaProfessionals.length){state.agendaAppointments=[];state.dbBlockedTimes=[];buildContent();return;}
     const indexById=new Map(dbProfessionals.map((p,i)=>[p.id,i]));
-    state.agendaAppointments=(appointmentResult.data||[]).filter(a=>indexById.has(a.professional_id)).map(a=>toCalendarAppointment(a,indexById.get(a.professional_id)));
+    state.agendaAppointments=(appointmentRows||[]).filter(a=>indexById.has(a.professional_id)).map(a=>toCalendarAppointment(a,indexById.get(a.professional_id)));
     state.dbBlockedTimes=(blockResult.data||[]).flatMap(b=>{
       const startDate=asLocalDateTime(b.starts_at),endDate=asLocalDateTime(b.ends_at);
       const indices=b.professional_id?[indexById.get(b.professional_id)].filter(i=>i!==undefined):dbProfessionals.map((_,i)=>i);
@@ -127,5 +139,14 @@ export async function loadAgendaPage() {
 '</small></div>';
   }
 }
+/**
+ * Atualiza somente o conteúdo visual da agenda usando o estado já carregado.
+ * @returns {void} Recompõe filtros, resumo e calendário sem nova consulta.
+ */
 export function refreshAgendaContent(){buildContent();}
+/**
+ * Localiza no estado em memória a representação visual de um agendamento.
+ * @param {string|number} id Identificador do agendamento.
+ * @returns {object|null} Agendamento encontrado ou null.
+ */
 export function findAppointmentView(id){return (state.agendaAppointments||[]).find(a=>String(a.id)===String(id))||null;}

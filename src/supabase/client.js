@@ -9,6 +9,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'pkce',
+    // Passkeys são experimentais no Supabase Auth; habilita a API do app cliente.
+    experimental: { passkey: true }
   }
 });

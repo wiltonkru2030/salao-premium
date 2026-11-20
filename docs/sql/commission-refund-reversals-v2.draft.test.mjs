@@ -1,0 +1,19 @@
+/** Contrato estático da candidata v2 de estornos; sem execução no PostgreSQL. */
+import assert from "node:assert/strict";
+import {readFile} from "node:fs/promises";
+const sql=(await readFile(new URL("./commission-refund-reversals-v2.draft.sql",import.meta.url),"utf8")).toLowerCase();
+assert.match(sql,/foreign key \(org_id,reversal_of_commission_id\)/);
+assert.match(sql,/create unique index if not exists commissions_reversal_source_unique/);
+assert.match(sql,/create or replace function private\.cancel_service_order/);
+assert.match(sql,/create or replace function private\.refund_service_order/);
+assert.match(sql,/create or replace function private\.pay_professional_commissions/);
+assert.match(sql,/c\.status='paid' and c\.amount>0 and c\.reversal_of_commission_id is null/);
+assert.match(sql,/on conflict \(reversal_of_commission_id\) where reversal_of_commission_id is not null do nothing/);
+assert.match(sql,/order by p\.id for update of p/);
+assert.match(sql,/v_locked_ids:=array_append\(v_locked_ids,v_comm\.id\)/);
+assert.match(sql,/id=any\(v_locked_ids\)/);
+assert.match(sql,/if v_amount<=0 then/);
+assert.match(sql,/revoke all on function private\.reverse_refunded_order_commissions\(uuid\) from public,anon,authenticated/);
+assert.doesNotMatch(sql,/create or replace function public\./);
+assert.equal((sql.match(/v_reversed:=private\.reverse_refunded_order_commissions/g)||[]).length,2);
+console.log("Contrato de estornos v2: OK (sem integração).");

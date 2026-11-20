@@ -3,6 +3,25 @@ import { supabase } from "../src/supabase/client.js";
 import { mountAutocomplete } from "../src/components/autocomplete.js";
 import { installGlobalErrorHandlers, reportError } from "../src/utils/errors.js";
 import { installGlobalMasks } from "../src/utils/input-masks.js";
+import {
+  escapeHtml as esc,
+  formatMoney as money,
+  toDateKey as dateKey,
+  formatMonthLabel as monthLabel,
+  formatDateLabel as dateLabel,
+  formatTime as timeLabel,
+  formatDateTime as dateTimeLabel,
+  formatBookingSource as sourceLabel,
+  formatStatus as statusLabel,
+  getAppointmentClass as appointmentClass
+} from "./utils/formatters.js";
+import { renderProfessionalPasswordChangeView, renderProfessionalLoginView } from "./views/auth.views.js";
+import { renderAgendaView } from "./views/agenda.views.js";
+import { handleAgendaClick } from "./agenda.controller.js";
+import { fetchProfessionalAppointments } from "./appointments.service.js";
+import { fetchProfessionalOrders, fetchProfessionalOrderItems } from "./orders.service.js";
+import { addProfessionalServiceToOrder } from "./order-items.service.js";
+import { fetchProfessionalCommissions } from "./commissions.service.js";
 
 // Aplicação PWA do profissional: autenticação, navegação, Agenda, Comandas e Comissões.
 installGlobalErrorHandlers();
@@ -16,29 +35,16 @@ const state={
  commissions:[],commissionPayouts:[],selectedOrder:null,orderItems:[],notice:""
 };
 let disposeAutocomplete=null;
-const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-const dateKey=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
-const monthLabel=d=>d.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
-const dateLabel=d=>d.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"});
-const timeLabel=v=>new Date(v).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
-const dateTimeLabel=v=>new Date(v).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
-const sourceLabel=v=>({customer:"Cliente",salon:"Salão",professional:"Profissional"})[v]||"Salão";
-const statusLabel=v=>({scheduled:"Agendado",confirmed:"Confirmado",arrived:"Cliente chegou",in_progress:"Em atendimento",completed:"Finalizado",cancelled:"Cancelado",no_show:"Falta",open:"Aberta",awaiting_payment:"Aguardando pagamento",partially_paid:"Pagamento parcial",closed:"Finalizada"})[v]||v||"—";
+// Formatadores puros são mantidos em professional/utils/formatters.js.
 function showNotice(message){state.notice=message;render();}
 function clearAutocomplete(){disposeAutocomplete?.();disposeAutocomplete=null;}
-// Renderiza a tela de autenticação do profissional.
+// Views de autenticação ficam isoladas do controlador principal do PWA.
 function loginView(){
  clearAutocomplete();
- root.innerHTML='<main class="login"><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Bem-vindo(a)</h1><p>Profissionais entram com CPF e senha. Proprietários e usuários autorizados podem usar o e-mail.</p>'+
- (state.notice?'<div class="notice">'+esc(state.notice)+'</div>':'')+
- '<form id="professional-login"><label class="field">CPF ou e-mail<input name="login" autocomplete="username" placeholder="000.000.000-00 ou e-mail" required></label><label class="field">Senha<input name="password" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Entrar</button></form><p class="muted">A recuperação de senha é feita somente pelo administrador do salão.</p></main>';
+ root.innerHTML=renderProfessionalLoginView(state.notice);
 }
-// Renderiza a troca obrigatória de senha temporária.
 function changePasswordView(){
- root.innerHTML='<main class="login"><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Crie sua nova senha</h1><p>Altere a senha temporária para proteger seu acesso.</p>'+
- (state.notice?'<div class="notice">'+esc(state.notice)+'</div>':'')+
- '<form id="professional-password-change"><label class="field">Nova senha<input name="password" type="password" minlength="10" autocomplete="new-password" required></label><label class="field">Confirmar senha<input name="confirm" type="password" minlength="10" autocomplete="new-password" required></label><button class="primary" type="submit">Salvar nova senha</button></form></main>';
+ root.innerHTML=renderProfessionalPasswordChangeView(state.notice);
 }
 // Monta cabeçalho, conteúdo e navegação principal do PWA.
 function shell(content){
@@ -47,12 +53,6 @@ function shell(content){
  root.innerHTML='<div class="app-shell"><header class="top"><div><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Olá, '+esc(greeting.split(" ")[0])+'</h1></div><button class="icon-button" data-action="logout" aria-label="Sair">↪</button></header>'+
  '<main class="content">'+(state.notice?'<div class="notice">'+esc(state.notice)+'</div>':'')+content+'</main>'+
  '<nav class="nav">'+links.map(([label,icon])=>'<button data-page="'+label+'" class="'+(state.page===label?"active":"")+'"><span>'+icon+'</span>'+label+'</button>').join("")+'</nav></div>';
-}
-function appointmentClass(a){
- if(a.status==="in_progress")return "progress";
- if(a.status==="completed"||a.status==="confirmed")return "success";
- if(a.status==="cancelled"||a.status==="no_show")return "released";
- return "scheduled";
 }
 function appointmentCard(a){
  const duration=Math.max(0,Math.round((new Date(a.ends_at)-new Date(a.starts_at))/60000));
@@ -78,24 +78,9 @@ function appointmentDetails(){
  '<div class="detail-row"><span>Observações</span><b>'+esc(a.notes||"—")+'</b></div></section>';
 }
 // Apresenta calendário mensal e lista de agendamentos do profissional.
+// Delega a composição visual da agenda para uma view sem efeitos colaterais.
 function agendaView(){
- const year=state.month.getFullYear(),month=state.month.getMonth(),first=new Date(year,month,1),offset=first.getDay(),days=new Date(year,month+1,0).getDate(),prevDays=new Date(year,month,0).getDate();
- const marks=new Set(state.appointments.map(a=>dateKey(new Date(a.starts_at))));
- const cells=[];
- for(let i=0;i<42;i++){
-  let d,inside=true;
-  if(i<offset){d=new Date(year,month-1,prevDays-offset+i+1);inside=false;}
-  else if(i>=offset+days){d=new Date(year,month+1,i-offset-days+1);inside=false;}
-  else d=new Date(year,month,i-offset+1);
-  const key=dateKey(d),classes=[inside?"":"outside",key===dateKey(state.selectedDate)?"selected":"",key===dateKey(new Date())?"today":""].join(" ");
-  cells.push('<button class="day '+classes+'" data-date="'+key+'">'+d.getDate()+(marks.has(key)?'<i class="dot"></i>':'')+'</button>');
- }
- const selected=state.appointments.filter(a=>dateKey(new Date(a.starts_at))===dateKey(state.selectedDate)).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at));
- return '<div class="section-title"><h2>Agenda mensal</h2><span class="muted">'+(state.scope==="calendar_all"||state.scope==="all"?"Agenda completa autorizada":"Somente sua agenda")+'</span></div>'+
- '<div class="calendar-head"><button data-action="prev-month">‹</button><strong>'+esc(monthLabel(state.month))+'</strong><button data-action="next-month">›</button></div>'+
- '<div class="calendar">'+["D","S","T","Q","Q","S","S"].map(d=>'<div class="weekday">'+d+'</div>').join("")+cells.join("")+'</div>'+
- '<div class="section-title section-title--tight-spaced"><h2>'+esc(dateLabel(state.selectedDate))+'</h2><span class="muted">'+selected.length+' agendamento(s)</span></div>'+
- (selected.length?selected.map(appointmentCard).join(""):'<div class="empty">Nenhum agendamento neste dia.</div>')+appointmentDetails();
+ return renderAgendaView({state,dateKey,monthLabel,dateLabel,appointmentCard,appointmentDetails});
 }
 // Apresenta comandas autorizadas e seus detalhes.
 function ordersView(){
@@ -173,16 +158,16 @@ async function loadBase(){
 }
 // Carrega somente agendamentos permitidos pelo escopo profissional.
 async function loadAppointments(){
- const start=new Date(state.month.getFullYear(),state.month.getMonth(),1),end=new Date(state.month.getFullYear(),state.month.getMonth()+1,1);
- const {data,error}=await supabase.from("appointments")
-  .select("id,starts_at,ends_at,customer_name,customer_phone,service_name,professional_name,status,price,booking_source,created_by_name,notes,professional_id")
-  .eq("org_id",state.orgId).gte("starts_at",start.toISOString()).lt("starts_at",end.toISOString()).order("starts_at").limit(1000);
- if(error)throw error;state.appointments=data||[];
+ const appointments=await fetchProfessionalAppointments({
+  client:supabase,
+  organizationId:state.orgId,
+  month:state.month
+ });
+ state.appointments=appointments;
 }
 // Carrega comandas visíveis ao usuário autenticado.
 async function loadOrders(){
- const {data,error}=await supabase.from("service_orders").select("id,order_number,status,total,assigned_professional_id,customer_id").eq("org_id",state.orgId).order("created_at",{ascending:false}).limit(100);
- if(error)throw error;state.orders=data||[];
+ state.orders=await fetchProfessionalOrders({client:supabase,organizationId:state.orgId});
 }
 async function loadServices(){
  let query=supabase.from("services").select("id,name,category,duration_minutes,price").eq("org_id",state.orgId).eq("active",true).order("name").limit(250);
@@ -198,22 +183,18 @@ async function loadServices(){
 }
 // Carrega comissões e pagamentos do profissional autenticado.
 async function loadCommissions(){
- const [commissionResult,payoutResult]=await Promise.all([
-  supabase.from("commissions").select("id,base_amount,rate,amount,status,paid_at,created_at,professional_id,payout_id")
-   .eq("org_id",state.orgId).order("created_at",{ascending:false}).limit(250),
-  supabase.from("commission_payouts").select("id,professional_id,amount,payment_method,paid_at,notes")
-   .eq("org_id",state.orgId).order("paid_at",{ascending:false}).limit(250)
- ]);
- if(commissionResult.error)throw commissionResult.error;
- if(payoutResult.error)throw payoutResult.error;
- state.commissions=commissionResult.data||[];
- state.commissionPayouts=payoutResult.data||[];
+ const result=await fetchProfessionalCommissions({
+  client:supabase,organizationId:state.orgId,professionalId:state.professional?.id
+ });
+ state.commissions=result.commissions;
+ state.commissionPayouts=result.payouts;
 }
 async function loadOrderItems(){
  if(!state.selectedOrder)return;
- const {data,error}=await supabase.from("service_order_items").select("id,item_type,description,quantity,unit_price,total,professional_id,performed_at")
-  .eq("org_id",state.orgId).eq("order_id",state.selectedOrder.id).order("created_at");
- if(error)throw error;state.orderItems=data||[];render();
+ state.orderItems=await fetchProfessionalOrderItems({
+  client:supabase,organizationId:state.orgId,orderId:state.selectedOrder.id
+ });
+ render();
 }
 async function chooseOrder(id){
  state.selectedOrder=state.orders.find(o=>o.id===id)||null;state.orderItems=[];render();await loadOrderItems();
@@ -228,35 +209,37 @@ function bindAutocomplete(){
   onSelect:item=>{selected=item;button.disabled=!item;}
  });
  button.addEventListener("click",async()=>{
-  if(!selected||!state.selectedOrder||!state.professional)return;
+  if(!selected||!state.selectedOrder||!state.professional||!state.user)return;
+  const orderId=state.selectedOrder.id;
+  const service=selected;
   button.disabled=true;button.textContent="Registrando…";
-  const price=Number(selected.price||0);
-  const {error}=await supabase.from("service_order_items").insert({
-   org_id:state.orgId,order_id:state.selectedOrder.id,item_type:"service",service_id:selected.id,
-   professional_id:state.professional.id,description:selected.name,quantity:1,unit_price:price,total:price,
-   performed_at:new Date().toISOString(),created_by:state.user.id
-  });
-  if(error){reportError(error,{context:"App Profissional > registrar serviço realizado"});button.disabled=false;button.textContent="Registrar serviço";showNotice("Não foi possível registrar o serviço. Tente novamente.");return;}
-  await loadOrders();await chooseOrder(state.selectedOrder.id);showNotice("Serviço registrado na comanda.");
+  try{
+   await addProfessionalServiceToOrder({
+    client:supabase,organizationId:state.orgId,orderId,service,
+    professionalId:state.professional.id,userId:state.user.id
+   });
+   await loadOrders();await chooseOrder(orderId);
+   showNotice("Serviço registrado na comanda.");
+  }catch(error){
+   reportError(error,{context:"App Profissional > registrar serviço realizado"});
+   showNotice(error?.message||"Não foi possível registrar o serviço. Tente novamente.");
+  }finally{
+   // Garante que o botão não permaneça travado após falhas de gravação ou atualização.
+   button.disabled=!selected;
+   button.textContent="Registrar serviço";
+  }
  });
 }
 root.addEventListener("click",async event=>{
  try{
- const page=event.target.closest("[data-page]");
+  // O controlador especializado consome eventos da Agenda antes das ações gerais.
+  if(await handleAgendaClick({event,state,loadAppointments,render}))return;
+  const page=event.target.closest("[data-page]");
  if(page){state.page=page.dataset.page;state.selectedOrder=null;state.selectedAppointment=null;state.notice="";render();return;}
- const date=event.target.closest("[data-date]");
- if(date){
-  const next=new Date(date.dataset.date+"T12:00:00"),changed=next.getMonth()!==state.month.getMonth()||next.getFullYear()!==state.month.getFullYear();
-  state.selectedDate=next;if(changed){state.month=new Date(next.getFullYear(),next.getMonth(),1);await loadAppointments();}render();return;
- }
- const appointment=event.target.closest("[data-appointment]");
- if(appointment){state.selectedAppointment=state.appointments.find(a=>a.id===appointment.dataset.appointment)||null;render();return;}
  const order=event.target.closest("[data-order]");
  if(order){await chooseOrder(order.dataset.order);return;}
  const action=event.target.closest("[data-action]")?.dataset.action;
- if(action==="prev-month"||action==="next-month"){state.month=new Date(state.month.getFullYear(),state.month.getMonth()+(action==="next-month"?1:-1),1);state.selectedDate=new Date(state.month.getFullYear(),state.month.getMonth(),1);await loadAppointments();render();}
  if(action==="back-orders"){state.selectedOrder=null;state.orderItems=[];render();}
- if(action==="close-appointment"){state.selectedAppointment=null;render();}
  if(action==="logout"){await supabase.auth.signOut();state.user=null;state.professional=null;loginView();}
  if(action==="save-profile"){
   const name=String(document.querySelector("#profile-name")?.value||"").trim(),phone=String(document.querySelector("#profile-phone")?.value||"").trim();

@@ -5,7 +5,7 @@ import { state } from '../state.js';
 
 import { $, esc } from '../utils.js';
 
-import { dashboard } from '../pages/dashboard.js';
+import { dashboard, loadDashboard } from '../pages/dashboard.js';
 
 import { agenda } from '../pages/agenda.js';
 import { loadAgendaPage } from '../agenda/pages/agenda-page.js';
@@ -15,27 +15,39 @@ import { customersPage, loadCustomersPage } from '../pages/customers.js';
 import { professionalsPage, loadProfessionalsPage } from '../pages/professionals.js';
 import { comandaPage, loadComandaPage } from '../pages/comanda.js';
 import { quotesPage, loadQuotesPage } from '../pages/quotes.js';
+import { couponsPage, loadCouponsPage } from '../pages/coupons.js';
 import { servicesPage, loadServicesPage } from '../pages/services.js';
 import { productsPage, loadProductsPage } from '../pages/products.js';
-import { salesPage } from '../pages/sales.js';
+import { categoriesPage, loadCategoriesPage } from '../pages/categories.js';
+import { salesPage, loadSalesPage } from '../pages/sales.js';
 import { cashPage, loadCashPage } from '../pages/cash.js';
-import { financePage } from '../pages/finance.js';
+import { financePage, loadFinancePage } from '../pages/finance.js';
+import { expensesPage, loadExpensesPage } from '../pages/expenses.js';
 import { commissionsPage, loadCommissionsPage } from '../pages/commissions.js';
-import { reportsPage } from '../pages/reports.js';
-import { branchesPage } from '../pages/branches.js';
+import { reportsPage, loadReportsPage, bindReportsPage } from '../pages/reports.js';
+import { branchesPage, loadBranchesPage } from '../pages/branches.js';
 import { teamPage, loadTeamPage } from '../pages/team.js';
 import { recycleBinPage, loadRecycleBinPage } from '../pages/recycle-bin.js';
 
-import { settings } from '../pages/settings.js';
+import { settings, loadSettingsPage } from '../pages/settings.js';
 
 import { renderDrawer } from '../components/drawer.js';
 
+/** Módulos disponíveis no App Profissional; o banco continua impondo as permissões reais via RLS/RPC. */
+const PROFESSIONAL_APP_PAGES = new Set(["Agenda", "Comanda", "Comissões", "Configurações"]);
+
+/** Impede que o perfil profissional navegue para módulos administrativos pela interface. */
+function canOpenCurrentPage(page) {
+  return state.membership?.role !== "professional" || PROFESSIONAL_APP_PAGES.has(page);
+}
+
 /**
- * Gera a navegação a partir dos grupos de menu configurados.
- * @returns {string} HTML dos itens de navegação.
+ * Gera a navegação a partir dos grupos de menu e filtra módulos pelo perfil ativo.
+ * @returns {string} HTML dos itens de navegação autorizados para a interface.
  */
 function renderNavigation() {
-  return groups.map(group => {
+  const visibleGroups = groups.map(([label, ...items]) => [label, ...items.filter(item => canOpenCurrentPage(item))]).filter(group => group.length > 1);
+  return visibleGroups.map(group => {
     const [label, ...items] = group;
     const buttons = items.map(item => `
       <button title="${esc(item)}" aria-label="${esc(item)}"
@@ -52,11 +64,14 @@ const pageViews = {
   Profissionais: professionalsPage,
   Comanda: comandaPage,
   Orçamentos: quotesPage,
+  Cupons: couponsPage,
   Serviços: servicesPage,
   "Produtos e estoque": productsPage,
+  Categorias: categoriesPage,
   Vendas: salesPage,
   Caixa: cashPage,
   Financeiro: financePage,
+  Despesas: expensesPage,
   Comissões: commissionsPage,
   Relatórios: reportsPage,
   Unidades: branchesPage,
@@ -66,6 +81,7 @@ const pageViews = {
 
 /** Resolve a função de página para a rota atual sem carregar dados demonstrativos. */
 function renderCurrentPage() {
+  if (!canOpenCurrentPage(state.page)) state.page = "Agenda";
   if (state.page === "Dashboard") return dashboard();
   if (state.page === "Agenda") return agenda();
   if (state.page === "Configurações") return settings();
@@ -81,6 +97,23 @@ function renderTenantControl() {
   return '<label class="tenant-switcher"><span>Organização</span><select id="tenant-switcher" aria-label="Trocar organização">' +
     organizations.map(org => '<option value="' + esc(org.id) + '" ' +
       (org.id === state.organization?.id ? "selected" : "") + '>' + esc(org.name) + '</option>').join("") +
+    '</select></label>';
+}
+
+/** Seletor de unidade física; a organização continua sendo o limite principal do tenant. */
+function renderBranchControl() {
+  const branches=state.availableBranches||[];
+  if(state.membership?.role==="professional") {
+    return '<span class="unit-indicator">'+esc(state.branch?.name||"Unidade não vinculada")+'</span>';
+  }
+  if(!branches.length)return "";
+  if(branches.length===1) {
+    return '<span class="unit-indicator">'+esc(branches[0].name)+'</span>';
+  }
+  return '<label class="branch-switcher"><span>Unidade</span><select id="branch-switcher" aria-label="Trocar unidade">'+
+    '<option value="__all__" '+(state.branch?.isAll?"selected":"")+'>Todas as unidades</option>'+
+    branches.map(branch=>'<option value="'+esc(branch.id)+'" '+(branch.id===state.branch?.id&&!state.branch?.isAll?"selected":"")+'>'+
+      esc(branch.name)+(branch.is_main?" · Matriz":"")+'</option>').join("")+
     '</select></label>';
 }
 
@@ -109,6 +142,7 @@ function renderApplicationShell(navigation, content) {
         </div>
         <div class="topbar-right">
           ${renderTenantControl()}
+          ${renderBranchControl()}
           <button class="icon-btn notification-btn" data-action="notifications" aria-label="Notificações">♧</button>
           <button class="icon-btn" data-action="sign-out" aria-label="Sair da conta" title="Sair da conta">↪</button>
         </div>
@@ -121,17 +155,26 @@ function renderApplicationShell(navigation, content) {
 /** Aciona somente o carregador do módulo que está visível na rota atual. */
 function loadCurrentPageData() {
   const loaders = {
+    Dashboard: loadDashboard,
     Agenda: loadAgendaPage,
     Profissionais: loadProfessionalsPage,
     Comanda: loadComandaPage,
     Orçamentos: loadQuotesPage,
+    Cupons: loadCouponsPage,
     Caixa: loadCashPage,
+    Financeiro: loadFinancePage,
+    Despesas: loadExpensesPage,
     Clientes: loadCustomersPage,
     Serviços: loadServicesPage,
     "Produtos e estoque": loadProductsPage,
+    Categorias: loadCategoriesPage,
+    Vendas: loadSalesPage,
     Recuperar: loadRecycleBinPage,
     Comissões: loadCommissionsPage,
-    "Equipe e permissões": loadTeamPage
+    Relatórios: () => { bindReportsPage(); loadReportsPage(); },
+    "Equipe e permissões": loadTeamPage,
+    Unidades: loadBranchesPage,
+    Configurações: loadSettingsPage
   };
   loaders[state.page]?.();
 }
@@ -158,6 +201,10 @@ export function render() {
 
 /** Troca a rota e limpa filtros, menu móvel e drawer antes de renderizar a página nova. */
 export function changePage(page) {
+  if (!canOpenCurrentPage(page)) {
+    state.page = "Agenda";
+    return render();
+  }
   state.page = page;
   state.query = "";
   state.mobileMenu = false;

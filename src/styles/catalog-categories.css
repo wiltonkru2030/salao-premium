@@ -1,0 +1,7 @@
+/**
+ * Estilos da gestão de categorias do catálogo.
+ * Responsabilidade: manter abas e estados consistentes com o design system global.
+ */
+.category-tabs{display:flex;gap:8px;margin:16px 0}
+.category-tabs button{border:1px solid var(--sp-line);background:#fff;color:var(--sp-text);border-radius:10px;padding:9px 16px;font:inherit;cursor:pointer}
+.category-tabs button.active{border-color:var(--sp-gold);background:var(--sp-surface);font-weight:600}

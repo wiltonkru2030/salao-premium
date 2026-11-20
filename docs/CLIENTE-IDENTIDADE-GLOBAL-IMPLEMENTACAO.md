@@ -1,0 +1,372 @@
+# Implementação da identidade global — plano de banco
+
+## Schema inspecionado
+- organizations.id e organizations.slug existem.
+- customers possui PK id, UNIQUE(org_id,id) e FK de branch composta.
+- appointments referencia customers por organização.
+- private.has_org_role(uuid,text[]) e private.is_org_member(uuid) existem e são SECURITY DEFINER com search_path vazio; são helpers de equipe, não substituem membership de cliente.
+- As tabelas customer_profiles, customer_tenant_memberships e customer_account_customers ainda não existem no banco inspecionado.
+
+## Arquivos
+- docs/sql/customer-global-identity-schema.sql: desenho inicial de DDL/RLS, não é migration oficial e não deve ser executado em produção.
+- docs/sql/customer-global-identity-functions.draft.sql: rascunho da RPC de associação assistida de cadastro legado, sem aplicação no banco.
+- tests/integration/customer-global-identity-rls.test.mjs: testes de leitura cruzada, bloqueio de escrita direta e associação autorizada com tokens de QA.
+
+## Regras de segurança do desenho
+- Perfil global por auth_user_id.
+- Membership único por organização e identidade global.
+- Associação legado protegida por FK composta (org_id, customer_id) e (org_id, auth_user_id).
+- A cliente pode ler somente seu próprio perfil, memberships e associações.
+- A cliente pode criar/atualizar somente campos de perfil permitidos; não pode escrever phone_verified_at.
+- Não há escrita direta para membership ou mapeamento legado.
+- O fluxo de onboarding e associação deverá ser feito por backend privilegiado, com autenticação, validação do tenant, auditoria e idempotência.
+- Nenhuma permissão para appointments, comandas, créditos ou pagamentos é concedida aqui.
+
+## Pendências antes da migration oficial
+1. Criar membership dentro da mesma transação que cria o HOLD/reserva, após validar identidade, organização, filial e disponibilidade; não criar membership apenas por abrir link público.
+2. Implementar e revisar a RPC privada de associação de cadastro legado, restrita a owner/admin do mesmo tenant, com auditoria e idempotência.
+3. Revisar grants, schema private e auditoria em ambiente local/staging.
+4. Executar a migration aprovada em staging e preservar os 17 cadastros operacionais existentes.
+5. Rodar testes com duas contas e duas organizações, incluindo tentativas de escrita cruzada e associação duplicada.
+6. Executar Security Advisors e revisar os alertas existentes.
+7. Gerar migration oficial usando Supabase CLI em ambiente local; o CLI não está disponível neste ambiente de edição.
+8. Não aplicar no banco de produção sem autorização explícita.
+
+## Auditoria somente leitura — 20/11/2026
+
+A estrutura atual do banco foi conferida por consulta somente leitura. Resultado:
+
+- `organizations.id` é UUID; `organizations.slug` é texto e possui restrição UNIQUE.
+- `customers.id` e `customers.org_id` são UUID.
+- Existe a restrição UNIQUE `customers_org_id_id_key` em `(org_id, id)`, necessária para a FK composta do vínculo legado.
+- `customers` já possui FK para `organizations` e FK composta para `branches`.
+- O schema `private` existe.
+- Os helpers `private.has_org_role(uuid, text[])` e `private.is_org_member(uuid)` existem, são SECURITY DEFINER e usam `search_path = ''`. Eles autorizam equipe do salão e não devem ser reutilizados como prova de membership da cliente.
+- As três tabelas globais propostas ainda não existem no banco consultado.
+- Nenhuma alteração foi aplicada no Supabase nesta auditoria.
+
+### Decisões de implementação confirmadas
+
+1. Manter `customer_profiles` global por `auth_user_id`, sem coluna `org_id`.
+2. Manter membership por `(org_id, auth_user_id)`.
+3. Manter a associação de legado com FK composta, impedindo que um registro de cliente de uma organização seja vinculado a outra.
+4. Não permitir que o navegador crie membership nem associação a cadastro legado.
+5. Não permitir que a cliente atualize `phone_verified_at`; alterar o telefone não significa comprovar posse.
+6. Não conceder acesso direto global a agendamentos, comandas, pacotes, créditos ou pagamentos.
+
+### Pendências técnicas antes de criar migration oficial
+
+- Definir o evento de criação do membership: deve ocorrer no fluxo autenticado de primeira reserva ou em convite explícito, com idempotência. Não criar membership só por abrir uma página pública.
+- Implementar o fluxo de reserva e a criação do membership em operação backend transacional, validando organização ativa, filial, serviço e identidade autenticada.
+- Implementar associação de cadastro legado somente após confirmação explícita/auditada por equipe autorizada ou revisão de titularidade; telefone coincidente não basta.
+- Validar grants de execução e uso do schema privado para a função de trigger em ambiente local/staging.
+- O teste de integração RLS atual é de leitura e exige duas sessões reais de QA. Sem as variáveis de QA, ele encerra como ignorado; isso não conta como aprovação de isolamento.
+- Ampliar os testes em staging para tentativas de escrita proibidas e isolamento de dados operacionais, com limpeza segura dos registros de teste.
+
+**Status:** modelo lógico compatível com as chaves e tipos encontrados, mas ainda não está pronto para produção. A migration permanece como rascunho e depende dos fluxos backend e da validação RLS real.
+
+## Testes de segurança ampliados — 20/11/2026
+
+O teste `tests/integration/customer-global-identity-rls.test.mjs` foi ampliado para validar, com tokens de duas sessões reais:
+
+- leitura do próprio perfil e ausência de leitura do perfil alheio;
+- leitura apenas dos próprios memberships e associações legadas;
+- bloqueio de criação direta de membership pelo navegador;
+- bloqueio de criação direta de associação a cadastro legado;
+- bloqueio de alteração de `phone_verified_at` pela própria cliente.
+
+A execução continua condicionada a um projeto Supabase de QA com as variáveis documentadas no cabeçalho do teste. Se o ambiente não estiver configurado, o script informa que foi ignorado; esse resultado não é aprovação de segurança.
+
+### Fluxo backend definido para a próxima implementação
+
+A criação de membership não será exposta como endpoint genérico que aceite apenas `org_id`. Isso permitiria que uma conta se vinculasse arbitrariamente a qualquer salão.
+
+O membership deverá ser criado dentro da mesma transação que cria um HOLD/reserva válida, após o backend confirmar:
+- sessão autenticada e titularidade via `auth.uid()`;
+- organização e filial ativas e pertencentes entre si;
+- serviços públicos ativos e disponíveis naquela filial;
+- regras de agenda, duração, profissional e conflito;
+- criação efetiva do HOLD com expiração e chave de idempotência.
+
+A associação com `customers` legado continua fora desse fluxo. Ela exigirá confirmação de titularidade separada, auditada e sem correspondência automática por telefone.
+
+**Status atualizado:** os testes negativos foram adicionados ao repositório, mas ainda precisam ser executados com duas sessões reais de QA. O endpoint/RPC de reserva ainda não existe e o banco de produção não foi alterado.
+
+
+## Atualização de implementação — associação assistida
+
+Foi adicionado `docs/sql/customer-global-identity-functions.draft.sql` com o desenho de uma RPC para associar um cadastro operacional legado à identidade global.
+
+A função proposta:
+- usa `auth.uid()` para identificar o operador autenticado;
+- exige papel owner/admin ativo na mesma organização;
+- confirma que o cadastro operacional pertence ao `org_id` informado;
+- confirma que a identidade de destino existe no Supabase Auth;
+- impede que uma identidade seja associada a dois cadastros ou que um cadastro pertença a duas identidades;
+- cria/ativa o membership de origem `legacy_link`, sem reativar vínculo suspenso;
+- registra a associação em `audit_logs`, sem copiar telefone, e-mail ou outros dados pessoais;
+- retorna o mesmo resultado em repetição da associação já confirmada;
+- expõe somente um wrapper `SECURITY INVOKER`; a lógica privilegiada permanece em `private` com `search_path` vazio.
+
+**Importante:** o membership de uma cliente que está iniciando uma reserva não será criado por um endpoint independente de slug. Ele deverá ser criado dentro da mesma transação do HOLD/reserva, depois da validação de todos os dados e regras de disponibilidade.
+
+O teste de integração foi ampliado para cobrir leitura cruzada, escrita direta proibida, proteção de `phone_verified_at`, associação repetida e tentativas de associação entre organizações. Os cenários que exigem tokens de owner e IDs operacionais de QA só são executados quando as variáveis adicionais estão configuradas.
+
+**Estado desta etapa:** arquivos de especificação e testes atualizados na branch de trabalho. Nenhuma migration foi aplicada, nenhuma tabela foi criada e nenhum dado de produção foi alterado. A migration oficial continua pendente porque o Supabase CLI não está disponível neste ambiente e os testes exigem um projeto de QA isolado.
+
+## Auditoria complementar de permissões e compatibilidade — 20/11/2026
+
+Consulta somente leitura realizada no projeto Supabase conectado:
+
+### Estado real do banco
+- A consulta a `information_schema.tables` confirmou que `customer_profiles`, `customer_tenant_memberships` e `customer_account_customers` ainda não existem. O modelo global continua apenas no repositório, sem migration aplicada.
+- `org_memberships` contém `org_id`, `user_id`, `role` e `status`; o helper `private.has_org_role(uuid,text[])` valida usuário da sessão, organização, status ativo e papel permitido.
+- `audit_logs` possui as colunas usadas no rascunho da associação: `org_id`, `actor_id`, `action`, `entity_type`, `entity_id`, `metadata` e `created_at`.
+- O papel `authenticated` possui USAGE no schema `private` e EXECUTE no helper `private.has_org_role`. Isso confirma compatibilidade de resolução da chamada no contexto atual, mas não substitui o teste da função final em QA.
+- `audit_logs` tem política de SELECT para owner/admin/manager. A consulta de políticas não encontrou política de INSERT para authenticated; a inserção de auditoria do rascunho depende, portanto, do contexto privilegiado da função SECURITY DEFINER e deve ser validada com teste real.
+
+### Security Advisors — estado observado
+A consulta Security Advisors retornou:
+- 16 avisos de funções SECURITY DEFINER no schema `public` executáveis por `authenticated`. São funções preexistentes do sistema; cada uma precisa de revisão individual de autorização e necessidade de exposição. Não revogar permissões em lote.
+- 1 aviso de proteção contra senhas vazadas desativada no Supabase Auth. Avaliar ativação nas configurações de Auth após validar impacto no fluxo de login.
+- Nenhum desses avisos foi alterado nesta etapa.
+
+Referência de remediação do aviso de funções: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable  
+Referência de remediação de senhas comprometidas: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+
+### Revisão de risco do rascunho de associação
+- A RPC exige owner/admin da organização da linha e usa `auth.uid()`; não usa metadados editáveis do usuário para autorização.
+- A FK composta protege o tenant do cadastro legado.
+- O rascunho registra a associação em `audit_logs` e é idempotente para repetição da mesma associação.
+- **Pendência de titularidade:** a ação `staff_confirmed` registra que um operador confirmou a associação, mas ainda não existe prova técnica de que a cliente confirmou que aquele cadastro legado é dela. Antes de liberar o fluxo, exigir confirmação explícita da cliente autenticada ou um processo assistido com evidência auditável e revisão humana. Telefone coincidente não é suficiente.
+- **Pendência de concorrência:** testar duas chamadas simultâneas tentando associar a mesma identidade ou o mesmo cadastro a destinos diferentes. As restrições UNIQUE protegem a integridade, mas o comportamento e a mensagem de conflito precisam ser verificados com duas sessões reais.
+- **Pendência de grants:** revisar privilégios efetivos da função privada e do wrapper público em staging; não conceder USAGE em schema privado nem EXECUTE em funções em bloco sem revisar o conjunto de objetos.
+
+### Conclusão
+O schema atual do projeto oferece os objetos operacionais necessários para construir o vínculo global, mas as três tabelas de identidade ainda não foram criadas. A especificação SQL está compatível em termos de tipos e colunas consultadas; a RPC não está validada por execução. Os avisos de segurança preexistentes permanecem abertos. Nenhuma alteração foi feita no banco e nenhum dado foi modificado.
+
+
+## Próxima etapa — confirmação explícita da titularidade
+
+Foi criado o rascunho `docs/sql/customer-identity-link-confirmation.draft.sql` para substituir o fluxo inseguro de associação imediata por um processo em duas etapas:
+
+1. Owner/admin solicita a associação de um cadastro legado a uma identidade Auth específica.
+2. A cliente entra autenticada nessa identidade e confirma a solicitação.
+3. Somente a confirmação autenticada efetiva, em uma transação, o membership e o mapeamento legado.
+4. A solicitação expira em 48 horas e não pode ser confirmada por outra identidade.
+5. A operação gera auditoria com IDs dos envolvidos, sem copiar dados pessoais.
+
+### Proteções incluídas no desenho
+- Tabela auxiliar sem acesso direto para anon ou authenticated.
+- RPC de solicitação valida papel owner/admin e pertencimento do cadastro à organização.
+- RPC de confirmação exige que auth.uid() seja exatamente a identidade destinatária.
+- Solicitação expirada, inexistente ou destinada a outra conta é recusada.
+- Membership suspenso não é reativado automaticamente.
+- Restrições únicas do modelo global continuam impedindo associação duplicada ou cruzada.
+
+### Limitações e validações pendentes
+- O arquivo é rascunho SQL, não migration oficial; não foi executado.
+- Ainda precisa ser validado em Supabase local/staging, inclusive grants do schema privado, comportamento de concorrência, política de expiração e integração com a interface da cliente.
+- O rascunho anterior customer-global-identity-functions.draft.sql representa o fluxo de associação imediata e não deve ser executado até ser substituído/revisado por este fluxo de confirmação.
+- A interface para listar e confirmar solicitações ainda não foi implementada.
+- Nenhuma tabela foi criada no projeto Supabase e nenhum dado de produção foi alterado.
+
+**Decisão de segurança:** funcionário não pode declarar sozinho que um cadastro pertence à cliente. O sistema precisa da confirmação autenticada da própria identidade global.
+
+
+Complemento do fluxo: o rascunho também define `get_my_pending_customer_link_requests()`, que retorna somente solicitações pendentes destinadas ao `auth.uid()` da sessão. Isso permite que o aplicativo da cliente apresente a confirmação sem expor a tabela auxiliar nem permitir leitura cruzada. A consulta e a confirmação ainda dependem de validação em QA.
+
+
+## Migration versionada — 20/11/2026
+
+Foi adicionada a migration `supabase/migrations/20261120041015_customer_global_identity.sql` à branch de desenvolvimento.
+
+Ela reúne:
+- Perfil global por `auth.users.id`.
+- Membership por organização.
+- Mapeamento legado com FK composta `(org_id, customer_id)` e `(org_id, auth_user_id)`.
+- RLS e grants mínimos para leitura/edição do próprio perfil.
+- Proteção de `phone_verified_at` contra escrita direta.
+- Solicitação de associação por owner/admin e confirmação pela cliente autenticada.
+- Auditoria da solicitação e da confirmação.
+- Rejeição de cadastros já associados e tratamento de conflitos únicos.
+
+O teste `tests/integration/customer-global-identity-rls.test.mjs` foi atualizado para testar o fluxo de duas etapas; o teste antigo da RPC de associação imediata foi removido.
+
+### Estado de execução
+
+- Migration versionada no Git: sim.
+- Aplicada no Supabase de produção: **não**.
+- Testada em Supabase local/QA: **não comprovado**.
+- Teste RLS com duas contas reais: depende das variáveis e dados isolados de QA.
+- Não executar a migration em produção antes de validar grants, funções SECURITY DEFINER, triggers existentes e o fluxo com duas sessões reais.
+
+### Nota técnica de expiração
+
+A RPC de confirmação rejeita solicitações expiradas. Ela não tenta gravar `status='expired'` e lançar exceção na mesma transação, pois a exceção faria rollback da atualização. A listagem oculta pedidos expirados; um novo pedido do owner/admin renova a solicitação pendente existente.
+
+
+### Confirmação na experiência da cliente
+
+A RPC `get_my_pending_customer_link_requests` retorna somente o contexto mínimo para a cliente decidir:
+- nome público do salão;
+- nome do cadastro legado;
+- somente os dois últimos dígitos do telefone, quando disponível;
+- identificador da solicitação, organização e expiração.
+
+O identificador interno do cadastro e o telefone completo não são enviados à interface. Foi criado `cliente/services/customerIdentityLinkService.js` para listar e confirmar solicitações, além de `cliente/utils/customerIdentityLinkUtils.js` para validar e normalizar os dados. Os testes puros desses utilitários foram incluídos em `test:customer-services`.
+
+A interface de confirmação foi conectada ao perfil da cliente e ao compositor principal, com estado vazio, exibição dos dados mínimos e confirmação por botão. A experiência ainda depende da migration aplicada em QA e de teste ponta a ponta com duas contas reais.
+
+
+## Aplicação real no Supabase — 20/11/2026
+
+**Correção de status das seções históricas acima:** as migrations de identidade global foram aplicadas no projeto Supabase conectado após autorização explícita do proprietário. Os registros de histórico retornados pelo Supabase são:
+
+- `20261120041015_customer_global_identity`
+- `20261120041034_customer_identity_link_hardening`
+
+As quatro tabelas foram confirmadas no schema `public`:
+- `customer_profiles`
+- `customer_tenant_memberships`
+- `customer_account_customers`
+- `customer_identity_link_requests`
+
+A verificação pós-aplicação confirmou RLS habilitado em todas as quatro tabelas. Contagem de políticas: perfil global (3), memberships (1), mapeamento legado (1), solicitações (1). A tabela de solicitações possui política explícita de negação de acesso direto para `authenticated`; o acesso é feito somente pelas RPCs destinadas a essa finalidade.
+
+Índices adicionais cobrem as referências `linked_by` e `requested_by`. A aplicação foi registrada nas migrations versionadas no Git.
+
+### Segurança e testes ainda pendentes
+
+- Security Advisors deixou de apontar tabela de solicitações com RLS sem política após a política explícita de negação.
+- Permanecem 16 alertas preexistentes de funções SECURITY DEFINER expostas no schema `public`; não foram alteradas em lote, pois precisam de revisão individual de autorização.
+- Permanece o alerta de proteção de senha comprometida desativada no Supabase Auth.
+- Os testes de integração que exigem duas contas reais, tokens de cliente e owner/admin ainda dependem de ambiente de QA e não foram considerados aprovados.
+- A criação de membership no fluxo de HOLD/reserva ainda precisa ser implementada; abrir um link público não deve criar vínculo.
+- O fluxo de associação legado precisa ser testado ponta a ponta com duas sessões reais antes de ser liberado comercialmente.
+
+**Status correto:** tabelas e hardening aplicados e verificados no Supabase; integração ponta a ponta e auditoria global de segurança ainda em andamento. O sistema completo não está declarado pronto para venda.
+
+
+### Verificação efetiva de privilégios — 20/11/2026
+
+Consulta de privilégios efetivos no PostgreSQL confirmou:
+
+- `authenticated` possui USAGE em `private`; `anon` não possui.
+- `authenticated` pode consultar o próprio perfil, sujeito à RLS.
+- `authenticated` não pode inserir diretamente em `customer_tenant_memberships` nem em `customer_account_customers`.
+- `authenticated` não pode consultar diretamente `customer_identity_link_requests`.
+- `authenticated` não pode atualizar a coluna `customer_profiles.phone_verified_at`.
+- As três RPCs públicas possuem wrapper `SECURITY INVOKER`, executável por authenticated e não executável por anon.
+- As funções internas privilegiadas ficam em `private`, com `SECURITY DEFINER`, `search_path = ''` e execução negada a anon.
+
+Essa verificação confirma grants e configuração do banco, mas não substitui teste de comportamento com JWTs reais de duas clientes e uma conta owner/admin.
+
+
+## Reserva temporária da cliente — 20/11/2026
+
+Migrations aplicadas no Supabase conectado:
+- `20261120041443_customer_appointment_holds`
+- `20261120041450_customer_appointment_holds_rpc_security`
+- `20261120041537_customer_appointment_hold_cancellation`
+
+### Estrutura e comportamento
+
+- `public.appointment_holds`: guarda o horário temporário, a identidade autenticada, o serviço, o profissional, a unidade, a expiração e o estado.
+- `appointments.appointment_hold_id`: vincula um agendamento confirmado ao HOLD consumido, com índice único para impedir reutilização.
+- HOLD dura cinco minutos; HOLD vencido é marcado como `expired` durante nova tentativa de reserva e deixa de bloquear horários após `expires_at`.
+- Criação verifica organização, unidade ativa, profissional ativo, serviço ativo e vínculo profissional-serviço.
+- Criação e trigger de agendamento usam o mesmo advisory lock por organização/profissional para evitar duas reservas concorrentes.
+- Conflitos com agendamentos, bloqueios e outros HOLDs são recusados.
+- Confirmação transacional cria/recupera cadastro local sem procurar cliente por telefone, cria membership e mapeamento apenas após a ação explícita da cliente, e grava agendamento e auditoria.
+- Confirmação repetida do mesmo HOLD retorna o mesmo agendamento; outro usuário não consegue confirmar ou cancelar o HOLD.
+- A tabela tem RLS e negação de acesso direto; RPCs são autenticadas, `SECURITY DEFINER`, `search_path = ''`, com checagem interna de `auth.uid()`.
+- Serviço de frontend adicionado em `cliente/services/appointmentHoldService.js`; validações puras e testes em `cliente/utils/appointmentHoldUtils.js`.
+
+### Limitações deliberadas desta etapa
+
+- A consulta de disponibilidade agora exige expediente cadastrado da unidade e do profissional, e considera fechamentos da unidade e afastamentos do profissional. Ainda não há interface administrativa para gerenciar esses horários, nem geração de grade de horários livres.
+- O fluxo atual exige cliente autenticada e perfil global com nome. Reserva pública anônima não foi habilitada.
+- A tela de descoberta/seleção/checkout ainda não chama o serviço. O serviço está pronto para integração, mas a jornada visual ainda não foi concluída.
+- Testes com duas sessões JWT reais, concorrência e isolamento entre organizações dependem de ambiente QA. Testes unitários locais não comprovam essas propriedades.
+
+**Status:** tabelas e RPCs de HOLD aplicadas e permissões verificadas. Jornada visual e regras de expediente continuam pendentes; produto não liberado para venda.
+
+
+### Endurecimento adicional das RPCs de reserva
+
+Migration `20261120041630_customer_appointment_holds_private_rpc` aplicada. A implementação privilegiada das operações de criar, confirmar e cancelar HOLD foi movida para o schema não exposto `private`. O schema `public` mantém apenas wrappers `SECURITY INVOKER`, com execução para `authenticated`; as funções internas usam `SECURITY DEFINER`, `search_path = ''` e checagem de `auth.uid()`.
+
+A consulta ao Security Advisor deixou de listar as três RPCs de HOLD entre as funções SECURITY DEFINER expostas no schema público. Os alertas restantes são anteriores a esta etapa e exigem auditoria individual. A proteção contra senhas vazadas também segue desativada e precisa ser habilitada nas configurações de Auth.
+
+
+### Contrato de segurança final das operações HOLD
+
+As funções transacionais SECURITY DEFINER foram movidas para `private` pela migration `20261120041630_customer_appointment_holds_private_rpc`. As funções em `public` são wrappers SECURITY INVOKER, sem `search_path` implícito e com EXECUTE concedido somente a `authenticated`. A inspeção de privilégios confirmou:
+- funções internas `private.*`: SECURITY DEFINER, `search_path = ''`, EXECUTE para authenticated e não para anon;
+- wrappers `public.*`: SECURITY INVOKER, EXECUTE para authenticated e não para anon;
+- tabela `appointment_holds`: RLS ligado, política explícita de negação de acesso direto e sem grants diretos.
+
+O Security Advisor deixou de listar as RPCs de HOLD como SECURITY DEFINER expostas em `public`. Ainda há 16 avisos de funções SECURITY DEFINER preexistentes em outros módulos e um aviso de proteção contra senhas vazadas desativada.
+
+
+### Expediente e disponibilidade operacional
+
+Migration `20261120041928_customer_booking_business_and_professional_availability` aplicada ao Supabase e registrada nesta branch.
+
+Novas tabelas:
+- `branch_business_hours`: múltiplos intervalos de atendimento por dia da semana e unidade.
+- `professional_working_hours`: múltiplos intervalos de trabalho por dia da semana e profissional.
+- `branch_closures`: fechamentos extraordinários de unidade por intervalo de data/hora.
+- `professional_time_off`: folgas, férias e afastamentos por intervalo de data/hora.
+
+As tabelas têm chaves compostas para manter o vínculo dentro da mesma organização, índices de consulta e RLS habilitado. Membros ativos podem consultar; somente owner/admin podem inserir, alterar e excluir. O papel `anon` não tem acesso.
+
+A RPC privada `private.create_customer_appointment_hold` agora:
+- interpreta dia e hora no fuso `organizations.timezone`;
+- exige que o serviço inteiro caiba em um intervalo de expediente da unidade;
+- exige que o serviço inteiro caiba em um intervalo de trabalho do profissional;
+- recusa fechamentos, afastamentos, bloqueios, agendamentos e HOLDs conflitantes;
+- mantém serialização por advisory lock e grava auditoria.
+
+**Verificação realizada:** as quatro tabelas existem no Supabase com RLS habilitado; a definição atual da função foi consultada após a migration; o Security Advisor continua apontando 16 funções SECURITY DEFINER antigas em outros módulos e a proteção contra senhas vazadas desativada.
+
+**Limitações que permanecem:** a tela administrativa de expediente foi conectada em Configurações, permitindo cadastrar/remover intervalos da unidade, intervalos dos profissionais, fechamentos e afastamentos. Ainda não existe uma grade de horários livres para a cliente nem a jornada visual de descoberta/seleção/checkout. Testes ponta a ponta com contas reais continuam pendentes.
+
+
+### Serviço de administração da disponibilidade
+
+Foram adicionados `src/modules/availability/availability.service.js` e `availability.utils.js` para consultar e manter expedientes da unidade/profissionais, fechamentos e afastamentos. O serviço exige sessão autenticada e depende das políticas RLS do banco para limitar escrita a owner/admin. Testes puros de validação estão em `availability.utils.test.js` e foram incluídos em `npm run test:availability` e `npm run test:all`.
+
+**Atenção:** o serviço de dados está criado, mas ainda não foi conectado a uma tela administrativa; a gestão visual de horários continua pendente.
+
+
+### Interface administrativa de disponibilidade
+
+A página `src/pages/settings.js` agora carrega e exibe a seção de expediente, integrada ao componente `src/modules/availability/availability-settings.view.js` e ao serviço `availability.service.js`. Owner/admin podem cadastrar e excluir horários semanais, fechamentos excepcionais e afastamentos. O formulário é responsivo e as gravações continuam protegidas no banco por RLS. A troca de unidade atualiza o contexto dos eventos sem recarregar a página.
+
+O teste puro `npm run test:availability` foi adicionado ao conjunto `npm run test:all`. **Execução de CI desta alteração ainda não foi confirmada**; a consulta de workflows/status não retornou execuções associadas aos commits mais recentes.
+
+
+### Integração da disponibilidade com a Agenda administrativa
+
+Migration `20261120063615_enforce_availability_on_admin_appointments` aplicada ao Supabase e registrada no histórico. O trigger `appointments_prevent_overlap` agora também valida, quando o agendamento possui unidade:
+- unidade ativa e pertencente à mesma organização;
+- compatibilidade do profissional com a unidade;
+- intervalo integral dentro do expediente semanal da unidade;
+- intervalo integral dentro do expediente semanal do profissional;
+- fechamentos extraordinários e afastamentos;
+- conflitos com agendamentos, bloqueios e HOLDs.
+
+A regra é executada no PostgreSQL, inclusive em remarcações por arrastar/soltar e em fluxos de gravação que não passam pelo formulário. A verificação de expediente só roda quando a unidade/profissional/horário é criado ou alterado; mudanças isoladas de status não invalidam um atendimento já marcado se o expediente for editado posteriormente.
+
+O formulário administrativo da Agenda agora carrega as unidades ativas da organização, seleciona automaticamente a única unidade quando existir apenas uma, exige escolha explícita quando houver várias e filtra a lista de profissionais pela unidade selecionada. O `branch_id` passa a ser persistido e preservado no modelo do calendário.
+
+**Limitação remanescente:** registros legados e fluxos que ainda enviam `branch_id = null` não passam pela nova validação de expediente. A tela de orçamentos e o agendamento público ainda precisam adotar seleção explícita de unidade. A regra de duração customizada ainda não distingue override autorizado de alteração comum.
+
+
+### Estado da validação automatizada da Agenda e do painel
+
+No commit `28c7c51b9b385f4e4f5e46ded6085100b0060500`, os workflows **Agenda tests** e **App validation** concluíram com sucesso. O workflow de validação executou verificação de sintaxe de todos os arquivos JavaScript, build de produção, validação de imports, auditoria estrutural, regressões de utilitários, erros pt-BR, Orçamentos, Comanda, Caixa, tenant, Agenda e comando agregado de testes.
+
+As últimas alterações pontuais no seletor de unidade e a atualização final da documentação ocorreram depois desse commit; portanto, a aprovação do workflow não deve ser interpretada como validação do HEAD mais recente. É necessária nova execução/checagem do CI no HEAD atual antes de liberar.

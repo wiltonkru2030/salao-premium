@@ -1,7 +1,11 @@
-/** Serviços de persistência compartilhados; consultas devem validar e filtrar o tenant ativo. */
+/**
+ * Serviços de persistência compartilhados.
+ * Responsabilidade: concentrar operações CRUD permitidas e limitar consultas ao tenant ativo.
+ * Segurança: a filtragem no cliente complementa, mas nunca substitui RLS e validações no banco.
+ */
 import { supabase } from './client.js';
 
-/** Camada genérica de persistência com allowlist de tabelas e filtro por organização. */
+/** Lista de tabelas que esta camada genérica está autorizada a consultar ou alterar. */
 const TABLES = new Set([
   'branches','customers','professionals','services','products','inventory_movements',
   'appointments','appointment_blocks','sales','sale_items','cash_registers',
@@ -9,6 +13,7 @@ const TABLES = new Set([
   'notifications','audit_logs','service_orders','service_order_items'
 ]);
 
+/** Resolve usuário autenticado e associação ativa; interrompe operações sem tenant válido. */
 async function tenant() {
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError) throw userError;
@@ -20,10 +25,18 @@ async function tenant() {
   return { user, ...data };
 }
 
+/** Bloqueia nomes de tabela fora da allowlist desta camada de persistência. */
 function assertTable(table) {
   if (!TABLES.has(table)) throw new Error('Tabela não permitida neste serviço.');
 }
 
+/**
+ * Lista registros da organização autenticada com filtros simples e limite máximo de 500.
+ * @param {string} table Tabela autorizada pela allowlist.
+ * @param {{columns?: string, orderBy?: string, ascending?: boolean, limit?: number, filters?: object}} options Opções de consulta.
+ * @returns {Promise<object[]>} Registros retornados pelo Supabase.
+ * @throws {Error} Quando não há sessão, tenant válido ou a consulta falha.
+ */
 export async function listRecords(table, { columns='*', orderBy='created_at', ascending=false, limit=100, filters={} } = {}) {
   assertTable(table);
   const { org_id } = await tenant();
@@ -36,6 +49,13 @@ export async function listRecords(table, { columns='*', orderBy='created_at', as
   return data || [];
 }
 
+/**
+ * Cria registro e define organização e autor a partir da sessão autenticada.
+ * @param {string} table Tabela autorizada pela allowlist.
+ * @param {object} values Campos do registro, sem poder sobrescrever org_id definido pela sessão.
+ * @returns {Promise<object>} Registro criado pelo Supabase.
+ * @throws {Error} Quando a sessão, tenant ou inserção falha.
+ */
 export async function createRecord(table, values) {
   assertTable(table);
   const { org_id,user } = await tenant();
@@ -46,6 +66,14 @@ export async function createRecord(table, values) {
   return data;
 }
 
+/**
+ * Atualiza registro pertencente à organização ativa, removendo campos de identidade imutáveis.
+ * @param {string} table Tabela autorizada pela allowlist.
+ * @param {string} id Identificador do registro.
+ * @param {object} values Campos que podem ser atualizados.
+ * @returns {Promise<object>} Registro atualizado.
+ * @throws {Error} Quando não existe registro acessível ou a operação falha.
+ */
 export async function updateRecord(table, id, values) {
   assertTable(table);
   const { org_id } = await tenant();
@@ -55,6 +83,13 @@ export async function updateRecord(table, id, values) {
   return data;
 }
 
+/**
+ * Exclui registro da organização ativa; a política de banco decide se a operação é permitida.
+ * @param {string} table Tabela autorizada pela allowlist.
+ * @param {string} id Identificador do registro.
+ * @returns {Promise<true>} Confirmação de exclusão sem retorno de dados pessoais.
+ * @throws {Error} Quando não existe registro acessível ou a exclusão falha.
+ */
 export async function deleteRecord(table, id) {
   assertTable(table);
   const { org_id } = await tenant();
@@ -63,6 +98,7 @@ export async function deleteRecord(table, id) {
   return true;
 }
 
+/** Retorna contexto autenticado e tenant ativo para fluxos que precisam de dados de sessão. */
 export async function currentTenant() {
   return tenant();
 }

@@ -1,0 +1,6 @@
+-- OBSOLETO — NÃO EXECUTAR.
+-- Este rascunho implementa identidade por organização (uma conta por marca).
+-- A decisão arquitetural foi alterada: a identidade da cliente é GLOBAL na plataforma.
+-- Consulte docs/CLIENTE-IDENTIDADE-MARCA.md antes de qualquer implementação.
+-- O modelo correto precisa separar perfil global, vínculo por tenant e cadastro operacional.
+-- Nenhuma alteração deve ser aplicada ao banco de produção a partir deste arquivo.

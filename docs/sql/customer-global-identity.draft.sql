@@ -1,0 +1,7 @@
+-- SUPERADO — NÃO EXECUTAR.
+-- Este rascunho contém uma versão anterior e incompatível do modelo global.
+-- Ele foi substituído por:
+--   docs/sql/customer-global-identity-schema.sql
+--   docs/sql/customer-global-identity-functions.draft.sql
+-- Consulte docs/CLIENTE-IDENTIDADE-GLOBAL-IMPLEMENTACAO.md.
+-- Nenhuma migration oficial foi gerada ou aplicada a partir deste arquivo.
