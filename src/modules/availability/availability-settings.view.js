@@ -65,7 +65,8 @@ export function bindAvailabilitySettings(host,context){
   const form=event.target;
   if(!["branch-hours-form","professional-hours-form","branch-closure-form","professional-timeoff-form"].includes(form.id)) return;
   event.preventDefault();
-  const current=bindingContexts.get(host);\n  if(!current?.canManage) return toast("Seu perfil não pode configurar a disponibilidade.");
+  const current=bindingContexts.get(host);
+  if(!current?.canManage) return toast("Seu perfil não pode configurar a disponibilidade.");
   const values=new FormData(form), get=key=>String(values.get(key)||"").trim();
   const button=form.querySelector('[type="submit"]'); button.disabled=true;
   try{
@@ -79,7 +80,8 @@ export function bindAvailabilitySettings(host,context){
  });
  host.addEventListener("click",async event=>{
   const button=event.target.closest("[data-delete-availability]"); if(!button) return;
-  const current=bindingContexts.get(host);\n  if(!current?.canManage) return toast("Seu perfil não pode excluir horários.");
+  const current=bindingContexts.get(host);
+  if(!current?.canManage) return toast("Seu perfil não pode excluir horários.");
   if(!window.confirm("Deseja excluir este registro de disponibilidade?")) return;
   button.disabled=true;
   try{await removeAvailabilityEntry(button.dataset.deleteAvailability,button.dataset.id,current.orgId);toast("Registro excluído.");await current.reload();}
