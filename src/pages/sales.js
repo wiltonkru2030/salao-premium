@@ -26,12 +26,20 @@ export async function loadSalesPage() {
   const host = document.querySelector("#sales-manager");
   const orgId = state.organization?.id;
   if (!host || !orgId) return;
+  const userId = state.user?.id;
+  const branchId = state.branch?.id || null;
+  const request = String(Number(host.dataset.request || 0) + 1);
+  host.dataset.request = request;
+  // Descarta respostas de consultas anteriores após troca de rota, usuário ou filial.
+  const isCurrent = () => host.isConnected && state.page === 'Vendas' &&
+    state.organization?.id === orgId && state.user?.id === userId &&
+    (state.branch?.id || null) === branchId && host.dataset.request === request;
 
   let rows,customers,itemsBySale;
   try {
-    ({sales:rows,customers,itemsBySale}=await fetchSalesWorkspace({client:supabase,orgId,branchId:state.branch?.id||null,limit:200}));
+    ({sales:rows,customers,itemsBySale}=await fetchSalesWorkspace({client:supabase,orgId,branchId,limit:200}));
   } catch(error) {
-    if (!host.isConnected || state.organization?.id !== orgId) return;
+    if (!isCurrent()) return;
     reportError(error,{context:"Vendas > carregar histórico"});
     host.innerHTML='<div class="empty-state"><b>Não foi possível carregar as vendas.</b><small>Verifique sua conexão e suas permissões. Tente novamente.</small></div>';
     return;
@@ -39,6 +47,7 @@ export async function loadSalesPage() {
 
   if (!host.isConnected || state.organization?.id !== orgId) return;
   try {
+    if (!isCurrent()) return;
     const totalSales = rows.length;
     const gross = rows.filter(row => row.status !== "cancelled" && row.status !== "refunded")
       .reduce((sum, row) => sum + Number(row.total || 0), 0);
@@ -81,7 +90,8 @@ export async function loadSalesPage() {
       host.addEventListener("click", event => {
         const button = event.target.closest("[data-sale-detail]");
         if (!button) return;
-        const detail = host.querySelector('[data-sale-items="' + CSS.escape(button.dataset.saleDetail) + '"]');
+        const detail = Array.from(host.querySelectorAll('[data-sale-items]'))
+          .find(item => item.dataset.saleItems === button.dataset.saleDetail);
         if (!detail) return;
         detail.hidden = !detail.hidden;
         button.setAttribute("aria-expanded", String(!detail.hidden));
@@ -89,6 +99,7 @@ export async function loadSalesPage() {
       });
     }
   } catch (error) {
+    if (!isCurrent()) return;
     reportError(error, { context: "Vendas > consultar histórico" });
     host.innerHTML = '<div class="empty-state"><b>Não foi possível carregar as vendas.</b><small>Verifique sua conexão e suas permissões e tente novamente.</small></div>';
   }
