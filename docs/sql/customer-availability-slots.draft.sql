@@ -1,4 +1,6 @@
--- RASCUNHO — consulta de horários disponíveis para a Área da Cliente.
+-- RASCUNHO SUPERSEDED — histórico da consulta de disponibilidade.
+-- NÃO EXECUTAR: a RPC oficial está aplicada em 20261120064407_public_salon_directory_and_availability.sql e alinhada pelas migrations seguintes.
+-- Este arquivo não representa o contrato ativo; use as migrations versionadas e os testes correspondentes.
 -- Não aplicar em produção sem revisão e autorização explícita.
 -- A consulta não cria HOLD; create_customer_appointment_hold revalida conflitos.
 
