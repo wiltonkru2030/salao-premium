@@ -5,7 +5,7 @@
  * - validar leitura restrita por auth.uid() nas tabelas globais;
  * - impedir escrita direta em memberships e associações legadas;
  * - impedir que a cliente marque o próprio telefone como verificado;
- * - validar idempotência das RPCs de entrada e associação quando QA estiver configurado.
+ * - validar a associação assistida quando o ambiente de QA estiver configurado.
  *
  * Segurança:
  * - usar exclusivamente tokens de usuários reais de QA;
@@ -145,6 +145,7 @@ const aOwn = await request(
   "/customer_profiles?select=auth_user_id&auth_user_id=eq." + customerAId
 );
 assert.equal(aOwn.ok, true, "Cliente A deve consultar o próprio perfil.");
+assert.equal(aOwn.body.length, 1, "O perfil da cliente A deve existir no ambiente de QA.");
 assert.ok(
   Array.isArray(aOwn.body) &&
     aOwn.body.every((row) => row.auth_user_id === ENV.CUSTOMER_A_ID),
