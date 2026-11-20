@@ -1,4 +1,5 @@
 /** Módulo de Orçamentos: propostas comerciais com itens, profissionais e regras de desconto por serviço. */
+import {queryQuoteWorkspace} from "../modules/quotes/services/quote-query.service.js";
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
@@ -12,6 +13,7 @@ import { printQuoteDocument, openQuoteSchedule } from "../modules/quotes/service
 
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const statusName = value => ({draft:"Rascunho",pending:"Em análise",accepted:"Aceito",rejected:"Recusado",expired:"Expirado",cancelled:"Cancelado"})[value] || value;
+let loadVersion=0,quoteContext=null;
 let customers = [], services = [], discountCatalog = [], professionals = [], professionalServices = [], items = [], selectedCustomer = null, discountRules = new Set(), maxDiscount = 0, allowFixedDiscount = true, activeQuote = null;
 
 function allowed() { return ["owner","admin","manager","receptionist"].includes(state.membership?.role); }
@@ -46,36 +48,18 @@ export function quotesPage() {
 export async function loadQuotesPage() {
   const host=document.querySelector("#quotes-manager");
   if(!host||!state.organization?.id)return;
+  const context=JSON.stringify([state.organization?.id,state.user?.id,state.branch?.id||null,state.membership?.role]);
+  const version=++loadVersion;
+  const isCurrent=()=>host.isConnected&&version===loadVersion&&context===JSON.stringify([state.organization?.id,state.user?.id,state.branch?.id||null,state.membership?.role]);
+  if(quoteContext!==context){items=[];selectedCustomer=null;activeQuote=null;quoteContext=context;}
+  host.dataset.quoteReady="";
+  host.textContent="Carregando orçamentos…";
   try {
     if(!allowed()) throw new Error("Seu perfil não possui acesso ao módulo de orçamentos.");
     const orgId=state.organization.id;
     const branchId=state.branch?.id||null;
-    let customerQuery=supabase.from("customers").select("id,name,phone")
-      .eq("org_id",orgId).eq("active",true);
-    let serviceQuery=supabase.from("services").select("id,name,price,duration_minutes")
-      .eq("org_id",orgId).eq("active",true);
-    let professionalQuery=supabase.from("professionals").select("id,name")
-      .eq("org_id",orgId).eq("active",true);
-    let quoteQuery=supabase.from("quotes").select("id,quote_number,customer_id,status,total,created_at,branch_id")
-      .eq("org_id",orgId);
-    if(branchId) {
-      customerQuery=customerQuery.or("branch_id.eq."+branchId+",branch_id.is.null");
-      serviceQuery=serviceQuery.or("branch_id.eq."+branchId+",branch_id.is.null");
-      professionalQuery=professionalQuery.or("branch_id.eq."+branchId+",branch_id.is.null");
-      quoteQuery=quoteQuery.eq("branch_id",branchId);
-    }
-    const [customerResult,serviceResult,professionalResult,professionalServiceResult,quoteResult,settingResult,ruleResult,discountCatalogResult]=await Promise.all([
-      customerQuery.order("name").limit(1000),
-      serviceQuery.order("name").limit(500),
-      professionalQuery.order("name").limit(500),
-      supabase.from("professional_services").select("professional_id,service_id").eq("org_id",orgId),
-      quoteQuery.order("created_at",{ascending:false}).limit(100),
-      supabase.from("quote_settings").select("max_discount_percent,allow_fixed_discount").eq("org_id",orgId).maybeSingle(),
-      supabase.from("quote_discount_services").select("service_id").eq("org_id",orgId).eq("discount_allowed",true),
-      supabase.from("services").select("id,name,branch_id").eq("org_id",orgId).eq("active",true).order("name").limit(1000)
-    ]);
-    for(const r of [customerResult,serviceResult,professionalResult,professionalServiceResult,quoteResult,settingResult,ruleResult,discountCatalogResult]) if(r.error) throw r.error;
-    if(!host.isConnected||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId)return;
+    const {customerResult,serviceResult,professionalResult,professionalServiceResult,quoteResult,settingResult,ruleResult,discountCatalogResult}=await queryQuoteWorkspace({supabase,orgId,branchId});
+    if(!isCurrent())return;
     customers=customerResult.data||[]; services=serviceResult.data||[]; professionals=professionalResult.data||[]; professionalServices=professionalServiceResult.data||[];
     maxDiscount=Number(settingResult.data?.max_discount_percent||0);
     allowFixedDiscount=settingResult.data?.allow_fixed_discount!==false;
@@ -87,11 +71,14 @@ export async function loadQuotesPage() {
     host.innerHTML='<div class="quote-page-grid"><div><div id="quote-builder"></div></div><div id="quotes-list"></div></div>';
     renderBuilder();
     renderList(quoteResult.data||[],new Map(customers.map(c=>[c.id,c.name])));
+    host.dataset.quoteReady=context;
+    host._quoteRows=quoteResult.data||[];
     if(host.dataset.bound==="true")return;
     host.dataset.bound="true";
-    const current=()=>host.isConnected&&state.organization?.id===orgId&&(state.branch?.id||null)===branchId;
+    const current=()=>host.isConnected&&allowed()&&host.dataset.quoteReady===JSON.stringify([state.organization?.id,state.user?.id,state.branch?.id||null,state.membership?.role]);
     host.addEventListener("change",event=>{
       if(!current())return;
+      const orgId=state.organization.id,branchId=state.branch?.id||null;
       if(event.target.id!=="quote-service")return;
       const serviceId=event.target.value,professionalSelect=host.querySelector("#quote-professional");
       if(!professionalSelect)return;
@@ -104,6 +91,7 @@ export async function loadQuotesPage() {
     });
     host.addEventListener("input",async e=>{
       if(!current())return;
+      const orgId=state.organization.id,branchId=state.branch?.id||null;
       if(e.target.id!=="quote-customer-search")return;
       const term=e.target.value.trim().toLocaleLowerCase("pt-BR"),box=host.querySelector("#quote-customer-results");
       if(term.length<2){box.innerHTML="";return;}
@@ -116,13 +104,14 @@ export async function loadQuotesPage() {
     });
     host.addEventListener("click",async e=>{
       if(!current())return;
+      const orgId=state.organization.id,branchId=state.branch?.id||null;
       const select=e.target.closest("[data-select-customer]");
       if(select){selectedCustomer=customers.find(c=>c.id===select.dataset.selectCustomer)||null;renderBuilder();return;}
       if(e.target.closest("#quote-show-quick")){host.querySelector("#quote-quick-customer").hidden=false;host.querySelector("#quote-quick-customer-form [name=name]").focus();return;}
       if(e.target.closest("#quote-quick-cancel")){host.querySelector("#quote-quick-customer").hidden=true;return;}
       if(e.target.closest("#quote-save")){
         if(!selectedCustomer||!items.length){toast("Selecione um cliente e adicione ao menos um serviço.");return;}
-        const button=host.querySelector("#quote-save");button.disabled=true;button.textContent="Salvando orçamento…";
+        const button=host.querySelector("#quote-save");if(!button||button.disabled)return;button.disabled=true;button.textContent="Salvando orçamento…";
         try{
           const notes=host.querySelector("#quote-notes").value.trim(),validUntil=host.querySelector("#quote-valid-until").value||null;
           const payload=makeQuotePayload(items);
@@ -167,14 +156,15 @@ export async function loadQuotesPage() {
       if(e.target.closest("#quote-whatsapp")){const phone=activeQuote?.customer?.phone||"";if(!phone){toast("Cadastre o WhatsApp do cliente para compartilhar.");return;}let digits=phone.replace(/\D/g,"");if(digits.length===10||digits.length===11)digits="55"+digits;window.open("https://wa.me/"+digits+
 "?text="+encodeURIComponent("Olá! Seu orçamento do "+(state.organization?.name||"salão")+
 " está pronto. Vou anexar o PDF nesta conversa."),"_blank","noopener");return;}
-      if(e.target.closest("#quote-back")){activeQuote=null;renderBuilder();renderList(quoteResult.data||[],new Map(customers.map(c=>[c.id,c.name])));return;}
+      if(e.target.closest("#quote-back")){activeQuote=null;renderBuilder();renderList(host._quoteRows||[],new Map(customers.map(c=>[c.id,c.name])));return;}
     });
     host.addEventListener("submit",async e=>{
       if(!current())return;
+      const orgId=state.organization.id,branchId=state.branch?.id||null;
       if(e.target.id==="quote-quick-customer-form"){
         e.preventDefault();const form=e.target,v=new FormData(form),name=String(v.get("name")||"").trim(),phone=String(v.get("phone")||"").trim();
         if(!name||!phone){toast("Informe nome e WhatsApp.");return;}
-        const button=form.querySelector('[type=submit]');button.disabled=true;
+        const button=form.querySelector('[type=submit]');if(!button||button.disabled)return;button.disabled=true;
         try{const {data,error}=await supabase.from("customers").insert({org_id:orgId,branch_id:state.branch?.id||null,name,phone}).select("id,name,phone").single();if(error)throw error;customers.push(data);selectedCustomer=data;toast("Cliente cadastrado e vinculado ao orçamento.");renderBuilder();}
         catch(error){reportError(error,{context:"Orçamentos > cadastro rápido"});}finally{button.disabled=false;}
       }
@@ -194,6 +184,8 @@ export async function loadQuotesPage() {
     });
 
   } catch(error) {
+    if(!isCurrent())return;
+    host.dataset.quoteReady="";
     reportError(error,{context:"Orçamentos > carregar"});
     host.innerHTML='<div class="empty-state">Não foi possível carregar os orçamentos. Confira suas permissões e tente novamente.</div>';
   }
