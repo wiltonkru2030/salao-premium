@@ -81,8 +81,8 @@ export function buildCouponPayload(formData,orgId) {
   if(!["percent","fixed"].includes(discountType)||!Number.isFinite(discountValue)||discountValue<=0||
      (discountType==="percent"&&discountValue>100))throw new TypeError("Informe um desconto percentual ou fixo válido.");
   if(!Number.isFinite(minimumAmount)||minimumAmount<0)throw new TypeError("Informe um valor mínimo válido.");
-  const maxDiscount=maxDiscountRaw?parseBRL(maxDiscountRaw):null;
-  if(maxDiscountRaw&&(!Number.isFinite(maxDiscount)||maxDiscount<=0))throw new TypeError("O desconto máximo precisa ser maior que zero.");
+  const parsedMaxDiscount=maxDiscountRaw?parseBRL(maxDiscountRaw):null;
+  const maxDiscount=parsedMaxDiscount&&parsedMaxDiscount>0?parsedMaxDiscount:null;
   if(!Number.isFinite(startsAt.getTime())||!Number.isFinite(endsAt.getTime())||endsAt<=startsAt)throw new TypeError("Informe um período de validade correto.");
   if(!Number.isInteger(usagePerCustomer)||usagePerCustomer<1)throw new TypeError("O limite por cliente precisa ser pelo menos 1.");
   if(usageLimitRaw&&(!Number.isInteger(Number(usageLimitRaw))||Number(usageLimitRaw)<1))throw new TypeError("O limite total precisa ser um número inteiro positivo.");
