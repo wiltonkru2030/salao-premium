@@ -18,7 +18,8 @@
     "test:customer-auth": "node cliente/auth-utils.test.js",
     "test:customer-account": "node cliente/customer-account.test.js",
     "test:customer-profile": "node cliente/customer-profile-utils.test.js",
-    "test:customer-services": "node cliente/services/client-services.test.js"
+    "test:customer-services": "node cliente/services/client-services.test.js",
+    "test:customer-rls": "node tests/integration/customer-global-identity-rls.test.mjs"
   },
   "engines": {
     "node": ">=20"
