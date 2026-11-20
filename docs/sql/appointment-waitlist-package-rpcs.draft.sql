@@ -232,6 +232,7 @@ begin
  if not exists(
   select 1 from public.salon_public_profiles sp
   join public.branch_public_profiles bp on bp.org_id=sp.org_id
+  join public.branches b on b.org_id=bp.org_id and b.id=bp.branch_id and b.active
   where sp.org_id=p_org_id and sp.is_published and bp.branch_id=p_branch_id and bp.is_published
  ) then return; end if;
  return query
