@@ -63,14 +63,21 @@ export function renderQuoteBuilder({ items, selectedCustomer, services, professi
       </label>
       <div id="quote-customer-results" class="quote-suggestions"></div>
       <div id="quote-selected-customer">${customerSummary}</div>
-      <div id="quote-quick-customer" hidden>
-        <form id="quote-quick-customer-form" class="form-grid">
-          <label>Nome completo<input class="field" name="name" required maxlength="120"></label>
-          <label>WhatsApp<input class="field" name="phone" type="tel" data-mask="phone" required placeholder="(00) 00000-0000"></label>
-          <button class="btn primary" type="submit">Cadastrar e vincular</button>
-          <button class="btn secondary" type="button" id="quote-quick-cancel">Cancelar</button>
-        </form>
-      </div>
+      <dialog id="quote-quick-customer" class="sp-modal" aria-labelledby="quote-customer-title">
+        <div class="sp-modal-shell">
+          <header class="sp-modal-head"><div><h2 id="quote-customer-title">Cadastrar cliente</h2><p>Cadastre o contato e vincule ao orçamento.</p></div><button class="sp-modal-close" type="button" data-close-quote-customer aria-label="Fechar">×</button></header>
+          <form id="quote-quick-customer-form">
+            <div class="sp-modal-body">
+              <label class="sp-span">Nome completo<input class="field" name="name" required maxlength="120" autocomplete="name"></label>
+              <label class="sp-span">WhatsApp<input class="field" name="phone" type="tel" data-mask="phone" required autocomplete="tel-national" placeholder="(00) 00000-0000"></label>
+            </div>
+            <footer class="sp-modal-foot">
+              <button class="btn secondary" type="button" id="quote-quick-cancel">Cancelar</button>
+              <button class="btn primary" type="submit">Cadastrar e vincular</button>
+            </footer>
+          </form>
+        </div>
+      </dialog>
       <div class="quote-item-entry">
         <label>Serviço
           <select class="field" id="quote-service"><option value="">Selecione um serviço</option>${serviceOptions}</select>
