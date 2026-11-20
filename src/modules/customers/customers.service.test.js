@@ -46,6 +46,9 @@ async function run(){
   assert.deepEqual(client.calls[5].payload,{active:false});
   await assert.rejects(()=>saveCustomer({client,orgId:"org-a",name:"M",email:"email-invalido"}),{name:"TypeError"});
   await assert.rejects(()=>saveCustomer({client,orgId:"org-a",name:"Maria",birthDate:"2026-13-99"}),{name:"TypeError"});
+  const missing=mockClient({customers:[]});
+  await assert.rejects(()=>saveCustomer({client:missing,orgId:"org-a",customerId:"missing",name:"Maria"}),e=>e.message.includes("não foi encontrado"));
+  await assert.rejects(()=>setCustomerActive({client:missing,orgId:"org-a",customerId:"missing",active:false}),e=>e.message.includes("não foi encontrado"));
   const failing=mockClient({}, {code:"42501",message:"SQL privado"});
   await assert.rejects(()=>listCustomers({client:failing,orgId:"org-a"}),e=>!e.message.includes("SQL privado"));
   const network=mockClient();
