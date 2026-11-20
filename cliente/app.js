@@ -25,6 +25,8 @@ import { fetchMyCustomerAppointments } from "./services/appointmentsService.js";
 import { fetchAppointmentChangeOptions, fetchRescheduleSlots, changeCustomerAppointment } from "./services/appointmentChangesService.js";
 import { renderCustomerProfileView } from "./ui/customerProfileView.js";
 import { renderFavoritesView } from "./ui/favoritesView.js";
+import { renderLoyaltyView } from "./ui/loyaltyView.js";
+import { getMyLoyaltyOverview } from "./services/loyaltyService.js";
 import { renderNotificationsView } from "./ui/notificationsView.js";
 import { ensureMyProfile, updateMyProfile } from "./services/customerProfileService.js";
 import { installGlobalMasks } from "../src/utils/input-masks.js";
@@ -51,6 +53,8 @@ let holdState = null;
 let favoritesState = { items: [], loading: false, error: "" };
 let favoriteOrgIds = new Set();
 let notificationsState = { items: [], loading: false, error: "" };
+let loyaltyState={items:[],loading:false,error:""};
+let loyaltyRequest=0;
 let couponState = { serviceId: null, code: "", preview: null, loading: false, error: "" };
 let sessionEpoch=0;
 let currentUserId=null;
@@ -72,6 +76,7 @@ function resetAccountState(userId){
   slotsState={serviceId:null,items:[],loading:false,error:"",date:"",professionalId:null};
   holdState=null; favoritesState={items:[],loading:false,error:""}; favoriteOrgIds=new Set();
   notificationsState={items:[],loading:false,error:""};
+  loyaltyState={items:[],loading:false,error:""};loyaltyRequest++;
   couponState={serviceId:null,code:"",preview:null,loading:false,error:""};
 }
 function isCurrent(epoch){return epoch===sessionEpoch;}
@@ -112,6 +117,7 @@ function renderApp() {
     page = renderCustomerProfileView({profile: profileState, session: currentSession, theme: getLocalSettings().theme});
   } else if (activePage === "favorites") page = renderFavoritesView(favoritesState);
   else if (activePage === "notifications") page = renderNotificationsView(notificationsState);
+  else if (activePage === "loyalty") page = renderLoyaltyView(loyaltyState);
   else if (activePage === "salon-detail") page = renderSalonDetailView({ ...salonDetailState, slots: slotsState, hold: holdState, isFavorite: favoriteOrgIds.has(salonDetailState.salon?.org_id), couponState });
   else page = renderHomeView({ locationLabel, salons: directoryState.items, loading: directoryState.loading, error: directoryState.error, query: directoryState.query });
 
@@ -231,6 +237,25 @@ async function loadFavorites() {
   }
 }
 
+/** Consulta indicadores reais de relacionamento, descartando respostas de sessões anteriores. */
+async function loadLoyalty(){
+  const epoch=sessionEpoch,userId=currentUserId,request=++loyaltyRequest;
+  const current=()=>isCurrent(epoch)&&currentUserId===userId&&request===loyaltyRequest;
+  loyaltyState={items:[],loading:true,error:""};
+  if(activePage==="loyalty")renderApp();
+  try{
+    const items=await getMyLoyaltyOverview({client:supabase,expectedUserId:userId});
+    if(current())loyaltyState.items=items;
+  }catch(error){
+    if(current())loyaltyState.error=error?.message||"Não foi possível consultar o histórico.";
+  }finally{
+    if(current()){
+      loyaltyState.loading=false;
+      if(activePage==="loyalty")renderApp();
+    }
+  }
+}
+
 /** Carrega notificações internas da cliente, mantendo a tela em estado seguro quando a migration não existe. */
 async function loadNotifications() {
   const epoch=sessionEpoch;
@@ -333,6 +358,16 @@ async function runAction(action, button = null) {
       if (!salon) throw new Error("Este salão não está mais disponível na busca. Atualize os resultados.");
       await loadSalonCatalog(salon);
       requireCurrent(epoch);
+    } else if (action === "loyalty" || action === "reload-loyalty") {
+      activePage="loyalty";
+      await loadLoyalty();
+      requireCurrent(epoch);
+      renderApp();
+    } else if (action === "back-profile") {
+      activePage="profile";
+      await loadProfile();
+      requireCurrent(epoch);
+      renderApp();
     } else if (action === "favorites") {
       activePage = "favorites";
       await loadFavorites();
