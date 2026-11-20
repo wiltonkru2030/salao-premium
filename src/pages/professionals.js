@@ -223,7 +223,7 @@ export async function loadProfessionalsPage(){
   if(!serviceIds.length){toast("Selecione ao menos um serviço que o profissional atende.");return;}
   button.disabled=true;button.textContent="Salvando…";
    const professionalId=await createProfessionalWithServices({
-    client:supabase,orgId:state.organization.id,name,phone,email,
+    client:supabase,orgId:state.organization.id,branchId:state.branch?.id||null,name,phone,email,
     commissionRate:rate,taxRegime,cnpj,
     legalName:v.get("legal_name"),tradeName:v.get("trade_name"),
     specialty:v.get("specialty"),serviceIds
