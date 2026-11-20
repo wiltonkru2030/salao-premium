@@ -30,3 +30,37 @@
 6. Executar Security Advisors e revisar os alertas existentes.
 7. Gerar migration oficial usando Supabase CLI em ambiente local; o CLI não está disponível neste ambiente de edição.
 8. Não aplicar no banco de produção sem autorização explícita.
+
+## Auditoria somente leitura — 20/11/2026
+
+A estrutura atual do banco foi conferida por consulta somente leitura. Resultado:
+
+- `organizations.id` é UUID; `organizations.slug` é texto e possui restrição UNIQUE.
+- `customers.id` e `customers.org_id` são UUID.
+- Existe a restrição UNIQUE `customers_org_id_id_key` em `(org_id, id)`, necessária para a FK composta do vínculo legado.
+- `customers` já possui FK para `organizations` e FK composta para `branches`.
+- O schema `private` existe.
+- Os helpers `private.has_org_role(uuid, text[])` e `private.is_org_member(uuid)` existem, são SECURITY DEFINER e usam `search_path = ''`. Eles autorizam equipe do salão e não devem ser reutilizados como prova de membership da cliente.
+- As três tabelas globais propostas ainda não existem no banco consultado.
+- Nenhuma alteração foi aplicada no Supabase nesta auditoria.
+
+### Decisões de implementação confirmadas
+
+1. Manter `customer_profiles` global por `auth_user_id`, sem coluna `org_id`.
+2. Manter membership por `(org_id, auth_user_id)`.
+3. Manter a associação de legado com FK composta, impedindo que um registro de cliente de uma organização seja vinculado a outra.
+4. Não permitir que o navegador crie membership nem associação a cadastro legado.
+5. Não permitir que a cliente atualize `phone_verified_at`; alterar o telefone não significa comprovar posse.
+6. Não conceder acesso direto global a agendamentos, comandas, pacotes, créditos ou pagamentos.
+
+### Pendências técnicas antes de criar migration oficial
+
+- Definir o evento de criação do membership: deve ocorrer no fluxo autenticado de primeira reserva ou em convite explícito, com idempotência. Não criar membership só por abrir uma página pública.
+- Implementar o fluxo de reserva e a criação do membership em operação backend transacional, validando organização ativa, filial, serviço e identidade autenticada.
+- Implementar associação de cadastro legado somente após confirmação explícita/auditada por equipe autorizada ou revisão de titularidade; telefone coincidente não basta.
+- Validar grants de execução e uso do schema privado para a função de trigger em ambiente local/staging.
+- O teste de integração RLS atual é de leitura e exige duas sessões reais de QA. Sem as variáveis de QA, ele encerra como ignorado; isso não conta como aprovação de isolamento.
+- Ampliar os testes em staging para tentativas de escrita proibidas e isolamento de dados operacionais, com limpeza segura dos registros de teste.
+
+**Status:** modelo lógico compatível com as chaves e tipos encontrados, mas ainda não está pronto para produção. A migration permanece como rascunho e depende dos fluxos backend e da validação RLS real.
+
