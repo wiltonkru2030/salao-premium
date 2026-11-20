@@ -1,0 +1,54 @@
+/* SALÃO PREMIUM — Módulo 05: contrato visual de cadastros e formulários.
+ * Responsabilidade: harmonizar campos, etiquetas, diálogos e feedback visual.
+ * Não altera validações de CPF/CNPJ, CEP, persistência nem permissões.
+ * Aplicado por último para corrigir fontes e tamanhos herdados de módulos antigos.
+ */
+:root{--sp-form-radius:9px;--sp-form-border:#dedbd4;--sp-form-label:#5d5952}
+:where(.sp-modal-body,.settings-form,.settings-card>form,.agenda-form,.professional-modal-body,.form-field,.professional-form-grid) :where(label){font-size:12px;line-height:1.5;color:var(--sp-form-label)}
+:where(.sp-modal-body,.settings-form,.settings-card>form,.agenda-form,.professional-modal-body,.form-field,.professional-form-grid) :where(input:not([type=checkbox]):not([type=radio]),select,textarea),
+:where(input.field,select.field,textarea.field){
+ font-family:var(--sp-font-ui,'Poppins',sans-serif);font-size:14px;line-height:1.45;
+ min-height:44px;max-width:100%;border-radius:var(--sp-form-radius);
+ border-color:var(--sp-form-border);background:#fff;color:var(--sp-ink)
+}
+:where(.sp-modal-body,.settings-form,.settings-card>form,.agenda-form,.professional-modal-body,.form-field,.professional-form-grid) textarea,
+textarea.field{min-height:104px;resize:vertical}
+:where(.sp-modal-body,.settings-form,.settings-card>form,.agenda-form,.professional-modal-body,.form-field,.professional-form-grid) :where(input,select,textarea):focus-visible,
+:where(input.field,select.field,textarea.field):focus-visible{outline:2px solid #ad9568;outline-offset:1px;border-color:#ad9568}
+:where(.sp-modal-body,.settings-form,.settings-card>form,.agenda-form,.professional-modal-body,.form-field,.professional-form-grid) :where(input,select,textarea):disabled{background:#f6f5f2;color:#77716b;cursor:not-allowed}
+:where(.sp-modal-body,.settings-form,.settings-card>form,.agenda-form,.professional-modal-body,.form-field,.professional-form-grid) :where(input,select,textarea)[aria-invalid=true]{border-color:#b65e52;box-shadow:0 0 0 2px #b65e521c}
+:where(.sp-modal-body,.settings-form,.settings-card>form,.agenda-form,.professional-modal-body,.form-field,.professional-form-grid) :where(small,.field-hint,.help-text){font-size:12px;line-height:1.55}
+dialog.sp-modal{width:min(720px,calc(100vw - 28px));max-height:min(90dvh,900px);border-radius:14px}
+.sp-modal-shell{max-height:min(90dvh,900px)}
+.sp-modal-head{padding:23px 25px}
+.sp-modal-head h2{font-family:'Body Grotesque Fit','Poppins',sans-serif;font-size:23px;font-weight:500;line-height:1.25}
+.sp-modal-head p{font-size:13px;line-height:1.55}
+.sp-modal-body{padding:23px 25px;gap:18px 20px}
+.sp-modal-body>label{font-size:12px;gap:8px}
+.sp-modal-body>label :where(input,select,textarea){font-size:14px;min-height:44px;border-radius:9px}
+.sp-modal-foot{padding:17px 25px;gap:10px}
+.sp-modal-foot .btn{min-height:44px;font-size:13px}
+.sp-modal-close{width:44px;height:44px;min-width:44px;cursor:pointer}
+.sp-modal-close:focus-visible{outline:2px solid #ad9568;outline-offset:2px}
+.settings-card>h3{font-size:15px;line-height:1.4}
+.settings-card>summary{font-size:14px;min-height:58px}
+.setting-row span:first-child,.setting-row b{font-size:12px;line-height:1.5}
+.professional-modal-body.sp-modal-body h3{font-size:14px}
+:where(.form-error,.field-error,[role=alert]){line-height:1.55}
+@media(max-width:700px){
+ dialog.sp-modal{width:calc(100vw - 16px);max-height:94dvh;border-radius:12px}
+ .sp-modal-shell{max-height:94dvh}
+ .sp-modal-head{padding:17px}
+ .sp-modal-head h2{font-size:21px}
+ .sp-modal-body{grid-template-columns:1fr;padding:17px;gap:15px}
+ .sp-modal-body>label.sp-span{grid-column:auto}
+ .sp-modal-foot{padding:13px 17px;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .sp-modal-foot .btn{min-width:0;white-space:normal}
+ .settings-form,.settings-card>form{grid-template-columns:1fr;padding:16px}
+ .settings-form>button{width:100%;justify-self:stretch}
+}
+@media(max-width:390px){
+ .sp-modal-head{gap:10px}
+ .sp-modal-head h2{font-size:19px}
+ .sp-modal-foot{gap:8px}
+}
