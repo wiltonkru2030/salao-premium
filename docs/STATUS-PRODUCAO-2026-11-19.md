@@ -406,3 +406,13 @@ Tabelas de vitrine e cupons foram confirmadas com RLS habilitado. As RPCs públi
 - A tela src/pages/team.js usa o serviço e mantém a autorização final no banco.
 - Testes em src/modules/team/team.service.test.js incluídos no test:all.
 - App validation e Agenda tests passaram no SHA 0d77ae3f8b18f49d29c4e2ce5f7a2d7fba99506d.
+
+
+### Profissionais e App Profissional
+- O serviço src/modules/professionals/professionals.service.js agora centraliza consulta de workspace, alteração de status, liberação/revogação de acesso e cadastro transacional.
+- A tela src/pages/professionals.js passou a delegar as operações de acesso às funções do serviço.
+- Criada migration versionada supabase/migrations/20261120100000_professional_transactional_creation.sql: profissional + vínculos de serviços são inseridos na mesma transação, com validação owner/admin, serviços ativos do mesmo tenant, comissão e regime fiscal.
+- CPF continua sendo tratado pelo fluxo de provisionamento de credenciais; não foi adicionado campo CPF à tabela professionals.
+- Teste estático da migration em docs/sql/professional-transactional-creation.test.mjs e teste do serviço incluídos em test:all.
+- A migration transacional de profissionais ainda NÃO foi aplicada ao Supabase conectado; requer execução e validação em ambiente QA antes de produção.
+- App validation e Agenda tests passaram no SHA f8455ef36a468ea2d2f024e35702246b5268c804.
