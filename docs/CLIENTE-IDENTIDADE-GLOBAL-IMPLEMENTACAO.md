@@ -261,3 +261,33 @@ Consulta de privilégios efetivos no PostgreSQL confirmou:
 - As funções internas privilegiadas ficam em `private`, com `SECURITY DEFINER`, `search_path = ''` e execução negada a anon.
 
 Essa verificação confirma grants e configuração do banco, mas não substitui teste de comportamento com JWTs reais de duas clientes e uma conta owner/admin.
+
+
+## Reserva temporária da cliente — 20/11/2026
+
+Migrations aplicadas no Supabase conectado:
+- `20261120041443_customer_appointment_holds`
+- `20261120041450_customer_appointment_holds_rpc_security`
+- `20261120041502_customer_appointment_hold_cancellation`
+
+### Estrutura e comportamento
+
+- `public.appointment_holds`: guarda o horário temporário, a identidade autenticada, o serviço, o profissional, a unidade, a expiração e o estado.
+- `appointments.appointment_hold_id`: vincula um agendamento confirmado ao HOLD consumido, com índice único para impedir reutilização.
+- HOLD dura cinco minutos; HOLD vencido é marcado como `expired` durante nova tentativa de reserva e deixa de bloquear horários após `expires_at`.
+- Criação verifica organização, unidade ativa, profissional ativo, serviço ativo e vínculo profissional-serviço.
+- Criação e trigger de agendamento usam o mesmo advisory lock por organização/profissional para evitar duas reservas concorrentes.
+- Conflitos com agendamentos, bloqueios e outros HOLDs são recusados.
+- Confirmação transacional cria/recupera cadastro local sem procurar cliente por telefone, cria membership e mapeamento apenas após a ação explícita da cliente, e grava agendamento e auditoria.
+- Confirmação repetida do mesmo HOLD retorna o mesmo agendamento; outro usuário não consegue confirmar ou cancelar o HOLD.
+- A tabela tem RLS e negação de acesso direto; RPCs são autenticadas, `SECURITY DEFINER`, `search_path = ''`, com checagem interna de `auth.uid()`.
+- Serviço de frontend adicionado em `cliente/services/appointmentHoldService.js`; validações puras e testes em `cliente/utils/appointmentHoldUtils.js`.
+
+### Limitações deliberadas desta etapa
+
+- Ainda não há consulta estruturada de expediente, intervalos, feriados, folgas e exceções por profissional/unidade. Portanto, esta camada impede conflitos e confirma a duração do serviço, mas **não pode ser apresentada como motor completo de disponibilidade**.
+- O fluxo atual exige cliente autenticada e perfil global com nome. Reserva pública anônima não foi habilitada.
+- A tela de descoberta/seleção/checkout ainda não chama o serviço. O serviço está pronto para integração, mas a jornada visual ainda não foi concluída.
+- Testes com duas sessões JWT reais, concorrência e isolamento entre organizações dependem de ambiente QA. Testes unitários locais não comprovam essas propriedades.
+
+**Status:** tabelas e RPCs de HOLD aplicadas e permissões verificadas. Jornada visual e regras de expediente continuam pendentes; produto não liberado para venda.
