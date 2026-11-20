@@ -122,6 +122,7 @@ declare
   v_item record;
   v_paid numeric;
   v_subtotal numeric;
+  v_full_base numeric;
   v_target_base numeric;
   v_prior_base numeric;
   v_prior_amount numeric;
@@ -142,8 +143,10 @@ begin
   loop
     if v_item.commission_enabled_snapshot is null then raise exception 'Regra de comissão não congelada.'; end if;
     if not v_item.commission_enabled_snapshot or v_item.professional_id is null then continue; end if;
-    -- Rateio por diferenças de totais acumulados: a soma das bases coincide com o recebido.
-    v_target_base:=round(v_item.running_total*v_paid/v_subtotal,2)-round((v_item.running_total-v_item.total)*v_paid/v_subtotal,2);
+    -- Distribui centavos do total uma única vez; cada item progride monotonicamente.
+    -- Parcelas podem ter diferença de arredondamento; na quitação as bases totalizam a comanda.
+    v_full_base:=round(v_item.running_total*v_order.total/v_subtotal,2)-round((v_item.running_total-v_item.total)*v_order.total/v_subtotal,2);
+    v_target_base:=round(v_full_base*v_paid/v_order.total,2);
     v_target_amount:=round(v_target_base*v_item.commission_rate_snapshot/100,2);
     select coalesce(sum(base_amount),0),coalesce(sum(amount),0) into v_prior_base,v_prior_amount
     from public.commissions where org_id=v_order.org_id and service_order_item_id=v_item.id and service_order_payment_id is not null and status<>'cancelled';
