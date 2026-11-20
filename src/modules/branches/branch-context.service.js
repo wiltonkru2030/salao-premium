@@ -24,6 +24,9 @@ export async function resolveBranchContext({
       if(error)throw error;
       return {branches,branch:branches.find(item=>item.id===data?.branch_id)||null};
     }
+    if(previousBranchId==="__all__") {
+      return {branches,branch:{id:null,name:"Todas as unidades",isAll:true}};
+    }
     const previous=branches.find(item=>item.id===previousBranchId);
     return {
       branches,
