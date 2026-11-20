@@ -3,7 +3,7 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, toast, esc } from "../utils.js";
 import { reportError } from "../utils/errors.js";
-import { fetchProfessionalWorkspace } from "../modules/professionals/professionals.service.js";
+import { fetchProfessionalWorkspace, setProfessionalActive } from "../modules/professionals/professionals.service.js";
 
 /** Módulo Profissionais: cadastro fiscal, vínculo de serviços e controle de acesso ao App Profissional. */
 
@@ -68,6 +68,7 @@ export async function loadProfessionalsPage(){
    <div class="professional-avatar">${esc((p.name||"P").trim().split(/\s+/).slice(0,2).map(part=>part[0]).join("").toUpperCase())}</div>
    <div class="professional-person-identity"><h3>${esc(p.name)}</h3><p>${esc(p.specialty||"Profissional")} <span>·</span> ${p.tax_regime==="mei"?"MEI":"Pessoa física"}</p></div>
    <span class="professional-status ${p.active?"is-active":"is-inactive"}"><i></i>${p.active?"Ativo":"Inativo"}</span>
+   ${canManageProfessionals()?'<button type="button" class="btn secondary" data-toggle-professional-active="'+p.id+'" data-active="'+(p.active?"true":"false")+'" '+(p.access_enabled?"disabled title=\"Revogue o acesso ao App antes de inativar.\'":"")+'>'+(p.active?"Inativar":"Reativar")+'</button>':""}
   </div>
   <div class="professional-person-meta"><span>${esc(p.phone||p.email||"Contato não informado")}</span><span>Comissão <b>${Number(p.commission_rate||0)}%</b></span>${p.tax_regime==="mei"?'<span>CNPJ '+esc(p.cnpj||"—")+'</span>':''}</div>
   <div class="professional-assigned-services"><small>SERVIÇOS HABILITADOS</small><div>${(assignedNames.get(p.id)||[]).length?(assignedNames.get(p.id)||[]).map(name=>'<span>'+esc(name)+'</span>').join(""):'<em>Nenhum serviço vinculado</em>'}</div></div>
@@ -129,6 +130,24 @@ export async function loadProfessionalsPage(){
  host.addEventListener("click",async event=>{
   if(event.target.closest("[data-open-professional-modal]") && canManageProfessionals()){const modal=host.querySelector("#professional-create-modal");if(modal&&!modal.open){modal.showModal();modal.querySelector('[name="name"]')?.focus();}return;}
   if(event.target===host.querySelector("#professional-create-modal")||event.target.closest("[data-close-professional-modal]")){host.querySelector("#professional-create-modal")?.close();return;}
+  const activeToggle=event.target.closest("[data-toggle-professional-active]");
+  if(activeToggle) {
+   if(!canManageProfessionals()){toast("Somente proprietário ou administrador pode alterar profissionais.");return;}
+   if(activeToggle.disabled){toast("Revogue o acesso ao App Profissional antes de inativar este cadastro.");return;}
+   const nextActive=activeToggle.dataset.active!=="true";
+   if(!window.confirm(nextActive?"Reativar este profissional?":"Inativar este profissional? O histórico será preservado."))return;
+   activeToggle.disabled=true;
+   try {
+    await setProfessionalActive({client:supabase,orgId:state.organization.id,professionalId:activeToggle.dataset.toggleProfessionalActive,active:nextActive});
+    toast(nextActive?"Profissional reativado.":"Profissional inativado.");
+    await loadProfessionalsPage();
+   } catch(error) {
+    reportError(error,{context:"Profissionais > alterar situação"});
+   } finally {
+    if(activeToggle.isConnected)activeToggle.disabled=false;
+   }
+   return;
+  }
   const reset=event.target.closest("[data-professional-reset]");
   if((reset||event.target.closest("[data-professional-copy]"))&&!canManageProfessionals()){toast("Somente proprietário ou administrador pode gerenciar acessos.");return;}
   if(reset){if(!window.confirm("Gerar uma nova senha temporária para este profissional?"))return;await provision(reset,"reset");return;}
