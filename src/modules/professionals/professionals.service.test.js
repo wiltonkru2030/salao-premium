@@ -3,11 +3,11 @@
  * Responsabilidade: validar escopo por organização, filtros de membros e perfis relacionados.
  */
 import assert from "node:assert/strict";
-import {fetchProfessionalWorkspace,setProfessionalActive,setTeamProfessionalAppAccess,revokeProfessionalAppAccess} from "./professionals.service.js";
+import {fetchProfessionalWorkspace,setProfessionalActive,setTeamProfessionalAppAccess,revokeProfessionalAppAccess,createProfessionalWithServices} from "./professionals.service.js";
 
 function mockClient(tables={},error=null) {
   const calls=[];
-  return {calls,rpc:async(name,args)=>{calls.push({rpc:name,args});return {data:{enabled:args.p_enabled},error};},from(table) {
+  return {calls,rpc:async(name,args)=>{calls.push({rpc:name,args});return {data:name==="create_professional_with_services"?"professional-new":{enabled:args.p_enabled},error};},from(table) {
     const call={table,filters:[],orders:[],limit:null};calls.push(call);
     const query={
       select(columns){call.columns=columns;return query;},
@@ -65,6 +65,16 @@ async function run() {
   await revokeProfessionalAppAccess({client,orgId:"org-a",professionalId:"pro-a"});
   assert.ok(client.calls.some(call=>call.rpc==="revoke_professional_app_access"&&call.args.p_org_id==="org-a"));
   await assert.rejects(()=>setTeamProfessionalAppAccess({client,orgId:"org-a",userId:"pro-a",role:"professional",enabled:true}),{name:"TypeError"});
+  const createdId=await createProfessionalWithServices({
+    client,orgId:"org-a",name:"Ana",commissionRate:50,taxRegime:"individual",serviceIds:["svc-a"]
+  });
+  assert.equal(createdId,"professional-new");
+  const createCall=client.calls.find(call=>call.rpc==="create_professional_with_services");
+  assert.equal(createCall.args.p_org_id,"org-a");
+  assert.deepEqual(createCall.args.p_service_ids,["svc-a"]);
+  await assert.rejects(()=>createProfessionalWithServices({
+    client,orgId:"org-a",name:"Ana",commissionRate:150,serviceIds:["svc-a"]
+  }),{name:"TypeError"});
   console.log("Testes do serviço de dados dos profissionais: OK");
 }
 run().catch(error=>{process.stderr.write(error.message+"\n");process.exitCode=1;});
