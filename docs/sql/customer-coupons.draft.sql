@@ -572,6 +572,8 @@ end;
 $function$;
 
 drop trigger if exists appointment_hold_release_coupon_trigger on public.appointment_holds;
+revoke all on function private.release_coupon_reservation_on_hold_end() from public,anon,authenticated;
+
 create trigger appointment_hold_release_coupon_trigger
   after update of status on public.appointment_holds
   for each row execute function private.release_coupon_reservation_on_hold_end();
