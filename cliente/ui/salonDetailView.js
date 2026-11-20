@@ -34,7 +34,7 @@ function localDateValue() {
  */
 export function renderSalonDetailView({
   salon = null, catalog = [], loading = false, error = "",
-  slots = {items:[],loading:false,error:""}, hold = null
+  slots = {items:[],loading:false,error:""}, hold = null, isFavorite = false
 } = {}) {
   if (loading) return '<section class="page-content"><div class="empty-state"><span class="spinner"></span><p>Carregando catálogo do salão…</p></div></section>';
   if (error) return '<section class="page-content"><button class="text-button" data-action="back-home">‹ Voltar aos salões</button><div class="empty-state"><h3>Catálogo indisponível</h3><p>' + escapeClientHtml(error) + '</p></div></section>';
@@ -92,7 +92,8 @@ export function renderSalonDetailView({
     '<div class="page-heading"><span class="eyebrow">VITRINE PUBLICADA</span><h1>' + escapeClientHtml(first.display_name || "Salão") +
     '</h1><p>' + escapeClientHtml(first.description || "Conheça os serviços desta unidade.") + '</p></div>' +
     '<div class="location-card"><div><strong>' + escapeClientHtml(first.branch_name || "Unidade") + '</strong><small>' +
-    escapeClientHtml([first.public_address,first.neighborhood,first.city,first.state].filter(Boolean).join(" · ")) + '</small></div></div>' +
+    escapeClientHtml([first.public_address,first.neighborhood,first.city,first.state].filter(Boolean).join(" · ")) + '</small></div><button class="client-button compact" data-action="toggle-favorite" data-org-id="' + escapeClientHtml(first.org_id || salon?.org_id) + '">' +
+    (isFavorite ? 'Remover dos favoritos' : '♡ Favoritar salão') + '</button></div>' +
     (catalog.length ? '<div class="section-heading"><h2>Serviços e profissionais</h2></div><div class="service-result-list">' + cards + '</div>' :
       '<div class="empty-state">Nenhum serviço está publicado nesta unidade.</div>') +
     holdContent + '</section>';
