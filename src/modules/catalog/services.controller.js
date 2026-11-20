@@ -14,6 +14,16 @@ function openServiceModal(service=null) {
   form.reset();
   form.elements.service_id.value=service?.id||"";
   form.elements.name.value=service?.name||"";
+  const branchField=form.elements.branch_id;
+  if(branchField){
+    branchField.querySelectorAll("[data-legacy-branch]").forEach(option=>option.remove());
+    if(service?.branch_id&&![...branchField.options].some(option=>option.value===service.branch_id)){
+      const option=document.createElement("option");option.value=service.branch_id;option.textContent="Unidade vinculada (inativa)";option.dataset.legacyBranch="true";branchField.add(option);
+    }
+    branchField.value=service?.branch_id||"";
+    // Alteração de escopo de serviço existente exige revisão dos vínculos históricos.
+    branchField.disabled=Boolean(service);
+  }
   const categoryField=form.elements.category;
   // Remove a opção temporária de uma edição anterior antes de abrir outro cadastro.
   if(categoryField.tagName==="SELECT")categoryField.querySelectorAll("[data-legacy-category]").forEach(option=>option.remove());
@@ -122,7 +132,7 @@ export function bindServiceEvents({host,client,servicePageState,getOrgId,canMana
     try {
       await saveService({
         client,orgId:snapshot.orgId,
-        serviceId,
+        serviceId,branchId:serviceId?null:(values.get("branch_id")||null),
         name,category:values.get("category"),durationMinutes:duration,
         price,description:values.get("description")
       });
