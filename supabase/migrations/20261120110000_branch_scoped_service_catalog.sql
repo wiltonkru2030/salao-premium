@@ -24,6 +24,20 @@ $block$;
 create index if not exists services_org_branch_active_name_idx
   on public.services(org_id,branch_id,active,name);
 
+-- Profissional autenticado só pode resolver o nome da unidade à qual está vinculado.
+drop policy if exists branches_select_staff on public.branches;
+create policy branches_select_staff on public.branches
+  for select to authenticated
+  using (
+    private.has_org_role(org_id,array['owner','admin','manager','receptionist','finance','viewer'])
+    or exists (
+      select 1 from public.professionals p
+      where p.org_id=branches.org_id
+        and p.id=private.current_professional_id(branches.org_id)
+        and p.branch_id=branches.id
+    )
+  );
+
 drop policy if exists services_select_professional_app on public.services;
 create policy services_select_professional_app on public.services
   for select to authenticated
