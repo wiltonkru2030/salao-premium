@@ -19,12 +19,12 @@ function mockClient(responses) {
   const calls = [];
   const client = {
     from(table) {
-      const call = { table, filters: [], selection: "", order: null, range: null };
+      const call = { table, filters: [], selection: "", order: null, orders: [], range: null };
       calls.push(call);
       const query = {
         select(value) { call.selection = value; return this; },
         eq(...args) { call.filters.push(args); return this; },
-        order(...args) { call.order = args; return this; },
+        order(...args) { call.order = args; call.orders.push(args); return this; },
         range(start, end) { call.range = [start, end]; return this; },
         then(resolve, reject) {
           const key = call.range?.[0] || 0;
@@ -56,7 +56,7 @@ async function run() {
     assert.ok(call.filters.some(([field, value]) => field === "org_id" && value === "org-1"));
     assert.ok(call.filters.some(([field, value]) => field === "professional_id" && value === "professional-1"));
     assert.deepEqual(call.range, [0, PAGE_SIZE - 1]);
-    assert.ok(call.order);
+    assert.deepEqual(call.orders.map(([column]) => column), call.table === "commissions" ? ["created_at","id"] : ["paid_at","id"]);
   }
 
   const firstPage = Array.from({ length: PAGE_SIZE }, (_, index) => ({ id: `commission-${index}` }));

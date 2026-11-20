@@ -1,0 +1,394 @@
+{
+  "captured_on": "2026-11-20",
+  "purpose": "Inventário de versões registradas no Supabase, sem SQL ou dados pessoais.",
+  "versions": [
+    {
+      "version": "20261112161153",
+      "name": "initial_salao_premium_schema"
+    },
+    {
+      "version": "20261112161333",
+      "name": "refine_role_based_access_and_indexes"
+    },
+    {
+      "version": "20261112162027",
+      "name": "professional_app_and_service_orders"
+    },
+    {
+      "version": "20261112162105",
+      "name": "secure_professional_cpf_auth"
+    },
+    {
+      "version": "20261112162115",
+      "name": "professional_login_provisioning_rpc"
+    },
+    {
+      "version": "20261112162202",
+      "name": "service_order_total_recalculation"
+    },
+    {
+      "version": "20261112162406",
+      "name": "fix_service_order_totals_trigger"
+    },
+    {
+      "version": "20261112162610",
+      "name": "tighten_professional_data_access"
+    },
+    {
+      "version": "20261112162757",
+      "name": "restrict_professional_module_permissions"
+    },
+    {
+      "version": "20261112162841",
+      "name": "enforce_professional_comanda_limits"
+    },
+    {
+      "version": "20261112163107",
+      "name": "vault_professional_cpf_pepper_access"
+    },
+    {
+      "version": "20261112163653",
+      "name": "allow_professional_read_own_order_items"
+    },
+    {
+      "version": "20261112165404",
+      "name": "audit_history_and_recovery_bin"
+    },
+    {
+      "version": "20261112165526",
+      "name": "professional_app_access_and_comanda_workflow"
+    },
+    {
+      "version": "20261112170155",
+      "name": "appointment_checkin_payment_and_commission_workflow"
+    },
+    {
+      "version": "20261112170218",
+      "name": "secure_professional_cpf_pepper_lookup"
+    },
+    {
+      "version": "20261112170347",
+      "name": "recycle_bin_retention_and_documentation"
+    },
+    {
+      "version": "20261112170907",
+      "name": "appointment_creator_snapshot"
+    },
+    {
+      "version": "20261112171759",
+      "name": "app_scope_reception_and_audit_completion"
+    },
+    {
+      "version": "20261112171813",
+      "name": "reception_calendar_all_rls"
+    },
+    {
+      "version": "20261112171935",
+      "name": "reception_command_operational_access"
+    },
+    {
+      "version": "20261112172256",
+      "name": "professional_access_revocation_and_comanda_strategy"
+    },
+    {
+      "version": "20261112172630",
+      "name": "fix_comanda_sale_status_on_payment"
+    },
+    {
+      "version": "20261112173203",
+      "name": "payment_safe_cancellation_and_security_cleanup"
+    },
+    {
+      "version": "20261112173311",
+      "name": "commission_payout_schema_and_history"
+    },
+    {
+      "version": "20261112173328",
+      "name": "commission_payout_rpc_and_sales_cash_link"
+    },
+    {
+      "version": "20261112173534",
+      "name": "professional_auth_bootstrap_without_tenant_creation"
+    },
+    {
+      "version": "20261112182318",
+      "name": "professional_app_scope_hardening"
+    },
+    {
+      "version": "20261112182427",
+      "name": "professional_app_scope_role_guard"
+    },
+    {
+      "version": "20261112182626",
+      "name": "professional_order_rls_no_recursion"
+    },
+    {
+      "version": "20261112182739",
+      "name": "professional_app_owner_and_reception_access"
+    },
+    {
+      "version": "20261112182809",
+      "name": "reception_app_scope_safe_until_separate_identity"
+    },
+    {
+      "version": "20261112202823",
+      "name": "professional_fiscal_profile_and_service_assignments"
+    },
+    {
+      "version": "20261112202951",
+      "name": "enforce_professional_service_assignments"
+    },
+    {
+      "version": "20261112203122",
+      "name": "professional_services_policy_optimization"
+    },
+    {
+      "version": "20261112203202",
+      "name": "preserve_legacy_appointments_service_links"
+    },
+    {
+      "version": "20261113002700",
+      "name": "product_commission_rules_and_payment_flow"
+    },
+    {
+      "version": "20261113002910",
+      "name": "index_product_commission_rule_foreign_key"
+    },
+    {
+      "version": "20261113003842",
+      "name": "quotes_and_grouped_appointments"
+    },
+    {
+      "version": "20261113004028",
+      "name": "enforce_quote_discount_rules_and_totals"
+    },
+    {
+      "version": "20261113004223",
+      "name": "support_fixed_value_quote_discounts"
+    },
+    {
+      "version": "20261113004247",
+      "name": "index_quote_group_foreign_keys_and_lock_discount_settings"
+    },
+    {
+      "version": "20261113004409",
+      "name": "atomic_quote_appointment_group_booking"
+    },
+    {
+      "version": "20261113004419",
+      "name": "atomic_grouped_quote_scheduling_and_quote_item_lifecycle"
+    },
+    {
+      "version": "20261113004537",
+      "name": "split_quote_rls_read_and_write_policies"
+    },
+    {
+      "version": "20261113004807",
+      "name": "quote_quantity_aware_appointment_duration"
+    },
+    {
+      "version": "20261113010050",
+      "name": "integrate_partial_commissions_cash_and_grouped_comandas"
+    },
+    {
+      "version": "20261113010144",
+      "name": "require_open_cash_for_payments_and_refunds"
+    },
+    {
+      "version": "20261113010244",
+      "name": "serialize_cash_register_movements"
+    },
+    {
+      "version": "20261113010311",
+      "name": "fix_grouped_order_existing_uuid_lookup"
+    },
+    {
+      "version": "20261113010319",
+      "name": "index_financial_refund_foreign_keys"
+    },
+    {
+      "version": "20261113010559",
+      "name": "document_financial_and_agenda_database_contracts"
+    },
+    {
+      "version": "20261113010702",
+      "name": "use_default_cash_register_for_branch_transactions"
+    },
+    {
+      "version": "20261113010729",
+      "name": "enforce_unique_professional_service_commission_rules"
+    },
+    {
+      "version": "20261113011533",
+      "name": "create_quotes_atomically_with_tenant_validation"
+    },
+    {
+      "version": "20261113011612",
+      "name": "save_quote_discount_settings_atomically"
+    },
+    {
+      "version": "20261113011915",
+      "name": "scope_professional_app_access_to_explicit_tenant"
+    },
+    {
+      "version": "20261113012733",
+      "name": "enforce_professional_service_on_quote_scheduling"
+    },
+    {
+      "version": "20261113034347",
+      "name": "dbd6acb8-12c0-4a49-9e33-93a41fb61d2e"
+    },
+    {
+      "version": "20261113034736",
+      "name": "f0d60118-12f4-43ef-9e1c-ee2d42dd82cf"
+    },
+    {
+      "version": "20261113121938",
+      "name": "fix_expense_payment_branch_cash_register"
+    },
+    {
+      "version": "20261120041015",
+      "name": "customer_global_identity"
+    },
+    {
+      "version": "20261120041034",
+      "name": "customer_identity_link_hardening"
+    },
+    {
+      "version": "20261120041443",
+      "name": "customer_appointment_holds"
+    },
+    {
+      "version": "20261120041450",
+      "name": "customer_appointment_holds_rpc_security"
+    },
+    {
+      "version": "20261120041537",
+      "name": "customer_appointment_hold_cancellation"
+    },
+    {
+      "version": "20261120041630",
+      "name": "customer_appointment_holds_private_rpc"
+    },
+    {
+      "version": "20261120041928",
+      "name": "customer_booking_business_and_professional_availability"
+    },
+    {
+      "version": "20261120063615",
+      "name": "enforce_availability_on_admin_appointments"
+    },
+    {
+      "version": "20261120064407",
+      "name": "20261120070000_public_salon_directory_and_availability"
+    },
+    {
+      "version": "20261120064553",
+      "name": "20261120071000_align_public_profiles_with_settings"
+    },
+    {
+      "version": "20261120064639",
+      "name": "20261120072000_restrict_private_schema_public_api"
+    },
+    {
+      "version": "20261120064758",
+      "name": "20261120073000_allow_members_read_public_profile_settings"
+    },
+    {
+      "version": "20261120065524",
+      "name": "20261120065000_customer_coupons_transactional"
+    },
+    {
+      "version": "20261120065604",
+      "name": "20261120065600_restrict_legacy_hold_private_entrypoints"
+    },
+    {
+      "version": "20261120070111",
+      "name": "20261120065700_coupon_fk_indexes_and_public_profile_policy_cleanup"
+    },
+    {
+      "version": "20261120070234",
+      "name": "20261120070200_audit_public_salon_profiles"
+    },
+    {
+      "version": "20261120072329",
+      "name": "consolidate_agenda_availability_rls_policies"
+    },
+    {
+      "version": "20261120072618",
+      "name": "move_privileged_financial_and_workflow_rpcs_private"
+    },
+    {
+      "version": "20261120073222",
+      "name": "complete_branch_cash_register_and_cash_summary"
+    },
+    {
+      "version": "20261120160212",
+      "name": "enforce_enabled_professional_identity"
+    },
+    {
+      "version": "20261120160728",
+      "name": "deny_null_appointment_start_authorization"
+    },
+    {
+      "version": "20261120160853",
+      "name": "professional_scope_explicit_denial"
+    },
+    {
+      "version": "20261120163051",
+      "name": "customer_appointment_history"
+    },
+    {
+      "version": "20261120163441",
+      "name": "customer_coupon_confirmation_idempotent"
+    },
+    {
+      "version": "20261120163536",
+      "name": "customer_favorites_and_preferences"
+    },
+    {
+      "version": "20261120164053",
+      "name": "customer_private_appointment_notifications"
+    },
+    {
+      "version": "20261120165637",
+      "name": "branch_catalog_rpc_alignment"
+    },
+    {
+      "version": "20261120165822",
+      "name": "branch_main_integrity_and_professional_read"
+    },
+    {
+      "version": "20261120205923",
+      "name": "prioritize_agenda_cash_query_indexes"
+    },
+    {
+      "version": "20261120211409",
+      "name": "enforce_exact_centavo_service_order_payment"
+    },
+    {
+      "version": "20261120212042",
+      "name": "service_packages_and_appointment_waitlist"
+    },
+    {
+      "version": "20261120212247",
+      "name": "fix_customer_available_slots_date_arithmetic"
+    },
+    {
+      "version": "20261120212306",
+      "name": "service_packages_waitlist_secure_rpcs"
+    },
+    {
+      "version": "20261120212554",
+      "name": "atomic_waitlist_booking_and_cancel_release"
+    },
+    {
+      "version": "20261120213452",
+      "name": "private_customer_loyalty_overview"
+    },
+    {
+      "version": "20261120213713",
+      "name": "waitlist_avoid_cross_midnight_openings"
+    }
+  ]
+}

@@ -85,6 +85,22 @@ function normalizePayload(input, orgId) {
 }
 
 /**
+ * Recalcula timestamps ao mover um atendimento por data, hora ou duração.
+ * Preserva a duração anterior quando não for explicitamente alterada.
+ */
+function mergeAppointmentChanges(current,changes) {
+ const merged={...current,...changes};
+ if(changes.date!==undefined||changes.time!==undefined||changes.duration!==undefined||changes.starts_at!==undefined){
+  const previous=toCandidate(current);
+  const start=changes.starts_at!==undefined?new Date(changes.starts_at):new Date((changes.date??previous.date)+"T"+(changes.time??previous.time)+":00");
+  merged.starts_at=start;
+  if(changes.ends_at===undefined)merged.ends_at=new Date(start.getTime()+Number(changes.duration??previous.duration)*60000);
+ }
+ if(changes.pro!==undefined&&changes.professional_id===undefined)merged.professional_id=changes.pro;
+ return merged;
+}
+
+/**
  * Traduz falhas do PostgREST em mensagens seguras para o painel.
  * @param {object} error Erro retornado pelo Supabase.
  * @returns {Error} Erro sem SQL ou detalhes internos.
@@ -216,7 +232,7 @@ export async function updateAppointment(id,changes,{client,orgId,opening="08:00"
   validateContext(client,orgId);
   const current=await getAppointment(id,{client,orgId});
   if(!current)return {ok:false,errors:["Agendamento não encontrado."]};
-  const payload=normalizePayload({...current,...changes},orgId);
+  const payload=normalizePayload(mergeAppointmentChanges(current,changes),orgId);
   const candidate=toCandidate({...payload,id});
   const existing=await readAllAppointments(client,orgId,{date:candidate.date});
   const validation=checkAvailability(candidate,existing.map(toCandidate),{opening,closing});
@@ -238,7 +254,7 @@ export async function updateAppointment(id,changes,{client,orgId,opening="08:00"
 export async function previewMoveAppointment(id,changes,context={}) {
   const current=await getAppointment(id,context);
   if(!current)return {ok:false,errors:["Agendamento não encontrado."]};
-  const payload=normalizePayload({...current,...changes},context.orgId);
+  const payload=normalizePayload(mergeAppointmentChanges(current,changes),context.orgId);
   const candidate=toCandidate({...payload,id});
   const existing=await readAllAppointments(context.client,context.orgId,{date:candidate.date});
   const {checkAvailability}=await import("./availability.service.js");

@@ -7,8 +7,8 @@
  * Gera a versão imprimível do orçamento e prepara o link público de aceite/recusa.
  * O token público é aleatório; somente seu hash SHA-256 é persistido.
  */
-export async function printQuoteDocument({ quote, orgId, supabase, state, esc, money, statusName, toast }) {
-  if (!quote) return;
+export async function printQuoteDocument({ quote, orgId, supabase, state, esc, money, statusName, toast, isCurrent=()=>true }) {
+  if (!quote||!isCurrent()) return;
 
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
@@ -19,9 +19,10 @@ export async function printQuoteDocument({ quote, orgId, supabase, state, esc, m
 
   const [orgResult, branchResult, professionalResult] = await Promise.all([
     supabase.from("organizations").select("name,document,phone").eq("id", orgId).single(),
-    supabase.from("branches").select("name,document,address,phone,is_main").eq("org_id", orgId).eq("is_main", true).maybeSingle(),
+    (quote.branch_id?supabase.from("branches").select("name,document,address,phone,is_main").eq("org_id",orgId).eq("id",quote.branch_id):supabase.from("branches").select("name,document,address,phone,is_main").eq("org_id",orgId).eq("is_main",true)).maybeSingle(),
     supabase.from("professionals").select("id,name").eq("org_id", orgId)
   ]);
+  if(!isCurrent()){printWindow.close();return;}
   if (orgResult.error) throw orgResult.error;
   if (branchResult.error) throw branchResult.error;
   if (professionalResult.error) throw professionalResult.error;
@@ -41,6 +42,7 @@ export async function printQuoteDocument({ quote, orgId, supabase, state, esc, m
     const token = [...bytes].map(byte => byte.toString(16).padStart(2, "0")).join("");
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
     const tokenHash = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+    if(!isCurrent()){printWindow.close();return;}
     const { data: updatedQuote, error } = await supabase
       .from("quotes")
       .update({ public_token_hash: tokenHash })
@@ -54,6 +56,7 @@ export async function printQuoteDocument({ quote, orgId, supabase, state, esc, m
     responseUrl = "https://vlifbvzlyzoncefvfgol.supabase.co/functions/v1/respond-to-quote?token=" + token;
   }
 
+  if(!isCurrent()){printWindow.close();return;}
   const itemRows = quote.items.map(item => `
     <div class="row">
       <span>
@@ -106,22 +109,27 @@ export async function printQuoteDocument({ quote, orgId, supabase, state, esc, m
  * O front-end valida conflitos dentro do próprio grupo; o banco valida tenant,
  * habilitação profissional, bloqueios e conflitos com a Agenda existente.
  */
-export async function openQuoteSchedule({ quote, orgId, supabase, host, esc, toast, reportError, loadQuotesPage, openQuote }) {
+export async function openQuoteSchedule({ quote, orgId, supabase, host, esc, toast, reportError, loadQuotesPage, openQuote, isCurrent=()=>true }) {
+  if(!quote||quote.status!=="accepted"||!isCurrent())return;
   const [itemsResult, professionalResult, assignmentResult] = await Promise.all([
     supabase.from("quote_items").select("id,service_id,professional_id,description,quantity,duration_minutes,total").eq("org_id", orgId).eq("quote_id", quote.id).order("sort_order"),
-    supabase.from("professionals").select("id,name").eq("org_id", orgId).eq("active", true).order("name"),
+    supabase.from("professionals").select("id,name,branch_id").eq("org_id", orgId).eq("active", true).order("name"),
     supabase.from("professional_services").select("professional_id,service_id").eq("org_id", orgId)
   ]);
+  if(!isCurrent())return;
   if (itemsResult.error) throw itemsResult.error;
   if (professionalResult.error) throw professionalResult.error;
   if (assignmentResult.error) throw assignmentResult.error;
 
+  if(!quote?.branch_id)throw new Error("O orçamento precisa estar vinculado a uma unidade para agendamento.");
   const items = itemsResult.data || [];
   const professionals = professionalResult.data || [];
   const assignments = assignmentResult.data || [];
 
   const itemForms = items.map((item, index) => {
     const eligibleProfessionals = professionals.filter(professional =>
+      (!professional.branch_id||professional.branch_id===quote.branch_id) &&
+      (!item.professional_id||item.professional_id===professional.id) &&
       assignments.some(link => link.service_id === item.service_id && link.professional_id === professional.id)
     );
     const professionalOptions = eligibleProfessionals.map(professional => `
@@ -164,6 +172,7 @@ export async function openQuoteSchedule({ quote, orgId, supabase, host, esc, toa
     event.preventDefault();
     const form = event.currentTarget;
     const button = form.querySelector('[type="submit"]');
+    if(button.disabled||!host.isConnected||!form.isConnected||!isCurrent())return;
     const values = new FormData(form);
     button.disabled = true;
     button.textContent = "Verificando disponibilidade…";
@@ -179,6 +188,9 @@ export async function openQuoteSchedule({ quote, orgId, supabase, host, esc, toa
         if (!professionalId || !date || !time || Number.isNaN(start.getTime())) {
           throw new Error("Preencha profissional, data e horário de todos os serviços.");
         }
+        if(start<=new Date()||!Number.isSafeInteger(duration)||duration<=0)throw new Error("Selecione um horário futuro com duração válida.");
+        if(item.professional_id&&professionalId!==item.professional_id)throw new Error("O profissional definido no orçamento não pode ser trocado.");
+        if(!professionals.some(p=>p.id===professionalId&&(!p.branch_id||p.branch_id===quote.branch_id))||!assignments.some(link=>link.service_id===item.service_id&&link.professional_id===professionalId))throw new Error("O profissional não está habilitado para este serviço e unidade.");
         return { item, professionalId, start, end };
       });
 
@@ -204,6 +216,7 @@ export async function openQuoteSchedule({ quote, orgId, supabase, host, esc, toa
       });
       if (error) throw error;
 
+      if(!isCurrent())return;
       toast("Agendamento agrupado criado com " + Number(group?.count || prepared.length) + " serviço(s).");
       await loadQuotesPage();
     } catch (error) {

@@ -62,3 +62,12 @@ As migrations recentes de Caixa/Comanda/Agenda/Orçamentos e tenant access estã
 - `20261113034736_f0d60118-12f4-43ef-9e1c-ee2d42dd82cf.sql`: corrige a RPC `register_service_order_payment` e usa uma função privada de estado financeiro para proteger itens da Comanda sem exigir que o profissional leia a tabela de pagamentos.
 
 Essas migrations foram recuperadas do commit Lovable `1f2db25dc2c61cda566885752000eb4c5f4b6e3c`. Não foram aplicadas ao banco durante a sincronização. Aplicação em produção depende de revisão e teste em banco isolado.
+
+
+## Atualização de 20/11/2026 — conciliação parcial
+
+- Inventário de 90 versões remotas registrado em `docs/migrations/remote-history-2026-11-20.json`. O comando `npm run audit:migrations` compara os arquivos locais com este inventário (somente leitura); não verifica equivalência semântica do SQL e não foi executado em um checkout completo.
+- Foram alinhadas as versões efetivamente registradas `20261120072329` (políticas da Agenda) e `20261120072618` (RPCs privadas), com SQL extraído do histórico remoto e comparação com os arquivos anteriores. As duas versões duplicadas foram retiradas; referência do teste de RPCs atualizada.
+- Cinco SQLs financeiros sem versão registrada foram preservados byte a byte em `docs/sql/legacy-unapplied/` e retirados de `supabase/migrations/`: 20261119150000 (pagamento), 20261119170000 (snapshot), 20261119180000 (caixa físico), 20261119190000 (resumo), 20261119200000 (caixa por filial). Não são migrations prontas para implantação. O teste de snapshot aponta para o arquivo arquivado. Os rascunhos financeiros mais recentes ainda precisam de validação transacional.
+- A comparação com main aponta divergência; os oito commits exclusivos da main contêm o snapshot remoto em `supabase/snapshot-remoto/`. Não mesclar automaticamente, não copiar o snapshot inteiro para a pasta ativa e não executar `db push` ou reparar o histórico até conciliar todas as versões e testar replay em banco isolado.
+- Outros arquivos locais sem versão correspondente e migrations remotas antigas ainda requerem auditoria completa. O inventário histórico de 13/11 acima é referência, não um retrato atual. Nenhuma operação de escrita ou reparo do banco feita nesta etapa; nenhum teste de integração executado.

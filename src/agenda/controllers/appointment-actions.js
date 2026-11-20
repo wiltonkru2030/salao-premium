@@ -2,6 +2,7 @@
  * Casos de uso da Agenda: validação, gravação e integração com Comanda.
  * Funções recebem o estado autenticado e executam operações persistentes com org_id.
  */
+import { startAgendaOrder } from "../services/agenda-order.service.js";
 import { state } from "../../state.js";
 import { $, toast } from "../../utils.js";
 import { parseBRL } from "../../utils/input-masks.js";
@@ -54,13 +55,15 @@ async function refreshAgendaAndDrawer() {
   }
 }
 // Busca comandas reutilizáveis e decide o vínculo antes de criar o agendamento.
-async function findOpenCustomerOrders(customerId) {
-  const {data,error}=await supabase.from('service_orders')
+async function findOpenCustomerOrders(customerId,branchId) {
+  // Reutilização restrita à unidade do atendimento; null representa caixa/unidade legada.
+  let query=supabase.from('service_orders')
     .select('id,order_number,status')
     .eq('org_id',state.organization.id)
     .eq('customer_id',customerId)
-    .in('status',['open','in_progress','partially_paid','awaiting_payment'])
-    .order('created_at',{ascending:false}).limit(20);
+    .in('status',['open','in_progress']);
+  query=branchId?query.eq('branch_id',branchId):query.is('branch_id',null);
+  const {data,error}=await query.order('created_at',{ascending:false}).limit(20);
   if(error) throw error;
   return data||[];
 }
@@ -142,7 +145,8 @@ export async function saveAppointment(form) {
     if(existing.service_order_id && (
       existing.customer_id!==customerId ||
       existing.service_id!==serviceId ||
-      existing.professional_id!==professionalId
+      existing.professional_id!==professionalId ||
+      (existing.branch_id||null)!==(branchId||null)
     )) throw new Error('Este horário já está vinculado a uma comanda. Para manter o histórico correto, altere somente data, horário e observações.');
     payload.status=existing.dbStatus||'scheduled';
     payload.service_order_id=existing.customer_id===customerId?existing.service_order_id:null;
@@ -159,7 +163,7 @@ export async function saveAppointment(form) {
   payload.status='scheduled';
   payload.comanda_strategy='new_on_arrival';
   payload.service_order_id=null;
-  const activeOrders=await findOpenCustomerOrders(customerId);
+  const activeOrders=await findOpenCustomerOrders(customerId,branchId);
   if(activeOrders.length) {
     const choice=await selectExistingOrder(activeOrders);
     if(choice===null)return;
@@ -204,37 +208,23 @@ export async function updateAppointmentStatus(appointment,status) {
  * @throws {Error} Quando o vínculo ou a abertura da comanda falhar.
  */
 export async function openAppointmentOrder(appointment) {
+  const orgId=state.organization?.id,userId=state.user?.id;
   if(appointment.dbStatus==='cancelled'||appointment.dbStatus==='completed'||appointment.dbStatus==='no_show') {
     throw new Error('Este agendamento não pode abrir uma comanda.');
   }
   let existingId=appointment.service_order_id||null;
-  let forceNew=appointment.comanda_strategy==='force_new_on_arrival';
+  // Uma comanda já vinculada prevalece sobre a preferência de criar uma nova.
+  let forceNew=!existingId&&appointment.comanda_strategy==='force_new_on_arrival';
   if(!existingId&&!forceNew) {
-    const orders=await findOpenCustomerOrders(appointment.customer_id);
+    const orders=await findOpenCustomerOrders(appointment.customer_id,appointment.branch_id);
     const choice=await selectExistingOrder(orders);
     if(choice===null)return;
     existingId=choice.orderId;
     forceNew=choice.forceNew;
   }
-  let result=null;
-  if(appointment.appointment_group_id){
-    // A RPC abre todos os serviços do grupo dentro de uma única transação no banco.
-    const {data,error}=await supabase.rpc('start_appointment_group_service_order',{
-      p_appointment_id:appointment.id,
-      p_existing_order_id:existingId,
-      p_force_new:forceNew
-    });
-    if(error)throw error;
-    result=data;
-  }else{
-    const {data,error}=await supabase.rpc('start_appointment_service_order',{
-      p_appointment_id:appointment.id,
-      p_existing_order_id:existingId,
-      p_force_new:forceNew
-    });
-    if(error)throw error;
-    result=data;
-  }
+  if(state.organization?.id!==orgId||state.user?.id!==userId)throw new Error("O contexto do salão mudou. Abra o atendimento novamente.");
+  const result=await startAgendaOrder({client:supabase,orgId,appointment,existingId,forceNew});
+  if(state.organization?.id!==orgId||state.user?.id!==userId)return;
   state.drawer=null;
   await loadAgendaPage();
   const count=Number(result?.service_count||1);

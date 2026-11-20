@@ -60,6 +60,16 @@ async function run() {
     professionalId: "p1", userId: "u1"
   }), { name: "TypeError" });
 
+
+  // Preço ausente não pode ser convertido silenciosamente em serviço gratuito.
+  for (const invalidPrice of [null, undefined, "", "  ", false, true, Infinity, NaN, 1e15]) {
+    await assert.rejects(() => addProfessionalServiceToOrder({
+      client: mock.client, organizationId: "org-1", orderId: "order-1",
+      service: { id: "s1", name: "Corte", price: invalidPrice },
+      professionalId: "p1", userId: "u1"
+    }), { name: "TypeError" });
+  }
+
   const failed = mockClient({ data: null, error: { message: "erro SQL privado" } });
   await assert.rejects(() => addProfessionalServiceToOrder({
     client: failed.client, organizationId: "org-1", orderId: "order-1",

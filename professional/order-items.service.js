@@ -14,8 +14,11 @@
  * @throws {TypeError} Se o valor não for numérico, finito ou não negativo.
  */
 function normalizePrice(value) {
+  if (value === null || value === undefined || (typeof value === "string" && !value.trim()) || typeof value === "boolean") {
+    throw new TypeError("O preço do serviço é inválido.");
+  }
   const price = Number(value);
-  if (!Number.isFinite(price) || price < 0) {
+  if (!Number.isFinite(price) || price < 0 || !Number.isSafeInteger(Math.round(price * 100))) {
     throw new TypeError("O preço do serviço é inválido.");
   }
   // O arredondamento ocorre antes do envio para evitar frações menores que um centavo.

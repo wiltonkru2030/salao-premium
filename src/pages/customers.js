@@ -11,7 +11,7 @@ import { reportError } from "../utils/errors.js";
 import { listCustomers, saveCustomer, setCustomerActive } from "../modules/customers/customers.service.js";
 
 import { bindCustomerEvents } from "../modules/customers/customers.controller.js";
-import { renderCustomersView } from "../modules/customers/customers.view.js";
+import { renderCustomersView, renderCustomersStatus } from "../modules/customers/customers.view.js";
 import { createCustomerPageState } from "../modules/customers/customer-page-state.js";
 
 const customerPageState=createCustomerPageState();
@@ -41,18 +41,22 @@ export async function loadCustomersPage() {
   const orgId=state.organization.id;
   const branchId=state.branch?.id||null;
   const request=customerPageState.begin(host,customerContextKey());
-  let customers;
+  // Remove a listagem anterior imediatamente, inclusive em trocas de filial.
+  host.innerHTML=renderCustomersStatus();
+  host.onclick=event=>{
+    if(event.target.closest?.('[data-retry-customers]'))void loadCustomersPage();
+  };
   try {
-    customers=await listCustomers({client:supabase,orgId,branchId});
+    const customers=await listCustomers({client:supabase,orgId,branchId});
     if(!customerPageState.commit(host,request,customerContextKey(),customers))return;
+    host.innerHTML=renderCustomersView(customers,canManageCustomers());
   } catch(error) {
     if(!customerPageState.isCurrent(host,request,customerContextKey()))return;
     reportError(error,{context:"Clientes > carregar lista"});
-    host.innerHTML='<div class="empty-state">Não foi possível carregar os clientes. Atualize a página e tente novamente.</div>';
+    host.innerHTML=renderCustomersStatus(true);
     return;
   }
 
-  host.innerHTML=renderCustomersView(customers,canManageCustomers());
 
   bindCustomerEvents({
     host,client:supabase,customerPageState,customerContextKey,

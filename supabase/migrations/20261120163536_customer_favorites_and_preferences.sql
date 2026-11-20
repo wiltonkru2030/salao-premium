@@ -1,9 +1,4 @@
--- RASCUNHO — favoritos, notificações internas e preferências da identidade global.
--- Não aplicar em produção sem revisão e autorização explícita.
--- Notificações são in-app; envio push/e-mail/WhatsApp não está incluído neste rascunho.
-
-begin;
-
+-- Favoritos privados e preferências da identidade global. Sem eventos de agenda nesta migration.
 grant usage on schema private to authenticated;
 
 create or replace function private.is_public_salon(p_org_id uuid)
@@ -33,7 +28,7 @@ create table if not exists public.customer_favorites (
 );
 
 alter table public.customer_favorites enable row level security;
-revoke all on public.customer_favorites from public,anon;
+revoke all on public.customer_favorites from public,anon,authenticated;
 grant select,insert,delete on public.customer_favorites to authenticated;
 
 drop policy if exists customer_favorites_select_own on public.customer_favorites;
@@ -50,9 +45,7 @@ drop policy if exists customer_favorites_delete_own on public.customer_favorites
 create policy customer_favorites_delete_own on public.customer_favorites
   for delete to authenticated using (auth_user_id=(select auth.uid()));
 
-drop trigger if exists audit_row_change on public.customer_favorites;
-create trigger audit_row_change after insert or update or delete on public.customer_favorites
-  for each row execute function private.capture_row_audit();
+-- Favoritos são privados da identidade; não enviar ao log administrativo do salão.
 
 create or replace function private.list_my_favorite_salons()
 returns table (
@@ -102,109 +95,8 @@ $function$;
 revoke all on function public.list_my_favorite_salons() from public,anon,authenticated;
 grant execute on function public.list_my_favorite_salons() to authenticated;
 
-create table if not exists public.customer_notifications (
-  id uuid primary key default gen_random_uuid(),
-  auth_user_id uuid not null references auth.users(id) on delete cascade,
-  org_id uuid not null references public.organizations(id) on delete cascade,
-  appointment_id uuid references public.appointments(id) on delete set null,
-  kind text not null,
-  title text not null,
-  body text not null,
-  read_at timestamptz,
-  created_at timestamptz not null default now(),
-  constraint customer_notifications_kind check (
-    kind in ('appointment_created','appointment_confirmed','appointment_cancelled','appointment_completed','appointment_rescheduled','appointment_updated')
-  ),
-  constraint customer_notifications_title_length check (length(title) between 1 and 120),
-  constraint customer_notifications_body_length check (length(body) between 1 and 500)
-);
 
-create index if not exists customer_notifications_owner_created_idx
-  on public.customer_notifications(auth_user_id,created_at desc);
-
-alter table public.customer_notifications enable row level security;
-revoke all on public.customer_notifications from public,anon;
-grant select on public.customer_notifications to authenticated;
-grant update(read_at) on public.customer_notifications to authenticated;
-
-drop policy if exists customer_notifications_select_own on public.customer_notifications;
-create policy customer_notifications_select_own on public.customer_notifications
-  for select to authenticated using (auth_user_id=(select auth.uid()));
-
-drop policy if exists customer_notifications_update_own on public.customer_notifications;
-create policy customer_notifications_update_own on public.customer_notifications
-  for update to authenticated using (auth_user_id=(select auth.uid()))
-  with check (auth_user_id=(select auth.uid()));
-
-drop trigger if exists audit_row_change on public.customer_notifications;
-create trigger audit_row_change after insert or update or delete on public.customer_notifications
-  for each row execute function private.capture_row_audit();
-
-create or replace function private.notify_customer_appointment_changes()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $function$
-declare
-  v_kind text;
-  v_title text;
-  v_body text;
-  v_timezone text;
-  v_when text;
-begin
-  select coalesce(o.timezone,'America/Sao_Paulo') into v_timezone
-  from public.organizations o where o.id=new.org_id;
-  v_when:=to_char(new.starts_at at time zone coalesce(v_timezone,'America/Sao_Paulo'),'DD/MM/YYYY "às" HH24:MI');
-
-  if tg_op='INSERT' then
-    v_kind:='appointment_created';
-    v_title:='Solicitação de agendamento recebida';
-    v_body:='Seu atendimento de '||coalesce(new.service_name,'serviço')||' foi solicitado para '||v_when||'.';
-  elsif new.status is distinct from old.status then
-    if new.status='confirmed' then
-      v_kind:='appointment_confirmed'; v_title:='Agendamento confirmado';
-      v_body:='Seu atendimento de '||coalesce(new.service_name,'serviço')||' foi confirmado para '||v_when||'.';
-    elsif new.status='cancelled' then
-      v_kind:='appointment_cancelled'; v_title:='Agendamento cancelado';
-      v_body:='O agendamento de '||coalesce(new.service_name,'serviço')||' foi cancelado.';
-    elsif new.status='completed' then
-      v_kind:='appointment_completed'; v_title:='Atendimento concluído';
-      v_body:='Seu atendimento de '||coalesce(new.service_name,'serviço')||' foi concluído.';
-    else
-      v_kind:='appointment_updated'; v_title:='Agendamento atualizado';
-      v_body:='O status do seu atendimento foi atualizado.';
-    end if;
-  elsif new.starts_at is distinct from old.starts_at
-     or new.ends_at is distinct from old.ends_at
-     or new.professional_id is distinct from old.professional_id then
-    v_kind:='appointment_rescheduled';
-    v_title:='Agendamento alterado';
-    v_body:='Seu atendimento de '||coalesce(new.service_name,'serviço')||' foi alterado para '||v_when||'.';
-  else
-    return new;
-  end if;
-
-  insert into public.customer_notifications(auth_user_id,org_id,appointment_id,kind,title,body)
-  select distinct link.auth_user_id,new.org_id,new.id,v_kind,v_title,v_body
-  from public.customer_account_customers link
-  join public.customer_tenant_memberships membership
-    on membership.org_id=link.org_id
-   and membership.auth_user_id=link.auth_user_id
-   and membership.status='active'
-  where link.org_id=new.org_id and link.customer_id=new.customer_id;
-
-  return new;
-end;
-$function$;
-
-revoke all on function private.notify_customer_appointment_changes() from public,anon,authenticated;
-
-drop trigger if exists customer_appointment_notification_trigger on public.appointments;
-create trigger customer_appointment_notification_trigger
-  after insert or update of status,starts_at,ends_at,professional_id
-  on public.appointments
-  for each row execute function private.notify_customer_appointment_changes();
+create index if not exists customer_favorites_org_idx on public.customer_favorites(org_id);
 
 create or replace function private.get_my_customer_preferences()
 returns jsonb
@@ -297,11 +189,5 @@ $function$;
 revoke all on function public.update_my_customer_preferences(jsonb) from public,anon,authenticated;
 grant execute on function public.update_my_customer_preferences(jsonb) to authenticated;
 
-comment on table public.customer_favorites is
-  'Salões favoritos por identidade global da cliente; não pertence ao tenant.';
-comment on table public.customer_notifications is
-  'Notificações internas destinadas à identidade global da cliente.';
-comment on function public.update_my_customer_preferences(jsonb) is
-  'Atualiza somente preferências permitidas do próprio perfil global autenticado.';
 
-commit;
+comment on table public.customer_favorites is 'Favoritos privados de uma identidade global, sem vínculo operacional com o salão.';

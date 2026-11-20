@@ -1,0 +1,22 @@
+/** Testes de contrato do serviço, sem gravações no banco remoto. */
+import assert from "node:assert/strict";
+import {fetchAppointmentChangeOptions,fetchRescheduleSlots,changeCustomerAppointment} from "./appointmentChangesService.js";
+const appointmentId="11111111-1111-4111-8111-111111111111";
+const future=new Date(Date.now()+86400000).toISOString(),next=new Date(Date.now()+172800000).toISOString();
+let calls=[];
+const client={rpc:async(name,args)=>{calls.push({name,args});return {data:name==="change_my_customer_appointment"?appointmentId:[],error:null};}};
+assert.deepEqual(await fetchAppointmentChangeOptions({client}),[]);
+assert.deepEqual(await fetchRescheduleSlots({client,appointmentId,date:future.slice(0,10)}),[]);
+assert.deepEqual(calls[1].args,{p_appointment_id:appointmentId,p_date:future.slice(0,10)});
+assert.equal(await changeCustomerAppointment({client,appointmentId,action:"reschedule",expectedStart:future,newStart:next}),appointmentId);
+assert.deepEqual(calls[2].args,{p_appointment_id:appointmentId,p_action:"reschedule",p_expected_start:future,p_new_start:next});
+await changeCustomerAppointment({client,appointmentId,action:"cancel",expectedStart:future});
+assert.equal(calls[3].args.p_new_start,null);
+await assert.rejects(()=>fetchRescheduleSlots({client,appointmentId,date:"2026-02-30"}),/data válida/);
+await assert.rejects(()=>changeCustomerAppointment({client,appointmentId:"invalid",action:"cancel",expectedStart:future}),TypeError);
+assert.equal(calls.length,4);
+const missing={rpc:async()=>({data:null,error:{code:"PGRST202"}})};
+assert.deepEqual(await fetchAppointmentChangeOptions({client:missing}),[]);
+const conflict={rpc:async()=>({data:null,error:{code:"23P01",message:"detalhe interno"}})};
+await assert.rejects(()=>changeCustomerAppointment({client:conflict,appointmentId,action:"reschedule",expectedStart:future,newStart:next}),/horário deixou de estar disponível/);
+console.log("Alterações de agendamentos: OK");

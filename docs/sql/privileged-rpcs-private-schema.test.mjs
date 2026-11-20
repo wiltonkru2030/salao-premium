@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const migration = await readFile(new URL("../../supabase/migrations/20261120072000_move_privileged_financial_and_workflow_rpcs_private.sql", import.meta.url), "utf8");
+const migration = await readFile(new URL("../../supabase/migrations/20261120072618_move_privileged_financial_and_workflow_rpcs_private.sql", import.meta.url), "utf8");
 const sql = migration.toLowerCase();
 
 assert.match(sql, /^\s*--/);

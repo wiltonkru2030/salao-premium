@@ -1,5 +1,5 @@
 -- SALÃO PREMIUM — histórico de agendamentos da identidade global da cliente.
--- Migration versionada; aplicar primeiro em ambiente QA e validar com duas identidades.
+-- Aplicada no Supabase em 20/11/2026; isolamento com duas identidades ainda requer QA.
 -- Retorna somente agendamentos associados à própria identidade Auth.
 -- Inclui registros legados somente depois da associação confirmada pela cliente.
 

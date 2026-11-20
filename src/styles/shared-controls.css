@@ -1,0 +1,31 @@
+/* Contrato visual dos controles: compartilhado pelos três produtos.
+   Escopo explícito para evitar interferência em widgets externos e calendários. */
+:is(#app,#professional-app,#cliente-app) :is(h1,.page-head h1,.client-title,.sp-modal-head h2,.metric-card strong){font-family:var(--sp-font-heading);font-weight:500}
+:is(#app,#professional-app,#cliente-app) :is(button,input,select,textarea){font-family:var(--sp-font-ui)}
+:is(#app,#professional-app,#cliente-app) :is(button,a,summary,input,select,textarea):focus-visible{outline:2px solid var(--color-gold,var(--sp-focus-ring));outline-offset:3px}
+:is(#app,#professional-app,#cliente-app) button:disabled{cursor:not-allowed;opacity:.55}
+:is(#app,#professional-app,#cliente-app) :is(.btn,.primary,.secondary,.client-button){min-height:var(--sp-control-height);font-size:var(--sp-label-size);font-weight:500;border-radius:var(--sp-control-radius);white-space:normal}
+:is(#app,#professional-app,#cliente-app) :is(.icon-btn,.icon-button,.sp-modal-close){min-width:44px;min-height:44px}
+:is(#app,#professional-app,#cliente-app) :is(input,select,textarea):not([type=checkbox],[type=radio],[type=hidden],[type=range],[type=color],[type=file]){min-width:0;max-width:100%}
+:is(#app,#professional-app,#cliente-app) :is(input.field,select.field,textarea.field,.field input,.field select,.field textarea,.form-field input,.form-field select,.form-field textarea,.sp-modal-body input,.sp-modal-body select,.sp-modal-body textarea,.profile-form input,.service-result-card input,.service-result-card select):not([type=checkbox],[type=radio],[type=hidden]){min-height:var(--sp-control-height);font-size:var(--sp-text-size)}
+:is(#app,#professional-app,#cliente-app) :is(.form-field,.form-grid>label,.sp-modal-body>label,.field-label){font-size:var(--sp-label-size);font-weight:500}
+:is(#app,#professional-app,#cliente-app) :is(.record-main b,.record-trailing>b,.appointment strong,.order strong){font-size:var(--sp-text-size);overflow-wrap:anywhere}
+:is(#app,#professional-app,#cliente-app) :is(.record-main small,.record-trailing small,.appointment .meta,.order .meta,.muted,.result-count){font-size:var(--sp-caption-size);color:var(--color-muted,var(--sp-muted));line-height:1.55}
+:is(#app,#professional-app,#cliente-app) :is(.empty-state,.notice,.client-alert,.client-error-text){font-size:var(--sp-label-size);line-height:1.65;overflow-wrap:anywhere}
+:is(#app,#professional-app,#cliente-app) .slot-option[aria-pressed="true"]{border-color:var(--color-gold,var(--sp-gold));background:var(--color-gold-soft,var(--sp-gold-soft))}
+dialog.sp-modal:not([open]){display:none}
+dialog.sp-modal .sp-modal-shell>form{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+dialog.sp-modal .sp-modal-body{flex:1;min-height:0;overscroll-behavior:contain}
+dialog.sp-modal :is(.sp-modal-head,.sp-modal-foot){flex-shrink:0}
+dialog.sp-modal .sp-modal-foot{flex-wrap:wrap}
+@media(max-width:700px){
+ :is(#app,#professional-app,#cliente-app) :is(input.field,select.field,textarea.field,.field input,.field select,.field textarea,.form-field input,.form-field select,.form-field textarea,.sp-modal-body input,.sp-modal-body select,.sp-modal-body textarea,.profile-form input,.service-result-card input,.service-result-card select):not([type=checkbox],[type=radio],[type=hidden]){font-size:16px}
+ :is(#app,#professional-app,#cliente-app) :is(input,select,textarea):not([type=checkbox],[type=radio],[type=hidden],[type=range],[type=color],[type=file]){font-size:16px}
+ :is(#app,#professional-app,#cliente-app) :is(.record-card,.setting-row){flex-wrap:wrap}
+ :is(#app,#professional-app,#cliente-app) :is(.record-main,.record-trailing){max-width:100%}
+ dialog.sp-modal{max-height:92dvh}
+ dialog.sp-modal .sp-modal-shell{max-height:92dvh}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}
+}

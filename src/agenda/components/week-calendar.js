@@ -35,7 +35,7 @@ function isOccupied(appointments, professionalIndex, key, minute) {
     if (appointment.pro !== professionalIndex || appointment.date !== key) return false;
     if (RELEASED_STATUSES.includes(appointment.status)) return false;
     const start = timeToMinutes(appointment.time);
-    return start <= minute && start + Number(appointment.duration || 30) > minute;
+    return start < minute + SLOT_MINUTES && start + Number(appointment.duration || 30) > minute;
   });
 }
 
@@ -43,8 +43,8 @@ function findBlock(blockedTimes, professionalIndex, key, minute) {
   return blockedTimes.find(block =>
     block.pro === professionalIndex &&
     block.date === key &&
-    timeToMinutes(block.start) <= minute &&
-    timeToMinutes(block.end) > minute
+    timeToMinutes(block.start) < minute + SLOT_MINUTES &&
+    (block.end === "24:00" ? 1440 : timeToMinutes(block.end)) > minute
   );
 }
 

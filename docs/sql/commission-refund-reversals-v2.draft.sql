@@ -36,6 +36,54 @@ comment on column public.commissions.reversal_of_commission_id is
   'Comissão original já paga que está sendo debitada em repasse futuro após estorno/devolução.';
 
 
+-- Um débito só pode corresponder integralmente a uma comissão positiva já paga.
+create or replace function private.guard_commission_reversal_integrity()
+returns trigger language plpgsql security definer set search_path='' as $function$
+declare original public.commissions%rowtype;
+begin
+  if tg_op='UPDATE' then
+    if new.reversal_of_commission_id is distinct from old.reversal_of_commission_id then
+      raise exception 'O vínculo de estorno não pode ser alterado.' using errcode='23514';
+    end if;
+  end if;
+  if new.reversal_of_commission_id is null then return new; end if;
+  select * into original from public.commissions
+    where org_id=new.org_id and id=new.reversal_of_commission_id;
+  if not found or original.status<>'paid' or original.reversal_of_commission_id is not null
+    or original.amount<=0 or original.professional_id is distinct from new.professional_id
+    or new.amount is distinct from -original.amount
+    or new.base_amount is distinct from -abs(original.base_amount)
+    or new.rate is distinct from original.rate
+    or new.item_type is distinct from original.item_type then
+    raise exception 'O débito de comissão não corresponde ao lançamento original.' using errcode='23514';
+  end if;
+  return new;
+end;
+$function$;
+revoke all on function private.guard_commission_reversal_integrity() from public,anon,authenticated;
+create trigger commissions_guard_reversal before insert or update of reversal_of_commission_id,org_id,professional_id,amount,base_amount,rate,item_type on public.commissions
+for each row execute function private.guard_commission_reversal_integrity();
+
+-- Um repasse nunca pode receber uma comissão de outro profissional ou valor divergente.
+create or replace function private.guard_commission_payout_item()
+returns trigger language plpgsql security definer set search_path='' as $function$
+begin
+  if not exists(
+    select 1 from public.commission_payouts p
+    join public.commissions c on c.org_id=p.org_id and c.professional_id=p.professional_id
+    where p.org_id=new.org_id and p.id=new.payout_id and c.id=new.commission_id
+      and c.amount is not distinct from new.amount
+      and ((c.status in ('pending','approved') and c.payout_id is null)
+        or (c.status='paid' and c.payout_id=p.id))
+      and (c.amount>=0 or c.reversal_of_commission_id is not null)
+  ) then raise exception 'Item de repasse incompatível com a comissão.' using errcode='23514'; end if;
+  return new;
+end;
+$function$;
+revoke all on function private.guard_commission_payout_item() from public,anon,authenticated;
+create trigger commission_payout_items_guard_integrity before insert or update of org_id,payout_id,commission_id,amount on public.commission_payout_items
+for each row execute function private.guard_commission_payout_item();
+
 -- Interna: cancelar créditos não pagos e registrar somente um débito por crédito pago.
 create or replace function private.reverse_refunded_order_commissions(p_order_id uuid)
 returns numeric language plpgsql security definer set search_path=''
@@ -43,7 +91,7 @@ as $function$
 declare v_order public.service_orders%rowtype; v_total numeric;
 begin
   select * into v_order from public.service_orders where id=p_order_id for update;
-  if not found or auth.uid() is null or not private.has_org_role(v_order.org_id,array['owner','admin','manager','finance']) then
+  if not found or auth.uid() is null or not coalesce(private.has_org_role(v_order.org_id,array['owner','admin','manager','finance']),false) then
     raise exception 'Sem permissão para compensar comissões.';
   end if;
   if exists(select 1 from public.service_order_payments p where p.org_id=v_order.org_id and p.order_id=v_order.id and p.status='confirmed')
@@ -79,7 +127,7 @@ begin
   if v_user is null then raise exception 'Autenticação necessária.'; end if;
   select * into v_order from public.service_orders where id=p_order_id for update;
   if not found then raise exception 'Comanda não encontrada.'; end if;
-  if not private.has_org_role(v_order.org_id,array['owner','admin','manager','finance']) then
+  if not coalesce(private.has_org_role(v_order.org_id,array['owner','admin','manager','finance']),false) then
     raise exception 'Somente administração ou financeiro pode devolver uma comanda paga.'; end if;
   if v_order.status<>'closed' then raise exception 'A devolução se aplica somente a comandas quitadas. Para as demais, use o cancelamento.'; end if;
   -- Ordem única: comanda, profissionais em ordem de ID, caixa, lançamentos.
@@ -134,7 +182,7 @@ begin
  if v_user is null then raise exception 'Autenticação necessária.'; end if;
  select * into v_order from public.service_orders where id=p_order_id for update;
  if not found then raise exception 'Comanda não encontrada.'; end if;
- if not private.has_org_role(v_order.org_id,array['owner','admin','manager','receptionist']) then raise exception 'Sem permissão para cancelar esta comanda.'; end if;
+ if not coalesce(private.has_org_role(v_order.org_id,array['owner','admin','manager','receptionist']),false) then raise exception 'Sem permissão para cancelar esta comanda.'; end if;
  if v_order.status in ('closed','cancelled') then raise exception 'Esta comanda não pode ser cancelada por este fluxo.'; end if;
  -- Ordem única: comanda, profissionais em ordem de ID, caixa, lançamentos.
   perform p.id from public.professionals p
@@ -144,7 +192,7 @@ begin
    order by p.id for update of p;
  if exists(select 1 from public.service_order_payments p where p.org_id=v_order.org_id and p.order_id=v_order.id and p.status='confirmed') then
   if not coalesce(p_refund_payments,false) then raise exception 'Esta comanda tem recebimentos. Confirme o estorno integral para cancelar.'; end if;
-  if not private.has_org_role(v_order.org_id,array['owner','admin','manager','finance']) then raise exception 'Somente administração ou financeiro pode estornar pagamentos.'; end if;
+  if not coalesce(private.has_org_role(v_order.org_id,array['owner','admin','manager','finance']),false) then raise exception 'Somente administração ou financeiro pode estornar pagamentos.'; end if;
   select id into v_register_id from public.cash_registers where org_id=v_order.org_id and (branch_id is not distinct from v_order.branch_id or branch_id is null) and status='open' order by (branch_id is not null) desc,opened_at desc limit 1 for update;
   if v_register_id is null then raise exception 'Abra o Caixa da unidade para registrar os estornos.'; end if;
   for v_payment in select * from public.service_order_payments where org_id=v_order.org_id and order_id=v_order.id and status='confirmed' order by paid_at,id for update loop
@@ -197,7 +245,7 @@ begin
   if p_payment_method is null or p_payment_method not in ('cash','pix','credit_card','debit_card','transfer','voucher','other') then
     raise exception 'Forma de pagamento inválida.';
   end if;
-  if not private.has_org_role(p_org_id,array['owner','admin','manager','finance']) then
+  if not coalesce(private.has_org_role(p_org_id,array['owner','admin','manager','finance']),false) then
     raise exception 'Somente administração ou financeiro pode pagar comissões.';
   end if;
 
@@ -219,7 +267,10 @@ begin
   loop
     v_locked_ids:=array_append(v_locked_ids,v_comm.id);
     v_count:=v_count+1;
-    if v_comm.id=any(p_commission_ids) then v_selected_found:=v_selected_found+1; end if;
+    if v_comm.id=any(p_commission_ids) then
+      if v_comm.amount<=0 then raise exception 'Selecione somente créditos positivos; débitos são compensados automaticamente.'; end if;
+      v_selected_found:=v_selected_found+1;
+    end if;
     v_amount:=v_amount+v_comm.amount;
   end loop;
   if v_selected_found<>v_expected then

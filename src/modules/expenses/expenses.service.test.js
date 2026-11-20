@@ -44,6 +44,7 @@ async function run(){
   await cancelExpense({client,orgId:"org-a",expenseId:"expense-a"});
   assert.ok(client.calls.some(call=>call.rpc==="cancel_expense"));
   await assert.rejects(()=>createExpense({client,orgId:"org-a",description:"X",amount:0}),{name:"TypeError"});
+  await assert.rejects(()=>createExpense({client,orgId:"org-a",description:"Aluguel",amount:10.001}),/duas casas decimais/);
   await assert.rejects(()=>createExpense({client,orgId:"org-a",description:"Aluguel",amount:20,dueDate:"2026-02-30"}),{name:"TypeError"});
   await assert.rejects(()=>payExpense({client,orgId:"org-a",expenseId:"x",paymentMethod:"invalid"}),{name:"TypeError"});
   const failing=mockClient({}, {code:"42501",message:"SQL privado"});

@@ -1,8 +1,11 @@
 /** Página de Agenda administrativa. Responsabilidade: consultar dados do Supabase e montar filtros, calendário e visão de horários. */
+import { expandCalendarBlocks } from '../utils/calendar-blocks.js';
 import { state } from '../../state.js';
 import { supabase } from '../../supabase/client.js';
-import { head, btn, initials } from '../../utils.js';
+import { head, btn, initials, esc } from '../../utils.js';
+import { fetchAgendaCalendar } from '../services/calendar-query.service.js';
 import { reportError } from '../../utils/errors.js';
+import {mountAgendaOffers} from '../controllers/agenda-offers.controller.js';
 
 /** @typedef {import('../../types/tenant.types').TenantContext} TenantContext */
 /** @typedef {import('../../types/operations.types').AppointmentRecord} AppointmentRecord */
@@ -15,6 +18,7 @@ import { renderAgendaFilters } from '../components/agenda-filters.js';
 import { dateKey, startOfWeek, addDays } from '../utils/date.utils.js';
 
 export { dateKey };
+let loadVersion=0;
 
 // Adapta os estados do banco aos rótulos exibidos no calendário.
 function dbStatus(value) {
@@ -36,7 +40,7 @@ function toCalendarAppointment(row,professionalIndex) {
     date:start.date,time:start.time,duration,price:row.price,
     status:dbStatus(row.status),dbStatus:row.status,notes:row.notes||'',
     booking_source:row.booking_source,created_by_name:row.created_by_name||'',
-    service_order_id:row.service_order_id,appointment_group_id:row.appointment_group_id||null,arrived_at:row.arrived_at||null
+    service_order_id:row.service_order_id,comanda_strategy:row.comanda_strategy,appointment_group_id:row.appointment_group_id||null,arrived_at:row.arrived_at||null
   };
 }
 // Compõe filtros, resumo e calendário sem executar consultas ao banco.
@@ -62,7 +66,7 @@ function buildContent() {
   html+=renderAgendaToolbar(state.date,state.view);
   html+=renderAgendaFilters({query:state.query,filter:state.filter});
   html+='<div class="agenda-summary"><span><i class="legend-dot booked"></i> Agendado</span><span><i class="legend-dot progress"></i> Em atendimento</span><span><i class="legend-dot free"></i> Disponível</span><span class="summary-count">'+count+
-' atendimento(s) para '+selectedProfessional[1]+
+' atendimento(s) para '+esc(selectedProfessional[1])+
 '</span></div>';
   const props={date:state.date,pro:state.pro,professional:selectedProfessional,appointments:items,
     blockedTimes:state.dbBlockedTimes||[],includeReleased:state.filter==='Cancelado'||state.filter==='Falta'};
@@ -77,7 +81,8 @@ function buildContent() {
 export function agenda() {
   return head('Agenda','Gerencie horários, atendimentos e disponibilidade dos profissionais.',btn('＋ Novo agendamento','new-appointment','primary'))+
 
-    '<div id="agenda-db-content"><div class="empty-state">Carregando agenda do banco…</div></div>';
+    '<div id="agenda-db-content"><div class="empty-state">Carregando agenda do banco…</div></div>'+ 
+    '<section id="agenda-offers-panel" class="surface agenda-offers-panel" aria-label="Pacotes e lista de espera"><p>Carregando módulos complementares…</p></section>';
 }
 // Consulta profissionais, agendamentos e bloqueios da organização ativa.
 /**
@@ -93,6 +98,13 @@ export async function loadAgendaPage() {
   if(!state.user||!state.organization?.id)return;
   const host=document.querySelector('#agenda-db-content');
   if(!host)return;
+  const orgId=state.organization.id,userId=state.user.id,branchId=state.branch?.id||null;
+  const version=++loadVersion;
+  const isCurrent=()=>host.isConnected&&version===loadVersion&&state.organization?.id===orgId&&state.user?.id===userId&&(state.branch?.id||null)===branchId;
+  // Painel independente: não bloqueia o calendário nem recarrega a página.
+  void mountAgendaOffers({client:supabase,state,onBooked:loadAgendaPage})
+    .catch(error=>reportError(error,{context:"Agenda > módulos complementares",notify:false}));
+  state.agendaProfessionals=[];state.agendaAppointments=[];state.dbBlockedTimes=[];
   host.innerHTML='<div class="empty-state">Carregando agenda…</div>';
   try{
     let start,end;
@@ -106,34 +118,16 @@ export async function loadAgendaPage() {
       start=new Date(state.date.getFullYear(),state.date.getMonth(),1);
       end=new Date(state.date.getFullYear(),state.date.getMonth()+1,1);
     }
-    const branchId=state.branch?.id||null;
-    let professionalQuery=supabase.from('professionals').select('id,name,color,active,branch_id')
-      .eq('org_id',state.organization.id).eq('active',true);
-    let blockQuery=supabase.from('appointment_blocks').select('id,professional_id,starts_at,ends_at,reason')
-      .eq('org_id',state.organization.id).lt('starts_at',end.toISOString()).gt('ends_at',start.toISOString());
-    if(branchId) {
-      professionalQuery=professionalQuery.eq('branch_id',branchId);
-      blockQuery=blockQuery.eq('branch_id',branchId);
-    }
-    const [proResult,appointmentRows,blockResult]=await Promise.all([
-      professionalQuery.order('name'),
-      listAppointments({client:supabase,orgId:state.organization.id,branchId,startAt:start.toISOString(),endAt:end.toISOString()}),
-      blockQuery.limit(500)
-    ]);
-    if(proResult.error)throw proResult.error;
-    if(blockResult.error)throw blockResult.error;
-    const dbProfessionals=proResult.data||[];
+    const {professionals:dbProfessionals,appointments:appointmentRows,blocks}=await fetchAgendaCalendar({client:supabase,orgId,branchId,start,end});
+    if(!isCurrent())return;
     state.agendaProfessionals=dbProfessionals.map(p=>[initials(p.name||'?'),p.name,'Profissional',p.id]);
     if(!state.agendaProfessionals.length){state.agendaAppointments=[];state.dbBlockedTimes=[];buildContent();return;}
     const indexById=new Map(dbProfessionals.map((p,i)=>[p.id,i]));
     state.agendaAppointments=(appointmentRows||[]).filter(a=>indexById.has(a.professional_id)).map(a=>toCalendarAppointment(a,indexById.get(a.professional_id)));
-    state.dbBlockedTimes=(blockResult.data||[]).flatMap(b=>{
-      const startDate=asLocalDateTime(b.starts_at),endDate=asLocalDateTime(b.ends_at);
-      const indices=b.professional_id?[indexById.get(b.professional_id)].filter(i=>i!==undefined):dbProfessionals.map((_,i)=>i);
-      return indices.map(index=>({id:b.id,pro:index,date:startDate.date,start:startDate.time,end:endDate.time,reason:b.reason}));
-    });
+    state.dbBlockedTimes=expandCalendarBlocks(blocks,dbProfessionals,start,end);
     buildContent();
   }catch(error){
+    if(!isCurrent())return;
     const diagnostic=reportError(error,{context:"Agenda > carregar calendário",notify:false});
     host.innerHTML='<div class="empty-state"><b>Não foi possível carregar a agenda.</b><small>Verifique sua conexão e suas permissões. Código '+diagnostic.id+
 '</small></div>';

@@ -39,4 +39,6 @@ assert.equal(formatCustomerPhoneInput("67999991234"), "(67) 99999-1234");
 assert.equal(formatCustomerPhoneInput("6799991234"), "(67) 9999-1234");
 assert.equal(formatCustomerPhoneDisplay("+5567999991234"), "(67) 99999-1234");
 assert.equal(formatCustomerPhoneDisplay(null), "");
+assert.equal(formatCustomerPhoneInput("+1 (415) 555-2671"),"+14155552671");
+assert.equal(formatCustomerPhoneInput("+5567999991234"),"+5567999991234");
 console.log("Testes de perfil global da cliente: OK");

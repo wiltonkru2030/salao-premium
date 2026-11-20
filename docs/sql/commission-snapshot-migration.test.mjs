@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const migrationPath=new URL("../../supabase/migrations/20261119170000_snapshot_commission_rate_on_first_payment.sql",import.meta.url);
+const migrationPath=new URL("./legacy-unapplied/20261119170000_snapshot_commission_rate_on_first_payment.sql",import.meta.url);
 const sql=await readFile(migrationPath,"utf8");
 const normalized=sql.toLowerCase();
 

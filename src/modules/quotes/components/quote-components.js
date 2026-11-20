@@ -3,6 +3,7 @@
  * Recebem dados e devolvem marcação; não consultam Supabase nem alteram estado global.
  */
 import { esc } from "../../../utils.js";
+import { calculateQuoteTotals } from "../quote.rules.js";
 
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const statusName = value => ({
@@ -19,10 +20,8 @@ const statusName = value => ({
  * @param {object} options Itens selecionados, cliente, catálogo, profissionais e permissões.
  * @returns {string} HTML do formulário e resumo financeiro do orçamento.
  */
-export function renderQuoteBuilder({ items, selectedCustomer, services, professionals, discountRules, maxDiscount, allowFixedDiscount, canManageSettings }) {
-  const subtotal = items.reduce((sum, item) => sum + item.quantity * item.price, 0);
-  const discount = items.reduce((sum, item) => sum + item.discount, 0);
-  const total = subtotal - discount;
+export function renderQuoteBuilder({ items, selectedCustomer, services, professionals, discountRules, maxDiscount, allowFixedDiscount, canManageSettings, discountCatalog=services }) {
+  const {subtotal,discount,total}=calculateQuoteTotals(items);
 
   const serviceOptions = services.map(service => `
     <option value="${esc(service.id)}">${esc(service.name)} · ${money(service.price)}</option>
@@ -46,7 +45,7 @@ export function renderQuoteBuilder({ items, selectedCustomer, services, professi
       </div>`).join("")
     : '<div class="empty-state">Adicione os serviços para compor o orçamento.</div>';
 
-  const discountServiceOptions = services.map(service => `
+  const discountServiceOptions = discountCatalog.map(service => `
     <label class="setting-row">
       <span>${esc(service.name)}</span>
       <input type="checkbox" name="discount_service" value="${esc(service.id)}" ${discountRules.has(service.id) ? "checked" : ""}>
@@ -64,14 +63,21 @@ export function renderQuoteBuilder({ items, selectedCustomer, services, professi
       </label>
       <div id="quote-customer-results" class="quote-suggestions"></div>
       <div id="quote-selected-customer">${customerSummary}</div>
-      <div id="quote-quick-customer" hidden>
-        <form id="quote-quick-customer-form" class="form-grid">
-          <label>Nome completo<input class="field" name="name" required maxlength="120"></label>
-          <label>WhatsApp<input class="field" name="phone" type="tel" required placeholder="(00) 00000-0000"></label>
-          <button class="btn primary" type="submit">Cadastrar e vincular</button>
-          <button class="btn secondary" type="button" id="quote-quick-cancel">Cancelar</button>
-        </form>
-      </div>
+      <dialog id="quote-quick-customer" class="sp-modal" aria-labelledby="quote-customer-title">
+        <div class="sp-modal-shell">
+          <header class="sp-modal-head"><div><h2 id="quote-customer-title">Cadastrar cliente</h2><p>Cadastre o contato e vincule ao orçamento.</p></div><button class="sp-modal-close" type="button" data-close-quote-customer aria-label="Fechar">×</button></header>
+          <form id="quote-quick-customer-form">
+            <div class="sp-modal-body">
+              <label class="sp-span">Nome completo<input class="field" name="name" required maxlength="120" autocomplete="name"></label>
+              <label class="sp-span">WhatsApp<input class="field" name="phone" type="tel" data-mask="phone" required autocomplete="tel-national" placeholder="(00) 00000-0000"></label>
+            </div>
+            <footer class="sp-modal-foot">
+              <button class="btn secondary" type="button" id="quote-quick-cancel">Cancelar</button>
+              <button class="btn primary" type="submit">Cadastrar e vincular</button>
+            </footer>
+          </form>
+        </div>
+      </dialog>
       <div class="quote-item-entry">
         <label>Serviço
           <select class="field" id="quote-service"><option value="">Selecione um serviço</option>${serviceOptions}</select>
@@ -79,7 +85,7 @@ export function renderQuoteBuilder({ items, selectedCustomer, services, professi
         <label>Profissional
           <select class="field" id="quote-professional" disabled><option value="">Selecione um serviço primeiro</option></select>
         </label>
-        <label>Quantidade<input class="field" id="quote-quantity" type="number" min="1" step="1" value="1"></label>
+        <label>Quantidade<input class="field" id="quote-quantity" type="number" min="1" max="1000" step="1" value="1"></label>
         <label>Tipo de desconto
           <select class="field" id="quote-discount-mode">
             <option value="percent">Percentual (%)</option>
@@ -101,7 +107,7 @@ export function renderQuoteBuilder({ items, selectedCustomer, services, professi
     </section>
     <section class="settings-card" id="quote-discount-settings-card" ${canManageSettings ? "" : "hidden"}>
       <div class="section-title">
-        <div><h3>Regras de desconto</h3><small class="muted">Defina o limite e quais serviços podem receber desconto.</small></div>
+        <div><h3>Regras de desconto</h3><small class="muted">Defina o limite e os serviços de toda a organização, inclusive de outras unidades.</small></div>
       </div>
       <form id="quote-discount-settings" class="form-grid">
         <label>Desconto máximo permitido (%)

@@ -14,11 +14,11 @@ import { fetchProfessionalOrders, fetchProfessionalOrderItems } from "./orders.s
  * @returns {{client: object, calls: object}} Cliente e registro dos filtros.
  */
 function mockClient(response) {
-  const calls = { table: "", selection: "", filters: [], order: null, limit: null };
+  const calls = { table: "", selection: "", filters: [], orders: [], limit: null };
   const query = {
     select(value) { calls.selection = value; return this; },
     eq(...args) { calls.filters.push(args); return this; },
-    order(...args) { calls.order = args; return this; },
+    order(...args) { calls.orders.push(args); return this; },
     limit(value) { calls.limit = value; return this; },
     then(resolve, reject) { return Promise.resolve(response).then(resolve, reject); }
   };
@@ -38,6 +38,7 @@ async function run() {
   assert.equal(orders.calls.table, "service_orders");
   assert.ok(orders.calls.filters.some(([field, value]) => field === "org_id" && value === "org-1"));
   assert.equal(orders.calls.limit, 100);
+  assert.deepEqual(orders.calls.orders.map(([column]) => column), ["created_at", "id"]);
 
   const itemRows = [{ id: "item-1" }];
   const items = mockClient({ data: itemRows, error: null });
@@ -45,6 +46,7 @@ async function run() {
     client: items.client, organizationId: "org-1", orderId: "order-1"
   }), itemRows);
   assert.equal(items.calls.table, "service_order_items");
+  assert.deepEqual(items.calls.orders.map(([column]) => column), ["created_at", "id"]);
   assert.ok(items.calls.filters.some(([field, value]) => field === "org_id" && value === "org-1"));
   assert.ok(items.calls.filters.some(([field, value]) => field === "order_id" && value === "order-1"));
 
