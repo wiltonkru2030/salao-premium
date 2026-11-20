@@ -44,7 +44,7 @@ end;
 $function$;
 
 revoke all on function private.open_cash_register_for_branch(uuid,uuid,numeric) from public,anon;
-grant execute on function private.open_cash_register_for_branch(uuid,uuid,numeric) to authenticated,service_role;
+grant execute on function private.open_cash_register_for_branch(uuid,uuid,numeric) to authenticated, service_role;
 
 create function public.open_cash_register_for_branch(
   p_org_id uuid,p_branch_id uuid,p_opening_amount numeric
@@ -53,7 +53,7 @@ returns jsonb language sql security invoker set search_path=''
 as $function$ select private.open_cash_register_for_branch($1,$2,$3); $function$;
 
 revoke all on function public.open_cash_register_for_branch(uuid,uuid,numeric) from public,anon;
-grant execute on function public.open_cash_register_for_branch(uuid,uuid,numeric) to authenticated,service_role;
+grant execute on function public.open_cash_register_for_branch(uuid,uuid,numeric) to authenticated, service_role;
 
 -- Resumo financeiro do caixa, limitado ao dinheiro físico.
 create function private.get_cash_register_summary(p_cash_register_id uuid)
@@ -87,14 +87,14 @@ end;
 $function$;
 
 revoke all on function private.get_cash_register_summary(uuid) from public,anon;
-grant execute on function private.get_cash_register_summary(uuid) to authenticated,service_role;
+grant execute on function private.get_cash_register_summary(uuid) to authenticated, service_role;
 
 create function public.get_cash_register_summary(p_cash_register_id uuid)
 returns jsonb language sql security invoker set search_path=''
 as $function$ select private.get_cash_register_summary($1); $function$;
 
 revoke all on function public.get_cash_register_summary(uuid) from public,anon;
-grant execute on function public.get_cash_register_summary(uuid) to authenticated,service_role;
+grant execute on function public.get_cash_register_summary(uuid) to authenticated, service_role;
 
 -- Valor contado é dinheiro físico: PIX/cartões não entram no saldo esperado.
 create or replace function private.close_cash_register(
