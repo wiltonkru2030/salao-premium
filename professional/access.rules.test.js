@@ -8,7 +8,7 @@ assert.deepEqual(contexts.map(c=>c.orgId),["a","c","d"]);
 assert.deepEqual(allowedProfessionalPages(contexts[0]),["Agenda","Comandas","Comissões","Configurações"]);
 assert.deepEqual(allowedProfessionalPages(contexts[1]),["Agenda","Configurações"]);
 assert.deepEqual(allowedProfessionalPages(contexts[2]),["Agenda","Comandas","Configurações"]);
-assert.equal(canRegisterProfessionalService(contexts[0],{status:"partially_paid"}),true);
+assert.equal(canRegisterProfessionalService(contexts[0],{status:"partially_paid"}),false);
 assert.equal(canRegisterProfessionalService(contexts[0],{status:"paid"}),false);
 assert.equal(canRegisterProfessionalService(contexts[0],{status:"cancelled"}),false);
 assert.equal(canRegisterProfessionalService(contexts[0],{status:"open"}),true);
