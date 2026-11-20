@@ -50,7 +50,7 @@ export function renderSalonDetailView({
       [row.professional_id, {id:row.professional_id,name:row.professional_name,specialty:row.specialty}]
     )).values()];
     const options = professionals.map(pro =>
-      '<option value="' + escapeClientHtml(pro.id) + '">' + escapeClientHtml(pro.name) +
+      '<option value="' + escapeClientHtml(pro.id) + '"' + (slots.serviceId===serviceId&&slots.professionalId===pro.id?' selected':'') + '>' + escapeClientHtml(pro.name) +
       (pro.specialty ? ' · ' + escapeClientHtml(pro.specialty) : '') + '</option>'
     ).join("");
     const matchingSlots = slots.serviceId === serviceId;
@@ -97,10 +97,13 @@ export function renderSalonDetailView({
       ? heldService?.price
       : hold.finalAmount;
     const totalLabel = Number.isFinite(Number(total)) ? money(total) : "Valor conforme catálogo";
-    holdContent = '<section class="booking-confirm-card"><h3>Horário reservado temporariamente</h3><p>Confirme antes de ' +
+    const expired = !Number.isFinite(Date.parse(hold.expiresAt)) || Date.parse(hold.expiresAt)<=Date.now();
+    const appointmentLabel = hold.startsAt ? new Date(hold.startsAt).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}) : "";
+    holdContent = '<section class="booking-confirm-card"><h3>' + (expired?"Reserva expirada":"Horário reservado temporariamente") + '</h3>' +
+      (heldService?'<p>'+escapeClientHtml(heldService.service_name)+' · '+escapeClientHtml(hold.professionalName||"Profissional selecionado")+' · '+escapeClientHtml(appointmentLabel)+'</p>':"") + '<p>Confirme antes de ' +
       escapeClientHtml(timeLabel(hold.expiresAt)) + ' para concluir o agendamento.</p>' +
       (hold.discountAmount > 0 ? '<p class="coupon-preview">Desconto: ' + escapeClientHtml(money(hold.discountAmount)) + ' · Total: ' + escapeClientHtml(totalLabel) + '</p>' : '<p>Total: ' + escapeClientHtml(totalLabel) + '</p>') +
-      '<button class="client-button" data-action="confirm-booking">Confirmar agendamento</button>' +
+      '<button class="client-button" data-action="confirm-booking"' + (expired?" disabled":"") + '>Confirmar agendamento</button>' +
       '<button class="text-button" data-action="cancel-hold">Cancelar reserva temporária</button></section>';
   }
   return '<section class="page-content"><button class="text-button" data-action="back-home">‹ Voltar aos salões</button>' +
