@@ -18,6 +18,7 @@ import { searchPublicSalons, getPublicSalonCatalog } from "./services/salonDirec
 import { getCustomerAvailableSlots, createAppointmentHold, confirmAppointmentHold, cancelAppointmentHold } from "./services/appointmentHoldService.js";
 import { renderAppointmentsView } from "./ui/appointmentsView.js";
 import { fetchMyCustomerAppointments } from "./services/appointmentsService.js";
+import { fetchAppointmentChangeOptions, fetchRescheduleSlots, changeCustomerAppointment } from "./services/appointmentChangesService.js";
 import { renderCustomerProfileView } from "./ui/customerProfileView.js";
 import { renderFavoritesView } from "./ui/favoritesView.js";
 import { renderNotificationsView } from "./ui/notificationsView.js";
@@ -34,6 +35,9 @@ let locationLabel = "Ative a localização ou escolha sua cidade";
 let profileState = null;
 let identityLinkRequests = [];
 let appointmentsState = { items: [], loading: false, error: "" };
+let changeOptions=[];
+let appointmentChange=null;
+let appointmentsRequest=0;
 let directoryState = { items: [], loading: false, error: "", query: "" };
 let locationCoordinates = null;
 let salonDetailState = { salon: null, catalog: [], loading: false, error: "" };
@@ -57,6 +61,7 @@ function resetAccountState(userId){
   const settings=getLocalSettings();
   locationLabel=settings.defaultCity||"Ative a localização ou escolha sua cidade";
   appointmentsState={items:[],loading:false,error:""};
+  changeOptions=[];appointmentChange=null;appointmentsRequest++;
   directoryState={items:[],loading:false,error:"",query:""};
   salonDetailState={salon:null,catalog:[],loading:false,error:""};
   slotsState={serviceId:null,items:[],loading:false,error:"",date:"",professionalId:null};
@@ -96,7 +101,7 @@ function applyTheme() {
 function renderApp() {
   if (!currentSession || !currentUserId) return;
   let page;
-  if (activePage === "appointments") page = renderAppointmentsView({ appointments: appointmentsState.items, loading: appointmentsState.loading, error: appointmentsState.error });
+  if (activePage === "appointments") page = renderAppointmentsView({ appointments: appointmentsState.items, loading: appointmentsState.loading, error: appointmentsState.error, changeOptions, change: appointmentChange });
   else if (activePage === "identity-links") page = renderIdentityLinkRequestsView({requests: identityLinkRequests});
   else if (activePage === "profile") {
     page = renderCustomerProfileView({profile: profileState, session: currentSession, theme: getLocalSettings().theme});
@@ -116,6 +121,7 @@ function renderApp() {
   const navigation = renderBottomNavigation(activePage, async pageId => {
     if(busy||!currentUserId)return;
     const epoch=sessionEpoch;
+    appointmentChange=null;
     activePage = pageId;
     if (pageId === "profile") await loadProfile();
     if (pageId === "appointments") await loadAppointments();
@@ -246,20 +252,22 @@ async function loadNotifications() {
 
 /**** Carrega o histórico vinculado à identidade atual e mantém estados de carregamento/erro. */
 async function loadAppointments() {
-  const epoch=sessionEpoch;
-  appointmentsState = { ...appointmentsState, loading: true, error: "" };
-  if (activePage === "appointments") renderApp();
-  try {
-    const items = await fetchMyCustomerAppointments({ client: supabase });
-    if(!isCurrent(epoch))return;
+  const epoch=sessionEpoch,request=++appointmentsRequest;
+  const current=()=>isCurrent(epoch)&&request===appointmentsRequest;
+  appointmentChange=null;changeOptions=[];
+  appointmentsState={...appointmentsState,loading:true,error:""};
+  if(activePage==="appointments")renderApp();
+  try{
+    const items=await fetchMyCustomerAppointments({client:supabase});
+    if(!current())return;
     appointmentsState.items=items;
-  } catch (error) {
-    if(!isCurrent(epoch))return;
-    appointmentsState.error = error?.message || "Não foi possível carregar seus agendamentos.";
-  } finally {
-    if(!isCurrent(epoch))return;
-    appointmentsState.loading = false;
-    if (activePage === "appointments") renderApp();
+    // Falha nas opções de alteração não impede a leitura do histórico.
+    try{const options=await fetchAppointmentChangeOptions({client:supabase});if(current())changeOptions=options;}
+    catch{if(current())changeOptions=[];}
+  }catch(error){
+    if(current()){appointmentsState.items=[];appointmentsState.error=error?.message||"Não foi possível carregar seus agendamentos.";}
+  }finally{
+    if(current()){appointmentsState.loading=false;if(activePage==="appointments")renderApp();}
   }
 }
 
@@ -473,6 +481,43 @@ async function runAction(action, button = null) {
       requireCurrent(epoch);holdState = null;
       renderApp();
       setNotice(cancelled ? "Reserva temporária cancelada." : "A reserva já estava encerrada ou havia expirado.", cancelled ? "success" : "info");
+    } else if (action === "open-cancel-appointment" || action === "open-reschedule-appointment") {
+      const id=button?.dataset.appointmentId;
+      const item=appointmentsState.items.find(row=>row.appointment_id===id);
+      const allowed=changeOptions.find(row=>row.appointment_id===id);
+      const cancel=action==="open-cancel-appointment";
+      if(!item||!allowed||(cancel?!allowed.can_cancel:!allowed.can_reschedule))throw new Error("Este agendamento não pode ser alterado pelo aplicativo.");
+      appointmentChange={appointmentId:id,action:cancel?"cancel":"reschedule",expectedStart:item.starts_at,timezone:allowed.timezone,date:"",slots:[],newStart:null,searched:false};
+      renderApp();
+    } else if(action==="close-appointment-change"){
+      appointmentChange=null;renderApp();
+    } else if(action==="load-reschedule-slots"){
+      const change=appointmentChange;
+      if(change?.action!=="reschedule")return;
+      const date=root.querySelector('input[name="rescheduleDate"]')?.value||"";
+      if(!date)throw new Error("Escolha uma data.");
+      Object.assign(change,{date,slots:[],newStart:null,loading:true,error:"",searched:false});renderApp();
+      try{
+        const slots=await fetchRescheduleSlots({client:supabase,appointmentId:change.appointmentId,date});
+        if(isCurrent(epoch)&&appointmentChange===change)Object.assign(change,{slots,searched:true});
+      }catch(error){
+        if(isCurrent(epoch)&&appointmentChange===change)change.error=error.message;
+      }finally{
+        if(isCurrent(epoch)&&appointmentChange===change){change.loading=false;renderApp();}
+      }
+    } else if(action==="select-reschedule-slot"){
+      const change=appointmentChange,index=Number(button?.dataset.slotIndex);
+      if(!change||!Number.isInteger(index)||!change.slots[index])throw new Error("Escolha um horário válido.");
+      if(root.querySelector('input[name="rescheduleDate"]')?.value!==change.date)throw new Error("A data mudou. Consulte os horários novamente.");
+      change.newStart=change.slots[index].starts_at;renderApp();
+    } else if(action==="submit-appointment-change"){
+      const change=appointmentChange;
+      if(!change)throw new Error("Selecione um agendamento.");
+      if(change.action==="reschedule"&&(!change.newStart||root.querySelector('input[name="rescheduleDate"]')?.value!==change.date))throw new Error("Consulte e selecione o novo horário.");
+      await changeCustomerAppointment({client:supabase,appointmentId:change.appointmentId,action:change.action,expectedStart:change.expectedStart,newStart:change.newStart});
+      requireCurrent(epoch);appointmentChange=null;
+      await loadAppointments();requireCurrent(epoch);
+      setNotice(change.action==="cancel"?"Agendamento cancelado.":"Agendamento reagendado.","success");
     } else if (action === "reload-appointments") {
       await loadAppointments();
       requireCurrent(epoch);
