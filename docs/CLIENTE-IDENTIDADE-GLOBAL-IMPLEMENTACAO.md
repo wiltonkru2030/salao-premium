@@ -363,3 +363,10 @@ A regra é executada no PostgreSQL, inclusive em remarcações por arrastar/solt
 O formulário administrativo da Agenda agora carrega as unidades ativas da organização, seleciona automaticamente a única unidade quando existir apenas uma, exige escolha explícita quando houver várias e filtra a lista de profissionais pela unidade selecionada. O `branch_id` passa a ser persistido e preservado no modelo do calendário.
 
 **Limitação remanescente:** registros legados e fluxos que ainda enviam `branch_id = null` não passam pela nova validação de expediente. A tela de orçamentos e o agendamento público ainda precisam adotar seleção explícita de unidade. A regra de duração customizada ainda não distingue override autorizado de alteração comum.
+
+
+### Estado da validação automatizada da Agenda e do painel
+
+No commit `28c7c51b9b385f4e4f5e46ded6085100b0060500`, os workflows **Agenda tests** e **App validation** concluíram com sucesso. O workflow de validação executou verificação de sintaxe de todos os arquivos JavaScript, build de produção, validação de imports, auditoria estrutural, regressões de utilitários, erros pt-BR, Orçamentos, Comanda, Caixa, tenant, Agenda e comando agregado de testes.
+
+As últimas alterações pontuais no seletor de unidade e a atualização final da documentação ocorreram depois desse commit; portanto, a aprovação do workflow não deve ser interpretada como validação do HEAD mais recente. É necessária nova execução/checagem do CI no HEAD atual antes de liberar.
