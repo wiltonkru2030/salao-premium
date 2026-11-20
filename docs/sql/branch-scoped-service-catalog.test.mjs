@@ -19,5 +19,7 @@ assert.match(normalized,/ps\.professional_id=private\.current_professional_id\(s
 assert.match(normalized,/services\.branch_id is null or services\.branch_id=p\.branch_id/);
 assert.match(normalized,/private\.professional_app_scope\(org_id\) in \('calendar_all','all'\)/);
 assert.match(normalized,/comment on column public\.services\.branch_id/);
+assert.match(normalized,/drop policy if exists products_select_admin_or_full_app/);
+assert.match(normalized,/products\.branch_id is null or products\.branch_id=p\.branch_id/);
 assert.doesNotMatch(normalized,/drop\s+table|truncate\s+table/);
 console.log("Contrato estático do catálogo por filial: OK.");
