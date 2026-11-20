@@ -34,3 +34,6 @@
 
 /* Módulo 04 — Agenda premium e responsiva. */
 @import url('./src/styles/design-agenda-premium.css');
+
+/* Módulo 05 — cadastros e formulários padronizados. */
+@import url('./src/styles/design-forms-premium.css');
