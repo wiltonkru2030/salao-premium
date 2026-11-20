@@ -66,7 +66,8 @@
     "test:customer-appointment-changes": "node cliente/services/appointmentChangesService.test.js",
     "test:finance-pagination": "node src/modules/finance/finance-pagination.test.js",
     "test:quote-rules": "node src/modules/quotes/quote.rules.test.js",
-    "test:design-system": "node src/styles/design-system.test.mjs"
+    "test:design-system": "node src/styles/design-system.test.mjs",
+    "audit:migrations": "node scripts/check-migration-history.mjs"
   },
   "engines": {
     "node": ">=20"
