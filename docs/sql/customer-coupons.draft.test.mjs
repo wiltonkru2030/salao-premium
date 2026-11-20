@@ -88,9 +88,9 @@ for (const rpc of [
   assert.match(appliedSql, new RegExp("create or replace function public\\." + rpc + "\\b"));
   assert.match(appliedSql, new RegExp("create or replace function private\\." + rpc + "\\b"));
 }
-assert.match(appliedSql, /create or replace function public\\.validate_public_coupon\\b/);
-assert.match(appliedSql, /create or replace function private\\.compute_customer_coupon\\b/);
-assert.match(appliedSql, /private\\.has_org_role\(p_org_id,array\['owner','admin'\]::text\[\]\)/);
+assert.match(appliedSql, /create or replace function public\.validate_public_coupon\b/);
+assert.match(appliedSql, /create or replace function private\.compute_customer_coupon\b/);
+assert.match(appliedSql, /private\.has_org_role\(p_org_id,array\['owner','admin'\]::text\[\]\)/);
 assert.match(appliedSql, /for update/);
 assert.match(appliedSql, /set price=v_hold\.coupon_final_amount/);
 assert.match(appliedSql, /status='released'/);
@@ -98,8 +98,6 @@ assert.match(appliedSql, /status='redeemed'/);
 assert.match(appliedSql, /create trigger appointment_hold_release_coupon_trigger/);
 assert.match(appliedSql, /create trigger audit_row_change after insert or update or delete on public\.salon_coupons/);
 assert.match(appliedSql, /create trigger audit_row_change after insert or update or delete on public\.customer_coupon_redemptions/);
-assert.match(appliedSql, /revoke all on function private\\.create_customer_appointment_hold\\(\\s*uuid,uuid,uuid,uuid,timestamptz\\s*\\) from public,anon,authenticated/);
-assert.match(appliedSql, /revoke all on function private\\.confirm_customer_appointment_hold\\(uuid\\) from public,anon,authenticated/);
 assert.match(appliedSql, /revoke all on function private\.create_customer_appointment_hold\(\s*uuid,uuid,uuid,uuid,timestamptz\s*\) from public,anon,authenticated/);
 assert.match(appliedSql, /revoke all on function private\.confirm_customer_appointment_hold\(uuid\) from public,anon,authenticated/);
 assert.match(appliedSql, /revoke all on function private\.cancel_customer_appointment_hold\(uuid\) from public,anon,authenticated/);
