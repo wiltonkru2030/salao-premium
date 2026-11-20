@@ -3,7 +3,7 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, toast, esc } from "../utils.js";
 import { reportError } from "../utils/errors.js";
-import { fetchProfessionalWorkspace, setProfessionalActive, setTeamProfessionalAppAccess, revokeProfessionalAppAccess } from "../modules/professionals/professionals.service.js";
+import { fetchProfessionalWorkspace, setProfessionalActive, setTeamProfessionalAppAccess, revokeProfessionalAppAccess, createProfessionalWithServices } from "../modules/professionals/professionals.service.js";
 
 /** Módulo Profissionais: cadastro fiscal, vínculo de serviços e controle de acesso ao App Profissional. */
 
@@ -222,21 +222,21 @@ export async function loadProfessionalsPage(){
   if(taxRegime==="mei"&&(!validCnpj(cnpj)||!String(v.get("legal_name")||"").trim())){toast("Para MEI, informe CNPJ válido e razão social.");return;}
   if(!serviceIds.length){toast("Selecione ao menos um serviço que o profissional atende.");return;}
   button.disabled=true;button.textContent="Salvando…";
-  const payload={org_id:state.organization.id,name,phone:phone||null,email:email||null,commission_rate:rate,active:true,tax_regime:taxRegime,cnpj:taxRegime==="mei"?cnpj:null,legal_name:taxRegime==="mei"?String(v.get("legal_name")||"").trim():null,trade_name:taxRegime==="mei"?String(v.get("trade_name")||"").trim()||null:null,specialty:String(v.get("specialty")||"").trim()||null};
-  const {data:professional,error:insertError}=await supabase.from("professionals").insert(payload).select("id").single();
-  if(insertError){reportError(insertError,{context:"Profissionais > inserir cadastro"});button.disabled=false;button.textContent="Salvar profissional";return;}
-  const links=serviceIds.map(service_id=>({org_id:state.organization.id,professional_id:professional.id,service_id}));
-  const {error:linkError}=await supabase.from("professional_services").insert(links);
-  if(linkError){const rollback=await supabase.from("professionals").delete().eq("org_id",state.organization.id).eq("id",professional.id);if(rollback.error)reportError(rollback.error,{context:"Profissionais > reverter cadastro incompleto"});reportError(linkError,{context:"Profissionais > vincular serviços"});button.disabled=false;button.textContent="Salvar profissional";return;}
-  const enableApp=v.get("enable_app")==="on";
+   const professionalId=await createProfessionalWithServices({
+    client:supabase,orgId:state.organization.id,name,phone,email,
+    commissionRate:rate,taxRegime,cnpj,
+    legalName:v.get("legal_name"),tradeName:v.get("trade_name"),
+    specialty:v.get("specialty"),serviceIds
+   });
+   const enableApp=v.get("enable_app")==="on";
   let appNotice="";
   if(enableApp){
-   const {data:access,error:accessError}=await supabase.functions.invoke("manage-professional-access",{body:{action:"create",org_id:state.organization.id,professional_id:professional.id,cpf}});
+   const {data:access,error:accessError}=await supabase.functions.invoke("manage-professional-access",{body:{action:"create",org_id:state.organization.id,professional_id:professionalId,cpf}});
    if(accessError||!access?.success){
     if(accessError)reportError(accessError,{context:"Profissionais > liberar App durante cadastro"});
     appNotice=access?.error||"Cadastro salvo, mas não foi possível liberar o App. Você pode liberar depois no cartão do profissional.";
    }else if(access.temporary_password){
-    initialPasswords.set(professional.id,access.temporary_password);
+    initialPasswords.set(professionalId,access.temporary_password);
     window.alert("Senha temporária de "+(access.professional_name||name)+":\\n"+access.temporary_password+"\\n\\nEntregue ao profissional por um canal seguro. Ela será solicitada apenas neste primeiro acesso.");
    }
   }
