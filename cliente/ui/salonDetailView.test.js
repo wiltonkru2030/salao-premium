@@ -13,10 +13,14 @@ const html = renderSalonDetailView({
     service_id: "service-1", service_name: "<img src=x>", category: "Cabelo",
     duration_minutes: 60, price: 90, professional_id: "professional-1", professional_name: "Ana"
   }],
-  slots: { serviceId: "service-1", items: [{starts_at:"2026-12-01T12:00:00Z",professional_name:"Ana"}] }
+  slots: { serviceId: "service-1", items: [{starts_at:"2026-12-01T12:00:00Z",professional_name:"Ana"}] },
+  couponState: {serviceId:"service-1",code:"BLACK20",preview:{code:"BLACK20",discountAmount:20,finalAmount:70}}
 });
 assert.ok(html.includes("&lt;img src=x&gt;"));
 assert.ok(!html.includes("<img src=x>"));
 assert.ok(html.includes("Qualquer profissional"));
 assert.ok(html.includes('data-action="create-hold"'));
+assert.ok(html.includes('data-action="validate-coupon"'));
+assert.ok(html.includes("BLACK20"));
+assert.ok(html.includes("70,00"));
 console.log("Testes do detalhe público do salão: OK");
