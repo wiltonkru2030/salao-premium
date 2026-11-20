@@ -10,6 +10,7 @@ import { renderBottomNavigation } from "./ui/bottomNavigation.js";
 import { renderLoginView } from "./ui/loginView.js";
 import { renderHomeView } from "./ui/homeView.js";
 import { renderAppointmentsView } from "./ui/appointmentsView.js";
+import { fetchMyCustomerAppointments } from "./services/appointmentsService.js";
 import { renderCustomerProfileView } from "./ui/customerProfileView.js";
 import { ensureMyProfile, updateMyProfile } from "./services/customerProfileService.js";
 import { formatCustomerPhoneInput } from "./customer-profile-utils.js";
@@ -23,6 +24,7 @@ let busy = false;
 let locationLabel = "Ative a localização ou escolha sua cidade";
 let profileState = null;
 let identityLinkRequests = [];
+let appointmentsState = { items: [], loading: false, error: "" };
 
 /** Exibe aviso de operação na região acessível por leitor de tela. */
 function setNotice(message, type = "info") {
@@ -49,7 +51,7 @@ function applyTheme() {
 /** Monta a página ativa e a navegação inferior sem recarregar o documento. */
 function renderApp() {
   let page;
-  if (activePage === "appointments") page = renderAppointmentsView();
+  if (activePage === "appointments") page = renderAppointmentsView({ appointments: appointmentsState.items, loading: appointmentsState.loading, error: appointmentsState.error });
   else if (activePage === "identity-links") page = renderIdentityLinkRequestsView({requests: identityLinkRequests});
   else if (activePage === "profile") {
     page = renderCustomerProfileView({profile: profileState, session: currentSession, theme: getLocalSettings().theme});
@@ -66,6 +68,7 @@ function renderApp() {
   const navigation = renderBottomNavigation(activePage, async pageId => {
     activePage = pageId;
     if (pageId === "profile") await loadProfile();
+    if (pageId === "appointments") await loadAppointments();
     renderApp();
   });
   root.querySelector("[data-bottom-nav]").append(navigation);
@@ -81,6 +84,20 @@ async function loadProfile() {
     if (error?.code !== "CUSTOMER_PROFILE_NOT_READY") {
       console.warn("Falha ao preparar perfil global.", error?.code || "PROFILE_ERROR");
     }
+  }
+}
+
+/** Carrega o histórico vinculado à identidade atual e mantém estados de carregamento/erro. */
+async function loadAppointments() {
+  appointmentsState = { ...appointmentsState, loading: true, error: "" };
+  if (activePage === "appointments") renderApp();
+  try {
+    appointmentsState.items = await fetchMyCustomerAppointments();
+  } catch (error) {
+    appointmentsState.error = error?.message || "Não foi possível carregar seus agendamentos.";
+  } finally {
+    appointmentsState.loading = false;
+    if (activePage === "appointments") renderApp();
   }
 }
 
@@ -123,6 +140,8 @@ async function runAction(action, button = null) {
       profileState = await updateMyProfile({ fullName, phone, email: profileState?.email || currentSession?.user?.email || null });
       renderApp();
       setNotice("Seus dados foram atualizados.", "success");
+    } else if (action === "reload-appointments") {
+      await loadAppointments();
     } else if (action === "theme") {
       const current = getLocalSettings().theme;
       const next = current === "system" ? "light" : current === "light" ? "dark" : "system";
