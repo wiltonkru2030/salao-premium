@@ -18,7 +18,7 @@ export function allowedProfessionalPages(context) {
 }
 /** Permite registrar serviço apenas quando o próprio profissional e a comanda estão elegíveis. */
 export function canRegisterProfessionalService(context,order) {
- return context?.scope==="self"&&context.role==="professional"&&!!context.professional&&["open","in_progress","partially_paid"].includes(order?.status);
+ return context?.scope==="self"&&context.role==="professional"&&!!context.professional&&["open","in_progress"].includes(order?.status);
 }
 /** Extrato em centavos; cancelamentos não compõem o saldo, débitos aparecem separadamente. */
 export function summarizeProfessionalCommissions(rows,payouts) {
