@@ -37,3 +37,6 @@
 
 /* Módulo 05 — cadastros e formulários padronizados. */
 @import url('./src/styles/design-forms-premium.css');
+
+/* Módulo 06 — Comanda, Vendas e Caixa. */
+@import url('./src/styles/design-financial-operations.css');
