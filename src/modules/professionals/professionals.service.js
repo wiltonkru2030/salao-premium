@@ -12,8 +12,11 @@ function requireContext(client,orgId) {
 function mapWorkspaceError(error) {
   if(error?.code==="42501")return new Error("Seu perfil não tem permissão para consultar ou alterar dados da equipe.");
   if(error?.code==="P0002"||error?.code==="PGRST116")return new Error("O profissional não foi encontrado ou não está mais disponível.");
-  if(["PGRST205","42P01"].includes(error?.code))return new Error("Os dados da equipe ainda não estão disponíveis no banco.");
-  return new Error("Não foi possível carregar os dados da equipe.");
+  if(error?.code==="23505")return new Error("Já existe um cadastro profissional com esses dados.");
+  if(error?.code==="23503")return new Error("Um serviço ou vínculo selecionado não está mais disponível.");
+  if(error?.code==="22023")return new Error("Confira os dados do profissional e os serviços selecionados.");
+  if(["PGRST202","PGRST205","42P01"].includes(error?.code))return new Error("O módulo de equipe ainda não está disponível no banco.");
+  return new Error("Não foi possível concluir a operação da equipe.");
 }
 
 /**
