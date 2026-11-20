@@ -245,14 +245,21 @@ export async function loadProfessionalsPage(){
   const cpf=String(card?.querySelector('[data-professional-cpf="'+id+'"]')?.value||"").replace(/\\D/g,"");
   if(cpf.length!==11){toast("Informe os 11 números do CPF do profissional.");return false;}
   button.disabled=true;
-  const {data,error}=await supabase.functions.invoke("manage-professional-access",{body:{action,org_id:state.organization.id,professional_id:id,cpf}});
-  button.disabled=false;
-  if(error||!data?.success){toast(data?.error||"Não foi possível criar o acesso.");return false;}
-  if(data.temporary_password)initialPasswords.set(id,data.temporary_password);
-  toast(action==="reset"?"Senha temporária redefinida.":"Acesso ao App Profissional liberado.");
-  await loadProfessionalsPage();
-  const target=host.querySelector('[data-professional-card="'+id+'"]');
-  if(target&&data.temporary_password){const pass=target.querySelector('[data-initial-password="'+id+'"]');if(pass)pass.value=data.temporary_password;const copy=target.querySelector('[data-professional-copy="'+id+'"]');if(copy)copy.disabled=false;window.alert("Senha temporária de "+data.professional_name+":\\n"+data.temporary_password+"\\n\\nEntregue ao profissional por um canal seguro.");}
-  return true;
+  try {
+   const {data,error}=await supabase.functions.invoke("manage-professional-access",{body:{action,org_id:state.organization.id,professional_id:id,cpf}});
+   if(error||!data?.success){toast(data?.error||"Não foi possível criar o acesso.");return false;}
+   if(data.temporary_password)initialPasswords.set(id,data.temporary_password);
+   toast(action==="reset"?"Senha temporária redefinida.":"Acesso ao App Profissional liberado.");
+   await loadProfessionalsPage();
+   const target=host.querySelector('[data-professional-card="'+id+'"]');
+   if(target&&data.temporary_password){const pass=target.querySelector('[data-initial-password="'+id+'"]');if(pass)pass.value=data.temporary_password;const copy=target.querySelector('[data-professional-copy="'+id+'"]');if(copy)copy.disabled=false;window.alert("Senha temporária de "+data.professional_name+":\\n"+data.temporary_password+"\\n\\nEntregue ao profissional por um canal seguro.");}
+   return true;
+  } catch(error) {
+   reportError(error,{context:"Profissionais > provisionar acesso ao App"});
+   toast("Não foi possível concluir a operação de acesso. Tente novamente.");
+   return false;
+  } finally {
+   if(button.isConnected)button.disabled=false;
+  }
  }
 }
