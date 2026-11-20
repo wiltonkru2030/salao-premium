@@ -1,5 +1,11 @@
 /** Componente: cartão de agendamento. Responsabilidade: exibir cliente, serviço, duração e status em uma faixa do calendário. */
 import {esc} from '../../utils.js';
+/**
+ * Renderiza um cartão de agendamento com dados já normalizados.
+ * @param {object} a Agendamento com cliente, horário, profissional e serviço.
+ * @param {boolean} compact Se deve usar a apresentação compacta.
+ * @returns {string} HTML do cartão, com valores escapados para a interface.
+ */
 export function renderAppointmentCard(a,compact=false){
  const unit=compact?64:52,height=Math.max(44,Math.round(Number(a.duration||30)/30*unit-8));
  return '<button type="button" class="'+(compact?'week-appointment':'appointment-block')+
