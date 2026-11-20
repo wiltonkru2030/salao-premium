@@ -15,6 +15,8 @@ Aplicativo independente servido em /cliente/, separado da autenticação adminis
 - Leitura de GPS sob ação explícita da cliente e cálculo de distância Haversine.
 - Preferências locais não sensíveis e limpeza restrita de cache.
 - Estrutura de navegação após autenticação.
+- Telas de login, Home, agendamentos e perfil separadas em módulos de UI.
+- Fallback manual para cidade e bairro, com preferência local.
 - Contratos de serviços separados. Funcionalidades dependentes de tabelas/RPCs ainda não implantadas falham explicitamente e não simulam sucesso.
 
 ## Segurança
