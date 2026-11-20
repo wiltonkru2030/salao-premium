@@ -1,137 +1,175 @@
 /**
  * Módulo: Produtos e estoque.
- * Responsabilidade: consultar produtos e cadastrar itens/estoque inicial pelo modal global.
- * Não faz: movimentar estoque de vendas ou registrar pagamentos.
+ * Responsabilidade: consultar, cadastrar, editar dados comerciais e inativar produtos.
+ * Integração: Comandas, Vendas e movimentações de estoque.
+ * Segurança: somente owner/admin altera; o serviço e RLS repetem a validação.
+ * Regra: saldo existente só muda por movimentação de estoque, nunca pelo modal de edição.
  */
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast, btn } from "../utils.js";
-import { parseBRL } from "../utils/input-masks.js";
+import { parseBRL, applyInputMask } from "../utils/input-masks.js";
 import { reportError } from "../utils/errors.js";
+import { listProducts, saveProduct, setProductActive } from "../modules/catalog/products.service.js";
 
-let modalListenerInstalled = false;
+let modalListenerInstalled=false;
+const canManageProducts=()=>["owner","admin"].includes(state.membership?.role);
+const money=value=>Number(value||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
-/** As políticas products_insert_admin permitem somente proprietário e administrador. */
-const canManageProducts = () => ["owner", "admin"].includes(state.membership?.role);
+/**
+ * Abre o modal de cadastro/edição e preenche dados do produto.
+ * @param {object|null} product Produto existente ou null para novo.
+ * @returns {void} Exibe o modal e aplica máscaras monetárias.
+ */
+function openProductModal(product=null) {
+  const dialog=document.querySelector("#product-create-modal");
+  const form=dialog?.querySelector("#product-create-form");
+  if(!dialog||!form)return;
+  form.reset();
+  form.elements.product_id.value=product?.id||"";
+  form.elements.name.value=product?.name||"";
+  form.elements.sku.value=product?.sku||"";
+  form.elements.category.value=product?.category||"";
+  form.elements.cost_price.value=Number(product?.cost_price||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  form.elements.sale_price.value=Number(product?.sale_price||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  form.elements.stock_quantity.value=Number(product?.stock_quantity||0);
+  form.elements.stock_quantity.readOnly=Boolean(product);
+  form.elements.stock_quantity.title=product?"Saldo só pode ser alterado por movimentação de estoque.":"Saldo inicial do produto.";
+  form.elements.min_stock.value=Number(product?.min_stock||0);
+  applyInputMask(form.elements.cost_price);
+  applyInputMask(form.elements.sale_price);
+  const title=dialog.querySelector("#product-modal-title");
+  const submit=form.querySelector('[type="submit"]');
+  if(title)title.textContent=product?"Editar produto":"Novo produto";
+  if(submit)submit.textContent=product?"Salvar alterações":"Cadastrar produto";
+  if(!dialog.open)dialog.showModal();
+}
 
-const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-/** Renderiza a página de Produtos e estoque e a ação para abrir o cadastro. */
+/** Renderiza a página de produtos e estoque. */
 export function productsPage() {
-  return head("Produtos e estoque", "Cadastre produtos e acompanhe preço e quantidade disponível.",
-    (canManageProducts() ? btn("＋ Novo produto", "open-product-modal", "primary") : "")) +
+  return head("Produtos e estoque","Cadastre produtos e acompanhe preço e quantidade disponível.",
+    canManageProducts()?btn("＋ Novo produto","open-product-modal","primary"):"")+
     '<div id="products-manager"><div class="empty-state">Carregando produtos…</div></div>';
 }
 
-/** Consulta a lista e mantém os eventos do modal conectados apenas uma vez. */
-/** Consulta produtos do tenant ativo e conecta os eventos do modal. */
+/**
+ * Carrega produtos do tenant e conecta eventos do modal uma única vez.
+ * @returns {Promise<void>} Atualiza a lista e estados de carregamento/erro.
+ */
 export async function loadProductsPage() {
-  const host = document.querySelector("#products-manager");
-  if (!host || !state.organization?.id) return;
-
+  const host=document.querySelector("#products-manager");
+  if(!host||!state.organization?.id)return;
   let products;
   try {
-    const result = await supabase.from("products")
-      .select("id,name,sku,category,cost_price,sale_price,stock_quantity,min_stock,active")
-      .eq("org_id", state.organization.id).order("name").limit(500);
-    if (result.error) throw result.error;
-    products = result.data || [];
-  } catch (error) {
-    reportError(error, { context: "Produtos > carregar lista" });
-    host.innerHTML = '<div class="empty-state">Não foi possível carregar os produtos. Atualize a página e tente novamente.</div>';
+    products=await listProducts({client:supabase,orgId:state.organization.id});
+  } catch(error) {
+    reportError(error,{context:"Produtos > carregar lista"});
+    host.innerHTML='<div class="empty-state">Não foi possível carregar os produtos. Atualize a página e tente novamente.</div>';
     return;
   }
 
-  host.innerHTML = `
-    <dialog class="sp-modal" id="product-create-modal" aria-labelledby="product-modal-title">
-      <div class="sp-modal-shell">
-        <header class="sp-modal-head">
-          <div><h2 id="product-modal-title">Novo produto</h2><p>Cadastre o produto e defina os valores e o estoque inicial.</p></div>
-          <button class="sp-modal-close" type="button" data-close-product-modal aria-label="Fechar">×</button>
-        </header>
-        <form id="product-create-form">
-          <div class="sp-modal-body">
-            <label class="sp-span">Nome do produto<input name="name" required maxlength="120" placeholder="Nome do produto"></label>
-            <label>SKU / Código<input name="sku" placeholder="Código interno"></label>
-            <label>Categoria<input name="category" placeholder="Ex.: Cuidados capilares"></label>
-            <label>Custo (R$)<input name="cost_price" type="text" inputmode="decimal" data-mask="currency" value="0,00"></label>
-            <label>Preço de venda (R$)<input name="sale_price" type="text" inputmode="decimal" data-mask="currency" value="0,00"></label>
-            <label>Estoque inicial<input name="stock_quantity" type="number" min="0" step="0.001" value="0"></label>
-            <label>Estoque mínimo<input name="min_stock" type="number" min="0" step="0.001" value="0"></label>
-          </div>
-          <footer class="sp-modal-foot">
-            <button class="btn secondary" type="button" data-close-product-modal>Cancelar</button>
-            <button class="btn primary" type="submit">Cadastrar produto</button>
-          </footer>
-        </form>
-      </div>
-    </dialog>
-    <div class="list-toolbar"><span class="result-count">${products.length} produtos</span></div>
-    <div class="record-list">${products.map(product => `
-      <article class="record-card">
-        <span class="record-main"><b>${esc(product.name)}</b><small>${esc(product.sku || "Sem SKU")} · ${esc(product.category || "Sem categoria")}</small><small>Estoque: ${Number(product.stock_quantity)} · Mínimo: ${Number(product.min_stock)}</small></span>
-        <span class="record-trailing"><b>${money(product.sale_price)}</b><small>${product.active ? "Ativo" : "Inativo"}</small></span>
-      </article>`).join("") || '<div class="empty-state">Nenhum produto cadastrado.</div>'}
-    </div>`;
+  const cards=products.map(product=>{
+    const actions=canManageProducts()
+      ? '<button class="btn secondary" type="button" data-edit-product="'+esc(product.id)+'">Editar</button>'+
+        '<button class="text-button" type="button" data-toggle-product="'+esc(product.id)+'" data-active="'+(product.active?"true":"false")+'">'+(product.active?"Inativar":"Reativar")+'</button>'
+      : "";
+    return '<article class="record-card"><span class="record-main"><b>'+esc(product.name)+'</b>'+
+      '<small>'+esc(product.sku||"Sem SKU")+' · '+esc(product.category||"Sem categoria")+'</small>'+
+      '<small>Estoque: '+Number(product.stock_quantity)+' · Mínimo: '+Number(product.min_stock)+'</small></span>'+
+      '<span class="record-trailing"><b>'+money(product.sale_price)+'</b>'+
+      '<small class="status-pill '+(product.active?"active":"inactive")+'">'+(product.active?"Ativo":"Inativo")+'</small>'+actions+
+      '</span></article>';
+  }).join("");
 
-  if (host.dataset.bound === "true") return;
-  host.dataset.bound = "true";
+  host.innerHTML=
+    '<dialog class="sp-modal" id="product-create-modal" aria-labelledby="product-modal-title">'+
+      '<div class="sp-modal-shell"><header class="sp-modal-head"><div><h2 id="product-modal-title">Novo produto</h2><p>Defina dados comerciais e estoque inicial.</p></div>'+
+      '<button class="sp-modal-close" type="button" data-close-product-modal aria-label="Fechar">×</button></header>'+
+      '<form id="product-create-form"><input type="hidden" name="product_id"><div class="sp-modal-body">'+
+      '<label class="sp-span">Nome do produto<input name="name" required maxlength="120" placeholder="Nome do produto"></label>'+
+      '<label>SKU / Código<input name="sku" maxlength="64" placeholder="Código interno"></label>'+
+      '<label>Categoria<input name="category" maxlength="80" placeholder="Ex.: Cuidados capilares"></label>'+
+      '<label>Custo (R$)<input name="cost_price" type="text" inputmode="decimal" data-mask="currency" value="0,00"></label>'+
+      '<label>Preço de venda (R$)<input name="sale_price" type="text" inputmode="decimal" data-mask="currency" value="0,00"></label>'+
+      '<label>Estoque inicial / atual<input name="stock_quantity" type="number" min="0" step="0.001" value="0"></label>'+
+      '<label>Estoque mínimo<input name="min_stock" type="number" min="0" step="0.001" value="0"></label>'+
+      '<p class="sp-span muted">Ao editar um produto, o saldo atual fica bloqueado. Ajustes de estoque devem ser lançados em Movimentações para preservar o histórico.</p>'+
+      '</div><footer class="sp-modal-foot"><button class="btn secondary" type="button" data-close-product-modal>Cancelar</button>'+
+      '<button class="btn primary" type="submit">Cadastrar produto</button></footer></form></div></dialog>'+
+    '<div class="list-toolbar"><span class="result-count">'+products.length+' produtos</span></div>'+
+    '<div class="record-list">'+(cards||'<div class="empty-state">Nenhum produto cadastrado.</div>')+'</div>';
 
-  // O botão do cabeçalho fica fora do host; por isso o clique é delegado ao documento.
-  if (!modalListenerInstalled) {
-    modalListenerInstalled = true;
-    document.addEventListener("click", event => {
-    const dialog = document.querySelector("#product-create-modal");
-    if (!dialog) return;
-    if (event.target.closest('[data-action="open-product-modal"]') && canManageProducts()) {
-      if (!dialog.open) dialog.showModal();
-    } else if (event.target.closest("[data-close-product-modal]") || event.target === dialog) {
-      if (dialog.open) dialog.close();
-    }
+  if(host.dataset.bound==="true")return;
+  host.dataset.bound="true";
+
+  if(!modalListenerInstalled) {
+    modalListenerInstalled=true;
+    document.addEventListener("click",event=>{
+      const dialog=document.querySelector("#product-create-modal");
+      if(!dialog)return;
+      if(event.target.closest('[data-action="open-product-modal"]')&&canManageProducts())openProductModal();
+      else if(event.target.closest("[data-close-product-modal]")||event.target===dialog) {
+        if(dialog.open)dialog.close();
+      }
     });
   }
 
-  host.addEventListener("submit", async event => {
-    if (!event.target.matches("#product-create-form")) return;
+  host.addEventListener("click",async event=>{
+    const edit=event.target.closest("[data-edit-product]");
+    if(edit) {
+      if(!canManageProducts())return toast("Somente proprietário ou administrador pode editar produtos.");
+      openProductModal(products.find(product=>product.id===edit.dataset.editProduct)||null);
+      return;
+    }
+    const toggle=event.target.closest("[data-toggle-product]");
+    if(!toggle)return;
+    if(!canManageProducts())return toast("Somente proprietário ou administrador pode alterar produtos.");
+    const nextActive=toggle.dataset.active!=="true";
+    if(!window.confirm(nextActive?"Reativar este produto?":"Inativar este produto? O histórico será preservado."))return;
+    toggle.disabled=true;
+    try {
+      await setProductActive({client:supabase,orgId:state.organization.id,productId:toggle.dataset.toggleProduct,active:nextActive});
+      toast(nextActive?"Produto reativado.":"Produto inativado.");
+      await loadProductsPage();
+    } catch(error) {
+      reportError(error,{context:"Produtos > alterar situação"});
+    } finally {
+      if(toggle.isConnected)toggle.disabled=false;
+    }
+  });
+
+  host.addEventListener("submit",async event=>{
+    const form=event.target;
+    if(!form.matches("#product-create-form"))return;
     event.preventDefault();
-    if (!canManageProducts()) { toast("Somente proprietário ou administrador pode cadastrar produtos."); return; }
-
-    const form = event.target;
-    const values = new FormData(form);
-    const submit = form.querySelector('[type="submit"]');
-    const name = String(values.get("name") || "").trim();
-    const cost = parseBRL(values.get("cost_price"));
-    const price = parseBRL(values.get("sale_price"));
-    const stock = Number(values.get("stock_quantity") || 0);
-    const minStock = Number(values.get("min_stock") || 0);
-
-    if (!name || ![cost, price, stock, minStock].every(Number.isFinite) ||
-        [cost, price, stock, minStock].some(value => value < 0)) {
+    if(!canManageProducts())return toast("Somente proprietário ou administrador pode cadastrar produtos.");
+    const values=new FormData(form);
+    const submit=form.querySelector('[type="submit"]');
+    const name=String(values.get("name")||"").trim();
+    const cost=parseBRL(values.get("cost_price"));
+    const price=parseBRL(values.get("sale_price"));
+    const stock=Number(values.get("stock_quantity")||0);
+    const minStock=Number(values.get("min_stock")||0);
+    if(!name||![cost,price,stock,minStock].every(Number.isFinite)||
+       [cost,price,stock,minStock].some(value=>value<0)) {
       toast("Confira os dados e os valores do produto.");
       return;
     }
-
-    submit.disabled = true;
+    submit.disabled=true;
     try {
-      const { error } = await supabase.from("products").insert({
-        org_id: state.organization.id,
-        name,
-        sku: String(values.get("sku") || "").trim() || null,
-        category: String(values.get("category") || "").trim() || null,
-        cost_price: cost,
-        sale_price: price,
-        stock_quantity: stock,
-        min_stock: minStock,
-        active: true
+      await saveProduct({
+        client:supabase,orgId:state.organization.id,
+        productId:String(values.get("product_id")||"").trim()||null,
+        name,sku:values.get("sku"),category:values.get("category"),
+        costPrice:cost,salePrice:price,stockQuantity:stock,minStock
       });
-      if (error) throw error;
-      host.querySelector("#product-create-modal")?.close();
-      toast("Produto cadastrado.");
+      document.querySelector("#product-create-modal")?.close();
+      toast(values.get("product_id")?"Produto atualizado.":"Produto cadastrado.");
       await loadProductsPage();
-    } catch (error) {
-      reportError(error, { context: "Produtos > salvar cadastro" });
+    } catch(error) {
+      reportError(error,{context:"Produtos > salvar cadastro"});
     } finally {
-      submit.disabled = false;
+      if(submit.isConnected)submit.disabled=false;
     }
   });
 }
