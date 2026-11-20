@@ -21,6 +21,9 @@ Aplicativo independente servido em /cliente/, separado da autenticação adminis
 - Consulta de disponibilidade, criação de HOLD, confirmação e cancelamento temporário integrados aos serviços Supabase.
 - Histórico de agendamentos com paginação e estados de carregamento/vazio/erro.
 - Formulário administrativo de vitrine pública em Configurações, condicionado à existência das tabelas/RPCs de publicação.
+- Favoritos por identidade global, com tela própria e remoção; a lista mostra somente unidades publicadas.
+- Central de notificações internas com leitura individual e em lote; o backend proposto gera eventos quando agendamentos são criados, confirmados, cancelados, concluídos ou remarcados.
+- Sincronização remota de preferências (tema, lembretes, promoções e região), mantendo fallback local até a RPC ser implantada.
 
 ## Banco e segurança
 - As migrations customer_global_identity, customer_identity_link_hardening e customer_appointment_holds constam no histórico do Supabase.
@@ -34,10 +37,10 @@ Aplicativo independente servido em /cliente/, separado da autenticação adminis
 - PIN de quatro dígitos não é autenticação autônoma nem substitui Google/Passkey.
 
 ## Pendências que bloqueiam liberação comercial
-- As migrations revisáveis docs/sql/customer-public-directory.draft.sql, docs/sql/customer-availability-slots.draft.sql e docs/sql/customer-appointment-history.draft.sql ainda não foram aplicadas ao Supabase.
+- As migrations revisáveis docs/sql/customer-public-directory.draft.sql, docs/sql/customer-availability-slots.draft.sql, docs/sql/customer-appointment-history.draft.sql e docs/sql/customer-engagement.draft.sql ainda não foram aplicadas ao Supabase.
 - Até aplicar e testar esses rascunhos, a busca pública, consulta de horários e leitura do histórico exibem estado de ativação/erro seguro; não há dados fictícios.
 - A interface permite um serviço por reserva; seleção de vários serviços em um único agendamento ainda precisa ser implementada.
-- Cupons, favoritos, notificações e preferências remotas ainda não estão integrados.
+- Cupons e resgate transacional ainda não estão implementados. Favoritos, notificações internas e preferências remotas têm código e SQL draft, mas só funcionarão após aplicar o rascunho e validar as políticas no ambiente de teste.
 - Configuração e teste ponta a ponta de Google/Passkey precisam ser concluídos no ambiente de autenticação.
 - Fluxo completo de publicação pelo painel e de reserva pelo app precisa de teste E2E com salão, filial, serviços e profissionais reais.
 
