@@ -5,8 +5,20 @@
  */
 import { state } from '../state.js';
 import { supabase } from '../supabase/client.js';
-import { head, btn, metric, initials, status, esc } from '../utils.js';
+import { head, btn, initials, status, esc } from '../utils.js';
 import { reportError } from '../utils/errors.js';
+
+/** Evita sobrescrever uma rota ou organização diferente após consultas assíncronas. */
+function dashboardIsCurrent(host, orgId) {
+  return host.isConnected && state.page === 'Dashboard' && state.organization?.id === orgId;
+}
+
+/** Cartão de indicador sem setas de crescimento inventadas. */
+function indicator(label, value, detail, icon) {
+  return '<article class="sp-overview-card"><div class="sp-overview-card-top"><span>' + esc(label) +
+    '</span><span class="sp-overview-card-icon" aria-hidden="true">' + icon + '</span></div>' +
+    '<strong>' + esc(value) + '</strong><small>' + esc(detail) + '</small></article>';
+}
 
 /** Formata uma data ISO para horário local sem alterar o valor persistido. */
 function formatTime(value) {
@@ -49,7 +61,7 @@ export async function loadDashboard() {
   host.innerHTML = '<div class="empty-state">Carregando indicadores do salão…</div>';
 
   try {
-    const [appointmentsResult, customersResult, servicesResult, professionalsResult] = await Promise.all([
+    const [appointmentsResult, todayResult, customersResult, servicesResult, professionalsResult] = await Promise.all([
       supabase.from('appointments')
         .select('id,customer_name,service_name,professional_name,starts_at,status', { count: 'exact' })
         .eq('org_id', orgId)
@@ -57,23 +69,27 @@ export async function loadDashboard() {
         .lt('starts_at', dayEnd.toISOString())
         .not('status', 'in', '(cancelled,no_show)')
         .order('starts_at')
-        .limit(4),
+        .limit(6),
+      supabase.from('appointments').select('id', { count: 'exact', head: true })
+        .eq('org_id', orgId).gte('starts_at', dayStart.toISOString()).lt('starts_at', dayEnd.toISOString())
+        .not('status', 'in', '(cancelled,no_show)'),
       supabase.from('customers').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('active', true),
       supabase.from('services').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('active', true),
       supabase.from('professionals').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('active', true)
     ]);
 
-    for (const result of [appointmentsResult, customersResult, servicesResult, professionalsResult]) {
+    if (!dashboardIsCurrent(host, orgId)) return;
+    for (const result of [appointmentsResult, todayResult, customersResult, servicesResult, professionalsResult]) {
       if (result.error) throw result.error;
     }
 
     const appointments = appointmentsResult.data || [];
     const appointmentCount = appointmentsResult.count ?? appointments.length;
-    const cards = '<div class="metrics">' +
-      metric('Atendimentos restantes', String(appointmentCount), 'a partir de agora', 'hoje, sem cancelamentos ou faltas') +
-      metric('Clientes ativos', String(customersResult.count ?? 0), 'cadastros ativos', 'na organização') +
-      metric('Serviços ativos', String(servicesResult.count ?? 0), 'serviços disponíveis', 'na organização') +
-      metric('Profissionais ativos', String(professionalsResult.count ?? 0), 'equipe ativa', 'na organização') +
+    const cards = '<div class="sp-overview-metrics">' +
+      indicator('Atendimentos de hoje', String(todayResult.count ?? 0), 'Programados, incluindo os já realizados', '◷') +
+      indicator('Restantes hoje', String(appointmentCount), 'A partir de agora', '▦') +
+      indicator('Clientes ativos', String(customersResult.count ?? 0), 'Cadastros na organização', '♙') +
+      indicator('Profissionais ativos', String(professionalsResult.count ?? 0), 'Equipe disponível no cadastro', '♧') +
       '</div>';
 
     const appointmentRows = appointments.length
@@ -86,14 +102,14 @@ export async function loadDashboard() {
         status(appointmentStatus(item.status)) + '</div>').join('')
       : '<div class="empty-state">Nenhum atendimento previsto para hoje.</div>';
 
-    host.innerHTML = cards +
-      '<div class="dashboard-grid"><section class="surface">' +
+    host.innerHTML = '<div class="sp-overview-intro"><div><span class="sp-overview-kicker">PAINEL OPERACIONAL</span><h2>Seu salão, em um só lugar.</h2><p>Resumo de ' + esc(now.toLocaleDateString('pt-BR', { dateStyle: 'full' })) + '</p></div><span class="sp-overview-live">Dados da organização ativa</span></div>' + cards +
+      '<div class="sp-overview-sections"><section class="surface sp-overview-appointments">' +
       '<div class="section-heading"><div><h2>Próximos atendimentos</h2><p>' +
       esc(now.toLocaleDateString('pt-BR', { dateStyle: 'full' })) +
-      '</p></div><button class="text-action" data-page="Agenda">Ver agenda →</button></div>' +
-      appointmentRows + '</section></div>' +
-      '<p class="demo-note">Indicadores consultados diretamente no banco de dados da organização ativa.</p>';
+      '</p></div><button type="button" class="text-action" data-page="Agenda">Ver agenda →</button></div>' +
+      appointmentRows + '</section><aside class="surface sp-overview-side"><h2>Catálogo ativo</h2><p>Serviços disponíveis para os atendimentos.</p><strong>' + esc(String(servicesResult.count ?? 0)) + '</strong><small>serviços cadastrados e ativos</small><div class="sp-overview-tip">Os números refletem os cadastros e agendamentos reais da organização.</div></aside></div>';
   } catch (error) {
+    if (!dashboardIsCurrent(host, orgId)) return;
     const diagnostic = reportError(error, { context: 'Dashboard > carregar indicadores', notify: false });
     host.innerHTML = '<div class="empty-state"><b>Não foi possível carregar o painel.</b>' +
       '<small>Verifique sua conexão e suas permissões. Código ' + esc(diagnostic.id) + '</small></div>';
