@@ -76,7 +76,9 @@ assert.match(appliedSql, /grant usage on schema private to anon, authenticated/)
 assert.ok(appliedSql.includes("grant execute on function private.search_public_salons"));
 assert.ok(appliedSql.includes("grant execute on function private.get_public_salon_catalog"));
 assert.ok(appliedSql.includes("grant execute on function private.get_customer_available_slots"));
-assert.ok(!appliedSql.includes("grant execute on function private.save_public_salon_profile") || !appliedSql.includes("to anon;"));
+assert.ok(!appliedSql.split("\\n").some(line =>
+  line.includes("grant execute on function private.save_public_salon_profile") && line.includes("to anon")
+));
 assert.match(appliedSql, /appointment_holds/);
 assert.match(appliedSql, /branch_closures/);
 assert.match(appliedSql, /professional_time_off/);
