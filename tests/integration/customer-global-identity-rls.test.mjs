@@ -44,6 +44,14 @@ const aMemberships = await request(process.env.CUSTOMER_A_ACCESS_TOKEN, "/custom
 assert.ok(aMemberships.status >= 200 && aMemberships.status < 300, "Cliente A deve consultar os próprios vínculos.");
 assert.ok(aMemberships.body.every(row => row.auth_user_id === process.env.CUSTOMER_A_ID), "Memberships de outra cliente não podem vazar.");
 
+const aCannotReadBMembership = await request(process.env.CUSTOMER_A_ACCESS_TOKEN, "/customer_tenant_memberships?select=org_id,auth_user_id&auth_user_id=eq." + process.env.CUSTOMER_B_ID);
+assert.ok(aCannotReadBMembership.status >= 200 && aCannotReadBMembership.status < 300, "Consulta cruzada de membership deve ser processada.");
+assert.equal(aCannotReadBMembership.body.length, 0, "Cliente A não pode consultar membership de B.");
+
+const aCannotReadBMapping = await request(process.env.CUSTOMER_A_ACCESS_TOKEN, "/customer_account_customers?select=org_id,auth_user_id&auth_user_id=eq." + process.env.CUSTOMER_B_ID);
+assert.ok(aCannotReadBMapping.status >= 200 && aCannotReadBMapping.status < 300, "Consulta cruzada de associação deve ser processada.");
+assert.equal(aCannotReadBMapping.body.length, 0, "Cliente A não pode consultar associação legada de B.");
+
 const bMappings = await request(process.env.CUSTOMER_B_ACCESS_TOKEN, "/customer_account_customers?select=org_id,auth_user_id");
 assert.ok(bMappings.status >= 200 && bMappings.status < 300, "Cliente B deve consultar seus vínculos legados.");
 assert.ok(bMappings.body.every(row => row.auth_user_id === process.env.CUSTOMER_B_ID), "Associações legadas de outra cliente não podem vazar.");
