@@ -106,10 +106,19 @@ export async function loadAgendaPage() {
       start=new Date(state.date.getFullYear(),state.date.getMonth(),1);
       end=new Date(state.date.getFullYear(),state.date.getMonth()+1,1);
     }
+    const branchId=state.branch?.id||null;
+    let professionalQuery=supabase.from('professionals').select('id,name,color,active,branch_id')
+      .eq('org_id',state.organization.id).eq('active',true);
+    let blockQuery=supabase.from('appointment_blocks').select('id,professional_id,starts_at,ends_at,reason')
+      .eq('org_id',state.organization.id).lt('starts_at',end.toISOString()).gt('ends_at',start.toISOString());
+    if(branchId) {
+      professionalQuery=professionalQuery.eq('branch_id',branchId);
+      blockQuery=blockQuery.eq('branch_id',branchId);
+    }
     const [proResult,appointmentRows,blockResult]=await Promise.all([
-      supabase.from('professionals').select('id,name,color,active').eq('org_id',state.organization.id).eq('active',true).order('name'),
-      listAppointments({client:supabase,orgId:state.organization.id,startAt:start.toISOString(),endAt:end.toISOString()}),
-      supabase.from('appointment_blocks').select('id,professional_id,starts_at,ends_at,reason').eq('org_id',state.organization.id).lt('starts_at',end.toISOString()).gt('ends_at',start.toISOString()).limit(500)
+      professionalQuery.order('name'),
+      listAppointments({client:supabase,orgId:state.organization.id,branchId,startAt:start.toISOString(),endAt:end.toISOString()}),
+      blockQuery.limit(500)
     ]);
     if(proResult.error)throw proResult.error;
     if(blockResult.error)throw blockResult.error;
