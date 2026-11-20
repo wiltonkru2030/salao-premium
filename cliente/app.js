@@ -4,6 +4,7 @@
  * Cada tela, serviço, componente e estilo fica em arquivo próprio.
  */
 import { getCurrentSession, subscribeToAuthChanges, signInWithGoogle, signInWithPasskey, registerPasskey, signOut } from "./services/authService.js";
+import { supabase } from "../src/supabase/client.js";
 import { getCurrentPosition } from "./services/geoSalonService.js";
 import { getLocalSettings, saveLocalSettings } from "./services/settingsService.js";
 import { renderBottomNavigation } from "./ui/bottomNavigation.js";
@@ -92,7 +93,7 @@ async function loadAppointments() {
   appointmentsState = { ...appointmentsState, loading: true, error: "" };
   if (activePage === "appointments") renderApp();
   try {
-    appointmentsState.items = await fetchMyCustomerAppointments();
+    appointmentsState.items = await fetchMyCustomerAppointments({ client: supabase });
   } catch (error) {
     appointmentsState.error = error?.message || "Não foi possível carregar seus agendamentos.";
   } finally {
