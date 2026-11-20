@@ -82,3 +82,33 @@ export function validateGlobalCustomerProfile({ fullName, phone = null, email = 
     avatarUrl: normalizedAvatar
   };
 }
+
+
+/**
+ * Formata telefone brasileiro durante a digitação, sem armazenar pontuação.
+ * @param {string} value Valor digitado.
+ * @returns {string} Telefone visual com DDD, limitado a onze dígitos.
+ */
+export function formatCustomerPhoneInput(value) {
+  const digits = String(value ?? "").replace(/\D/g, "").replace(/^55(?=\d{10,11})/, "").slice(0, 11);
+  if (digits.length <= 2) return digits.length === 2 ? "(" + digits + ")" : digits;
+  const area = digits.slice(0, 2);
+  const local = digits.slice(2);
+  const split = digits.length > 10 ? 5 : 4;
+  const first = local.slice(0, split);
+  const rest = local.slice(split);
+  return "(" + area + ") " + first + (rest ? "-" + rest : "");
+}
+
+/**
+ * Apresenta um telefone E.164 em máscara brasileira quando o DDI for +55.
+ * @param {string|null} value Telefone armazenado.
+ * @returns {string} Telefone pronto para exibição.
+ */
+export function formatCustomerPhoneDisplay(value) {
+  if (!value) return "";
+  const normalized = String(value);
+  return normalized.startsWith("+55")
+    ? formatCustomerPhoneInput(normalized.slice(1))
+    : normalized;
+}
