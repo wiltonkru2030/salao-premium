@@ -5,6 +5,7 @@ import { head, esc, toast } from "../utils.js";
 import { mountAutocomplete } from "../components/autocomplete.js";
 import { reportError } from "../utils/errors.js";
 import { fetchCommissionPageData, fetchCommissionReferences } from "../modules/commissions/commissions.service.js";
+import { createServiceCommissionRule, updateServiceCommissionRule, deleteServiceCommissionRule, saveProductCommissionSetting, payProfessionalCommissions } from "../modules/commissions/commission-rules.service.js";
 
 let cleanupSearch=null;
 let selectedProfessionalFilter=null;
@@ -154,8 +155,7 @@ export async function loadCommissionsPage(){
      if(serviceRules.some(rule=>rule.id!==ruleId&&rule.professional_id===professionalId&&rule.service_id===serviceId)){toast("Já existe outra regra para este profissional e serviço.");return;}
      button.disabled=true;button.textContent="Salvando…";
      try{
-      const {error}=await supabase.from("commission_rules").update({professional_id:professionalId,service_id:serviceId,rate}).eq("org_id",orgId).eq("id",ruleId);
-      if(error)throw error;
+      await updateServiceCommissionRule({client:supabase,orgId,ruleId,professionalId,serviceId,rate});
       toast("Regra atualizada.");await loadCommissionsPage();
      }catch(error){reportError(error,{context:"Comissões > editar regra por serviço"});}
      finally{if(button.isConnected){button.disabled=false;button.textContent="Salvar";}}
@@ -167,8 +167,7 @@ export async function loadCommissionsPage(){
      if(serviceRules.some(rule=>rule.professional_id===professionalId&&rule.service_id===serviceId)){toast("Já existe uma regra para este profissional e serviço. Exclua a regra anterior antes de cadastrar outra.");return;}
      button.disabled=true;button.textContent="Salvando…";
      try{
-      const {error}=await supabase.from("commission_rules").insert({org_id:orgId,professional_id:professionalId,service_id:serviceId,item_type:"service",rate,active:true});
-      if(error)throw error;
+      await createServiceCommissionRule({client:supabase,orgId,professionalId,serviceId,rate});
       toast("Regra de comissão salva.");
       await loadCommissionsPage();
      }catch(error){reportError(error,{context:"Comissões > cadastrar regra por serviço"});}
@@ -179,14 +178,10 @@ export async function loadCommissionsPage(){
     if(!Number.isFinite(rate)||rate<0||rate>100||(enabled&&rate<=0)){toast("Informe uma comissão entre 0,01% e 100% quando a regra estiver ativa.");return;}
     button.disabled=true;button.textContent="Salvando…";
     try{
-     const payload={setting_value:{enabled,default_rate:rate},updated_by:state.user?.id||null};
-     let result;
-     if(productSetting){
-      result=await supabase.from("app_settings").update(payload).eq("org_id",orgId).eq("id",productSetting.id);
-     }else{
-      result=await supabase.from("app_settings").insert({org_id:orgId,branch_id:null,setting_key:"product_commission",...payload});
-     }
-     if(result.error)throw result.error;
+     await saveProductCommissionSetting({
+      client:supabase,orgId,settingId:productSetting?.id||null,
+      userId:state.user?.id||null,enabled,rate
+     });
      toast(enabled?"Comissão de produtos ativada.":"Comissão de produtos desativada.");
      await loadCommissionsPage();
     }catch(error){reportError(error,{context:"Comissões > configurar comissão de produtos"});}
@@ -205,9 +200,16 @@ export async function loadCommissionsPage(){
      if(!canManageCommissionSettings()){toast("Você não tem permissão para alterar regras.");return;}
      if(!window.confirm("Excluir esta regra específica? O sistema voltará a usar a comissão padrão do profissional."))return;
      deleteRule.disabled=true;
-     const {error}=await supabase.from("commission_rules").delete().eq("org_id",orgId).eq("id",deleteRule.dataset.deleteCommissionRule);
-     if(error){reportError(error,{context:"Comissões > excluir regra"});deleteRule.disabled=false;return;}
-     toast("Regra removida.");await loadCommissionsPage();return;
+     try {
+      await deleteServiceCommissionRule({client:supabase,orgId,ruleId:deleteRule.dataset.deleteCommissionRule});
+      toast("Regra removida.");
+      await loadCommissionsPage();
+     } catch(error) {
+      reportError(error,{context:"Comissões > excluir regra"});
+     } finally {
+      if(deleteRule.isConnected)deleteRule.disabled=false;
+     }
+     return;
     }
     const button=event.target.closest("[data-pay-commissions]");
     if(!button)return;
@@ -229,11 +231,10 @@ export async function loadCommissionsPage(){
     button.disabled=true;button.textContent="Registrando…";
     let payment;
     try {
-     payment=await supabase.rpc("pay_professional_commissions",{
-      p_org_id:orgId,p_professional_id:professionalId,p_commission_ids:ids,
-      p_payment_method:method,p_notes:"Pagamento de comissões"
-     });
-     if(payment.error)throw payment.error;
+     payment={data:await payProfessionalCommissions({
+      client:supabase,orgId,professionalId,commissionIds:ids,
+      paymentMethod:method,notes:"Pagamento de comissões"
+     })};
     } catch(error) {
      reportError(error,{context:"Comissões > registrar pagamento"});
      button.disabled=false;button.textContent="Pagar selecionadas";return;
