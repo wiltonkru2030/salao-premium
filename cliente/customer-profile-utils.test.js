@@ -10,7 +10,7 @@ assert.equal(normalizeGlobalCustomerName("  Ana   Maria "), "Ana Maria");
 assert.equal(normalizeCustomerPhone("(67) 99999-1234"), "+5567999991234");
 assert.equal(normalizeCustomerPhone("+1 (415) 555-2671"), "+14155552671");
 assert.equal(normalizeCustomerPhone(""), null);
-assert.equal(normalizeTenantSlug("  Studio-Mãos-de-Fadas "), "studio-mãos-de-fadas".normalize("NFC").replace("ã","a").replace("õ","o").replace("á","a").replace("é","e").replace("â","a").replace("ê","e").replace("ç","c"));
+assert.equal(normalizeTenantSlug("  Studio-Maos-de-Fadas "), "studio-maos-de-fadas");
 // Slugs são ASCII intencionalmente; acentos são rejeitados para evitar aliases ambíguos.
 assert.throws(() => normalizeTenantSlug("salão"), /link do salão é inválido/);
 assert.throws(() => normalizeCustomerPhone("123"), /DDD/);
