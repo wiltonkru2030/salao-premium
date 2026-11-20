@@ -73,7 +73,8 @@ export function mountAppointmentForm(){
   const branchSelect=form.querySelector('[name="branch_id"]');
   let branchOptions=[];
   let selectedServiceId=serviceId.value||null;
-  const preferredBranchId=branchSelect.dataset.selected||state.branch?.id||'';\n  professionalInput.disabled=true;
+  const preferredBranchId=branchSelect.dataset.selected||state.branch?.id||'';
+  professionalInput.disabled=true;
   supabase.from('branches').select('id,name,is_main').eq('org_id',orgId).eq('active',true).order('name')
     .then(({data,error})=>{
       if(error)throw error;
@@ -81,7 +82,8 @@ export function mountAppointmentForm(){
       const selected=preferredBranchId|| (branchOptions.length===1?branchOptions[0].id:'');
       branchSelect.innerHTML='<option value="">Selecione a unidade</option>'+branchOptions.map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+(b.is_main?' · Principal':'')+'</option>').join('');
       if(selected&&branchOptions.some(b=>b.id===selected))branchSelect.value=selected;
-      state.branch=branchOptions.find(b=>b.id===branchSelect.value)||null;\n      professionalInput.disabled=!branchSelect.value;
+      state.branch=branchOptions.find(b=>b.id===branchSelect.value)||null;
+      professionalInput.disabled=!branchSelect.value;
       if(!branchOptions.length)branchSelect.innerHTML='<option value="">Nenhuma unidade ativa cadastrada</option>';
     })
     .catch(error=>{branchSelect.innerHTML='<option value="">Falha ao carregar unidades</option>';reportError(error,{context:'Agenda > carregar unidades'});});
