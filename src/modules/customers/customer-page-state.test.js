@@ -36,4 +36,15 @@ assert.equal(store.current(newHost,"org-b"),null);
 const fourth=store.begin(newHost,"org-b");
 assert.equal(store.commit(newHost,fourth,"org-b",[]),true);
 assert.deepEqual(store.current(newHost,"org-b").customers,[]);
+// Filiais da mesma organização também precisam invalidar respostas atrasadas.
+const branchA=JSON.stringify(["org-b","filial-a"]);
+const branchB=JSON.stringify(["org-b","filial-b"]);
+const previousBranch=store.begin(newHost,branchA);
+assert.equal(store.commit(newHost,previousBranch,branchA,[{id:"cliente-a"}]),true);
+assert.equal(store.current(newHost,branchB),null);
+assert.equal(store.commit(newHost,previousBranch,branchB,[]),false);
+const nextBranch=store.begin(newHost,branchB);
+assert.equal(store.commit(newHost,nextBranch,branchB,[{id:"cliente-b"}]),true);
+assert.equal(store.commit(newHost,previousBranch,branchA,[]),false);
+assert.equal(store.current(newHost,branchB).customers[0].id,"cliente-b");
 console.log("Testes de isolamento da página de clientes: OK.");
