@@ -13,8 +13,9 @@ Os arquivos marcados como draft são documentos de revisão, não migrations apl
 2. docs/sql/customer-availability-slots.draft.sql — consulta de horários, limitada a salões e unidades publicados.
 3. docs/sql/customer-appointment-history.draft.sql — histórico da própria identidade global.
 4. docs/sql/customer-engagement.draft.sql — favoritos, notificações internas por trigger e preferências globais.
+5. docs/sql/customer-coupons.draft.sql — gestão de cupons pelo owner/admin, validação, reserva transacional no HOLD e resgate na confirmação.
 
-A etapa 1 é dependência das etapas 2 e 4. O histórico depende das tabelas de identidade global já existentes no ambiente.
+A etapa 1 é dependência das etapas 2, 4 e 5. O histórico depende das tabelas de identidade global já existentes no ambiente. A etapa 5 depende também de appointments, appointment_holds e dos serviços ativos.
 
 ## Comissões
 1. supabase/migrations/20261119170000_snapshot_commission_rate_on_first_payment.sql — congela a regra de comissão no primeiro pagamento do item.
@@ -23,7 +24,6 @@ A etapa 1 é dependência das etapas 2 e 4. O histórico depende das tabelas de 
 O rascunho de reversão pressupõe as tabelas atuais de comissões e repasses. Deve ser testado com pagamentos parciais, comissão já paga, estorno total e repasse líquido.
 
 ## Não incluído nesta etapa
-- Aplicar SQL em produção.
 - Criar regras progressivas de comissão sem definição de faixas, período de apuração e reinício.
-- Resgate de cupons com reserva transacional ligada ao HOLD.
+- Aplicar SQL em produção.
 - Envio de notificações push, e-mail ou WhatsApp.
