@@ -1,0 +1,21 @@
+/** Testes das regras comerciais, sem persistência ou chamadas externas. */
+import assert from "node:assert/strict";
+import {buildQuoteItem,makeQuotePayload,calculateQuoteTotals} from "./quote.rules.js";
+const base={service:{id:"s",name:"Serviço",price:10,duration_minutes:30},quantity:1,discountMode:"percent",discountValue:20,maxDiscount:50,allowFixedDiscount:true,discountAllowed:true};
+const item=buildQuoteItem(base);
+assert.equal(item.discount,2);
+assert.equal(makeQuotePayload([item])[0].discount_value,20);
+assert.deepEqual(calculateQuoteTotals([item]),{subtotal:10,discount:2,total:8});
+const rounded=buildQuoteItem({...base,service:{...base.service,price:13.23},discountValue:17.5});
+assert.equal(rounded.discount,2.32);
+assert.equal(makeQuotePayload([rounded])[0].discount_value,17.5);
+assert.throws(()=>buildQuoteItem({...base,discountMode:"fixed",discountValue:11}),/limite/);
+assert.throws(()=>buildQuoteItem({...base,discountValue:51}),/limite/);
+assert.throws(()=>buildQuoteItem({...base,discountValue:10.001}),/duas casas/);
+assert.throws(()=>buildQuoteItem({...base,discountAllowed:false}),/não permite/);
+assert.throws(()=>buildQuoteItem({...base,quantity:1.5}),/quantidade/);
+assert.throws(()=>buildQuoteItem({...base,professional:{id:"p"}}),/habilitado/);
+assert.equal(buildQuoteItem({...base,professional:{id:"p",name:"Profissional"},assignments:[{professional_id:"p",service_id:"s"}]}).professionalId,"p");
+assert.throws(()=>makeQuotePayload([]),/entre 1 e 100/);
+assert.deepEqual(calculateQuoteTotals([{price:0.1,quantity:1,discount:0},{price:0.2,quantity:1,discount:0}]),{subtotal:0.3,discount:0,total:0.3});
+console.log("Regras de orçamento: OK");
