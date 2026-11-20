@@ -211,6 +211,11 @@ export function startAuth(onAuthenticated) {
 }
 
 // Encerra a sessão Supabase e propaga falhas ao chamador.
+/**
+ * Encerra a sessão autenticada no Supabase.
+ * @returns {Promise<void>} Resolve após encerrar a sessão.
+ * @throws {Error} Quando o Supabase não consegue encerrar a sessão.
+ */
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
