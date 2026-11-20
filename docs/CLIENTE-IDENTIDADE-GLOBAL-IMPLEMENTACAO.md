@@ -285,7 +285,7 @@ Migrations aplicadas no Supabase conectado:
 
 ### Limitações deliberadas desta etapa
 
-- Ainda não há consulta estruturada de expediente, intervalos, feriados, folgas e exceções por profissional/unidade. Portanto, esta camada impede conflitos e confirma a duração do serviço, mas **não pode ser apresentada como motor completo de disponibilidade**.
+- A consulta de disponibilidade agora exige expediente cadastrado da unidade e do profissional, e considera fechamentos da unidade e afastamentos do profissional. Ainda não há interface administrativa para gerenciar esses horários, nem geração de grade de horários livres.
 - O fluxo atual exige cliente autenticada e perfil global com nome. Reserva pública anônima não foi habilitada.
 - A tela de descoberta/seleção/checkout ainda não chama o serviço. O serviço está pronto para integração, mas a jornada visual ainda não foi concluída.
 - Testes com duas sessões JWT reais, concorrência e isolamento entre organizações dependem de ambiente QA. Testes unitários locais não comprovam essas propriedades.
@@ -308,3 +308,27 @@ As funções transacionais SECURITY DEFINER foram movidas para `private` pela mi
 - tabela `appointment_holds`: RLS ligado, política explícita de negação de acesso direto e sem grants diretos.
 
 O Security Advisor deixou de listar as RPCs de HOLD como SECURITY DEFINER expostas em `public`. Ainda há 16 avisos de funções SECURITY DEFINER preexistentes em outros módulos e um aviso de proteção contra senhas vazadas desativada.
+
+
+### Expediente e disponibilidade operacional
+
+Migration `20261120041928_customer_booking_business_and_professional_availability` aplicada ao Supabase e registrada nesta branch.
+
+Novas tabelas:
+- `branch_business_hours`: múltiplos intervalos de atendimento por dia da semana e unidade.
+- `professional_working_hours`: múltiplos intervalos de trabalho por dia da semana e profissional.
+- `branch_closures`: fechamentos extraordinários de unidade por intervalo de data/hora.
+- `professional_time_off`: folgas, férias e afastamentos por intervalo de data/hora.
+
+As tabelas têm chaves compostas para manter o vínculo dentro da mesma organização, índices de consulta e RLS habilitado. Membros ativos podem consultar; somente owner/admin podem inserir, alterar e excluir. O papel `anon` não tem acesso.
+
+A RPC privada `private.create_customer_appointment_hold` agora:
+- interpreta dia e hora no fuso `organizations.timezone`;
+- exige que o serviço inteiro caiba em um intervalo de expediente da unidade;
+- exige que o serviço inteiro caiba em um intervalo de trabalho do profissional;
+- recusa fechamentos, afastamentos, bloqueios, agendamentos e HOLDs conflitantes;
+- mantém serialização por advisory lock e grava auditoria.
+
+**Verificação realizada:** as quatro tabelas existem no Supabase com RLS habilitado; a definição atual da função foi consultada após a migration; o Security Advisor continua apontando 16 funções SECURITY DEFINER antigas em outros módulos e a proteção contra senhas vazadas desativada.
+
+**Limitações que permanecem:** não foi criada ainda a tela administrativa para configurar esses intervalos, nem a consulta/grade visual de horários livres. A disponibilidade é validada na criação do HOLD, mas a jornada da cliente ainda precisa integrar a descoberta e seleção de horários. Testes ponta a ponta com contas reais continuam pendentes.
