@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "npx --yes vite@6 --host 0.0.0.0",
     "build": "npx --yes vite@6 build",
-    "test:agenda": "node src/agenda/tests/run.js && node src/agenda/tests/calendar-query.test.js && node src/agenda/tests/calendar-blocks.test.js",
+    "test:agenda": "node src/agenda/tests/run.js && node src/agenda/tests/calendar-query.test.js && node src/agenda/tests/calendar-blocks.test.js && node src/agenda/tests/agenda-order.test.js",
     "test:utils": "node src/utils/input-masks.test.js",
     "test:errors": "node src/utils/errors.test.js",
     "test:quotes": "node src/modules/quotes/quote-components.test.js",
