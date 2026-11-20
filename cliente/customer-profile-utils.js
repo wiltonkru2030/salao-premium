@@ -22,7 +22,7 @@ export function normalizeGlobalCustomerName(value) {
 export function normalizeCustomerPhone(value, defaultCountryCode = "55") {
   const raw = String(value ?? "").trim();
   if (!raw) return null;
-  if (!/^\+?\d[\d\s().-]*$/.test(raw)) {
+  if (!/^\+?(?:\d|\()[\d\s().-]*$/.test(raw)) {
     throw new Error("Confira o telefone informado.");
   }
 
