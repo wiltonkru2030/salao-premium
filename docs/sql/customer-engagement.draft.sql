@@ -57,6 +57,11 @@ returns table (
   display_name text,
   description text,
   logo_url text,
+  branch_id uuid,
+  branch_name text,
+  neighborhood text,
+  city text,
+  state char(2),
   created_at timestamptz
 )
 language sql
@@ -64,11 +69,14 @@ stable
 security definer
 set search_path = ''
 as $function$
-  select f.org_id,p.slug,p.display_name,p.description,p.logo_url,f.created_at
+  select f.org_id,p.slug,p.display_name,p.description,p.logo_url,
+         bp.branch_id,b.name,bp.neighborhood,bp.city,bp.state,f.created_at
   from public.customer_favorites f
   join public.salon_public_profiles p on p.org_id=f.org_id and p.is_published
+  join public.branch_public_profiles bp on bp.org_id=f.org_id and bp.is_published
+  join public.branches b on b.org_id=bp.org_id and b.id=bp.branch_id and b.active
   where f.auth_user_id=(select auth.uid())
-  order by f.created_at desc;
+  order by f.created_at desc,b.name;
 $function$;
 
 revoke all on function private.list_my_favorite_salons() from public,anon;
@@ -76,7 +84,8 @@ grant execute on function private.list_my_favorite_salons() to authenticated;
 
 create or replace function public.list_my_favorite_salons()
 returns table (
-  org_id uuid, slug text, display_name text, description text, logo_url text, created_at timestamptz
+  org_id uuid, slug text, display_name text, description text, logo_url text,
+  branch_id uuid, branch_name text, neighborhood text, city text, state char(2), created_at timestamptz
 )
 language sql
 stable
