@@ -16,6 +16,7 @@ export function renderAppointmentForm({appointment=null,date='',time='',pro=null
   const selectedProfessionalName=a.professionalName||(state.agendaProfessionals||[]).find(item=>item[3]===professionalId)?.[1]||'';
   return '<form class="agenda-form" data-agenda-form>'+
 
+    '<label class="form-field"><span>Unidade</span><select name="branch_id" required><option value="">Carregando unidades…</option></select></label>'+
     '<label class="form-field"><span>Cliente</span><input id="appointment-customer-search" value="'+esc(a.name||'')+
 '" placeholder="Digite para buscar o cliente" autocomplete="off" required></label>'+
 
@@ -68,7 +69,25 @@ export function mountAppointmentForm(){
   const duration=form.querySelector('[name="duration"]');
   const price=form.querySelector('[name="price"]');
   const orgId=state.organization.id;
+  const branchSelect=form.querySelector('[name="branch_id"]');
+  let branchOptions=[];
   let selectedServiceId=serviceId.value||null;
+  const preferredBranchId=branchSelect.dataset.selected||state.branch?.id||'';
+  supabase.from('branches').select('id,name,is_main').eq('org_id',orgId).eq('active',true).order('name')
+    .then(({data,error})=>{
+      if(error)throw error;
+      branchOptions=data||[];
+      const selected=preferredBranchId|| (branchOptions.length===1?branchOptions[0].id:'');
+      branchSelect.innerHTML='<option value="">Selecione a unidade</option>'+branchOptions.map(b=>'<option value="'+esc(b.id)+'">'+esc(b.name)+(b.is_main?' · Principal':'')+'</option>').join('');
+      if(selected&&branchOptions.some(b=>b.id===selected))branchSelect.value=selected;
+      state.branch=branchOptions.find(b=>b.id===branchSelect.value)||null;
+      if(!branchOptions.length)branchSelect.innerHTML='<option value="">Nenhuma unidade ativa cadastrada</option>';
+    })
+    .catch(error=>{branchSelect.innerHTML='<option value="">Falha ao carregar unidades</option>';console.error('Agenda > unidades:',error);});
+  branchSelect.addEventListener('change',()=>{
+    state.branch=branchOptions.find(b=>b.id===branchSelect.value)||null;
+    professionalId.value='';professionalInput.value='';
+  });
 
   cleanups.push(mountAutocomplete(customerInput,{
     search:async term=>{
@@ -94,8 +113,9 @@ export function mountAppointmentForm(){
   }));
   cleanups.push(mountAutocomplete(professionalInput,{
     search:async term=>{
-      let query=supabase.from('professionals').select('id,name').eq('org_id',orgId).eq('active',true).ilike('name','%'+term+
+      let query=supabase.from('professionals').select('id,name,branch_id').eq('org_id',orgId).eq('active',true).ilike('name','%'+term+
 '%').order('name').limit(8);
+      if(branchSelect.value)query=query.or('branch_id.eq.'+branchSelect.value+',branch_id.is.null');
       if(selectedServiceId){
         const {data:links,error:linkError}=await supabase.from('professional_services').select('professional_id').eq('org_id',orgId).eq('service_id',selectedServiceId);
         if(linkError)throw linkError;
