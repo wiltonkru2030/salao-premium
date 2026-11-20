@@ -5,6 +5,8 @@
 
 begin;
 
+grant usage on schema private to authenticated;
+
 create or replace function private.get_my_customer_appointments()
 returns table (
   appointment_id uuid,
