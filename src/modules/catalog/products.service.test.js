@@ -36,6 +36,7 @@ async function run(){
   assert.equal(client.calls[2].payload.stock_quantity,12);
   await saveProduct({client,orgId:"org-a",productId:"p1",name:"Shampoo novo",costPrice:12,salePrice:30,stockQuantity:8,minStock:1});
   assert.deepEqual(client.calls[3].filters,[["org_id","org-a"],["id","p1"]]);
+  assert.ok(!("stock_quantity" in client.calls[3].payload),"Edição não pode alterar saldo fora de movimentação de estoque.");
   await setProductActive({client,orgId:"org-a",productId:"p1",active:false});
   assert.deepEqual(client.calls[4].payload,{active:false});
   await assert.rejects(()=>saveProduct({client,orgId:"org-a",name:"Shampoo",costPrice:-1,salePrice:25}),{name:"TypeError"});
