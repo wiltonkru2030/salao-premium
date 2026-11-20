@@ -57,7 +57,10 @@ async function run() {
     commission_payouts:[{id:"payout-a",org_id:"org-a",professional_id:"professional-a",amount:25}],
     app_settings:[{id:"setting-a",org_id:"org-a",branch_id:null,setting_key:"product_commission",setting_value:{enabled:true,default_rate:10}}],
     services:[{id:"service-a",org_id:"org-a",name:"Corte",active:true}],
-    commission_rules:[{id:"rule-a",org_id:"org-a",professional_id:"professional-a",service_id:"service-a",active:true,rate:50,item_type:"service"}]
+    commission_rules:[{id:"rule-a",org_id:"org-a",professional_id:"professional-a",service_id:"service-a",active:true,rate:50,item_type:"service"}],
+    service_order_items:[{id:"item-a",org_id:"org-a",order_id:"order-a",description:"Corte"}],
+    service_order_payments:[{id:"payment-a",org_id:"org-a",order_id:"order-a",amount:100,paid_at:"2026-11-20"}],
+    service_orders:[{id:"order-a",org_id:"org-a",order_number:123}]
   });
   const data=await fetchCommissionPageData({client:mock.client,organizationId:"org-a"});
   assert.equal(data.commissions.length,COMMISSION_PAGE_SIZE+1);
