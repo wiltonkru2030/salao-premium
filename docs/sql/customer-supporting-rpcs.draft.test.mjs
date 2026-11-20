@@ -43,7 +43,7 @@ async function run() {
   assert.doesNotMatch(history,/p_customer_id/i);
 
   const historyMigration=await readFile(
-    new URL("../../supabase/migrations/20261120072000_customer_appointment_history.sql",import.meta.url),"utf8"
+    new URL("../../supabase/migrations/20261120163051_customer_appointment_history.sql",import.meta.url),"utf8"
   );
   checkDelimiters(historyMigration,"Migration de histórico");
   const migratedHistoryFunctions=checkFunctionSecurity(historyMigration,2);
@@ -83,15 +83,15 @@ async function run() {
   assert.match(engagement,/grant update\(read_at\) on public\.customer_notifications to authenticated/i);
 
   const engagementMigration=await readFile(
-    new URL("../../supabase/migrations/20261120073000_customer_engagement.sql",import.meta.url),"utf8"
+    new URL("../../supabase/migrations/20261120163536_customer_favorites_and_preferences.sql",import.meta.url),"utf8"
   );
-  checkDelimiters(engagementMigration,"Migration de engajamento");
-  const migratedEngagementFunctions=checkFunctionSecurity(engagementMigration,8);
-  assert.ok(migratedEngagementFunctions.includes("private.notify_customer_appointment_changes"));
-  assert.match(engagementMigration,/revoke all on function private\.notify_customer_appointment_changes\(\) from public,anon,authenticated/i);
-  for(const table of ["customer_favorites","customer_notifications"]) {
-    assert.match(engagementMigration,new RegExp("create trigger audit_row_change\\s+after insert or update or delete on public\\."+table,"i"));
-  }
+  const migratedEngagementFunctions=checkFunctionSecurity(engagementMigration,7);
+  assert.ok(migratedEngagementFunctions.includes("private.is_public_salon"));
+  assert.ok(migratedEngagementFunctions.includes("public.update_my_customer_preferences"));
+  assert.match(engagementMigration,/alter table public\.customer_favorites enable row level security/i);
+  assert.match(engagementMigration,/revoke all on public\.customer_favorites from public,anon,authenticated/i);
+  assert.doesNotMatch(engagementMigration,/create trigger audit_row_change/i);
+  assert.doesNotMatch(engagementMigration,/create table if not exists public\.customer_notifications/i);
 
   console.log("Contratos estáticos dos RPCs auxiliares da cliente: OK (não equivalem à execução PostgreSQL).");
 }
