@@ -29,9 +29,9 @@ export async function loadCommissionsPage(){
  const host=document.querySelector("#commissions-manager");
  if(!host||!state.organization?.id)return;
  cleanupSearch?.();cleanupSearch=null;
- const context=JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role]);
+ const context=JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role,state.branch?.id||null]);
  const request=++version;
- const current=()=>host.isConnected&&request===version&&context===JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role]);
+ const current=()=>host.isConnected&&state.page==='Comissões'&&request===version&&context===JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role,state.branch?.id||null]);
  if(lastContext!==context){selectedProfessionalFilter=null;lastContext=context;}
  host._commissionConfig=null;
  host.textContent="Carregando comissões…";
