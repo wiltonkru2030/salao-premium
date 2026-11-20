@@ -22,7 +22,7 @@ function mapFinanceError(error) {
  * @returns {Promise<object>} Movimentos de caixa e despesas em coleções separadas.
  */
 export async function fetchFinanceWorkspace({
-  client,orgId,startIso,endIso,limit=500
+  client,orgId,branchId=null,startIso,endIso,limit=500
 }={}) {
   requireContext(client,orgId);
   if(!startIso||!endIso||new Date(startIso).toString()==="Invalid Date"||
@@ -31,14 +31,19 @@ export async function fetchFinanceWorkspace({
   }
   if(!Number.isInteger(limit)||limit<1||limit>1000)throw new TypeError("Limite de consulta inválido.");
   try {
+    let movementQuery=client.from("cash_movements")
+      .select("id,movement_type,category,description,amount,payment_method,created_at,branch_id")
+      .eq("org_id",orgId).gte("created_at",startIso).lt("created_at",endIso);
+    let expenseQuery=client.from("expenses")
+      .select("id,description,category,amount,due_date,paid_at,status,supplier,created_at,branch_id")
+      .eq("org_id",orgId);
+    if(branchId) {
+      movementQuery=movementQuery.eq("branch_id",branchId);
+      expenseQuery=expenseQuery.eq("branch_id",branchId);
+    }
     const [movementResult,expenseResult]=await Promise.all([
-      client.from("cash_movements")
-        .select("id,movement_type,category,description,amount,payment_method,created_at,branch_id")
-        .eq("org_id",orgId).gte("created_at",startIso).lt("created_at",endIso)
-        .order("created_at",{ascending:false}).limit(limit),
-      client.from("expenses")
-        .select("id,description,category,amount,due_date,paid_at,status,supplier,created_at,branch_id")
-        .eq("org_id",orgId).order("due_date",{ascending:true}).limit(limit)
+      movementQuery.order("created_at",{ascending:false}).limit(limit),
+      expenseQuery.order("due_date",{ascending:true}).limit(limit)
     ]);
     if(movementResult.error)throw movementResult.error;
     if(expenseResult.error)throw expenseResult.error;
