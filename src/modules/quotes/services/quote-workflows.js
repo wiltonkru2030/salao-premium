@@ -19,7 +19,7 @@ export async function printQuoteDocument({ quote, orgId, supabase, state, esc, m
 
   const [orgResult, branchResult, professionalResult] = await Promise.all([
     supabase.from("organizations").select("name,document,phone").eq("id", orgId).single(),
-    supabase.from("branches").select("name,document,address,phone,is_main").eq("org_id", orgId).eq("is_main", true).maybeSingle(),
+    (quote.branch_id?supabase.from("branches").select("name,document,address,phone,is_main").eq("org_id",orgId).eq("id",quote.branch_id):supabase.from("branches").select("name,document,address,phone,is_main").eq("org_id",orgId).eq("is_main",true)).maybeSingle(),
     supabase.from("professionals").select("id,name").eq("org_id", orgId)
   ]);
   if (orgResult.error) throw orgResult.error;
@@ -109,19 +109,22 @@ export async function printQuoteDocument({ quote, orgId, supabase, state, esc, m
 export async function openQuoteSchedule({ quote, orgId, supabase, host, esc, toast, reportError, loadQuotesPage, openQuote }) {
   const [itemsResult, professionalResult, assignmentResult] = await Promise.all([
     supabase.from("quote_items").select("id,service_id,professional_id,description,quantity,duration_minutes,total").eq("org_id", orgId).eq("quote_id", quote.id).order("sort_order"),
-    supabase.from("professionals").select("id,name").eq("org_id", orgId).eq("active", true).order("name"),
+    supabase.from("professionals").select("id,name,branch_id").eq("org_id", orgId).eq("active", true).order("name"),
     supabase.from("professional_services").select("professional_id,service_id").eq("org_id", orgId)
   ]);
   if (itemsResult.error) throw itemsResult.error;
   if (professionalResult.error) throw professionalResult.error;
   if (assignmentResult.error) throw assignmentResult.error;
 
+  if(!quote?.branch_id)throw new Error("O orçamento precisa estar vinculado a uma unidade para agendamento.");
   const items = itemsResult.data || [];
   const professionals = professionalResult.data || [];
   const assignments = assignmentResult.data || [];
 
   const itemForms = items.map((item, index) => {
     const eligibleProfessionals = professionals.filter(professional =>
+      (!professional.branch_id||professional.branch_id===quote.branch_id) &&
+      (!item.professional_id||item.professional_id===professional.id) &&
       assignments.some(link => link.service_id === item.service_id && link.professional_id === professional.id)
     );
     const professionalOptions = eligibleProfessionals.map(professional => `
@@ -164,6 +167,7 @@ export async function openQuoteSchedule({ quote, orgId, supabase, host, esc, toa
     event.preventDefault();
     const form = event.currentTarget;
     const button = form.querySelector('[type="submit"]');
+    if(button.disabled||!host.isConnected||!form.isConnected)return;
     const values = new FormData(form);
     button.disabled = true;
     button.textContent = "Verificando disponibilidade…";
@@ -179,6 +183,9 @@ export async function openQuoteSchedule({ quote, orgId, supabase, host, esc, toa
         if (!professionalId || !date || !time || Number.isNaN(start.getTime())) {
           throw new Error("Preencha profissional, data e horário de todos os serviços.");
         }
+        if(start<=new Date()||!Number.isSafeInteger(duration)||duration<=0)throw new Error("Selecione um horário futuro com duração válida.");
+        if(item.professional_id&&professionalId!==item.professional_id)throw new Error("O profissional definido no orçamento não pode ser trocado.");
+        if(!professionals.some(p=>p.id===professionalId&&(!p.branch_id||p.branch_id===quote.branch_id))||!assignments.some(link=>link.service_id===item.service_id&&link.professional_id===professionalId))throw new Error("O profissional não está habilitado para este serviço e unidade.");
         return { item, professionalId, start, end };
       });
 
