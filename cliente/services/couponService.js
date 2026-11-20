@@ -3,6 +3,18 @@
  * Responsabilidade: obter uma prévia de desconto; a reserva transacional recalcula e reserva o uso no banco.
  * Segurança: nunca confia no desconto exibido pelo navegador para gravar o agendamento.
  */
+/**
+ * Normaliza código promocional para comparação sem diferenciar maiúsculas/minúsculas.
+ * @param {string} value Código informado pela cliente.
+ * @returns {string} Código em maiúsculas.
+ * @throws {TypeError} Quando o código não atende ao formato permitido.
+ */
+export function normalizeCouponCode(value) {
+  const code=String(value??"").trim().toUpperCase();
+  if(!/^[A-Z0-9_-]{3,32}$/.test(code))throw new TypeError("Informe um código promocional válido.");
+  return code;
+}
+
 const UUID_PATTERN=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /** Valida conexão, identificadores e código de cupom antes da RPC. */
@@ -11,9 +23,7 @@ function validateCouponInput({client,orgId,branchId,serviceId,code}={}) {
   for(const [value,label] of [[orgId,"Salão"],[branchId,"Unidade"],[serviceId,"Serviço"]]) {
     if(typeof value!=="string"||!UUID_PATTERN.test(value))throw new TypeError(label+" inválido.");
   }
-  const normalized=String(code||"").trim().toUpperCase();
-  if(!/^[A-Z0-9_-]{3,32}$/.test(normalized))throw new TypeError("Digite um código de cupom válido.");
-  return normalized;
+  return normalizeCouponCode(code);
 }
 
 /** Traduz falhas da RPC sem expor detalhes do banco. */
