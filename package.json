@@ -44,7 +44,7 @@
     "test:sql-customer-applied-migrations": "node docs/sql/customer-applied-migrations.test.mjs",
     "test:admin-commission-rules": "node src/modules/commissions/commission-rules.service.test.js",
     "test:catalog-services": "node src/modules/catalog/services.service.test.js",
-    "test:catalog-products": "node src/modules/catalog/products.service.test.js && node src/modules/catalog/products.view.test.js",
+    "test:catalog-products": "node src/modules/catalog/products.service.test.js && node src/modules/catalog/products.view.test.js && node src/modules/catalog/products.controller.test.js",
     "test:catalog-categories": "node src/modules/catalog/categories.service.test.js",
     "test:sql-catalog-categories": "node docs/sql/catalog-categories.migration.test.mjs",
     "test:customers-service": "node src/modules/customers/customers.service.test.js && node src/modules/customers/customer-page-state.test.js && node src/modules/customers/customers.view.test.js && node src/modules/customers/customers.controller.test.js",
