@@ -4,7 +4,7 @@
  */
 export const groups = [
   ["VISÃO GERAL","Dashboard","Agenda"],
-  ["GESTÃO","Clientes","Profissionais","Serviços","Produtos e estoque","Orçamentos","Cupons","Vendas","Comanda"],
+  ["GESTÃO","Clientes","Profissionais","Serviços","Produtos e estoque","Categorias","Orçamentos","Cupons","Vendas","Comanda"],
   ["FINANCEIRO","Caixa","Despesas","Financeiro","Comissões"],
   ["INTELIGÊNCIA","Relatórios"],
   ["ADMINISTRAÇÃO","Unidades","Equipe e permissões","Recuperar","Configurações"]
@@ -17,6 +17,7 @@ export const glyph = {
   "Profissionais":"Profissionais_20261112_105848_0007.svg",
   "Serviços":"Serviços_20261112_105849_0020.svg",
   "Produtos e estoque":"Estoque_20261112_105849_0022.svg",
+  "Categorias":"Documentos_20261112_105850_0039.svg",
   "Orçamentos":"Documentos_20261112_105850_0039.svg",
   "Cupons":"Documentos_20261112_105850_0039.svg",
   "Vendas":"Vendas_20261112_105849_0019.svg",
