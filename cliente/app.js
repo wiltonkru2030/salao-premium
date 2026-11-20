@@ -347,13 +347,14 @@ async function runAction(action, button = null) {
     } else if (action === "toggle-favorite") {
       const orgId=button?.dataset.orgId||salonDetailState.salon?.org_id;
       if(!orgId)throw new Error("Não foi possível identificar o salão.");
-      if(favoriteOrgIds.has(orgId))await removeFavorite({client:supabase,orgId});
+      const wasFavorite=favoriteOrgIds.has(orgId);
+      if(wasFavorite)await removeFavorite({client:supabase,orgId});
       else await addFavorite({client:supabase,orgId});
       requireCurrent(epoch);
       await loadFavorites();
       requireCurrent(epoch);
       renderApp();
-      setNotice(favoriteOrgIds.has(orgId)?"Salão adicionado aos favoritos.":"Salão removido dos favoritos.","success");
+      setNotice(wasFavorite?"Salão removido dos favoritos.":"Salão adicionado aos favoritos.","success");
     } else if (action === "remove-favorite") {
       const orgId=button?.dataset.orgId;
       if(!orgId)throw new Error("Não foi possível identificar o salão.");
