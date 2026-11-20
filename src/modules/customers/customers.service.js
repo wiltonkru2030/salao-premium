@@ -91,7 +91,9 @@ export async function setCustomerActive({client,orgId,customerId,active}={}) {
   requireContext(client,orgId);
   if(!customerId||typeof active!=="boolean")throw new TypeError("Selecione um cliente e uma situação válida.");
   try {
-    const {error}=await client.from("customers").update({active}).eq("org_id",orgId).eq("id",customerId);
+    const {data,error}=await client.from("customers").update({active})
+      .eq("org_id",orgId).eq("id",customerId).select("id").maybeSingle();
     if(error)throw error;
+    if(!data?.id)throw Object.assign(new Error("Cliente não encontrado."),{code:"P0002"});
   } catch(error) { throw mapCustomerError(error); }
 }
