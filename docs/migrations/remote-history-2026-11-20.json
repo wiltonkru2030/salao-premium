@@ -365,6 +365,30 @@
     {
       "version": "20261120211409",
       "name": "enforce_exact_centavo_service_order_payment"
+    },
+    {
+      "version": "20261120212042",
+      "name": "service_packages_and_appointment_waitlist"
+    },
+    {
+      "version": "20261120212247",
+      "name": "fix_customer_available_slots_date_arithmetic"
+    },
+    {
+      "version": "20261120212306",
+      "name": "service_packages_waitlist_secure_rpcs"
+    },
+    {
+      "version": "20261120212554",
+      "name": "atomic_waitlist_booking_and_cancel_release"
+    },
+    {
+      "version": "20261120213452",
+      "name": "private_customer_loyalty_overview"
+    },
+    {
+      "version": "20261120213713",
+      "name": "waitlist_avoid_cross_midnight_openings"
     }
   ]
 }
