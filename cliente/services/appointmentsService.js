@@ -4,8 +4,6 @@
  * Ecossistema: PWA da cliente SALÃO PREMIUM.
  * Integração: usa RPC privada por wrapper público; auth.uid() determina a titularidade.
  */
-import { supabase } from "../../src/supabase/client.js";
-
 const PAGE_SIZE = 250;
 
 /**
@@ -55,11 +53,11 @@ async function readAllAppointments(client) {
 /**
  * Busca o histórico da cliente autenticada.
  * @param {object} options Opções da consulta.
- * @param {object} [options.client=supabase] Cliente Supabase autenticado.
+ * @param {object} options.client Cliente Supabase autenticado, injetado pelo compositor.
  * @returns {Promise<Array<object>>} Agendamentos da própria identidade.
  * @throws {TypeError|Error} Em dependência inválida ou falha de leitura.
  */
-export async function fetchMyCustomerAppointments({ client = supabase } = {}) {
+export async function fetchMyCustomerAppointments({ client } = {}) {
   validateClient(client);
   return readAllAppointments(client);
 }
