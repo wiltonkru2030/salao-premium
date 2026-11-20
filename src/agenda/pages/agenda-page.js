@@ -1,7 +1,8 @@
 /** Página de Agenda administrativa. Responsabilidade: consultar dados do Supabase e montar filtros, calendário e visão de horários. */
+import { expandCalendarBlocks } from '../utils/calendar-blocks.js';
 import { state } from '../../state.js';
 import { supabase } from '../../supabase/client.js';
-import { head, btn, initials } from '../../utils.js';
+import { head, btn, initials, esc } from '../../utils.js';
 import { fetchAgendaCalendar } from '../services/calendar-query.service.js';
 import { reportError } from '../../utils/errors.js';
 
@@ -64,7 +65,7 @@ function buildContent() {
   html+=renderAgendaToolbar(state.date,state.view);
   html+=renderAgendaFilters({query:state.query,filter:state.filter});
   html+='<div class="agenda-summary"><span><i class="legend-dot booked"></i> Agendado</span><span><i class="legend-dot progress"></i> Em atendimento</span><span><i class="legend-dot free"></i> Disponível</span><span class="summary-count">'+count+
-' atendimento(s) para '+selectedProfessional[1]+
+' atendimento(s) para '+esc(selectedProfessional[1])+
 '</span></div>';
   const props={date:state.date,pro:state.pro,professional:selectedProfessional,appointments:items,
     blockedTimes:state.dbBlockedTimes||[],includeReleased:state.filter==='Cancelado'||state.filter==='Falta'};
@@ -118,11 +119,7 @@ export async function loadAgendaPage() {
     if(!state.agendaProfessionals.length){state.agendaAppointments=[];state.dbBlockedTimes=[];buildContent();return;}
     const indexById=new Map(dbProfessionals.map((p,i)=>[p.id,i]));
     state.agendaAppointments=(appointmentRows||[]).filter(a=>indexById.has(a.professional_id)).map(a=>toCalendarAppointment(a,indexById.get(a.professional_id)));
-    state.dbBlockedTimes=blocks.flatMap(b=>{
-      const startDate=asLocalDateTime(b.starts_at),endDate=asLocalDateTime(b.ends_at);
-      const indices=b.professional_id?[indexById.get(b.professional_id)].filter(i=>i!==undefined):dbProfessionals.map((_,i)=>i);
-      return indices.map(index=>({id:b.id,pro:index,date:startDate.date,start:startDate.time,end:endDate.time,reason:b.reason}));
-    });
+    state.dbBlockedTimes=expandCalendarBlocks(blocks,dbProfessionals,start,end);
     buildContent();
   }catch(error){
     if(!isCurrent())return;
