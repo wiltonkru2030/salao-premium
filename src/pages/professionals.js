@@ -152,7 +152,17 @@ export async function loadProfessionalsPage(){
   if((reset||event.target.closest("[data-professional-copy]"))&&!canManageProfessionals()){toast("Somente proprietário ou administrador pode gerenciar acessos.");return;}
   if(reset){if(!window.confirm("Gerar uma nova senha temporária para este profissional?"))return;await provision(reset,"reset");return;}
   const copy=event.target.closest("[data-professional-copy]");
-  if(copy){const id=copy.dataset.professionalCopy,password=initialPasswords.get(id);if(!password)return;await navigator.clipboard.writeText(password);toast("Senha inicial copiada.");}
+  if(copy){
+   const id=copy.dataset.professionalCopy,password=initialPasswords.get(id);
+   if(!password)return;
+   try {
+    await navigator.clipboard.writeText(password);
+    toast("Senha inicial copiada.");
+   } catch(error) {
+    reportError(error,{context:"Profissionais > copiar senha temporária"});
+    toast("Não foi possível copiar. Selecione e copie a senha manualmente.");
+   }
+  }
  });
  host.addEventListener("input",event=>{
   if(event.target.id==="professional-service-filter"){
