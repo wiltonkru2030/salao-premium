@@ -119,7 +119,16 @@ export async function loadCouponsPage() {
       <div class="coupon-record-list">${coupons.map(coupon=>{
         const used=usedByCoupon.get(coupon.id)||0;
         const scope=coupon.serviceIds.length?coupon.serviceIds.map(id=>serviceMap.get(id)).filter(Boolean).join(", "):"Todos os serviços";
-        return '<article class="record-card coupon-record-card"><div class="record-main"><b>'+esc(coupon.code)+' · '+esc(coupon.title)+'</b><small>'+esc(formatCouponDiscount(coupon))+' · '+esc(branchMap.get(coupon.branch_id)||"Todas as unidades")+'</small><small>'+esc(scope)+'</small><small>Validade: '+esc(dateTime(coupon.starts_at))+' até '+esc(dateTime(coupon.ends_at))+'</small><small>Usos: '+used+(coupon.usage_limit?' / '+coupon.usage_limit:'')+' · '+(coupon.usage_per_customer||1)+' por cliente</small></div><div class="coupon-record-actions"><span class="status-pill '+(coupon.active?'active':'inactive')+'">'+(coupon.active?'Ativo':'Inativo')+'</span><button class="btn secondary" type="button" data-edit-coupon="'+esc(coupon.id)+'">Editar</button>'+(coupon.active?'<button class="text-button" type="button" data-deactivate-coupon="'+esc(coupon.id)+'">Desativar</button>':'')+'</div></article>';
+        return '<article class="record-card coupon-record-card">' +
+          '<div class="record-main"><b>'+esc(coupon.code)+' · '+esc(coupon.title)+'</b>' +
+          '<small>'+esc(formatCouponDiscount(coupon))+' · '+esc(branchMap.get(coupon.branch_id)||"Todas as unidades")+'</small>' +
+          '<small>'+esc(scope)+'</small>' +
+          '<small>Validade: '+esc(dateTime(coupon.starts_at))+' até '+esc(dateTime(coupon.ends_at))+'</small>' +
+          '<small>Usos: '+used+(coupon.usage_limit?' / '+coupon.usage_limit:'')+' · '+(coupon.usage_per_customer||1)+' por cliente</small></div>' +
+          '<div class="coupon-record-actions"><span class="status-pill '+(coupon.active?'active':'inactive')+'">'+(coupon.active?'Ativo':'Inativo')+'</span>' +
+          '<button class="btn secondary" type="button" data-edit-coupon="'+esc(coupon.id)+'">Editar</button>' +
+          (coupon.active?'<button class="text-button" type="button" data-deactivate-coupon="'+esc(coupon.id)+'">Desativar</button>':'') +
+          '</div></article>';
       }).join("")||'<div class="empty-state">Nenhum cupom cadastrado.</div>'}</div>`;
 
     if(host.dataset.bound==="true")return;
