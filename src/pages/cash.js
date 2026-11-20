@@ -6,9 +6,9 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
 import { reportError } from "../utils/errors.js";
-import { readFinancePages, sumFinanceAmounts } from "../modules/finance/finance-pagination.js";
+import { queryCashDashboard } from "../modules/cash/services/cash-query.service.js";
 import { renderCashDashboard } from "../modules/cash/components/cash-dashboard.js";
-import { openCashRegister, closeCashRegister, getCashRegisterSummary } from "../modules/cash/services/cash-operations.js";
+import { openCashRegister, closeCashRegister } from "../modules/cash/services/cash-operations.js";
 
 /** Renderiza a estrutura da página de Caixa e seu estado inicial de carregamento. */
 export function cashPage(){
@@ -20,57 +20,20 @@ export function cashPage(){
 export async function loadCashPage(){
  const host=document.querySelector("#cash-manager");
  if(!host||!state.organization?.id)return;
+ const orgId=state.organization.id,userId=state.user?.id,globalBranch=state.branch?.id||null;
+ const request=String(Number(host.dataset.request||0)+1);host.dataset.request=request;
+ const current=()=>host.isConnected&&state.organization?.id===orgId&&state.user?.id===userId&&(state.branch?.id||null)===globalBranch&&host.dataset.request===request;
+ const context=JSON.stringify([orgId,userId,globalBranch]);
+ if(host.dataset.context!==context){delete host.dataset.branchId;host.dataset.context=context;}
+ host.dataset.loadedOrgId="";
+ host.textContent="Carregando movimentações do caixa…";
  try{
-  const orgId=state.organization.id;
-  const request=String(Number(host.dataset.request||0)+1);host.dataset.request=request;
-  const current=()=>host.isConnected&&state.organization?.id===orgId&&host.dataset.request===request;
   const selectedBranchId=host.dataset.branchId!==undefined?host.dataset.branchId:(state.branch?.id||"");
   host.dataset.branchId=selectedBranchId;
-  const branchFilter=selectedBranchId?{method:"eq",value:selectedBranchId}:{method:"is",value:null};
-  const today=new Date();today.setHours(0,0,0,0);
-  const tomorrow=new Date(today);tomorrow.setDate(tomorrow.getDate()+1);
-  const registerQuery=supabase.from("cash_registers").select("id,org_id,branch_id,opening_amount,closing_amount,expected_amount,status,opened_at,closed_at,notes").eq("org_id",orgId)[branchFilter.method]("branch_id",branchFilter.value);
-  // O filtro é pelo caixa que recebeu o lançamento, não pela unidade comercial da venda.
-  const movementQuery=()=>supabase.from("cash_movements").select("id,cash_register_id,branch_id,service_order_id,movement_type,category,description,amount,payment_method,created_at,sale_id,register:cash_registers!cash_movements_org_id_cash_register_id_fkey!inner(branch_id)").eq("org_id",orgId)[branchFilter.method]("register.branch_id",branchFilter.value);
-  const [branchResult,registerResult,movementResult,todayMoves]=await Promise.all([
-   supabase.from("branches").select("id,name,is_main,active").eq("org_id",orgId).order("active",{ascending:false}).order("is_main",{ascending:false}).order("name",{ascending:true}).limit(200),
-   registerQuery.order("opened_at",{ascending:false}).limit(50),
-   movementQuery().order("created_at",{ascending:false}).order("id",{ascending:false}).limit(500),
-   readFinancePages(()=>movementQuery().gte("created_at",today.toISOString()).lt("created_at",tomorrow.toISOString()).order("created_at",{ascending:false}).order("id",{ascending:false}))
-  ]);
+  const result=await queryCashDashboard({supabase,orgId,selectedBranchId});
   if(!current())return;
-  if(branchResult.error)throw branchResult.error;
-  if(registerResult.error)throw registerResult.error;
-  if(movementResult.error)throw movementResult.error;
-  const branches=branchResult.data||[],registers=registerResult.data||[],movements=movementResult.data||[];
-  if(selectedBranchId&&!branches.some(branch=>branch.id===selectedBranchId)){
-   host.dataset.branchId="";
-   return loadCashPage();
-  }
-  const paymentRows=[];
-  for(let i=0;i<movements.length;i+=100){
-   const {data,error}=await supabase.from("service_order_payments").select("id,order_id,cash_movement_id,amount,payment_method,paid_at").eq("org_id",orgId).in("cash_movement_id",movements.slice(i,i+100).map(m=>m.id));
-   if(error)throw error;
-   paymentRows.push(...(data||[]));
-  }
-  const orderIds=[...new Set([...paymentRows.map(p=>p.order_id),...movements.map(m=>m.service_order_id).filter(Boolean)])];
-  const {data:orderRows,error:orderError}=orderIds.length?await supabase.from("service_orders").select("id,order_number,customer_id").eq("org_id",orgId).in("id",orderIds):{data:[],error:null};
-  if(orderError)throw orderError;
-  const customerIds=[...new Set((orderRows||[]).map(o=>o.customer_id).filter(Boolean))];
-  const {data:customerRows,error:customerError}=customerIds.length?await supabase.from("customers").select("id,name").eq("org_id",orgId).in("id",customerIds):{data:[],error:null};
-  if(customerError)throw customerError;
-  const customerNames=new Map((customerRows||[]).map(c=>[c.id,c.name]));
-  const orderMap=new Map((orderRows||[]).map(o=>[o.id,{...o,customerName:customerNames.get(o.customer_id)||"Cliente"}]));
-  const movementIds=new Set(movements.map(m=>m.id));
-  const paymentMap=new Map(paymentRows.filter(p=>movementIds.has(p.cash_movement_id)).map(p=>[p.cash_movement_id,{...p,order:orderMap.get(p.order_id)}]));
-  const active=registers.find(r=>r.status==="open")||null;
-  const income=sumFinanceAmounts(todayMoves,m=>m.movement_type==="income"),expense=sumFinanceAmounts(todayMoves,m=>m.movement_type==="expense"),net=income-expense;
-  let activeNet=0;
-  if(active){
-   const {data:cashSummary,error:summaryError}=await getCashRegisterSummary({supabase,cashRegisterId:active.id});
-   if(summaryError)throw summaryError;
-   activeNet=Number(cashSummary?.cash_income||0)-Number(cashSummary?.cash_expense||0);
-  }
+  if(result.invalidBranch){host.dataset.branchId="";return loadCashPage();}
+  const {branches,registers,movements,active,income,expense,net,activeNet,paymentMap,orderMap}=result;
   const history=movements.map(m=>{
    const payment=paymentMap.get(m.id),order=payment?.order||orderMap.get(m.service_order_id);
    const label=order?"Comanda #"+order.order_number+" · "+order.customerName:m.description;
@@ -133,7 +96,7 @@ export async function loadCashPage(){
    });
   }
  }catch(error){
-  if(!host.isConnected)return;
+  if(!current())return;
   reportError(error,{context:"Caixa > carregar movimentações"});
   host.innerHTML='<div class="empty-state"><b>Não foi possível carregar o Caixa.</b><small>Confira sua permissão e tente novamente.</small></div>';
  }
