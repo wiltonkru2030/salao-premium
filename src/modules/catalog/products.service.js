@@ -64,10 +64,12 @@ export async function saveProduct({
     cost_price:cost,sale_price:sale,min_stock:minimum
   };
   // Estoque existente só muda por movimentação; cadastro novo recebe o saldo inicial.
-  const result=productId
-    ? await client.from("products").update(payload).eq("org_id",orgId).eq("id",productId)
-    : await client.from("products").insert({org_id:orgId,...payload,stock_quantity:stock,active:true});
-  if(result.error)throw mapProductError(result.error);
+  try {
+    const result=productId
+      ? await client.from("products").update(payload).eq("org_id",orgId).eq("id",productId)
+      : await client.from("products").insert({org_id:orgId,...payload,stock_quantity:stock,active:true});
+    if(result.error)throw result.error;
+  } catch(error) { throw mapProductError(error); }
 }
 
 /**
@@ -78,6 +80,8 @@ export async function saveProduct({
 export async function setProductActive({client,orgId,productId,active}={}) {
   requireContext(client,orgId);
   if(!productId||typeof active!=="boolean")throw new TypeError("Selecione um produto e um estado válidos.");
-  const {error}=await client.from("products").update({active}).eq("org_id",orgId).eq("id",productId);
-  if(error)throw mapProductError(error);
+  try {
+    const {error}=await client.from("products").update({active}).eq("org_id",orgId).eq("id",productId);
+    if(error)throw error;
+  } catch(error) { throw mapProductError(error); }
 }
