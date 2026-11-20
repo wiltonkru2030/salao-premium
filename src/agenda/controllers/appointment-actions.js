@@ -16,8 +16,7 @@ import { dateKey, addDays } from "../utils/date.utils.js";
 /**
  * Converte uma chave de data da agenda em objeto Date local.
  * @param {string} key Data no formato AAAA-MM-DD.
- * @returns {Date} Data local correspondente.
- * @throws {TypeError} Quando a chave não representa uma data válida.
+ * @returns {Date} Data local correspondente; pode ser Invalid Date se a chave estiver incorreta.
  */
 export function dateFromKey(key) {
   const parts=String(key).split('-').map(Number);
@@ -27,8 +26,8 @@ export function dateFromKey(key) {
  * Combina data e hora locais em um timestamp ISO.
  * @param {string} date Data no formato AAAA-MM-DD.
  * @param {string} time Hora no formato HH:mm.
- * @returns {string} Timestamp ISO para persistência.
- * @throws {TypeError} Quando data ou hora são inválidas.
+ * @returns {Date} Instante local combinado para validação e persistência.
+ * @throws {Error} Quando data ou hora são inválidas.
  */
 export function makeTimestamp(date,time) {
   const value=new Date(String(date)+'T'+String(time)+':00');
