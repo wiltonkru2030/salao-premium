@@ -14,6 +14,10 @@ import { dateKey, addDays } from "../utils/date.utils.js";
 import { signOut } from "../../auth/auth.js";
 import { dateFromKey, makeTimestamp, appointmentActionRow, saveAppointment, updateAppointmentStatus, openAppointmentOrder, handleAppointmentAction, saveBlockTime } from "./appointment-actions.js";
 
+/**
+ * Registra os eventos da agenda e conecta os componentes às ações do domínio.
+ * @returns {void} Instala listeners no contêiner da agenda atual.
+ */
 export function installAgendaController() {
 document.addEventListener('click',async event=>{
  try{
