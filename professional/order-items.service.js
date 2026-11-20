@@ -88,16 +88,14 @@ export async function addProfessionalServiceToOrder({
         total: price,
         performed_at: performedAt.toISOString(),
         created_by: userId
-      })
-      .select("id,item_type,description,quantity,unit_price,total,professional_id,performed_at")
-      .single();
+      });
 
     if (error) {
       const failure = new Error("Não foi possível registrar o serviço na comanda. Verifique os dados e tente novamente.");
       failure.code = "PROFESSIONAL_ORDER_ITEM_CREATE_FAILED";
       throw failure;
     }
-    return data;
+    return true;
   } catch (error) {
     if (error?.code === "PROFESSIONAL_ORDER_ITEM_CREATE_FAILED") throw error;
     const failure = new Error("Não foi possível registrar o serviço na comanda. Verifique sua conexão e tente novamente.");
