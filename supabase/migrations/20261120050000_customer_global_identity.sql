@@ -272,7 +272,7 @@ as $function$
     o.name,
     c.name,
     nullif(pg_catalog.right(
-      pg_catalog.regexp_replace(pg_catalog.coalesce(c.phone, ''), '[^0-9]', '', 'g'),
+      pg_catalog.regexp_replace(coalesce(c.phone, ''), '[^0-9]', '', 'g'),
       2
     ), ''),
     r.expires_at
