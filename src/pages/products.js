@@ -138,7 +138,8 @@ export async function loadProductsPage() {
       const dialog=document.querySelector("#product-create-modal");
       if(!dialog)return;
       if(event.target.closest('[data-action="open-product-modal"]')&&canManageProducts()) {
-        if(productPageState.current(document.querySelector("#products-manager"),state.organization?.id))openProductModal();
+        const snapshot=productPageState.current(document.querySelector("#products-manager"),state.organization?.id);
+        if(snapshot&&!snapshot.pending)openProductModal();
       }
       else if(event.target.closest("[data-close-product-modal]")||event.target===dialog) {
         if(dialog.open)dialog.close();
@@ -151,6 +152,7 @@ export async function loadProductsPage() {
     if(edit) {
       if(!canManageProducts())return toast("Somente proprietário ou administrador pode editar produtos.");
       const snapshot=productPageState.current(host,state.organization?.id);
+      if(!snapshot||snapshot.pending)return;
       const row=snapshot?.rows.find(item=>item.id===edit.dataset.editProduct);
       if(!row)return toast("Registro não encontrado. Atualize a lista.");
       openProductModal(row);
