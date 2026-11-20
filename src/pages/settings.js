@@ -106,25 +106,28 @@ export async function loadSettingsPage() {
     const selectedBranch = units.find(item => item.id === state.branch?.id) ||
       units.find(item => item.is_main) || units[0] || null;
     state.branch = selectedBranch;
+    const canManage = canManageSettings();
     let publicProfile = null;
     let branchPublicProfile = null;
     let publicDirectoryReady = true;
-    try {
-      const [profileResult, branchProfileResult] = await Promise.all([
-        supabase.from("salon_public_profiles").select("*").eq("org_id", orgId).maybeSingle(),
-        selectedBranch
-          ? supabase.from("branch_public_profiles").select("*").eq("org_id", orgId).eq("branch_id", selectedBranch.id).maybeSingle()
-          : Promise.resolve({data:null,error:null})
-      ]);
-      if (profileResult.error) throw profileResult.error;
-      if (branchProfileResult.error) throw branchProfileResult.error;
-      publicProfile = profileResult.data;
-      branchPublicProfile = branchProfileResult.data;
-    } catch (error) {
-      if (["PGRST205", "42P01"].includes(error?.code)) publicDirectoryReady = false;
-      else throw error;
+    // O perfil profissional não possui SELECT nas tabelas administrativas da vitrine pública.
+    if (canManage) {
+      try {
+        const [profileResult, branchProfileResult] = await Promise.all([
+          supabase.from("salon_public_profiles").select("*").eq("org_id", orgId).maybeSingle(),
+          selectedBranch
+            ? supabase.from("branch_public_profiles").select("*").eq("org_id", orgId).eq("branch_id", selectedBranch.id).maybeSingle()
+            : Promise.resolve({data:null,error:null})
+        ]);
+        if (profileResult.error) throw profileResult.error;
+        if (branchProfileResult.error) throw branchProfileResult.error;
+        publicProfile = profileResult.data;
+        branchPublicProfile = branchProfileResult.data;
+      } catch (error) {
+        if (["PGRST205", "42P01"].includes(error?.code)) publicDirectoryReady = false;
+        else throw error;
+      }
     }
-    const canManage = canManageSettings();
     const availability = selectedBranch ? await listAvailabilitySettings(orgId, selectedBranch.id) : null;
 
     host.innerHTML = `
