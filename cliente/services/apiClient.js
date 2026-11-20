@@ -32,6 +32,11 @@ export async function requestApi(url, options = {}) {
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort("timeout"), timeoutMs);
+  const forwardAbort = () => controller.abort("caller-abort");
+  if (options.signal) {
+    if (options.signal.aborted) forwardAbort();
+    else options.signal.addEventListener("abort", forwardAbort, { once: true });
+  }
   const headers = new Headers(options.headers || {});
   if (options.body !== undefined && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
@@ -43,7 +48,7 @@ export async function requestApi(url, options = {}) {
       method,
       headers,
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
-      signal: options.signal || controller.signal,
+      signal: controller.signal,
       credentials: options.credentials || "same-origin"
     });
     const raw = await response.text();
@@ -78,5 +83,6 @@ export async function requestApi(url, options = {}) {
     throw new ApiError("Não foi possível conectar ao serviço. Verifique sua conexão e tente novamente.", { code: "NETWORK_ERROR" });
   } finally {
     clearTimeout(timeoutId);
+    options.signal?.removeEventListener("abort", forwardAbort);
   }
 }
