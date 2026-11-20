@@ -43,3 +43,6 @@
 
 /* Módulo 07 — Financeiro, Comissões e Relatórios. */
 @import url('./src/styles/design-financial-analytics.css');
+
+/* Módulo 08 — Administração, Unidades e Permissões. */
+@import url('./src/styles/design-administration.css');
