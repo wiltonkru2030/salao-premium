@@ -1,4 +1,5 @@
 /** Painel administrativo: inicializa sessão, tenant e recursos globais; delega os eventos da Agenda ao controlador de domínio. */
+// Mantém uma única importação de render no entrypoint para evitar duplicidade no merge com main.
 import { state } from './state.js';
 import { installGlobalMasks } from './utils/input-masks.js';
 import { installGlobalErrorHandlers, reportError } from './utils/errors.js';
