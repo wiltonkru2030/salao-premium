@@ -28,6 +28,9 @@ async function run(){
   const client=mockClient({expenses:[{id:"expense-a",org_id:"org-a",description:"Aluguel",status:"pending"}]});
   assert.equal((await listExpenses({client,orgId:"org-a"})).length,1);
   assert.ok(client.calls[0].filters.some(([key,value])=>key==="org_id"&&value==="org-a"));
+  const branchClient=mockClient({expenses:[]});
+  await listExpenses({client:branchClient,orgId:"org-a",branchId:"branch-a"});
+  assert.ok(branchClient.calls[0].filters.some(([key,value])=>key==="branch_id"&&value==="branch-a"));
   await createExpense({client,orgId:"org-a",branchId:"branch-a",createdBy:"user-a",description:" Aluguel ",amount:1200,dueDate:"2026-12-10"});
   const inserted=client.calls[1].payload;
   assert.equal(inserted.org_id,"org-a");
