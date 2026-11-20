@@ -3,7 +3,7 @@
  * Responsabilidade: validar escopo por organização, filtros de membros e perfis relacionados.
  */
 import assert from "node:assert/strict";
-import {fetchProfessionalWorkspace} from "./professionals.service.js";
+import {fetchProfessionalWorkspace,setProfessionalActive} from "./professionals.service.js";
 
 function mockClient(tables={},error=null) {
   const calls=[];
@@ -11,6 +11,8 @@ function mockClient(tables={},error=null) {
     const call={table,filters:[],orders:[],limit:null};calls.push(call);
     const query={
       select(columns){call.columns=columns;return query;},
+      update(payload){call.action="update";call.payload=payload;return query;},
+      maybeSingle(){return query;},
       eq(key,value){call.filters.push(["eq",key,value]);return query;},
       in(key,values){call.filters.push(["in",key,values]);return query;},
       order(key){call.orders.push(key);return query;},
@@ -20,6 +22,7 @@ function mockClient(tables={},error=null) {
         const rows=(tables[table]||[]).filter(row=>call.filters.every(([,key,value])=>
           call.filters.find(filter=>filter[1]===key)?.[0]==="in"?value.includes(row[key]):row[key]===value
         ));
+        if(call.action==="update")return Promise.resolve({data:rows[0]||null,error:null}).then(resolve,reject);
         return Promise.resolve({data:rows,error:null}).then(resolve,reject);
       }
     };
@@ -48,6 +51,10 @@ async function run() {
   assert.ok(client.calls.find(call=>call.table==="profiles").filters.some(filter=>filter[1]==="id"&&filter[0]==="in"));
   assert.ok(client.calls.find(call=>call.table==="org_memberships").filters.some(filter=>filter[1]==="role"&&filter[0]==="in"));
   await assert.rejects(()=>fetchProfessionalWorkspace({client,orgId:"",currentUserId:"owner-a"}),{name:"TypeError"});
+  await setProfessionalActive({client,orgId:"org-a",professionalId:"pro-a",active:false});
+  const activationCall=client.calls.at(-1);
+  assert.deepEqual(activationCall.payload,{active:false});
+  assert.deepEqual(activationCall.filters,[["eq","org_id","org-a"],["eq","id","pro-a"]]);
   const failing=mockClient({}, {code:"42501",message:"SQL privado"});
   await assert.rejects(()=>fetchProfessionalWorkspace({client:failing,orgId:"org-a"}),e=>!e.message.includes("SQL privado"));
   console.log("Testes do serviço de dados dos profissionais: OK");
