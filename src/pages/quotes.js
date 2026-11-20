@@ -53,12 +53,27 @@ export async function loadQuotesPage() {
   try {
     if(!allowed()) throw new Error("Seu perfil não possui acesso ao módulo de orçamentos.");
     const orgId=state.organization.id;
+    const branchId=state.branch?.id||null;
+    let customerQuery=supabase.from("customers").select("id,name,phone")
+      .eq("org_id",orgId).eq("active",true);
+    let serviceQuery=supabase.from("services").select("id,name,price,duration_minutes")
+      .eq("org_id",orgId).eq("active",true);
+    let professionalQuery=supabase.from("professionals").select("id,name")
+      .eq("org_id",orgId).eq("active",true);
+    let quoteQuery=supabase.from("quotes").select("id,quote_number,customer_id,status,total,created_at,branch_id")
+      .eq("org_id",orgId);
+    if(branchId) {
+      customerQuery=customerQuery.or("branch_id.eq."+branchId+",branch_id.is.null");
+      serviceQuery=serviceQuery.or("branch_id.eq."+branchId+",branch_id.is.null");
+      professionalQuery=professionalQuery.eq("branch_id",branchId);
+      quoteQuery=quoteQuery.eq("branch_id",branchId);
+    }
     const [customerResult,serviceResult,professionalResult,professionalServiceResult,quoteResult,settingResult,ruleResult]=await Promise.all([
-      supabase.from("customers").select("id,name,phone").eq("org_id",orgId).eq("active",true).order("name").limit(1000),
-      supabase.from("services").select("id,name,price,duration_minutes").eq("org_id",orgId).eq("active",true).order("name").limit(500),
-      supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("active",true).order("name").limit(500),
+      customerQuery.order("name").limit(1000),
+      serviceQuery.order("name").limit(500),
+      professionalQuery.order("name").limit(500),
       supabase.from("professional_services").select("professional_id,service_id").eq("org_id",orgId),
-      supabase.from("quotes").select("id,quote_number,customer_id,status,total,created_at").eq("org_id",orgId).order("created_at",{ascending:false}).limit(100),
+      quoteQuery.order("created_at",{ascending:false}).limit(100),
       supabase.from("quote_settings").select("max_discount_percent,allow_fixed_discount").eq("org_id",orgId).maybeSingle(),
       supabase.from("quote_discount_services").select("service_id").eq("org_id",orgId).eq("discount_allowed",true)
     ]);
@@ -151,7 +166,7 @@ export async function loadQuotesPage() {
         e.preventDefault();const form=e.target,v=new FormData(form),name=String(v.get("name")||"").trim(),phone=String(v.get("phone")||"").trim();
         if(!name||!phone){toast("Informe nome e WhatsApp.");return;}
         const button=form.querySelector('[type=submit]');button.disabled=true;
-        try{const {data,error}=await supabase.from("customers").insert({org_id:orgId,name,phone}).select("id,name,phone").single();if(error)throw error;customers.push(data);selectedCustomer=data;toast("Cliente cadastrado e vinculado ao orçamento.");renderBuilder();}
+        try{const {data,error}=await supabase.from("customers").insert({org_id:orgId,branch_id:state.branch?.id||null,name,phone}).select("id,name,phone").single();if(error)throw error;customers.push(data);selectedCustomer=data;toast("Cliente cadastrado e vinculado ao orçamento.");renderBuilder();}
         catch(error){reportError(error,{context:"Orçamentos > cadastro rápido"});}finally{button.disabled=false;}
       }
       if(e.target.id==="quote-discount-settings"){
