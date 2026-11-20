@@ -80,13 +80,22 @@ export async function loadSettingsPage() {
         else throw error;
       }
     }
-    const availability = selectedBranch ? await listAvailabilitySettings(orgId, selectedBranch.id) : null;
+    // Uma falha na consulta de expediente não pode ocultar dados cadastrais já carregados.
+    // Permissões de escrita/consulta continuam impostas no banco via RLS.
+    let availability=null,availabilityError=false;
+    if(selectedBranch&&canManage){
+      try{availability=await listAvailabilitySettings(orgId,selectedBranch.id);}
+      catch(error){
+        availabilityError=true;
+        if(current())reportError(error,{context:"Configurações > consultar expediente",notify:false});
+      }
+    }
 
     if(!current())return;
-    host.innerHTML=renderSettingsView({organization,units,selectedBranch,canManage,publicProfile,branchPublicProfile,publicDirectoryReady,availability});
+    host.innerHTML=renderSettingsView({organization,units,selectedBranch,canManage,publicProfile,branchPublicProfile,publicDirectoryReady,availability,availabilityError});
     host._settingsContext={context,units,orgId};
 
-    bindAvailabilitySettings(host,{orgId,branchId:selectedBranch?.id,canManage,reload:loadSettingsPage});
+    bindAvailabilitySettings(host,{orgId,branchId:selectedBranch?.id,canManage:canManage&&!availabilityError,reload:loadSettingsPage});
 
     bindSettingsEvents({host,state,supabase,toast,reportError,canManageSettings,reload:loadSettingsPage});
   } catch (error) {
