@@ -29,7 +29,7 @@ export async function loadSalesPage() {
 
   let rows,customers,itemsBySale;
   try {
-    ({sales:rows,customers,itemsBySale}=await fetchSalesWorkspace({client:supabase,orgId,limit:200}));
+    ({sales:rows,customers,itemsBySale}=await fetchSalesWorkspace({client:supabase,orgId,branchId:state.branch?.id||null,limit:200}));
   } catch(error) {
     if (!host.isConnected || state.organization?.id !== orgId) return;
     reportError(error,{context:"Vendas > carregar histórico"});
