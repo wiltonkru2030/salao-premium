@@ -9,6 +9,7 @@ import { state } from "../state.js";
 import { head, esc, toast, btn } from "../utils.js";
 import { listCoupons, buildCouponPayload, saveCoupon, deactivateCoupon, formatCouponDiscount, toCouponDateTimeInput } from "../modules/coupons/coupon.service.js";
 import { reportError } from "../utils/errors.js";
+import { applyInputMask } from "../utils/input-masks.js";
 
 let coupons = [];
 let services = [];
@@ -37,9 +38,23 @@ function openCouponModal(coupon=null) {
   form.elements.description.value=coupon?.description||"";
   form.elements.branch_id.value=coupon?.branch_id||"";
   form.elements.discount_type.value=coupon?.discount_type||"percent";
-  form.elements.discount_value.value=String(coupon?.discount_value??"");
-  form.elements.max_discount_amount.value=coupon?.max_discount_amount??"";
-  form.elements.minimum_amount.value=coupon?.minimum_amount??"0";
+  const discountInput=form.elements.discount_value;
+  discountInput.value=coupon?.discount_value!==undefined?Number(coupon.discount_value).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}):"";
+  if(form.elements.discount_type.value==="fixed")discountInput.dataset.mask="currency";
+  else delete discountInput.dataset.mask;
+  applyInputMask(discountInput);
+  form.elements.max_discount_amount.value=coupon?.max_discount_amount!==null&&coupon?.max_discount_amount!==undefined?Number(coupon.max_discount_amount).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}):"";
+  form.elements.minimum_amount.value=Number(coupon?.minimum_amount??0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+  applyInputMask(form.elements.max_discount_amount);
+  applyInputMask(form.elements.minimum_amount);
+  if(form.dataset.discountMaskBound!=="true"){
+    form.elements.discount_type.addEventListener("change",()=>{
+      if(form.elements.discount_type.value==="fixed")discountInput.dataset.mask="currency";
+      else delete discountInput.dataset.mask;
+      applyInputMask(discountInput);
+    });
+    form.dataset.discountMaskBound="true";
+  }
   form.elements.starts_at.value=toCouponDateTimeInput(coupon?.starts_at||new Date());
   form.elements.ends_at.value=toCouponDateTimeInput(coupon?.ends_at||new Date(Date.now()+30*86400000));
   form.elements.usage_limit.value=coupon?.usage_limit??"";
@@ -82,7 +97,7 @@ export async function loadCouponsPage() {
               <label>Código<input name="code" required maxlength="32" pattern="[A-Za-z0-9_-]{3,32}" placeholder="BLACK20"></label>
               <label>Nome da campanha<input name="title" required maxlength="120" placeholder="Desconto de boas-vindas"></label>
               <label>Tipo de desconto<select name="discount_type"><option value="percent">Percentual (%)</option><option value="fixed">Valor fixo (R$)</option></select></label>
-              <label>Desconto<input name="discount_value" required inputmode="decimal" data-mask="currency" placeholder="20,00"></label>
+              <label>Desconto<input name="discount_value" required inputmode="decimal" placeholder="20,00"></label>
               <label>Desconto máximo (R$)<input name="max_discount_amount" inputmode="decimal" data-mask="currency" placeholder="Opcional"></label>
               <label>Valor mínimo (R$)<input name="minimum_amount" inputmode="decimal" data-mask="currency" value="0,00"></label>
               <label>Unidade<select name="branch_id"><option value="">Todas as unidades</option>${branches.map(row=>'<option value="'+esc(row.id)+'">'+esc(row.name)+'</option>').join("")}</select></label>
