@@ -54,13 +54,15 @@ async function refreshAgendaAndDrawer() {
   }
 }
 // Busca comandas reutilizáveis e decide o vínculo antes de criar o agendamento.
-async function findOpenCustomerOrders(customerId) {
-  const {data,error}=await supabase.from('service_orders')
+async function findOpenCustomerOrders(customerId,branchId) {
+  // Reutilização restrita à unidade do atendimento; null representa caixa/unidade legada.
+  let query=supabase.from('service_orders')
     .select('id,order_number,status')
     .eq('org_id',state.organization.id)
     .eq('customer_id',customerId)
-    .in('status',['open','in_progress','partially_paid','awaiting_payment'])
-    .order('created_at',{ascending:false}).limit(20);
+    .in('status',['open','in_progress']);
+  query=branchId?query.eq('branch_id',branchId):query.is('branch_id',null);
+  const {data,error}=await query.order('created_at',{ascending:false}).limit(20);
   if(error) throw error;
   return data||[];
 }
@@ -142,7 +144,8 @@ export async function saveAppointment(form) {
     if(existing.service_order_id && (
       existing.customer_id!==customerId ||
       existing.service_id!==serviceId ||
-      existing.professional_id!==professionalId
+      existing.professional_id!==professionalId ||
+      (existing.branch_id||null)!==(branchId||null)
     )) throw new Error('Este horário já está vinculado a uma comanda. Para manter o histórico correto, altere somente data, horário e observações.');
     payload.status=existing.dbStatus||'scheduled';
     payload.service_order_id=existing.customer_id===customerId?existing.service_order_id:null;
@@ -159,7 +162,7 @@ export async function saveAppointment(form) {
   payload.status='scheduled';
   payload.comanda_strategy='new_on_arrival';
   payload.service_order_id=null;
-  const activeOrders=await findOpenCustomerOrders(customerId);
+  const activeOrders=await findOpenCustomerOrders(customerId,branchId);
   if(activeOrders.length) {
     const choice=await selectExistingOrder(activeOrders);
     if(choice===null)return;
@@ -208,9 +211,10 @@ export async function openAppointmentOrder(appointment) {
     throw new Error('Este agendamento não pode abrir uma comanda.');
   }
   let existingId=appointment.service_order_id||null;
-  let forceNew=appointment.comanda_strategy==='force_new_on_arrival';
+  // Uma comanda já vinculada prevalece sobre a preferência de criar uma nova.
+  let forceNew=!existingId&&appointment.comanda_strategy==='force_new_on_arrival';
   if(!existingId&&!forceNew) {
-    const orders=await findOpenCustomerOrders(appointment.customer_id);
+    const orders=await findOpenCustomerOrders(appointment.customer_id,appointment.branch_id);
     const choice=await selectExistingOrder(orders);
     if(choice===null)return;
     existingId=choice.orderId;
