@@ -21,6 +21,7 @@ let selectedOrder=null;
 let selectedService=null;
 let selectedProduct=null;
 let loadVersion=0;
+let orderContext=null;
 const escapeHtml=esc;
 function clearAutocomplete(){cleanup.forEach(fn=>fn());cleanup=[];}
 /** Renderiza a estrutura inicial da página de Comandas. */
@@ -77,7 +78,7 @@ function renderOrderDetails(host,order,data,orgId){
 
  if(canEditItems){
   host.querySelectorAll("[data-edit-comanda-item]").forEach(form=>form.addEventListener("submit",async e=>{
-   e.preventDefault();const submit=form.querySelector('[type="submit"]');
+   e.preventDefault();const submit=form.querySelector('[type="submit"]');if(!submit||submit.disabled)return;
    const values=new FormData(form),quantity=Number(values.get("quantity")),unitPrice=Number(values.get("unit_price")),discount=Number(values.get("discount")),professionalId=String(values.get("professional_id")||"");
    const base=quantity*unitPrice,total=base-discount;
    if(!Number.isFinite(quantity)||quantity<=0||!Number.isFinite(unitPrice)||unitPrice<0||!Number.isFinite(discount)||discount<0||discount>base){toast("Confira quantidade, preço e desconto.");return;}
@@ -89,6 +90,7 @@ function renderOrderDetails(host,order,data,orgId){
    finally{if(submit.isConnected){submit.disabled=false;submit.textContent="Salvar alterações";}}
   }));
   host.querySelectorAll("[data-delete-comanda-item]").forEach(button=>button.addEventListener("click",async()=>{
+   if(button.disabled)return;
    if(!window.confirm("Excluir este item da comanda? O total será recalculado."))return;
    button.disabled=true;
    try{
@@ -158,6 +160,8 @@ export async function loadComandaPage(orderId=null){
  const host=document.querySelector("#comanda-manager");if(!host)return;
  clearAutocomplete();
  const version=++loadVersion,expectedOrg=state.organization?.id,expectedUser=state.user?.id,expectedBranch=state.branch?.id||null;
+ const key=JSON.stringify([expectedOrg,expectedUser,expectedBranch]);
+ if(orderContext!==key){selectedOrder=null;orderContext=key;}
  const isCurrent=()=>host.isConnected&&version===loadVersion&&state.organization?.id===expectedOrg&&state.user?.id===expectedUser&&(state.branch?.id||null)===expectedBranch;
  host.textContent="Carregando comandas…";
  try{
@@ -182,7 +186,7 @@ export async function loadComandaPage(orderId=null){
   host.innerHTML='<div class="list-toolbar"><label class="search-box"><span>⌕</span><input id="comanda-search" placeholder="Buscar cliente, profissional ou número"></label><span class="result-count">'+(orders?.length||0)+
 ' comandas</span></div>'+
 
-   '<div class="record-list">'+(orders||[]).map(o=>'<button class="record-card" data-open-comanda="'+o.id+
+   '<div class="record-list">'+(orders||[]).map(o=>'<button class="record-card" data-open-comanda="'+esc(o.id)+
 '"><span class="record-main"><b>Comanda #'+esc(o.order_number)+
 '</b><small>'+esc(customerMap.get(o.customer_id)||"Cliente não informado")+
 '</small><small>'+esc(professionalMap.get(o.assigned_professional_id)||"Sem profissional")+
@@ -197,6 +201,7 @@ export async function loadComandaPage(orderId=null){
     if(e.target.closest('[data-action="back-comandas"]')){selectedOrder=null;await loadComandaPage();return;}
     if(e.target.closest('[data-action="cancel-comanda"]')){
      const button=e.target.closest('[data-action="cancel-comanda"]');
+     if(button.disabled)return;
      const refund=button.dataset.refundPayments==="true";
      const message=refund
       ?"A comanda será cancelada e todos os pagamentos parciais serão estornados como saídas no Caixa. Deseja continuar?"
