@@ -116,3 +116,41 @@ export async function revokeProfessionalAppAccess({client,orgId,professionalId}=
     if(error)throw error;
   } catch(error) { throw mapWorkspaceError(error); }
 }
+
+
+/**
+ * Cria profissional e vínculos de serviços em uma única transação no banco.
+ * @param {object} options Cliente, organização, dados cadastrais e serviços selecionados.
+ * @returns {Promise<string>} ID do profissional criado.
+ */
+export async function createProfessionalWithServices({
+  client,orgId,name,phone=null,email=null,commissionRate,taxRegime="individual",
+  cnpj=null,legalName=null,tradeName=null,specialty=null,serviceIds=[]
+}={}) {
+  if(!client?.rpc)throw new TypeError("A conexão com o cadastro profissional não está disponível.");
+  const cleanName=String(name??"").trim();
+  const rate=Number(commissionRate);
+  const ids=Array.isArray(serviceIds)?serviceIds.filter(Boolean):[];
+  if(typeof orgId!=="string"||!orgId.trim()||cleanName.length<2||cleanName.length>120) {
+    throw new TypeError("Informe a organização e o nome do profissional.");
+  }
+  if(!Number.isFinite(rate)||rate<0||rate>100)throw new TypeError("A comissão deve estar entre 0 e 100 por cento.");
+  if(!["individual","mei"].includes(taxRegime))throw new TypeError("Regime fiscal inválido.");
+  if(taxRegime==="mei"&&(String(cnpj??"").replace(/\D/g,"").length!==14||String(legalName??"").trim().length<2)) {
+    throw new TypeError("Para MEI, informe CNPJ e razão social válidos.");
+  }
+  if(!ids.length||new Set(ids).size!==ids.length)throw new TypeError("Selecione serviços válidos sem duplicidade.");
+  try {
+    const {data,error}=await client.rpc("create_professional_with_services",{
+      p_org_id:orgId,p_name:cleanName,p_phone:phone,p_email:email,
+      p_commission_rate:rate,p_tax_regime:taxRegime,
+      p_cnpj:taxRegime==="mei"?String(cnpj).replace(/\D/g,""):null,
+      p_legal_name:taxRegime==="mei"?String(legalName).trim():null,
+      p_trade_name:taxRegime==="mei"?String(tradeName??"").trim()||null:null,
+      p_specialty:String(specialty??"").trim()||null,p_service_ids:ids
+    });
+    if(error)throw error;
+    if(typeof data!=="string"||!data)throw new Error("O servidor não confirmou o cadastro profissional.");
+    return data;
+  } catch(error) { throw mapWorkspaceError(error); }
+}
