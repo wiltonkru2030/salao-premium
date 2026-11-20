@@ -45,6 +45,7 @@ function renderHome() {
   return '<section class="page-content">' +
     '<div class="page-heading"><span class="eyebrow">BEM-VINDA AO SALÃO PREMIUM</span><h1>Seu próximo cuidado começa aqui.</h1><p>Descubra estabelecimentos e acompanhe seus horários em um só lugar.</p></div>' +
     '<div class="location-card"><div><span class="eyebrow">SUA REGIÃO</span><strong data-location-label>' + escapeHtml(locationLabel) + '</strong></div><button class="client-button compact" data-action="locate">Usar minha localização</button></div>' +
+    '<form class="manual-location-form" data-location-form><input name="city" maxlength="80" placeholder="Cidade (ex.: Três Lagoas)" aria-label="Cidade" required><input name="neighborhood" maxlength="80" placeholder="Bairro (opcional)" aria-label="Bairro"><button class="client-button compact" type="submit">Usar esta região</button></form>' +
     '<div class="section-heading"><h2>Descubra salões</h2><span class="muted">Em preparação</span></div>' +
     '<div class="empty-state"><span class="empty-icon">✦</span><h3>Estamos preparando a vitrine</h3><p>A busca pública será liberada quando o diretório de salões e as regras de privacidade estiverem implantados.</p></div>' +
     '<div class="section-heading"><h2>Categorias</h2></div><div class="category-grid"><span>Cabelo</span><span>Barbearia</span><span>Unhas</span><span>Estética</span><span>Sobrancelha</span></div>' +
@@ -107,7 +108,7 @@ async function runAction(action, button) {
       locationLabel = "Localização obtida (precisão aproximada: " + Math.round(position.accuracy) + " m)";
       renderApp();
       setNotice("Localização disponível neste aparelho. Ela ainda não foi enviada ao servidor.", "success");
-    } else if (action === "theme") {
+    } else if (action === "save-location") {\n      const form = root.querySelector("[data-location-form]");\n      const city = form && form.elements.city.value.trim();\n      const neighborhood = form && form.elements.neighborhood.value.trim();\n      if (!city || city.length < 2) throw new Error("Informe uma cidade válida.");\n      saveLocalSettings({defaultCity: city, defaultNeighborhood: neighborhood || null});\n      locationLabel = neighborhood ? city + " · " + neighborhood : city;\n      renderApp();\n      setNotice("Região padrão salva neste aparelho.", "success");\n    } else if (action === "theme") {
       const current = getLocalSettings().theme;
       saveLocalSettings({theme: current === "system" ? "light" : current === "light" ? "dark" : "system"});
       renderApp();
@@ -127,7 +128,7 @@ async function runAction(action, button) {
     if (current) current.disabled = false;
   }
 }
-root.addEventListener("click", function (event) {
+root.addEventListener("submit", function (event) {\n  const form = event.target.closest("[data-location-form]");\n  if (!form) return;\n  event.preventDefault();\n  runAction("save-location", form.querySelector("button[type=submit]"));\n});\nroot.addEventListener("click", function (event) {
   const button = event.target.closest("[data-action]");
   if (button) runAction(button.dataset.action, button);
 });
