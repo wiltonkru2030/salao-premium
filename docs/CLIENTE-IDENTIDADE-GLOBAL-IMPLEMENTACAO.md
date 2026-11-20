@@ -172,3 +172,6 @@ Foi criado o rascunho `docs/sql/customer-identity-link-confirmation.draft.sql` p
 - Nenhuma tabela foi criada no projeto Supabase e nenhum dado de produção foi alterado.
 
 **Decisão de segurança:** funcionário não pode declarar sozinho que um cadastro pertence à cliente. O sistema precisa da confirmação autenticada da própria identidade global.
+
+
+Complemento do fluxo: o rascunho também define `get_my_pending_customer_link_requests()`, que retorna somente solicitações pendentes destinadas ao `auth.uid()` da sessão. Isso permite que o aplicativo da cliente apresente a confirmação sem expor a tabela auxiliar nem permitir leitura cruzada. A consulta e a confirmação ainda dependem de validação em QA.
