@@ -82,6 +82,17 @@ async function run() {
   assert.match(engagement,/auth_user_id=\(select auth\.uid\(\)\)/i);
   assert.match(engagement,/grant update\(read_at\) on public\.customer_notifications to authenticated/i);
 
+  const engagementMigration=await readFile(
+    new URL("../../supabase/migrations/20261120073000_customer_engagement.sql",import.meta.url),"utf8"
+  );
+  checkDelimiters(engagementMigration,"Migration de engajamento");
+  const migratedEngagementFunctions=checkFunctionSecurity(engagementMigration,8);
+  assert.ok(migratedEngagementFunctions.includes("private.notify_customer_appointment_changes"));
+  assert.match(engagementMigration,/revoke all on function private\.notify_customer_appointment_changes\(\) from public,anon,authenticated/i);
+  for(const table of ["customer_favorites","customer_notifications"]) {
+    assert.match(engagementMigration,new RegExp("create trigger audit_row_change\\\\s+after insert or update or delete on public\\\\."+table,"i"));
+  }
+
   console.log("Contratos estáticos dos RPCs auxiliares da cliente: OK (não equivalem à execução PostgreSQL).");
 }
 run().catch(error=>{process.stderr.write(error.message+"\n");process.exitCode=1;});
