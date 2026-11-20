@@ -38,7 +38,8 @@ export function saveLocalSettings(patch = {}) {
   }
   const next = { ...getLocalSettings(), ...allowed };
   try {
-    globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(next));
+    if (!globalThis.localStorage) throw new Error("storage-unavailable");
+    globalThis.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
     throw new Error("Não foi possível salvar as preferências neste aparelho.");
   }
