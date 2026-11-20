@@ -19,19 +19,29 @@ function requireContext(client,orgId) {
   if(typeof orgId!=="string"||!orgId.trim())throw new TypeError("A organização ativa não foi identificada.");
 }
 
+/** Valida UUID de filial antes de compor filtros PostgREST. */
+function requireBranchId(branchId) {
+  if(branchId&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(branchId)) {
+    throw new TypeError("A unidade selecionada não é válida.");
+  }
+}
+
 /**
  * Consulta todas as páginas de serviços do tenant.
  * @param {object} options Cliente Supabase e organização.
  * @returns {Promise<Array<object>>} Serviços ativos e inativos.
  */
-export async function listServices({client,orgId}={}) {
+export async function listServices({client,orgId,branchId=null}={}) {
   requireContext(client,orgId);
+  requireBranchId(branchId);
   const rows=[];
   try {
     for(let offset=0;;offset+=PAGE_SIZE) {
-      const {data,error}=await client.from("services")
-        .select("id,name,category,duration_minutes,price,description,active")
-        .eq("org_id",orgId).order("name").range(offset,offset+PAGE_SIZE-1);
+      let query=client.from("services")
+        .select("id,name,category,duration_minutes,price,description,active,branch_id")
+        .eq("org_id",orgId);
+      if(branchId)query=query.or("branch_id.eq."+branchId+",branch_id.is.null");
+      const {data,error}=await query.order("name").range(offset,offset+PAGE_SIZE-1);
       if(error)throw error;
       const page=Array.isArray(data)?data:[];
       rows.push(...page);
@@ -47,9 +57,10 @@ export async function listServices({client,orgId}={}) {
  * @returns {Promise<void>} Resolve após persistir o serviço.
  */
 export async function saveService({
-  client,orgId,serviceId=null,name,category=null,durationMinutes,price,description=null
+  client,orgId,branchId=null,serviceId=null,name,category=null,durationMinutes,price,description=null
 }={}) {
   requireContext(client,orgId);
+  requireBranchId(branchId);
   const cleanName=String(name??"").trim();
   const duration=Number(durationMinutes),amount=Number(price);
   if(cleanName.length<2||cleanName.length>120)throw new TypeError("Informe um nome de serviço entre 2 e 120 caracteres.");
@@ -63,7 +74,7 @@ export async function saveService({
   try {
     const result=serviceId
       ? await client.from("services").update(payload).eq("org_id",orgId).eq("id",serviceId)
-      : await client.from("services").insert({org_id:orgId,...payload,active:true});
+      : await client.from("services").insert({org_id:orgId,branch_id:branchId||null,...payload,active:true});
     if(result.error)throw result.error;
   } catch(error) { throw mapServiceError(error); }
 }
