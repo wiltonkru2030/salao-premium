@@ -97,7 +97,13 @@ begin
  select timezone into v_timezone from public.organizations where id=new.org_id;
  v_today:=(now() at time zone v_timezone)::date;
  update public.appointment_waitlist w
- set status=case when w.preferred_until>=v_today then 'waiting' else 'cancelled' end,
+ set status=case when w.preferred_until>=v_today and not exists(
+   select 1 from public.appointment_waitlist other
+   where other.org_id=w.org_id and other.branch_id=w.branch_id
+     and other.customer_id=w.customer_id and other.service_id=w.service_id
+     and other.professional_id is not distinct from w.professional_id
+     and other.id<>w.id and other.status in ('waiting','contacted')
+ ) then 'waiting' else 'cancelled' end,
   matched_appointment_id=null,updated_at=clock_timestamp()
  where w.org_id=new.org_id and w.matched_appointment_id=new.id and w.status='booked';
  return new;
