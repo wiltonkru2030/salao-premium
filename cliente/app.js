@@ -229,7 +229,7 @@ async function runAction(action, button = null) {
         renderApp();
       }
     } else if (action === "create-hold") {
-      if (holdState?.holdId) { try { await cancelAppointmentHold(holdState.holdId); } catch { /* A reserva anterior expira automaticamente no banco. */ } }
+      if (holdState?.holdId) { try { await cancelAppointmentHold(holdState.holdId); } catch { /* A reserva anterior expira automaticamente no banco. */ } holdState = null; }
       const index = Number(button?.dataset.slotIndex);
       const slot = slotsState.items[index];
       if (!slot || !slotsState.serviceId) throw new Error("Selecione um horário válido.");
