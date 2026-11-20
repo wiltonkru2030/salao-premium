@@ -175,3 +175,32 @@ Foi criado o rascunho `docs/sql/customer-identity-link-confirmation.draft.sql` p
 
 
 Complemento do fluxo: o rascunho também define `get_my_pending_customer_link_requests()`, que retorna somente solicitações pendentes destinadas ao `auth.uid()` da sessão. Isso permite que o aplicativo da cliente apresente a confirmação sem expor a tabela auxiliar nem permitir leitura cruzada. A consulta e a confirmação ainda dependem de validação em QA.
+
+
+## Migration versionada — 20/11/2026
+
+Foi adicionada a migration `supabase/migrations/20261120050000_customer_global_identity.sql` à branch de desenvolvimento.
+
+Ela reúne:
+- Perfil global por `auth.users.id`.
+- Membership por organização.
+- Mapeamento legado com FK composta `(org_id, customer_id)` e `(org_id, auth_user_id)`.
+- RLS e grants mínimos para leitura/edição do próprio perfil.
+- Proteção de `phone_verified_at` contra escrita direta.
+- Solicitação de associação por owner/admin e confirmação pela cliente autenticada.
+- Auditoria da solicitação e da confirmação.
+- Rejeição de cadastros já associados e tratamento de conflitos únicos.
+
+O teste `tests/integration/customer-global-identity-rls.test.mjs` foi atualizado para testar o fluxo de duas etapas; o teste antigo da RPC de associação imediata foi removido.
+
+### Estado de execução
+
+- Migration versionada no Git: sim.
+- Aplicada no Supabase de produção: **não**.
+- Testada em Supabase local/QA: **não comprovado**.
+- Teste RLS com duas contas reais: depende das variáveis e dados isolados de QA.
+- Não executar a migration em produção antes de validar grants, funções SECURITY DEFINER, triggers existentes e o fluxo com duas sessões reais.
+
+### Nota técnica de expiração
+
+A RPC de confirmação rejeita solicitações expiradas. Ela não tenta gravar `status='expired'` e lançar exceção na mesma transação, pois a exceção faria rollback da atualização. A listagem oculta pedidos expirados; um novo pedido do owner/admin renova a solicitação pendente existente.
