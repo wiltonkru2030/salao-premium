@@ -8,6 +8,7 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
 import { reportError } from "../utils/errors.js";
+import { renderAvailabilitySettings, bindAvailabilitySettings } from "../modules/availability/availability-settings.view.js";
 
 const canManageSettings = () => ["owner", "admin"].includes(state.membership?.role);
 const timezones = ["America/Campo_Grande", "America/Sao_Paulo", "America/Manaus", "America/Belem", "America/Fortaleza", "America/Noronha"];
@@ -53,6 +54,7 @@ export async function loadSettingsPage() {
       units.find(item => item.is_main) || units[0] || null;
     state.branch = selectedBranch;
     const canManage = canManageSettings();
+    const availability = selectedBranch ? await listAvailabilitySettings(orgId, selectedBranch.id) : null;
 
     host.innerHTML = `
       <section class="surface settings-panel">
@@ -89,7 +91,7 @@ export async function loadSettingsPage() {
       </section>
 
       <section class="surface settings-panel" style="margin-top:18px">
-        <div class="section-heading"><div><h2>Preferências do sistema</h2><p>Recursos que ainda não possuem persistência validada no banco.</p></div></div>
+        <div class="section-heading"><div>${renderAvailabilitySettings(availability, canManage)}<h2>Preferências do sistema</h2><p>Recursos que ainda não possuem persistência validada no banco.</p></div></div>
         <div class="record-list">
           <article class="record-card"><span class="record-main"><b>Agenda e horários</b><small>Intervalos, antecedência e regras de sobreposição ainda não configuráveis nesta tela.</small></span><span class="record-trailing"><small>Em implementação</small></span></article>
           <article class="record-card"><span class="record-main"><b>Notificações</b><small>Envio de lembretes e integrações de WhatsApp/e-mail não estão ativados por esta tela.</small></span><span class="record-trailing"><small>Em implementação</small></span></article>
@@ -131,6 +133,8 @@ export async function loadSettingsPage() {
         </div>
       </dialog>
       <p class="demo-note">Apenas proprietário e administrador podem editar. O banco aplica a mesma restrição por RLS; cada alteração cadastral da organização também é registrada pela auditoria do banco.</p>`;
+
+    bindAvailabilitySettings(host,{orgId,branchId:selectedBranch?.id,canManage,reload:loadSettingsPage});
 
     if (host.dataset.bound !== "true") {
       host.dataset.bound = "true";
