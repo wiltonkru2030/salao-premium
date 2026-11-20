@@ -56,6 +56,7 @@ for(const legacy of [
 
 assert.match(normalized,/from public,anon,authenticated;\s*grant execute on function public\.save_salon_coupon/);
 assert.match(normalized,/from public,anon,authenticated;\s*grant execute on function public\.create_customer_appointment_hold_with_coupon/);
+assert.match(normalized,/revoke all on function private\.release_coupon_reservation_on_hold_end\(\) from public,anon,authenticated/);
 assert.match(normalized,/create trigger appointment_hold_release_coupon_trigger/);
 for(const table of ["salon_coupons","salon_coupon_services","customer_coupon_redemptions"]) {
   assert.match(normalized,new RegExp("create trigger audit_row_change after insert or update or delete on public\\."+table));
