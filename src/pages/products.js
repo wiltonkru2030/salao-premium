@@ -119,9 +119,7 @@ export async function loadProductsPage() {
       '<form id="product-create-form"><input type="hidden" name="product_id"><div class="sp-modal-body">'+
       '<label class="sp-span">Nome do produto<input name="name" required maxlength="120" placeholder="Nome do produto"></label>'+
       '<label>SKU / Código<input name="sku" maxlength="64" placeholder="Código interno"></label>'+
-      (Array.isArray(productCategories)
-        ? '<label>Categoria<select name="category"><option value="">Sem categoria</option>'+productCategories.map(category=>'<option value="'+esc(category.name)+'">'+esc(category.name)+'</option>').join("")+'</select></label>'
-        : '<label>Categoria\${categoryField}</label>')+
+      '<label>Categoria'+categoryField+'</label>'+
       '<label>Custo (R$)<input name="cost_price" type="text" inputmode="decimal" data-mask="currency" value="0,00"></label>'+
       '<label>Preço de venda (R$)<input name="sale_price" type="text" inputmode="decimal" data-mask="currency" value="0,00"></label>'+
       '<label>Estoque inicial / atual<input name="stock_quantity" type="number" min="0" step="0.001" value="0"></label>'+
