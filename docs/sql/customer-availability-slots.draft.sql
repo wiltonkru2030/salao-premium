@@ -50,6 +50,15 @@ begin
   if not found then
     raise exception 'Salão, unidade ou serviço indisponível.' using errcode = '22023';
   end if;
+  if not exists (
+    select 1
+    from public.salon_public_profiles sp
+    join public.branch_public_profiles bp
+      on bp.org_id=sp.org_id and bp.branch_id=p_branch_id and bp.is_published
+    where sp.org_id=p_org_id and sp.is_published
+  ) then
+    raise exception 'Este salão ou unidade não está publicado para agendamento.' using errcode='22023';
+  end if;
   if p_date < (pg_catalog.now() at time zone v_timezone)::date then
     raise exception 'Escolha uma data atual ou futura.' using errcode = '22023';
   end if;
