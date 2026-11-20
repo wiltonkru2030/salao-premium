@@ -2,6 +2,7 @@
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, toast, esc } from "../utils.js";
+import { onlyDigits, validCpf, validCnpj } from "../modules/professionals/professionals.validation.js";
 import { reportError } from "../utils/errors.js";
 import { fetchProfessionalWorkspace, setProfessionalActive, setTeamProfessionalAppAccess, revokeProfessionalAppAccess, createProfessionalWithServices } from "../modules/professionals/professionals.service.js";
 
@@ -10,19 +11,6 @@ import { fetchProfessionalWorkspace, setProfessionalActive, setTeamProfessionalA
 const initialPasswords=new Map();
 /** Escrita em profissionais, vínculos e gestão de acesso exige owner/admin no banco. */
 const canManageProfessionals=()=>["owner","admin"].includes(state.membership?.role);
-const onlyDigits=value=>String(value||"").replace(/\D/g,"");
-function validCpf(value){
- const cpf=onlyDigits(value);if(cpf.length!==11||/^([0-9])\1{10}$/.test(cpf))return false;
- const digit=(base,factor)=>{let sum=0;for(let i=0;i<base.length;i++)sum+=Number(base[i])*(factor-i);const rest=(sum*10)%11;return rest===10?0:rest;};
- return digit(cpf.slice(0,9),10)===Number(cpf[9])&&digit(cpf.slice(0,10),11)===Number(cpf[10]);
-}
-function validCnpj(value){
- const cnpj=onlyDigits(value);if(cnpj.length!==14||/^([0-9])\1{13}$/.test(cnpj))return false;
- const calc=(base,weights)=>{const sum=base.split("").reduce((total,n,i)=>total+Number(n)*weights[i],0),rest=sum%11;return rest<2?0:11-rest;};
- const first=calc(cnpj.slice(0,12),[5,4,3,2,9,8,7,6,5,4,3,2]);
- const second=calc(cnpj.slice(0,12)+first,[6,5,4,3,2,9,8,7,6,5,4,3,2]);
- return first===Number(cnpj[12])&&second===Number(cnpj[13]);
-}
 /** Renderiza a página de Profissionais e o acesso ao cadastro e permissões. */
 export function professionalsPage(){
  return head("Profissionais","Cadastre profissionais e gerencie o acesso individual por CPF ao App Profissional.")+
@@ -216,7 +204,7 @@ export async function loadProfessionalsPage(){
   let button;
   try{
   const form=event.target;button=form.querySelector('[type="submit"]');const v=new FormData(form);
-  const name=String(v.get("name")||"").trim(),cpf=String(v.get("cpf")||"").replace(/\\D/g,""),phone=String(v.get("phone")||"").trim(),email=String(v.get("email")||"").trim(),rate=Number(v.get("commission_rate")||0),taxRegime=String(v.get("tax_regime")||"individual"),cnpj=String(v.get("cnpj")||"").replace(/\\D/g,"");
+  const name=String(v.get("name")||"").trim(),cpf=onlyDigits(v.get("cpf")),phone=String(v.get("phone")||"").trim(),email=String(v.get("email")||"").trim(),rate=Number(v.get("commission_rate")||0),taxRegime=String(v.get("tax_regime")||"individual"),cnpj=onlyDigits(v.get("cnpj"));
   const serviceIds=[...form.querySelectorAll('input[name="service_ids"]:checked')].map(input=>input.value);
   if(!name||!validCpf(cpf)||!Number.isFinite(rate)||rate<0||rate>100){toast("Confira nome, CPF e comissão.");return;}
   if(taxRegime==="mei"&&(!validCnpj(cnpj)||!String(v.get("legal_name")||"").trim())){toast("Para MEI, informe CNPJ válido e razão social.");return;}
@@ -250,8 +238,8 @@ export async function loadProfessionalsPage(){
  async function provision(button,action){
   const id=button.dataset.professionalReset||button.dataset.professionalToggle;
   const card=host.querySelector('[data-professional-card="'+id+'"]');
-  const cpf=String(card?.querySelector('[data-professional-cpf="'+id+'"]')?.value||"").replace(/\\D/g,"");
-  if(cpf.length!==11){toast("Informe os 11 números do CPF do profissional.");return false;}
+  const cpf=onlyDigits(card?.querySelector('[data-professional-cpf="'+id+'"]')?.value);
+  if(!validCpf(cpf)){toast("Informe um CPF válido do profissional.");return false;}
   button.disabled=true;
   try {
    const {data,error}=await supabase.functions.invoke("manage-professional-access",{body:{action,org_id:state.organization.id,professional_id:id,cpf}});
