@@ -416,3 +416,12 @@ Tabelas de vitrine e cupons foram confirmadas com RLS habilitado. As RPCs públi
 - Teste estático da migration em docs/sql/professional-transactional-creation.test.mjs e teste do serviço incluídos em test:all.
 - A migration transacional de profissionais ainda NÃO foi aplicada ao Supabase conectado; requer execução e validação em ambiente QA antes de produção.
 - App validation e Agenda tests passaram no SHA f8455ef36a468ea2d2f024e35702246b5268c804.
+
+
+### Vendas, despesas e financeiro
+- Criado src/modules/sales/sales.service.js para consultar vendas, clientes e itens relacionados, sem mutações financeiras.
+- Criado src/modules/expenses/expenses.service.js para consulta, cadastro e operações transacionais de pagamento/cancelamento via RPC.
+- Criado src/modules/finance/finance.service.js para separar consulta de movimentos efetivos de caixa dos compromissos de despesas.
+- As três telas foram conectadas aos serviços; operações financeiras continuam autorizadas pelo RLS/RPC no banco, não apenas por controles da interface.
+- Testes dos três serviços incluídos no test:all.
+- App validation e Agenda tests passaram no SHA a5ab87092e509c04e29bea5d0a263c591f157fd1.
