@@ -320,7 +320,7 @@ async function runAction(action, button = null) {
       const form = root.querySelector("[data-profile-form]");
       const fullName = form?.elements.fullName.value || "";
       const phone = form?.elements.phone.value || "";
-      const updatedProfile=await updateMyProfile({ fullName, phone, email: profileState?.email || currentSession?.user?.email || null },userId);
+      const updatedProfile=await updateMyProfile({ fullName, phone, email: profileState?.email || currentSession?.user?.email || null, avatarUrl: profileState?.avatarUrl || null },userId);
       requireCurrent(epoch);profileState=updatedProfile;
       renderApp();
       setNotice("Seus dados foram atualizados.", "success");
