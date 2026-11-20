@@ -11,19 +11,19 @@ Permitir que cada salão decida explicitamente se deseja aparecer no aplicativo 
 
 ## Migrations aplicadas
 
-1. `20261120070000_public_salon_directory_and_availability.sql`
+1. `20261120064407_public_salon_directory_and_availability.sql`
    - Primeira versão da estrutura de publicação e das RPCs públicas.
    - Criou a estrutura inicial `public_branch_profiles` e as consultas de diretório, catálogo e disponibilidade.
-2. `20261120071000_align_public_profiles_with_settings.sql`
+2. `20261120064553_align_public_profiles_with_settings.sql`
    - Alinhou o banco ao formulário de Configurações que já existia no painel.
    - Substituiu a estrutura inicial pelas tabelas `salon_public_profiles` e `branch_public_profiles`.
    - Criou a RPC transacional `save_public_salon_profile`.
    - Atualizou busca, catálogo e disponibilidade para exigir publicação da marca e da filial.
-3. `20261120072000_restrict_private_schema_public_api.sql`
+3. `20261120064639_restrict_private_schema_public_api.sql`
    - Concedeu USAGE no schema privado a `anon` apenas para que wrappers públicos invoker chamem suas implementações internas.
    - Revogou EXECUTE herdado de PUBLIC nas funções privadas e preservou os privilégios previamente efetivos de `authenticated`.
    - Liberou a execução anônima somente para as consultas privadas de busca, catálogo e horários.
-4. `20261120073000_allow_members_read_public_profile_settings.sql`
+4. `20261120064758_allow_members_read_public_profile_settings.sql`
    - Permitiu que membros ativos da organização leiam as configurações da vitrine em modo de consulta.
    - Escrita continua restrita a owner/admin.
 
