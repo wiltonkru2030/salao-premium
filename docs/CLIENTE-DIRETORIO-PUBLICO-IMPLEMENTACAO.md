@@ -25,6 +25,7 @@ Permitir que cada salão decida explicitamente se deseja aparecer no aplicativo 
    - Liberou a execução anônima somente para as consultas privadas de busca, catálogo e horários.
 4. `20261120064758_allow_members_read_public_profile_settings.sql`
 5. `20261120070111_coupon_fk_indexes_and_public_profile_policy_cleanup.sql`
+6. `20261120070234_audit_public_salon_profiles.sql`
    - Permitiu que membros ativos da organização leiam as configurações da vitrine em modo de consulta.
    - Escrita continua restrita a owner/admin.
 
@@ -59,6 +60,7 @@ O endereço privado armazenado em `branches.address` não é copiado automaticam
 - Apenas owner/admin pode gravar, validado pela RPC privada com `auth.uid()` e `private.has_org_role`.
 - O navegador chama wrappers públicos `SECURITY INVOKER`; as funções privilegiadas ficam no schema `private`, com `SECURITY DEFINER` e `search_path = ''`.
 - A busca pública retorna apenas unidades com publicação explícita, sem telefone/e-mail/documento privado da organização.
+- INSERT/UPDATE/DELETE da vitrine são registrados por `private.capture_row_audit()` em `audit_events`; exclusões preservam a linha anterior em `recycle_bin`.
 - A disponibilidade retorna somente horário, identificador e nome do profissional que atende o serviço.
 - A disponibilidade não cria reserva. O HOLD continua revalidando as regras no banco para evitar corrida entre consulta e reserva.
 
