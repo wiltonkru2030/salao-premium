@@ -2,6 +2,7 @@
 import { state } from '../../state.js';
 import { supabase } from '../../supabase/client.js';
 import { head, btn, initials } from '../../utils.js';
+import { fetchAgendaCalendar } from '../services/calendar-query.service.js';
 import { reportError } from '../../utils/errors.js';
 
 /** @typedef {import('../../types/tenant.types').TenantContext} TenantContext */
@@ -15,6 +16,7 @@ import { renderAgendaFilters } from '../components/agenda-filters.js';
 import { dateKey, startOfWeek, addDays } from '../utils/date.utils.js';
 
 export { dateKey };
+let loadVersion=0;
 
 // Adapta os estados do banco aos rótulos exibidos no calendário.
 function dbStatus(value) {
@@ -93,6 +95,10 @@ export async function loadAgendaPage() {
   if(!state.user||!state.organization?.id)return;
   const host=document.querySelector('#agenda-db-content');
   if(!host)return;
+  const orgId=state.organization.id,userId=state.user.id,branchId=state.branch?.id||null;
+  const version=++loadVersion;
+  const isCurrent=()=>host.isConnected&&version===loadVersion&&state.organization?.id===orgId&&state.user?.id===userId&&(state.branch?.id||null)===branchId;
+  state.agendaProfessionals=[];state.agendaAppointments=[];state.dbBlockedTimes=[];
   host.innerHTML='<div class="empty-state">Carregando agenda…</div>';
   try{
     let start,end;
@@ -106,34 +112,20 @@ export async function loadAgendaPage() {
       start=new Date(state.date.getFullYear(),state.date.getMonth(),1);
       end=new Date(state.date.getFullYear(),state.date.getMonth()+1,1);
     }
-    const branchId=state.branch?.id||null;
-    let professionalQuery=supabase.from('professionals').select('id,name,color,active,branch_id')
-      .eq('org_id',state.organization.id).eq('active',true);
-    let blockQuery=supabase.from('appointment_blocks').select('id,professional_id,starts_at,ends_at,reason')
-      .eq('org_id',state.organization.id).lt('starts_at',end.toISOString()).gt('ends_at',start.toISOString());
-    if(branchId) {
-      professionalQuery=professionalQuery.eq('branch_id',branchId);
-      blockQuery=blockQuery.eq('branch_id',branchId);
-    }
-    const [proResult,appointmentRows,blockResult]=await Promise.all([
-      professionalQuery.order('name'),
-      listAppointments({client:supabase,orgId:state.organization.id,branchId,startAt:start.toISOString(),endAt:end.toISOString()}),
-      blockQuery.limit(500)
-    ]);
-    if(proResult.error)throw proResult.error;
-    if(blockResult.error)throw blockResult.error;
-    const dbProfessionals=proResult.data||[];
+    const {professionals:dbProfessionals,appointments:appointmentRows,blocks}=await fetchAgendaCalendar({client:supabase,orgId,branchId,start,end});
+    if(!isCurrent())return;
     state.agendaProfessionals=dbProfessionals.map(p=>[initials(p.name||'?'),p.name,'Profissional',p.id]);
     if(!state.agendaProfessionals.length){state.agendaAppointments=[];state.dbBlockedTimes=[];buildContent();return;}
     const indexById=new Map(dbProfessionals.map((p,i)=>[p.id,i]));
     state.agendaAppointments=(appointmentRows||[]).filter(a=>indexById.has(a.professional_id)).map(a=>toCalendarAppointment(a,indexById.get(a.professional_id)));
-    state.dbBlockedTimes=(blockResult.data||[]).flatMap(b=>{
+    state.dbBlockedTimes=blocks.flatMap(b=>{
       const startDate=asLocalDateTime(b.starts_at),endDate=asLocalDateTime(b.ends_at);
       const indices=b.professional_id?[indexById.get(b.professional_id)].filter(i=>i!==undefined):dbProfessionals.map((_,i)=>i);
       return indices.map(index=>({id:b.id,pro:index,date:startDate.date,start:startDate.time,end:endDate.time,reason:b.reason}));
     });
     buildContent();
   }catch(error){
+    if(!isCurrent())return;
     const diagnostic=reportError(error,{context:"Agenda > carregar calendário",notify:false});
     host.innerHTML='<div class="empty-state"><b>Não foi possível carregar a agenda.</b><small>Verifique sua conexão e suas permissões. Código '+diagnostic.id+
 '</small></div>';
