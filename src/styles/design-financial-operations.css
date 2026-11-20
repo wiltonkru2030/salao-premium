@@ -1,0 +1,57 @@
+/* SALÃO PREMIUM | Módulo 06 — Comanda, Vendas e Caixa.
+ * Responsabilidade: leitura financeira, hierarquia e disposição responsiva.
+ * Não modifica RPCs, cálculos, pagamentos ou permissões.
+ */
+:is(#comanda-manager,#sales-manager,#cash-manager){min-width:0}
+:is(#comanda-manager,#sales-manager,#cash-manager) .settings-card{min-width:0;border-radius:11px}
+:is(#comanda-manager,#sales-manager,#cash-manager) .settings-card>h3{font-size:15px;padding:17px 19px}
+:is(#comanda-manager,#sales-manager,#cash-manager) .record-card{min-width:0;padding:17px 18px;gap:14px;border-radius:10px}
+:is(#comanda-manager,#sales-manager,#cash-manager) .record-main{min-width:0;flex:1 1 220px;gap:6px}
+:is(#comanda-manager,#sales-manager,#cash-manager) .record-main b{font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+:is(#comanda-manager,#sales-manager,#cash-manager) .record-main small{font-size:12px;line-height:1.5;white-space:normal;overflow-wrap:anywhere}
+:is(#comanda-manager,#sales-manager,#cash-manager) .record-trailing{gap:7px;max-width:100%;align-items:flex-end}
+:is(#comanda-manager,#sales-manager,#cash-manager) .record-trailing>b{font-size:16px;line-height:1.4;font-variant-numeric:tabular-nums}
+:is(#comanda-manager,#sales-manager,#cash-manager) .record-trailing small{font-size:12px}
+:is(#comanda-manager,#sales-manager,#cash-manager) .setting-row{gap:14px;min-width:0}
+:is(#comanda-manager,#sales-manager,#cash-manager) .setting-row>span{min-width:0;overflow-wrap:anywhere}
+:is(#comanda-manager,#sales-manager,#cash-manager) .setting-row b{font-size:13px;overflow-wrap:anywhere}
+:is(#comanda-manager,#sales-manager,#cash-manager) .setting-row small{display:block;font-size:12px;line-height:1.55;color:var(--sp-muted)}
+:is(#comanda-manager,#sales-manager,#cash-manager) .list-toolbar{flex-wrap:wrap;gap:10px;margin-block:18px}
+:is(#comanda-manager,#sales-manager,#cash-manager) .search-box{max-width:520px;min-height:44px}
+:is(#comanda-manager,#sales-manager,#cash-manager) .search-box input{font-size:14px}
+:is(#comanda-manager,#sales-manager,#cash-manager) .result-count{font-size:12px}
+:is(#comanda-manager,#sales-manager,#cash-manager) .form-grid{min-width:0;gap:14px}
+:is(#comanda-manager,#sales-manager,#cash-manager) .form-grid label{font-size:12px;line-height:1.5;min-width:0}
+:is(#comanda-manager,#sales-manager,#cash-manager) .form-grid input,
+:is(#comanda-manager,#sales-manager,#cash-manager) .form-grid select{font-size:14px;min-height:44px}
+#cash-manager .cash-branch-selector{padding:18px 20px;display:grid;gap:10px}
+#cash-manager .cash-branch-selector label{font-size:13px;font-weight:600}
+#cash-manager .cash-branch-selector select{width:100%;max-width:460px}
+#cash-manager .commission-summary{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+#cash-manager .commission-summary h2{font-size:clamp(18px,2vw,26px);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+#cash-manager .commission-summary .eyebrow{font-size:11px}
+#cash-manager .cash-filters{padding:18px}
+#sales-manager .sales-record{display:flex;flex-wrap:wrap;align-items:flex-start}
+#sales-manager .sales-record .sales-items{flex-basis:100%;width:100%;margin:12px 0 0;padding:14px 0 0 20px;border-top:1px solid var(--sp-line)}
+#sales-manager .sales-items li{display:flex;justify-content:space-between;gap:14px;font-size:12px;padding:7px 0}
+#sales-manager .sales-items li b{font-size:13px;font-variant-numeric:tabular-nums}
+#sales-manager .sales-record[hidden],#sales-manager .sales-items[hidden]{display:none!important}
+#comanda-manager .comanda-item-editor{padding:12px 18px;border-top:1px solid var(--sp-line)}
+#comanda-manager .comanda-item-editor summary{font-size:13px;cursor:pointer}
+#comanda-manager .comanda-item-editor form{display:grid;gap:12px;margin-top:14px}
+#comanda-manager :is(#comanda-service-form,#comanda-product-form,#comanda-payment-form){display:grid;gap:14px;padding:18px}
+#comanda-manager :is(#comanda-service-form,#comanda-product-form,#comanda-payment-form) label{display:grid;gap:7px;font-size:12px}
+@media(max-width:700px){
+ :is(#comanda-manager,#sales-manager,#cash-manager) .record-card{padding:14px;gap:10px}
+ :is(#comanda-manager,#sales-manager,#cash-manager) .record-trailing{align-items:flex-start}
+ :is(#comanda-manager,#sales-manager,#cash-manager) .record-trailing>b{font-size:15px}
+ :is(#comanda-manager,#sales-manager,#cash-manager) .list-toolbar .search-box{flex:1 1 100%;max-width:none}
+ :is(#comanda-manager,#sales-manager,#cash-manager) .setting-row{flex-wrap:wrap}
+ #cash-manager .commission-summary{grid-template-columns:1fr;gap:0}
+ #cash-manager .commission-summary>div{border-right:0;border-bottom:1px solid var(--sp-line);padding:12px 0}
+ #cash-manager .commission-summary>div:last-child{border-bottom:0}
+ #cash-manager .cash-filters{padding:14px}
+ #cash-manager .cash-branch-selector{padding:14px}
+ #sales-manager .sales-record .record-trailing{flex:1 1 100%;display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between}
+ #sales-manager .sales-record .record-trailing .btn{min-height:44px}
+}
