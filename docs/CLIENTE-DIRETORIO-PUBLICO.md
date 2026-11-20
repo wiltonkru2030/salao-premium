@@ -1,9 +1,25 @@
-# Diretório público de salões — rascunho
+# Diretório público de salões — implementação e pendências
 
-A publicação é opt-in: nenhuma organização ou unidade aparece até o owner/admin ativar explicitamente a vitrine e publicar a filial.
+## Implementado no repositório
+- Busca da cliente por nome do salão/unidade, cidade/UF ou coordenadas.
+- Cartões de resultado sem avaliações ou dados demonstrativos.
+- Tela de detalhe por slug e filial, catálogo de serviços e profissionais.
+- Serviços de consulta com validação de entrada, mensagens pt-BR e tratamento de RPC ausente.
+- Formulário administrativo de perfil público em Configurações, com slug, nome, descrição, logo, capa, telefone, links, endereço público e coordenadas.
+- A publicação exige seleção explícita do perfil da organização e da unidade.
 
-O contrato SQL está em docs/sql/customer-public-directory.draft.sql. Ele cria tabelas separadas para dados públicos e mantém RLS administrativo nas tabelas de configuração. A busca e o catálogo usam RPCs que retornam somente campos permitidos; as tabelas operacionais não recebem SELECT para anon.
+## Contrato SQL
+O rascunho está em docs/sql/customer-public-directory.draft.sql:
+- salon_public_profiles e branch_public_profiles separam dados públicos das tabelas operacionais.
+- RLS permite leitura e alteração de configuração somente a owner/admin.
+- save_public_salon_profile grava perfil e filial em uma transação e valida links HTTPS e coordenadas.
+- search_public_salons retorna somente salões e unidades publicados.
+- get_public_salon_catalog retorna catálogo ativo de filial publicada.
+- RPCs públicas expõem apenas os campos necessários; anon não recebe SELECT direto nas tabelas.
 
-A busca aceita cidade/UF ou coordenadas e calcula distância sem exigir PostGIS. O catálogo retorna serviços ativos e profissionais ativos vinculados à filial. Não inclui e-mail privado, CPF/CNPJ, comissões, permissões ou dados de clientes.
-
-O SQL ainda não foi aplicado. O painel ainda precisa de formulário para o owner/admin configurar slug, descrição, telefone, endereço público e publicação da organização/filiais.
+## Pendências
+- O SQL não foi aplicado ao Supabase; por isso a busca mostra estado seguro de ativação até o backend existir.
+- O formulário administrativo só aparece depois que as tabelas forem encontradas pelo schema.
+- O catálogo precisa ser validado com dados reais após aplicar o SQL.
+- A consulta de disponibilidade usa o rascunho separado docs/sql/customer-availability-slots.draft.sql.
+- Não existe teste E2E completo de publicação → busca → catálogo → HOLD → confirmação.
