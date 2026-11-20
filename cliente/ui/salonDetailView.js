@@ -34,7 +34,7 @@ function localDateValue() {
  */
 export function renderSalonDetailView({
   salon = null, catalog = [], loading = false, error = "",
-  slots = {items:[],loading:false,error:""}, hold = null, isFavorite = false
+  slots = {items:[],loading:false,error:""}, hold = null, isFavorite = false, couponState = {serviceId:null,code:"",preview:null,loading:false,error:""}
 } = {}) {
   if (loading) return '<section class="page-content"><div class="empty-state"><span class="spinner"></span><p>Carregando catálogo do salão…</p></div></section>';
   if (error) return '<section class="page-content"><button class="text-button" data-action="back-home">‹ Voltar aos salões</button><div class="empty-state"><h3>Catálogo indisponível</h3><p>' + escapeClientHtml(error) + '</p></div></section>';
@@ -67,6 +67,12 @@ export function renderSalonDetailView({
     } else if (matchingSlots) {
       slotContent = '<p class="client-note">Não há horários disponíveis nesta data.</p>';
     }
+    const matchingCoupon = couponState.serviceId === serviceId;
+    let couponContent = "";
+    if (matchingCoupon && couponState.loading) couponContent = '<p class="client-note">Validando cupom…</p>';
+    else if (matchingCoupon && couponState.error) couponContent = '<p class="client-error-text">' + escapeClientHtml(couponState.error) + '</p>';
+    else if (matchingCoupon && couponState.preview) couponContent = '<p class="coupon-preview">Cupom ' + escapeClientHtml(couponState.preview.code) +
+      ': desconto de ' + escapeClientHtml(money(couponState.preview.discountAmount)) + ' · Total ' + escapeClientHtml(money(couponState.preview.finalAmount)) + '</p>';
     return '<article class="service-result-card" data-service-card="' + escapeClientHtml(serviceId) + '">' +
       '<div class="service-result-heading"><div><strong>' + escapeClientHtml(service.service_name) + '</strong><small>' +
       escapeClientHtml(service.category || "Serviço") + ' · ' + escapeClientHtml(service.duration_minutes) + ' min</small></div><b>' +
@@ -77,6 +83,9 @@ export function renderSalonDetailView({
       '</select></label>' +
       '<label>Data<input type="date" name="date" min="' + localDateValue() + '" value="' +
       escapeClientHtml(matchingSlots ? slots.date : '') + '"></label>' +
+      '<div class="coupon-input-row"><label>Cupom de desconto<input name="couponCode" maxlength="32" autocomplete="off" value="' +
+      escapeClientHtml(matchingCoupon ? couponState.code : '') + '" placeholder="Digite seu cupom"></label><button type="button" class="text-button" data-action="validate-coupon" data-service-id="' +
+      escapeClientHtml(serviceId) + '">Aplicar cupom</button></div>' + couponContent +
       '<button type="button" class="client-button" data-action="view-slots" data-service-id="' + escapeClientHtml(serviceId) +
       '" ' + (professionals.length ? '' : 'disabled') + '>Ver horários</button>' +
       slotContent + '</article>';
@@ -85,6 +94,7 @@ export function renderSalonDetailView({
   if (hold) {
     holdContent = '<section class="booking-confirm-card"><h3>Horário reservado temporariamente</h3><p>Confirme antes de ' +
       escapeClientHtml(timeLabel(hold.expiresAt)) + ' para concluir o agendamento.</p>' +
+      (hold.discountAmount > 0 ? '<p class="coupon-preview">Desconto: ' + escapeClientHtml(money(hold.discountAmount)) + ' · Total: ' + escapeClientHtml(money(hold.finalAmount)) + '</p>' : '<p>Total: ' + escapeClientHtml(money(hold.finalAmount)) + '</p>') +
       '<button class="client-button" data-action="confirm-booking">Confirmar agendamento</button>' +
       '<button class="text-button" data-action="cancel-hold">Cancelar reserva temporária</button></section>';
   }
