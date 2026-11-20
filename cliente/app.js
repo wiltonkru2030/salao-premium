@@ -6,7 +6,9 @@
 import { getCurrentSession, subscribeToAuthChanges, signInWithGoogle, signInWithPasskey, registerPasskey, signOut } from "./services/authService.js";
 import { supabase } from "../src/supabase/client.js";
 import { getCurrentPosition } from "./services/geoSalonService.js";
-import { getLocalSettings, saveLocalSettings } from "./services/settingsService.js";
+import { getLocalSettings, saveLocalSettings, getRemoteSettings, saveRemoteSettings } from "./services/settingsService.js";
+import { listFavorites, addFavorite, removeFavorite } from "./services/favoritesService.js";
+import { listNotifications, markNotificationRead, markAllNotificationsRead } from "./services/notificationService.js";
 import { renderBottomNavigation } from "./ui/bottomNavigation.js";
 import { renderLoginView } from "./ui/loginView.js";
 import { renderHomeView } from "./ui/homeView.js";
@@ -16,6 +18,8 @@ import { getCustomerAvailableSlots, createAppointmentHold, confirmAppointmentHol
 import { renderAppointmentsView } from "./ui/appointmentsView.js";
 import { fetchMyCustomerAppointments } from "./services/appointmentsService.js";
 import { renderCustomerProfileView } from "./ui/customerProfileView.js";
+import { renderFavoritesView } from "./ui/favoritesView.js";
+import { renderNotificationsView } from "./ui/notificationsView.js";
 import { ensureMyProfile, updateMyProfile } from "./services/customerProfileService.js";
 import { formatCustomerPhoneInput } from "./customer-profile-utils.js";
 import { listMyPendingIdentityLinks, confirmMyIdentityLink } from "./services/customerIdentityLinkService.js";
@@ -34,6 +38,9 @@ let locationCoordinates = null;
 let salonDetailState = { salon: null, catalog: [], loading: false, error: "" };
 let slotsState = { serviceId: null, items: [], loading: false, error: "", date: "" };
 let holdState = null;
+let favoritesState = { items: [], loading: false, error: "" };
+let favoriteOrgIds = new Set();
+let notificationsState = { items: [], loading: false, error: "" };
 
 /** Exibe aviso de operação na região acessível por leitor de tela. */
 function setNotice(message, type = "info") {
@@ -64,7 +71,9 @@ function renderApp() {
   else if (activePage === "identity-links") page = renderIdentityLinkRequestsView({requests: identityLinkRequests});
   else if (activePage === "profile") {
     page = renderCustomerProfileView({profile: profileState, session: currentSession, theme: getLocalSettings().theme});
-  } else if (activePage === "salon-detail") page = renderSalonDetailView({ ...salonDetailState, slots: slotsState, hold: holdState });
+  } else if (activePage === "favorites") page = renderFavoritesView(favoritesState);
+  else if (activePage === "notifications") page = renderNotificationsView(notificationsState);
+  else if (activePage === "salon-detail") page = renderSalonDetailView({ ...salonDetailState, slots: slotsState, hold: holdState, isFavorite: favoriteOrgIds.has(salonDetailState.salon?.org_id) });
   else page = renderHomeView({ locationLabel, salons: directoryState.items, loading: directoryState.loading, error: directoryState.error, query: directoryState.query });
 
   root.innerHTML =
@@ -90,6 +99,12 @@ function renderApp() {
 async function loadProfile() {
   try {
     profileState = await ensureMyProfile();
+    try {
+      const remoteSettings = await getRemoteSettings({client:supabase});
+      if (remoteSettings) saveLocalSettings(remoteSettings);
+    } catch (settingsError) {
+      if (settingsError?.message && !settingsError.message.includes("ainda está sendo ativada")) console.warn("Preferências remotas indisponíveis.", settingsError?.code || "PREFERENCES_ERROR");
+    }
   } catch (error) {
     profileState = null;
     if (error?.code !== "CUSTOMER_PROFILE_NOT_READY") {
@@ -142,7 +157,37 @@ async function loadSalonCatalog(salon) {
   }
 }
 
-/** Carrega o histórico vinculado à identidade atual e mantém estados de carregamento/erro. */
+/** Carrega favoritos da identidade global sem bloquear a navegação se o módulo estiver em ativação. */
+async function loadFavorites() {
+  favoritesState = { ...favoritesState, loading: true, error: "" };
+  try {
+    favoritesState.items = await listFavorites({client:supabase});
+    favoriteOrgIds = new Set(favoritesState.items.map(item=>item.org_id));
+  } catch (error) {
+    favoritesState.items = [];
+    favoriteOrgIds = new Set();
+    favoritesState.error = error?.message || "Não foi possível carregar seus favoritos.";
+  } finally {
+    favoritesState.loading = false;
+    if (activePage === "favorites") renderApp();
+  }
+}
+
+/** Carrega notificações internas da cliente, mantendo a tela em estado seguro quando a migration não existe. */
+async function loadNotifications() {
+  notificationsState = { ...notificationsState, loading: true, error: "" };
+  try {
+    notificationsState.items = await listNotifications({client:supabase,limit:50});
+  } catch (error) {
+    notificationsState.items = [];
+    notificationsState.error = error?.message || "Não foi possível carregar notificações.";
+  } finally {
+    notificationsState.loading = false;
+    if (activePage === "notifications") renderApp();
+  }
+}
+
+/**** Carrega o histórico vinculado à identidade atual e mantém estados de carregamento/erro. */
 async function loadAppointments() {
   appointmentsState = { ...appointmentsState, loading: true, error: "" };
   if (activePage === "appointments") renderApp();
@@ -174,6 +219,9 @@ async function runAction(action, button = null) {
       currentSession = null;
       profileState = null;
       identityLinkRequests = [];
+      favoritesState = {items:[],loading:false,error:""};
+      favoriteOrgIds = new Set();
+      notificationsState = {items:[],loading:false,error:""};
       renderLogin();
     } else if (action === "locate") {
       const position = await getCurrentPosition();
@@ -188,6 +236,7 @@ async function runAction(action, button = null) {
       const neighborhood = form?.elements.neighborhood.value.trim();
       if (!city || city.length < 2) throw new Error("Informe uma cidade válida.");
       saveLocalSettings({defaultCity: city, defaultNeighborhood: neighborhood || null});
+      try { await saveRemoteSettings({client:supabase,patch:{defaultCity:city,defaultNeighborhood:neighborhood||null}}); } catch { /* A preferência local permanece disponível até a RPC remota ser implantada. */ }
       locationCoordinates = null;
       locationLabel = neighborhood ? city + " · " + neighborhood : city;
       await loadPublicSalons();
@@ -207,6 +256,46 @@ async function runAction(action, button = null) {
       const salon = directoryState.items.find(item => item.slug === button?.dataset.slug && item.branch_id === button?.dataset.branchId);
       if (!salon) throw new Error("Este salão não está mais disponível na busca. Atualize os resultados.");
       await loadSalonCatalog(salon);
+    } else if (action === "favorites") {
+      activePage = "favorites";
+      await loadFavorites();
+      renderApp();
+    } else if (action === "open-favorite") {
+      const salon = favoritesState.items.find(item=>item.org_id===button?.dataset.orgId&&item.branch_id===button?.dataset.branchId);
+      if(!salon)throw new Error("Esta unidade não está mais disponível nos seus favoritos.");
+      await loadSalonCatalog(salon);
+    } else if (action === "toggle-favorite") {
+      const orgId=button?.dataset.orgId||salonDetailState.salon?.org_id;
+      if(!orgId)throw new Error("Não foi possível identificar o salão.");
+      if(favoriteOrgIds.has(orgId))await removeFavorite({client:supabase,orgId});
+      else await addFavorite({client:supabase,orgId});
+      await loadFavorites();
+      renderApp();
+      setNotice(favoriteOrgIds.has(orgId)?"Salão adicionado aos favoritos.":"Salão removido dos favoritos.","success");
+    } else if (action === "remove-favorite") {
+      const orgId=button?.dataset.orgId;
+      if(!orgId)throw new Error("Não foi possível identificar o salão.");
+      await removeFavorite({client:supabase,orgId});
+      await loadFavorites();
+      renderApp();
+      setNotice("Salão removido dos favoritos.","success");
+    } else if (action === "notifications") {
+      activePage = "notifications";
+      await loadNotifications();
+      renderApp();
+    } else if (action === "mark-notification-read") {
+      await markNotificationRead({client:supabase,notificationId:button?.dataset.notificationId});
+      await loadNotifications();
+      renderApp();
+    } else if (action === "mark-all-notifications-read") {
+      await markAllNotificationsRead({client:supabase});
+      await loadNotifications();
+      renderApp();
+      setNotice("Todas as notificações foram marcadas como lidas.","success");
+    } else if (action === "back-profile") {
+      activePage = "profile";
+      await loadProfile();
+      renderApp();
     } else if (action === "back-home") {
       activePage = "home";
       renderApp();
@@ -267,6 +356,7 @@ async function runAction(action, button = null) {
       const current = getLocalSettings().theme;
       const next = current === "system" ? "light" : current === "light" ? "dark" : "system";
       saveLocalSettings({theme: next});
+      try { await saveRemoteSettings({client:supabase,patch:{theme:next}}); } catch { /* O tema local continua funcionando sem sincronização remota. */ }
       renderApp();
       setNotice("Aparência atualizada.", "success");
     } else if (action === "profile") {
@@ -335,6 +425,7 @@ async function start() {
     if (currentSession) {
       await loadProfile();
       await loadPublicSalons();
+      await loadFavorites();
       renderApp();
     } else renderLogin();
     subscribeToAuthChanges(async session => {
@@ -342,6 +433,7 @@ async function start() {
       if (session) {
         await loadProfile();
         await loadPublicSalons();
+        await loadFavorites();
         renderApp();
       } else {
         profileState = null;
