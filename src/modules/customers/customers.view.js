@@ -25,8 +25,7 @@ export function renderCustomersView(customers,canManage=false) {
       '<span class="record-trailing"><small class="status-pill '+(customer.active?"active":"inactive")+'">'+(customer.active?"Ativo":"Inativo")+'</small>'+actions+'</span></article>';
   }).join("");
 
-  return 
-    '<dialog class="sp-modal" id="customer-create-modal" aria-labelledby="customer-modal-title">'+
+  return '<dialog class="sp-modal" id="customer-create-modal" aria-labelledby="customer-modal-title">'+
       '<div class="sp-modal-shell"><header class="sp-modal-head"><div><h2 id="customer-modal-title">Novo cliente</h2><p>Informe os dados para adicionar à base de clientes.</p></div>'+
       '<button class="sp-modal-close" type="button" data-close-customer-modal aria-label="Fechar">×</button></header>'+
       '<form id="customer-create-form"><input type="hidden" name="customer_id"><div class="sp-modal-body">'+
