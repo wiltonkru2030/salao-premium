@@ -7,7 +7,7 @@ import { startAuth, getCurrentUserContext } from './auth/auth.js';
 import { installAgendaController } from './agenda/controllers/agenda-controller.js';
 import { render as renderApp } from './layout/render.js';
 import { supabase } from './supabase/client.js';
-import { listBranches } from './modules/branches/branches.service.js';
+import { resolveBranchContext } from './modules/branches/branch-context.service.js';
 
 // Inicializa máscaras, mensagens de erro e eventos da Agenda antes do primeiro render.
 installGlobalMasks();
@@ -16,24 +16,14 @@ installAgendaController();
 
 // Carrega unidades ativas da organização e escolhe a matriz como contexto inicial.
 async function refreshBranchContext() {
-  if(!state.organization?.id) {
-    state.availableBranches=[];
-    state.branch=null;
-    return;
-  }
   try {
-    const branches=await listBranches({client:supabase,orgId:state.organization.id});
-    state.availableBranches=branches.filter(branch=>branch.active);
-    if(state.membership?.role==="professional") {
-      const {data:professional,error}=await supabase.from("professionals")
-        .select("branch_id").eq("org_id",state.organization.id)
-        .eq("profile_id",state.user?.id).maybeSingle();
-      if(error)throw error;
-      state.branch=state.availableBranches.find(branch=>branch.id===professional?.branch_id)||null;
-      return;
-    }
-    const current=state.availableBranches.find(branch=>branch.id===state.branch?.id);
-    state.branch=current||state.availableBranches.find(branch=>branch.is_main)||state.availableBranches[0]||null;
+    const context=await resolveBranchContext({
+      client:supabase,orgId:state.organization?.id,
+      role:state.membership?.role,userId:state.user?.id,
+      previousBranchId:state.branch?.id||null
+    });
+    state.availableBranches=context.branches;
+    state.branch=context.branch;
   } catch(error) {
     state.availableBranches=[];
     state.branch=null;
