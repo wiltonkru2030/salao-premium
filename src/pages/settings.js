@@ -2,7 +2,7 @@
  * Módulo: Configurações administrativas.
  * Responsabilidade: consultar e editar dados reais da organização e da unidade selecionada.
  * Segurança: gravações limitadas a owner/admin pela interface e, principalmente, pelas políticas RLS.
- * Escopo: preferências de agenda, notificações, plano e segurança ainda não possuem configuração persistente validada.
+ * Escopo: dados cadastrais e expediente têm persistência; notificações, cobrança e outras preferências seguem pendentes.
  */
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
