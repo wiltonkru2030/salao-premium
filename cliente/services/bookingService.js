@@ -106,7 +106,7 @@ export async function getAvailableSlots({
  * @throws {TypeError|Error} Se a seleção for inválida ou o banco rejeitar o horário.
  */
 export async function createBookingHold({
-  client, orgId, branchId, professionalId, serviceId, startsAt
+  client, orgId, branchId, professionalId, serviceId, startsAt, couponCode = null
 } = {}) {
   requireUuid(client, orgId, "Salão");
   requireUuid(client, branchId, "Unidade");
@@ -116,19 +116,30 @@ export async function createBookingHold({
   if (typeof startsAt !== "string" || !Number.isFinite(date.getTime()) || date.getTime() <= Date.now()) {
     throw new TypeError("Escolha um horário futuro válido.");
   }
-  const { data, error } = await client.rpc("create_customer_appointment_hold", {
+  const normalizedCoupon = typeof couponCode === "string" ? couponCode.trim().toUpperCase() : null;
+  if (normalizedCoupon && !/^[A-Z0-9_-]{3,32}$/.test(normalizedCoupon)) {
+    throw new TypeError("O código do cupom é inválido.");
+  }
+  const { data, error } = await client.rpc("create_customer_appointment_hold_with_coupon", {
     p_org_id: orgId,
     p_branch_id: branchId,
     p_professional_id: professionalId,
     p_service_id: serviceId,
-    p_starts_at: date.toISOString()
+    p_starts_at: date.toISOString(),
+    p_coupon_code: normalizedCoupon
   });
   if (error) throw mapBookingError(error);
   const row = Array.isArray(data) ? data[0] : data;
   if (!row || !UUID_PATTERN.test(String(row.hold_id || "")) || !Number.isFinite(new Date(row.expires_at).getTime())) {
     throw new Error("O servidor não retornou uma reserva temporária válida.");
   }
-  return { holdId: row.hold_id, expiresAt: new Date(row.expires_at).toISOString() };
+  return {
+    holdId: row.hold_id,
+    expiresAt: new Date(row.expires_at).toISOString(),
+    couponId: row.coupon_id || null,
+    discountAmount: Number(row.coupon_discount_amount || 0),
+    finalAmount: Number(row.coupon_final_amount)
+  };
 }
 
 /**
@@ -139,7 +150,7 @@ export async function createBookingHold({
  */
 export async function confirmBooking({ client, holdId } = {}) {
   requireUuid(client, holdId, "Reserva temporária");
-  const { data, error } = await client.rpc("confirm_customer_appointment_hold", { p_hold_id: holdId });
+  const { data, error } = await client.rpc("confirm_customer_appointment_hold_with_coupon", { p_hold_id: holdId });
   if (error) throw mapBookingError(error);
   if (typeof data !== "string" || !UUID_PATTERN.test(data)) {
     throw new Error("O servidor não retornou a confirmação do agendamento.");
@@ -155,7 +166,7 @@ export async function confirmBooking({ client, holdId } = {}) {
  */
 export async function releaseBookingHold({ client, holdId } = {}) {
   requireUuid(client, holdId, "Reserva temporária");
-  const { data, error } = await client.rpc("cancel_customer_appointment_hold", { p_hold_id: holdId });
+  const { data, error } = await client.rpc("cancel_customer_appointment_hold_with_coupon", { p_hold_id: holdId });
   if (error) throw mapBookingError(error);
   return data === true;
 }
