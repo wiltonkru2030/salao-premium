@@ -8,6 +8,11 @@ const URL_BASE = process.env.SUPABASE_URL;
 const ANON = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+/**
+ * Valida a presença das credenciais necessárias para testes de integração.
+ * @returns {void} Não retorna valor quando o ambiente está completo.
+ * @throws {Error} Lista as variáveis ausentes sem revelar valores secretos.
+ */
 export function assertEnvironment() {
   const missing = [["SUPABASE_URL", URL_BASE], ["SUPABASE_PUBLISHABLE_KEY", ANON], ["SUPABASE_SERVICE_ROLE_KEY", SERVICE]]
     .filter(([, value]) => !value).map(([name]) => name);
