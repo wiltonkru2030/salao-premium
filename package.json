@@ -47,7 +47,7 @@
     "test:catalog-products": "node src/modules/catalog/products.service.test.js",
     "test:catalog-categories": "node src/modules/catalog/categories.service.test.js",
     "test:sql-catalog-categories": "node docs/sql/catalog-categories.migration.test.mjs",
-    "test:customers-service": "node src/modules/customers/customers.service.test.js",
+    "test:customers-service": "node src/modules/customers/customers.service.test.js && node src/modules/customers/customer-page-state.test.js",
     "test:professionals-service": "node src/modules/professionals/professionals.service.test.js",
     "test:branches-service": "node src/modules/branches/branches.service.test.js",
     "test:team-service": "node src/modules/team/team.service.test.js",
