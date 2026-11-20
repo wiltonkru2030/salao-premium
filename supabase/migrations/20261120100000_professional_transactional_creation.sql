@@ -36,7 +36,7 @@ begin
   if p_commission_rate is null or p_commission_rate<0 or p_commission_rate>100 then
     raise exception 'A comissão deve estar entre 0 e 100 por cento.' using errcode='22023';
   end if;
-  if p_tax_regime not in ('individual','mei') then
+  if p_tax_regime is null or p_tax_regime not in ('individual','mei') then
     raise exception 'Regime fiscal inválido.' using errcode='22023';
   end if;
   if p_tax_regime='mei' and (
@@ -48,7 +48,7 @@ begin
   if p_service_ids is null or cardinality(p_service_ids)=0 then
     raise exception 'Selecione ao menos um serviço.' using errcode='22023';
   end if;
-  if cardinality(p_service_ids)<>(select count(distinct value) from unnest(p_service_ids) as value) then
+  if cardinality(p_service_ids)<>(select count(distinct service_id) from unnest(p_service_ids) as items(service_id)) then
     raise exception 'A lista de serviços contém itens duplicados.' using errcode='22023';
   end if;
 
@@ -73,8 +73,8 @@ begin
   ) returning id into v_professional_id;
 
   insert into public.professional_services(org_id,professional_id,service_id)
-  select p_org_id,v_professional_id,service_id
-  from unnest(p_service_ids) as service_id;
+  select p_org_id,v_professional_id,items.service_id
+  from unnest(p_service_ids) as items(service_id);
 
   return v_professional_id;
 end;
