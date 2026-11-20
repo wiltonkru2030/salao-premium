@@ -63,6 +63,19 @@ begin
      where id=v_payment.id;
     v_total:=v_total+v_payment.amount; v_count:=v_count+1;
   end loop;
+  -- Mesmo bloqueio usado no pagamento: serializa devolução e repasse por profissional.
+  perform p.id
+    from public.professionals p
+    join (
+      select distinct c.professional_id
+        from public.commissions c
+        join public.service_order_items i on i.org_id=c.org_id and i.id=c.service_order_item_id
+       where i.org_id=v_order.org_id and i.order_id=v_order.id
+         and c.status in ('pending','approved','paid')
+    ) affected on affected.professional_id=p.id
+   where p.org_id=v_order.org_id
+   order by p.id
+   for update of p;
   update public.commissions c set status='cancelled'
    where c.org_id=v_order.org_id and c.status in ('pending','approved')
      and c.service_order_item_id in (select i.id from public.service_order_items i where i.org_id=v_order.org_id and i.order_id=v_order.id);
@@ -156,7 +169,8 @@ begin
 
   select count(*) into v_expected from unnest(p_commission_ids);
   select p.branch_id into v_branch_id from public.professionals p
-   where p.org_id=p_org_id and p.id=p_professional_id and p.active=true;
+   where p.org_id=p_org_id and p.id=p_professional_id and p.active=true
+   for update;
   if not found then raise exception 'Profissional não encontrado ou inativo.'; end if;
 
   for v_comm in
