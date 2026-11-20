@@ -26,7 +26,9 @@ export function escapeHtml(value) {
  * @returns {string} Valor formatado em BRL.
  */
 export function formatMoney(value) {
-  const amount = Number(value || 0);
+  // Ausência de valor não significa zero: preservar o traço usado na interface.
+  if (value === null || value === undefined || value === "") return "R$ —";
+  const amount = Number(value);
   if (!Number.isFinite(amount)) return "R$ —";
   return amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
