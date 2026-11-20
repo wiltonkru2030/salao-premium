@@ -16,5 +16,7 @@
 @import url('./src/styles/coupons.css');
 @import url('./src/styles/catalog-categories.css');
 
-/* Fonte global de tokens e componentes: manter este import por último. */
+/* Fonte global de tokens e componentes, seguida do contrato compartilhado de controles. */
 @import url('./src/styles/design-system.css');
+
+@import url('./src/styles/shared-controls.css');
