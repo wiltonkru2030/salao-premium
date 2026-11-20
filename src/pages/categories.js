@@ -12,7 +12,7 @@ import {listCatalogCategories,saveCatalogCategory,setCatalogCategoryActive} from
 
 let categories=[];
 let selectedType="service";
-let listenersBound=false;
+let documentListenerBound=false;
 const canManageCategories=()=>["owner","admin"].includes(state.membership?.role);
 const typeLabel=type=>type==="service"?"Serviços":"Produtos";
 
@@ -88,17 +88,20 @@ export async function loadCategoriesPage() {
     host.innerHTML='<div class="empty-state">Não foi possível carregar categorias. Verifique se a migration de categorias foi aplicada no ambiente.</div>';
     return;
   }
-  if(listenersBound)return;
-  listenersBound=true;
+  if(host.dataset.bound==="true")return;
+  host.dataset.bound="true";
 
-  document.addEventListener("click",event=>{
+  if(!documentListenerBound) {
+    documentListenerBound=true;
+    document.addEventListener("click",event=>{
     const dialog=document.querySelector("#category-create-modal");
     if(!dialog)return;
     if(event.target.closest('[data-action="open-category-modal"]')&&canManageCategories())openCategoryModal();
     else if(event.target.closest("[data-close-category-modal]")||event.target===dialog) {
       if(dialog.open)dialog.close();
     }
-  });
+    });
+  }
 
   host.addEventListener("click",async event=>{
     const tab=event.target.closest("[data-category-type]");
