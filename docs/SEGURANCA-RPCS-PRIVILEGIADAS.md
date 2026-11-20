@@ -39,9 +39,9 @@ As sobrecargas legadas de um argumento para revogação e três argumentos para 
 
 ## Verificações no banco
 
-- As 15 funções privilegiadas apontadas pelo Security Advisor deixaram de aparecer como SECURITY DEFINER executáveis no schema público.
+- As 16 funções privilegiadas migradas pelo Security Advisor deixaram de aparecer como SECURITY DEFINER executáveis no schema público.
 - O Security Advisor não apresenta mais o aviso `authenticated_security_definer_function_executable`.
-- Consulta de catálogo confirmou wrappers públicos como `SECURITY INVOKER`, execução negada a `anon` e permitida a `authenticated` nas 15 RPCs abrangidas.
+- Consulta de catálogo confirmou wrappers públicos como `SECURITY INVOKER`, execução negada a `anon` e permitida a `authenticated` nas 16 RPCs abrangidas.
 - A função privada de implementação continua `SECURITY DEFINER`.
 - O aviso restante do Security Advisor é a proteção contra senhas vazadas desativada no Supabase Auth. Essa configuração precisa ser habilitada nas configurações de autenticação do projeto.
 
@@ -60,3 +60,14 @@ A verificação de catálogo e permissões não substitui testes funcionais aute
 - negar chamadas entre organizações e papéis sem permissão.
 
 Não considerar o módulo financeiro aprovado para produção até concluir essa matriz de testes.
+
+
+## Contratos financeiros adicionais
+
+Em 20/11/2026, foi aplicada a migration `20261120073500_complete_branch_cash_register_and_cash_summary`:
+- `open_cash_register_for_branch`: wrapper público `SECURITY INVOKER`; implementação privada valida papel, filial ativa e serializa abertura concorrente por filial.
+- `get_cash_register_summary`: wrapper público `SECURITY INVOKER`; implementação privada valida o acesso ao caixa e retorna totais de dinheiro físico.
+- `close_cash_register`: a implementação privada foi corrigida para calcular o valor esperado apenas com movimentos em dinheiro (`payment_method = 'cash'`), pois PIX e cartões não fazem parte do dinheiro contado na gaveta.
+- Catálogo do Supabase confirmou os três wrappers públicos como `SECURITY INVOKER`, execução negada a `anon` e permitida a `authenticated`.
+
+O teste `npm run test:sql-cash-register` protege o contrato estático da migration. Ainda não houve E2E autenticado nem teste de concorrência com contas QA.
