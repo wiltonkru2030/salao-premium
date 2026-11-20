@@ -1,3 +1,4 @@
+import { formatPhone, formatInternationalPhone } from "../src/utils/input-masks.js";
 /**
  * Valida dados do perfil global da cliente sem acessar rede ou autenticação.
  * Telefone é apenas dado de contato: esta função nunca o marca como verificado.
@@ -90,14 +91,7 @@ export function validateGlobalCustomerProfile({ fullName, phone = null, email = 
  * @returns {string} Telefone visual com DDD, limitado a onze dígitos.
  */
 export function formatCustomerPhoneInput(value) {
-  const digits = String(value ?? "").replace(/\D/g, "").replace(/^55(?=\d{10,11})/, "").slice(0, 11);
-  if (digits.length <= 2) return digits.length === 2 ? "(" + digits + ")" : digits;
-  const area = digits.slice(0, 2);
-  const local = digits.slice(2);
-  const split = digits.length > 10 ? 5 : 4;
-  const first = local.slice(0, split);
-  const rest = local.slice(split);
-  return "(" + area + ") " + first + (rest ? "-" + rest : "");
+  return formatInternationalPhone(value);
 }
 
 /**
@@ -109,6 +103,6 @@ export function formatCustomerPhoneDisplay(value) {
   if (!value) return "";
   const normalized = String(value);
   return normalized.startsWith("+55")
-    ? formatCustomerPhoneInput(normalized.slice(1))
+    ? formatPhone(normalized)
     : normalized;
 }
