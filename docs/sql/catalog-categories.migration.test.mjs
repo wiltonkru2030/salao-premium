@@ -23,7 +23,7 @@ assert.match(normalized,/from public\.products/);
 assert.match(normalized,/update public\.services set category=v_name/);
 assert.match(normalized,/update public\.products set category=v_name/);
 assert.match(normalized,/set active=p_active/);
-assert.match(normalized,/private\.is_org_admin\(p_org_id\)/);
+assert.equal((normalized.match(/private\.has_org_role\(p_org_id,array\['owner','admin'\]\)/g)||[]).length,2);
 assert.match(normalized,/p_category_type is null/);
 assert.match(normalized,/on conflict do nothing/);
 assert.equal((sql.match(/as \$function\$/gi)||[]).length,4);
