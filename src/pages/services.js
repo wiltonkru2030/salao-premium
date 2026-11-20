@@ -11,11 +11,8 @@ import { parseBRL, applyInputMask } from "../utils/input-masks.js";
 import { reportError } from "../utils/errors.js";
 import { listServices, saveService, setServiceActive } from "../modules/catalog/services.service.js";
 import { listCatalogCategories } from "../modules/catalog/categories.service.js";
-import { listCatalogCategories } from "../modules/catalog/categories.service.js";
 
 let modalListenerInstalled=false;
-let serviceCategories=[];
-let categoriesAvailable=false;
 let serviceCategories=null;
 const canManageServices=()=>["owner","admin"].includes(state.membership?.role);
 const money=value=>Number(value||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
@@ -83,16 +80,6 @@ export async function loadServicesPage() {
     return;
   }
 
-  try {
-    serviceCategories=await listCatalogCategories({client:supabase,orgId:state.organization.id,categoryType:"service",activeOnly:true});
-    categoriesAvailable=true;
-  } catch {
-    // Compatibilidade temporária: mantém campo textual até a migration ser aplicada.
-    serviceCategories=[];categoriesAvailable=false;
-  }
-  const categoryField=categoriesAvailable
-    ? '<select name="category"><option value="">Sem categoria</option>'+serviceCategories.map(category=>'<option value="'+esc(category.name)+'">'+esc(category.name)+'</option>').join("")+'</select>'
-    : '<input name="category" maxlength="80" placeholder="Categoria (opcional)">';
   const cards=services.map(service=>{
     const actions=canManageServices()
       ? '<button class="btn secondary" type="button" data-edit-service="'+esc(service.id)+'">Editar</button>'+
@@ -111,7 +98,9 @@ export async function loadServicesPage() {
       '<button class="sp-modal-close" type="button" data-close-service-modal aria-label="Fechar">×</button></header>'+
       '<form id="service-create-form"><input type="hidden" name="service_id"><div class="sp-modal-body">'+
       '<label class="sp-span">Nome do serviço<input name="name" required maxlength="120" placeholder="Ex.: Corte feminino"></label>'+
-      '<label>Categoria'+categoryField+'</label>'+
+      (Array.isArray(serviceCategories)
+        ? '<label>Categoria<select name="category"><option value="">Sem categoria</option>'+serviceCategories.map(category=>'<option value="'+esc(category.name)+'">'+esc(category.name)+'</option>').join("")+'</select></label>'
+        : '<label>Categoria<input name="category" maxlength="80" placeholder="Categoria (opcional)"></label>')+
       '<label>Duração (minutos)<input name="duration" type="number" min="5" max="720" step="5" value="30" required></label>'+
       '<label>Preço (R$)<input name="price" type="text" inputmode="decimal" data-mask="currency" value="0,00" required></label>'+
       '<label class="sp-span">Descrição<textarea name="description" rows="3" maxlength="500" placeholder="Detalhes opcionais do serviço"></textarea></label>'+
