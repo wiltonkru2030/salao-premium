@@ -33,7 +33,7 @@ export async function loadExpensesPage() {
   const orgId = state.organization?.id;
   if (!host || !orgId) return;
   try {
-    const rows = await listExpenses({client:supabase,orgId,limit:500});
+    const rows = await listExpenses({client:supabase,orgId,branchId:state.branch?.id||null,limit:500});
     const pending = rows.filter(row => row.status === "pending");
     const pendingTotal = pending.reduce((sum, row) => sum + Number(row.amount || 0), 0);
     const actions = row => canManage() && row.status === "pending"
