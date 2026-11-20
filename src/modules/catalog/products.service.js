@@ -61,11 +61,12 @@ export async function saveProduct({
   if(cleanSku.length>64)throw new TypeError("O SKU deve ter até 64 caracteres.");
   const payload={
     name:cleanName,sku:cleanSku||null,category:String(category??"").trim()||null,
-    cost_price:cost,sale_price:sale,stock_quantity:stock,min_stock:minimum
+    cost_price:cost,sale_price:sale,min_stock:minimum
   };
+  // Estoque existente só muda por movimentação; cadastro novo recebe o saldo inicial.
   const result=productId
     ? await client.from("products").update(payload).eq("org_id",orgId).eq("id",productId)
-    : await client.from("products").insert({org_id:orgId,...payload,active:true});
+    : await client.from("products").insert({org_id:orgId,...payload,stock_quantity:stock,active:true});
   if(result.error)throw mapProductError(result.error);
 }
 
