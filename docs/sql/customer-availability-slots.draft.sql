@@ -4,6 +4,8 @@
 
 begin;
 
+grant usage on schema private to authenticated;
+
 create or replace function private.get_customer_available_slots(
   p_org_id uuid,
   p_branch_id uuid,
