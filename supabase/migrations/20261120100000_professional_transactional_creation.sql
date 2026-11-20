@@ -93,8 +93,8 @@ $function$;
 
 comment on function private.create_professional_with_services(uuid,uuid,text,text,text,numeric,text,text,text,text,text,uuid[]) is 'Cria profissional e vínculos de serviços de forma atômica; exige owner/admin ativo no tenant.';
 
-revoke all on function private.create_professional_with_services(uuid,text,text,text,numeric,text,text,text,text,text,uuid[]) from public,anon,authenticated;
-grant execute on function private.create_professional_with_services(uuid,text,text,text,numeric,text,text,text,text,text,uuid[]) to authenticated;
+revoke all on function private.create_professional_with_services(uuid,uuid,text,text,text,numeric,text,text,text,text,text,uuid[]) from public,anon,authenticated;
+grant execute on function private.create_professional_with_services(uuid,uuid,text,text,text,numeric,text,text,text,text,text,uuid[]) to authenticated;
 
 create or replace function public.create_professional_with_services(
   p_org_id uuid,
@@ -123,7 +123,7 @@ $function$;
 
 comment on function public.create_professional_with_services(uuid,uuid,text,text,text,numeric,text,text,text,text,text,uuid[]) is 'Wrapper SECURITY INVOKER para cadastro transacional de profissional.';
 
-revoke all on function public.create_professional_with_services(uuid,text,text,text,numeric,text,text,text,text,text,uuid[]) from public,anon;
-grant execute on function public.create_professional_with_services(uuid,text,text,text,numeric,text,text,text,text,text,uuid[]) to authenticated;
+revoke all on function public.create_professional_with_services(uuid,uuid,text,text,text,numeric,text,text,text,text,text,uuid[]) from public,anon;
+grant execute on function public.create_professional_with_services(uuid,uuid,text,text,text,numeric,text,text,text,text,text,uuid[]) to authenticated;
 
 commit;
