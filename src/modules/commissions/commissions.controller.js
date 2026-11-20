@@ -1,6 +1,6 @@
 /** Controlador das regras e repasses de comissão; não gera marcação HTML. */
-import {summarizeCommissionPayout} from "../commission-payout-summary.js";
-import {createServiceCommissionRule,updateServiceCommissionRule,deleteServiceCommissionRule,saveProductCommissionSetting,payProfessionalCommissions} from "../commission-rules.service.js";
+import {summarizeCommissionPayout} from "./commission-payout-summary.js";
+import {createServiceCommissionRule,updateServiceCommissionRule,deleteServiceCommissionRule,saveProductCommissionSetting,payProfessionalCommissions} from "./commission-rules.service.js";
 /** Vincula ações autorizadas ao contexto financeiro ativo. */
 export function bindCommissionEvents({host,state,supabase,toast,reportError,canPay,canManageCommissionSettings,money,refresh,clearFilter}){
  const active=()=>host.isConnected&&host._commissionConfig?.context===JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role]);
