@@ -62,6 +62,22 @@ async function run() {
     client: create.client, orgId, branchId, professionalId, serviceId, startsAt: future
   }), { holdId, expiresAt: "2026-12-01T12:05:00.000Z", couponId: null, discountAmount: 0, finalAmount: 120 });
 
+  const couponCreate = mockClient({
+    create_customer_appointment_hold_with_coupon: {
+      data: [{hold_id:holdId,expires_at:"2026-12-01T12:05:00Z",coupon_id:"77777777-7777-4777-8777-777777777777",coupon_discount_amount:30,coupon_final_amount:120}],
+      error:null
+    }
+  });
+  const couponHold=await createBookingHold({
+    client:couponCreate.client,orgId,branchId,professionalId,serviceId,startsAt:future,couponCode:"black20"
+  });
+  assert.equal(couponHold.discountAmount,30);
+  assert.equal(couponHold.finalAmount,120);
+  assert.equal(couponCreate.calls[0].args.p_coupon_code,"BLACK20");
+  await assert.rejects(()=>createBookingHold({
+    client:couponCreate.client,orgId,branchId,professionalId,serviceId,startsAt:future,couponCode:"x"
+  }),{name:"TypeError"});
+
   const confirm = mockClient({
     confirm_customer_appointment_hold_with_coupon: { data: appointmentId, error: null }
   });
