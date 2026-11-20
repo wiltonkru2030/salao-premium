@@ -32,7 +32,7 @@ As definições consultadas já fixam search_path vazio. Isso reduz risco de res
 - docs/sql/security-definer-api-hardening.draft.sql: move 14 implementações para private e preserva os contratos públicos com wrappers SECURITY INVOKER. Concede execução a authenticated e service_role, não a anon.
 - docs/sql/commission-refund-reversals.draft.sql: inclui pay_professional_commissions e refund_service_order em versão privada, com wrappers SECURITY INVOKER e compensação de comissão já paga.
 
-Os dois rascunhos precisam ser revisados e aplicados em conjunto, em ambiente de teste. Não executar um deles isoladamente sem conferir o outro.
+Os dois rascunhos precisam ser revisados e aplicados em conjunto, em ambiente de teste. Não executar um deles isoladamente sem conferir o outro. Confirmar também que o schema private não está incluído na lista de schemas expostos pela API do projeto.
 
 ## Outros achados
 
