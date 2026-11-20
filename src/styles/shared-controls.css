@@ -7,7 +7,7 @@
 :is(#app,#professional-app,#cliente-app) :is(.btn,.primary,.secondary,.client-button){min-height:var(--sp-control-height);font-size:var(--sp-label-size);font-weight:500;border-radius:var(--sp-control-radius);white-space:normal}
 :is(#app,#professional-app,#cliente-app) :is(.icon-btn,.icon-button,.sp-modal-close){min-width:44px;min-height:44px}
 :is(#app,#professional-app,#cliente-app) :is(input,select,textarea):not([type=checkbox],[type=radio],[type=hidden],[type=range],[type=color],[type=file]){min-width:0;max-width:100%}
-:is(#app,#professional-app,#cliente-app) :is(.field,.form-field input,.form-field select,.form-field textarea,.sp-modal-body input,.sp-modal-body select,.sp-modal-body textarea,.profile-form input,.service-result-card input,.service-result-card select):not([type=checkbox],[type=radio],[type=hidden]){min-height:var(--sp-control-height);font-size:var(--sp-text-size)}
+:is(#app,#professional-app,#cliente-app) :is(input.field,select.field,textarea.field,.field input,.field select,.field textarea,.form-field input,.form-field select,.form-field textarea,.sp-modal-body input,.sp-modal-body select,.sp-modal-body textarea,.profile-form input,.service-result-card input,.service-result-card select):not([type=checkbox],[type=radio],[type=hidden]){min-height:var(--sp-control-height);font-size:var(--sp-text-size)}
 :is(#app,#professional-app,#cliente-app) :is(.form-field,.form-grid>label,.sp-modal-body>label,.field-label){font-size:var(--sp-label-size);font-weight:500}
 :is(#app,#professional-app,#cliente-app) :is(.record-main b,.record-trailing>b,.appointment strong,.order strong){font-size:var(--sp-text-size);overflow-wrap:anywhere}
 :is(#app,#professional-app,#cliente-app) :is(.record-main small,.record-trailing small,.appointment .meta,.order .meta,.muted,.result-count){font-size:var(--sp-caption-size);color:var(--color-muted,var(--sp-muted));line-height:1.55}
@@ -19,6 +19,7 @@ dialog.sp-modal .sp-modal-body{flex:1;min-height:0;overscroll-behavior:contain}
 dialog.sp-modal :is(.sp-modal-head,.sp-modal-foot){flex-shrink:0}
 dialog.sp-modal .sp-modal-foot{flex-wrap:wrap}
 @media(max-width:700px){
+ :is(#app,#professional-app,#cliente-app) :is(input.field,select.field,textarea.field,.field input,.field select,.field textarea,.form-field input,.form-field select,.form-field textarea,.sp-modal-body input,.sp-modal-body select,.sp-modal-body textarea,.profile-form input,.service-result-card input,.service-result-card select):not([type=checkbox],[type=radio],[type=hidden]){font-size:16px}
  :is(#app,#professional-app,#cliente-app) :is(input,select,textarea):not([type=checkbox],[type=radio],[type=hidden],[type=range],[type=color],[type=file]){font-size:16px}
  :is(#app,#professional-app,#cliente-app) :is(.record-card,.setting-row){flex-wrap:wrap}
  :is(#app,#professional-app,#cliente-app) :is(.record-main,.record-trailing){max-width:100%}
