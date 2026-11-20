@@ -21,7 +21,7 @@
     "test:customer-services": "node cliente/services/client-services.test.js && node cliente/utils/customerIdentityLinkUtils.test.js && node cliente/utils/appointmentHoldUtils.test.js && node cliente/services/appointmentsService.test.js && node cliente/services/bookingService.test.js && node cliente/services/salonDirectoryService.test.js && node cliente/services/favoritesService.test.js && node cliente/services/notificationService.test.js && node cliente/services/customerPreferencesService.test.js && node cliente/services/couponService.test.js",
     "test:customer-rls": "node tests/integration/customer-global-identity-rls.test.mjs",
     "test:professional-utils": "node professional/utils/formatters.test.js",
-    "test:professional-views": "node professional/views/auth.views.test.js",
+    "test:professional-views": "node professional/views/auth.views.test.js && node professional/auth.service.test.js",
     "test:professional-agenda-view": "node professional/views/agenda.views.test.js",
     "test:professional-agenda-rules": "node professional/utils/agenda-rules.test.js",
     "test:professional-agenda-controller": "node professional/agenda.controller.test.js",
