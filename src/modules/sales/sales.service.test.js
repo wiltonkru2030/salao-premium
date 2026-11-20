@@ -36,6 +36,9 @@ async function run(){
   assert.equal(result.itemsBySale.get("sale-a").length,1);
   assert.ok(client.calls.every(call=>call.filters.some(([key,value])=>key==="org_id"&&value==="org-a")));
   assert.equal(client.calls.find(call=>call.table==="sales").limit,200);
+  const branchScoped=mockClient({sales:[{id:"sale-b",org_id:"org-a",branch_id:"branch-a"}]});
+  await fetchSalesWorkspace({client:branchScoped,orgId:"org-a",branchId:"branch-a"});
+  assert.ok(branchScoped.calls.find(call=>call.table==="sales").filters.some(([key,value])=>key==="branch_id"&&value==="branch-a"));
   await assert.rejects(()=>fetchSalesWorkspace({client,orgId:"",limit:200}),{name:"TypeError"});
   await assert.rejects(()=>fetchSalesWorkspace({client,orgId:"org-a",limit:0}),{name:"TypeError"});
   const failing=mockClient({}, {code:"42501",message:"SQL privado"});
