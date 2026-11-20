@@ -2,7 +2,7 @@
 
 Aplicativo independente servido em `/cliente/`, sem compartilhar a tela de autenticação administrativa.
 
-## Implementado nesta etapa
+## Base implementada
 
 - Entrada com Google OAuth.
 - Entrada com Passkey via Supabase Auth (WebAuthn).
@@ -11,33 +11,33 @@ Aplicativo independente servido em `/cliente/`, sem compartilhar a tela de auten
 - Sessão persistente gerenciada pelo Supabase Auth.
 - Layout responsivo e acessível.
 
+## Decisão de identidade global
+
+A cliente terá uma única conta na plataforma, independente de quantos salões parceiros utilizar. O perfil global será separado dos vínculos por organização e dos cadastros operacionais locais. Agendamentos, comandas, pacotes, créditos e histórico continuam isolados por tenant e filial.
+
+Especificação: `docs/CLIENTE-IDENTIDADE-MARCA.md`.
+
+## Segurança do PIN e telefone
+
+- Telefone + PIN de quatro dígitos não será habilitado como login autônomo sem verificação real de posse do número.
+- Google e Passkey serão os métodos principais sem dependência de SMS/WhatsApp.
+- PIN local poderá ser usado para desbloquear o app no mesmo aparelho após autenticação forte, nunca como prova de identidade ou recuperação em aparelho novo.
+- Não associar cadastro legado apenas por telefone, nome ou data de nascimento.
+- Nunca persistir PIN em texto puro. Mesmo hash forte não torna quatro dígitos uma credencial suficiente sem rate limit e prova de identidade.
+
 ## Dependências de configuração externa
 
-1. Ativar o provedor Google em Supabase Authentication > Sign In / Providers e cadastrar Client ID/Secret.
+1. Ativar Google em Supabase Authentication > Sign In / Providers e configurar Client ID/Secret.
 2. Ativar Passkey em Supabase Authentication > Passkeys.
-3. Configurar RP ID com o domínio definitivo e origem HTTPS, por exemplo `app.seudominio.com.br` e `https://app.seudominio.com.br`.
-4. Não trocar o RP ID depois que clientes cadastrarem chaves: isso invalida as chaves já registradas.
+3. Configurar RP ID com o domínio definitivo e origem HTTPS.
+4. Não alterar RP ID após clientes cadastrarem chaves.
 
-A integração usa `@supabase/supabase-js` 2.119.0 e a opção experimental `auth.experimental.passkey`. O recurso Passkey do Supabase está em fase experimental.
+A integração usa `@supabase/supabase-js` e a API experimental de Passkey; validar compatibilidade antes de produção.
 
-## Ainda não liberar para produção
+## Não liberar para produção
 
-- O banco atual não possui vínculo `customers.auth_user_id` nem identidade de cliente compartilhada entre filiais.
-- A tabela `customers` atual é por organização e contém `branch_id`; a unificação por marca exige migração de dados e política RLS revisada.
-- Não há ainda fluxo público de seleção de marca/unidade, catálogo, disponibilidade, agendamento, cancelamento, histórico ou pacotes.
-- PIN local de quatro dígitos não foi habilitado: não é seguro tratá-lo como credencial de servidor ou como prova de identidade. Só deve ser adicionado como bloqueio local após autenticação forte, com armazenamento protegido e recuperação segura.
-- O fluxo Google/Passkey autentica a identidade, mas não concede acesso às tabelas de clientes nem cria automaticamente um cadastro de cliente.
-
-## Testes
-
-`node cliente/auth-utils.test.js`
-
-A autenticação Google depende de provider configurado no Dashboard. Passkeys dependem da ativação do recurso e do RP ID/origens configurados no Supabase.
-## Identidade única por marca (em preparação)
-
-- O modelo proposto usa `customer_accounts` para uma conta Auth por cliente e organização.
-- `customer_account_customers` liga vários cadastros operacionais de filiais à mesma conta sem apagar histórico.
-- Serviço e validadores em `customer-account.js` e `customer-account-utils.js`.
-- SQL de referência em `docs/sql/cliente-identidade-marca.sql`; documentação em `docs/CLIENTE-IDENTIDADE-MARCA.md`.
-- A RPC ainda não foi aplicada ao banco; o serviço não deve ser chamado pela interface até a migration oficial ser validada em ambiente de teste.
-- Registros antigos não serão associados automaticamente por telefone/data de nascimento: a inspeção encontrou muitos cadastros sem telefone. A recepção terá de confirmar a identidade ou um futuro OTP poderá verificar o número.
+- O fluxo de perfil global e memberships ainda não foi migrado para o banco.
+- O SQL anterior de identidade por marca está obsoleto e não deve ser aplicado.
+- Não há ainda fluxo completo de seleção de salão/filial, catálogo, disponibilidade, agendamento, cancelamento, histórico ou pacotes.
+- O cadastro legado requer confirmação de identidade antes do vínculo.
+- Nenhuma alteração foi aplicada ao banco de produção.
