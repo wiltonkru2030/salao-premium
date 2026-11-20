@@ -473,7 +473,7 @@ commit;
   if p_description is not null and length(p_description)>500 then
     raise exception 'A descrição do cupom ultrapassou o limite permitido.' using errcode='22023';
   end if;
-  if p_discount_type not in ('percent','fixed') or p_discount_value is null or p_discount_value<=0
+  if p_discount_type is null or p_discount_type not in ('percent','fixed') or p_discount_value is null or p_discount_value<=0
      or (p_discount_type='percent' and p_discount_value>100) then
     raise exception 'Configure um desconto percentual ou fixo válido.' using errcode='22023';
   end if;
