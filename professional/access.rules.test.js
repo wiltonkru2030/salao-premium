@@ -1,0 +1,15 @@
+/** Testes das regras de escopo e do extrato, sem acesso à rede. */
+import assert from "node:assert/strict";
+import {resolveProfessionalContexts,allowedProfessionalPages,canRegisterProfessionalService,summarizeProfessionalCommissions} from "./access.rules.js";
+const memberships=[{org_id:"a",role:"professional",status:"active"},{org_id:"b",role:"professional",status:"active"},{org_id:"c",role:"receptionist",status:"active",professional_app_enabled:true,professional_app_scope:"calendar_all"},{org_id:"d",role:"owner",status:"active",professional_app_enabled:true,professional_app_scope:"all"},{org_id:"e",role:"professional",status:"inactive"}];
+const profiles=[{id:"p1",org_id:"a",active:true,access_enabled:true},{id:"p2",org_id:"b",active:true,access_enabled:false},{id:"p3",org_id:"e",active:true,access_enabled:true}];
+const contexts=resolveProfessionalContexts(memberships,profiles);
+assert.deepEqual(contexts.map(c=>c.orgId),["a","c","d"]);
+assert.deepEqual(allowedProfessionalPages(contexts[0]),["Agenda","Comandas","Comissões","Configurações"]);
+assert.deepEqual(allowedProfessionalPages(contexts[1]),["Agenda","Configurações"]);
+assert.deepEqual(allowedProfessionalPages(contexts[2]),["Agenda","Comandas","Configurações"]);
+assert.equal(canRegisterProfessionalService(contexts[0],{status:"partially_paid"}),false);
+assert.equal(canRegisterProfessionalService(contexts[0],{status:"open"}),true);
+assert.equal(canRegisterProfessionalService(contexts[1],{status:"open"}),false);
+assert.deepEqual(summarizeProfessionalCommissions([{status:"pending",amount:100},{status:"approved",amount:-40},{status:"cancelled",amount:20},{status:"paid",amount:12}],[{amount:12}]),{credit:100,debit:40,open:60,paid:12,received:12});
+console.log("Escopo e extrato profissional: OK");
