@@ -19,7 +19,7 @@ export function bindOrderService({root,state,client,getEpoch,lock,loadOrders,cho
   const epoch=getEpoch();
   const orderId=state.selectedOrder.id;
   const orgId=state.orgId,userId=state.user.id,professionalId=state.professional.id;
-  const current=()=>current()&&state.orgId===orgId&&state.user?.id===userId&&state.professional?.id===professionalId;
+  const current=()=>epoch===getEpoch()&&state.orgId===orgId&&state.user?.id===userId&&state.professional?.id===professionalId;
   const service=selected;
   button.disabled=true;button.textContent="Registrando…";
   try{
