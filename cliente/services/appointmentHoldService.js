@@ -20,7 +20,7 @@ export async function getCustomerAvailableSlots(input) {
 /** Cria HOLD temporário após validar os identificadores e horário desejado. */
 export async function createAppointmentHold(input) {
   const valid = validateHoldInput(input);
-  return createBookingHold({ client: supabase, ...valid });
+  return createBookingHold({ client: supabase, ...valid, couponCode: input?.couponCode || null });
 }
 
 /** Confirma o HOLD e recebe o identificador do agendamento criado atomicamente. */
