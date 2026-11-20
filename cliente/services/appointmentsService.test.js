@@ -15,9 +15,10 @@ function mockClient(responses) {
     calls,
     client: {
       rpc(name) {
-        const call = { name, range: null };
+        const call = { name, range: null, orders: [] };
         calls.push(call);
         const query = {
+          order(...args) { call.orders.push(args); return this; },
           range(start, end) { call.range = [start, end]; return this; },
           then(resolve, reject) {
             const offset = call.range?.[0] || 0;
@@ -38,6 +39,7 @@ async function run() {
   assert.deepEqual(await fetchMyCustomerAppointments({ client: basic.client }), rows);
   assert.equal(basic.calls[0].name, "get_my_customer_appointments");
   assert.deepEqual(basic.calls[0].range, [0, PAGE_SIZE - 1]);
+  assert.deepEqual(basic.calls[0].orders, [["starts_at", {ascending:false}], ["appointment_id", {ascending:false}]]);
 
   const first = Array.from({ length: PAGE_SIZE }, (_, index) => ({ appointment_id: "a-" + index }));
   const second = [{ appointment_id: "a-250" }];
