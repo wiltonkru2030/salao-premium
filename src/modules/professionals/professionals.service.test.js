@@ -50,6 +50,12 @@ async function run() {
   assert.ok(client.calls.filter(call=>call.table!=="profiles").every(call=>call.filters.some(filter=>filter[1]==="org_id"&&filter[2]==="org-a")));
   assert.ok(client.calls.find(call=>call.table==="profiles").filters.some(filter=>filter[1]==="id"&&filter[0]==="in"));
   assert.ok(client.calls.find(call=>call.table==="org_memberships").filters.some(filter=>filter[1]==="role"&&filter[0]==="in"));
+  const branchClient=mockClient({
+    professionals:[{id:"pro-b",org_id:"org-a",branch_id:"11111111-1111-4111-8111-111111111111"}]
+  });
+  await fetchProfessionalWorkspace({client:branchClient,orgId:"org-a",currentUserId:"owner-a",branchId:"11111111-1111-4111-8111-111111111111"});
+  assert.ok(branchClient.calls.find(call=>call.table==="professionals").filters.some(filter=>filter[1]==="branch_id"&&filter[2]==="11111111-1111-4111-8111-111111111111"));
+
   await assert.rejects(()=>fetchProfessionalWorkspace({client,orgId:"",currentUserId:"owner-a"}),{name:"TypeError"});
   await setProfessionalActive({client,orgId:"org-a",professionalId:"pro-a",active:false});
   const activationCall=client.calls.at(-1);
@@ -66,11 +72,12 @@ async function run() {
   assert.ok(client.calls.some(call=>call.rpc==="revoke_professional_app_access"&&call.args.p_org_id==="org-a"));
   await assert.rejects(()=>setTeamProfessionalAppAccess({client,orgId:"org-a",userId:"pro-a",role:"professional",enabled:true}),{name:"TypeError"});
   const createdId=await createProfessionalWithServices({
-    client,orgId:"org-a",name:"Ana",commissionRate:50,taxRegime:"individual",serviceIds:["svc-a"]
+    client,orgId:"org-a",branchId:"11111111-1111-4111-8111-111111111111",name:"Ana",commissionRate:50,taxRegime:"individual",serviceIds:["svc-a"]
   });
   assert.equal(createdId,"professional-new");
   const createCall=client.calls.find(call=>call.rpc==="create_professional_with_services");
   assert.equal(createCall.args.p_org_id,"org-a");
+  assert.equal(createCall.args.p_branch_id,"11111111-1111-4111-8111-111111111111");
   assert.deepEqual(createCall.args.p_service_ids,["svc-a"]);
   await assert.rejects(()=>createProfessionalWithServices({
     client,orgId:"org-a",name:"Ana",commissionRate:150,serviceIds:["svc-a"]
