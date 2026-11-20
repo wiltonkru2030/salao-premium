@@ -114,6 +114,15 @@ async function run() {
     client: conflict.client, orgId, branchId, professionalId, serviceId, startsAt: future
   }), error => error.message.includes("ficar indisponível"));
 
+  const couponConflict = mockClient({
+    create_customer_appointment_hold_with_coupon: { data: null, error: { code: "22023", message: "SQL interno" } }
+  });
+  await assert.rejects(() => createBookingHold({
+    client: couponConflict.client, orgId, branchId, professionalId, serviceId,
+    startsAt: future, couponCode: "BLACK20"
+  }), error => error.message.includes("O cupom deixou de estar disponível")
+    && !error.message.includes("SQL interno"));
+
   await assert.rejects(() => confirmBooking({ client: {}, holdId }), { name: "TypeError" });
   console.log("Testes do serviço de disponibilidade e reservas da cliente: OK");
 }
