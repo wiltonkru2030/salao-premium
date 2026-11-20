@@ -144,3 +144,31 @@ Referência de remediação de senhas comprometidas: https://supabase.com/docs/g
 
 ### Conclusão
 O schema atual do projeto oferece os objetos operacionais necessários para construir o vínculo global, mas as três tabelas de identidade ainda não foram criadas. A especificação SQL está compatível em termos de tipos e colunas consultadas; a RPC não está validada por execução. Os avisos de segurança preexistentes permanecem abertos. Nenhuma alteração foi feita no banco e nenhum dado foi modificado.
+
+
+## Próxima etapa — confirmação explícita da titularidade
+
+Foi criado o rascunho `docs/sql/customer-identity-link-confirmation.draft.sql` para substituir o fluxo inseguro de associação imediata por um processo em duas etapas:
+
+1. Owner/admin solicita a associação de um cadastro legado a uma identidade Auth específica.
+2. A cliente entra autenticada nessa identidade e confirma a solicitação.
+3. Somente a confirmação autenticada efetiva, em uma transação, o membership e o mapeamento legado.
+4. A solicitação expira em 48 horas e não pode ser confirmada por outra identidade.
+5. A operação gera auditoria com IDs dos envolvidos, sem copiar dados pessoais.
+
+### Proteções incluídas no desenho
+- Tabela auxiliar sem acesso direto para anon ou authenticated.
+- RPC de solicitação valida papel owner/admin e pertencimento do cadastro à organização.
+- RPC de confirmação exige que auth.uid() seja exatamente a identidade destinatária.
+- Solicitação expirada, inexistente ou destinada a outra conta é recusada.
+- Membership suspenso não é reativado automaticamente.
+- Restrições únicas do modelo global continuam impedindo associação duplicada ou cruzada.
+
+### Limitações e validações pendentes
+- O arquivo é rascunho SQL, não migration oficial; não foi executado.
+- Ainda precisa ser validado em Supabase local/staging, inclusive grants do schema privado, comportamento de concorrência, política de expiração e integração com a interface da cliente.
+- O rascunho anterior customer-global-identity-functions.draft.sql representa o fluxo de associação imediata e não deve ser executado até ser substituído/revisado por este fluxo de confirmação.
+- A interface para listar e confirmar solicitações ainda não foi implementada.
+- Nenhuma tabela foi criada no projeto Supabase e nenhum dado de produção foi alterado.
+
+**Decisão de segurança:** funcionário não pode declarar sozinho que um cadastro pertence à cliente. O sistema precisa da confirmação autenticada da própria identidade global.
