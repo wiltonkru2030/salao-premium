@@ -87,11 +87,13 @@ async function run() {
     confirm_customer_appointment_hold_with_coupon: { data: appointmentId, error: null }
   });
   assert.equal(await confirmBooking({ client: confirm.client, holdId }), appointmentId);
+  assert.equal(confirm.calls[0].name, "confirm_customer_appointment_hold");
 
   const cancel = mockClient({
     cancel_customer_appointment_hold_with_coupon: { data: true, error: null }
   });
   assert.equal(await releaseBookingHold({ client: cancel.client, holdId }), true);
+  assert.equal(cancel.calls[0].name, "cancel_customer_appointment_hold");
 
   await assert.rejects(() => getAvailableSlots({
     client: availability.client, orgId, branchId, serviceId, date: "01/12/2026"
