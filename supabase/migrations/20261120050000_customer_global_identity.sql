@@ -256,7 +256,9 @@ create or replace function private.get_my_pending_customer_link_requests()
 returns table (
   request_id uuid,
   org_id uuid,
-  customer_id uuid,
+  salon_name text,
+  customer_name text,
+  phone_suffix text,
   expires_at timestamptz
 )
 language sql
@@ -264,8 +266,19 @@ stable
 security definer
 set search_path = ''
 as $function$
-  select r.id, r.org_id, r.customer_id, r.expires_at
+  select
+    r.id,
+    r.org_id,
+    o.name,
+    c.name,
+    nullif(pg_catalog.right(
+      pg_catalog.regexp_replace(pg_catalog.coalesce(c.phone, ''), '[^0-9]', '', 'g'),
+      2
+    ), ''),
+    r.expires_at
   from public.customer_identity_link_requests r
+  join public.organizations o on o.id = r.org_id
+  join public.customers c on c.org_id = r.org_id and c.id = r.customer_id
   where r.target_auth_user_id = (select auth.uid())
     and r.status = 'pending'
     and r.expires_at > pg_catalog.now()
@@ -365,7 +378,14 @@ as $function$
 $function$;
 
 create or replace function public.get_my_pending_customer_link_requests()
-returns table (request_id uuid, org_id uuid, customer_id uuid, expires_at timestamptz)
+returns table (
+  request_id uuid,
+  org_id uuid,
+  salon_name text,
+  customer_name text,
+  phone_suffix text,
+  expires_at timestamptz
+)
 language sql
 security invoker
 set search_path = ''
