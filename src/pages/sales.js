@@ -8,6 +8,7 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, metric } from "../utils.js";
 import { reportError } from "../utils/errors.js";
+import { fetchSalesWorkspace } from "../modules/sales/sales.service.js";
 
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dateTime = value => value ? new Date(value).toLocaleString("pt-BR") : "—";
@@ -26,35 +27,14 @@ export async function loadSalesPage() {
   const orgId = state.organization?.id;
   if (!host || !orgId) return;
 
+  let rows,customers,itemsBySale;
   try {
-    const { data: sales, error: salesError } = await supabase.from("sales")
-      .select("id,sale_number,status,subtotal,discount,total,payment_method,notes,sold_at,customer_id,branch_id")
-      .eq("org_id", orgId)
-      .order("sold_at", { ascending: false })
-      .limit(200);
-    if (salesError) throw salesError;
-
-    const rows = sales || [];
-    const customerIds = [...new Set(rows.map(row => row.customer_id).filter(Boolean))];
-    const saleIds = rows.map(row => row.id);
-    const [customerResult, itemResult] = await Promise.all([
-      customerIds.length
-        ? supabase.from("customers").select("id,name").eq("org_id", orgId).in("id", customerIds)
-        : Promise.resolve({ data: [], error: null }),
-      saleIds.length
-        ? supabase.from("sale_items").select("id,sale_id,description,quantity,unit_price,discount,total").eq("org_id", orgId).in("sale_id", saleIds).order("created_at", { ascending: true })
-        : Promise.resolve({ data: [], error: null })
-    ]);
-    if (customerResult.error) throw customerResult.error;
-    if (itemResult.error) throw itemResult.error;
-
-    const customers = new Map((customerResult.data || []).map(customer => [customer.id, customer.name]));
-    const itemsBySale = new Map();
-    for (const item of itemResult.data || []) {
-      const list = itemsBySale.get(item.sale_id) || [];
-      list.push(item);
-      itemsBySale.set(item.sale_id, list);
-    }
+    ({sales:rows,customers,itemsBySale}=await fetchSalesWorkspace({client:supabase,orgId,limit:200}));
+  } catch(error) {
+    reportError(error,{context:"Vendas > carregar histórico"});
+    host.innerHTML='<div class="empty-state"><b>Não foi possível carregar as vendas.</b><small>Verifique sua conexão e suas permissões. Tente novamente.</small></div>';
+    return;
+  }
 
     const totalSales = rows.length;
     const gross = rows.filter(row => row.status !== "cancelled" && row.status !== "refunded")
