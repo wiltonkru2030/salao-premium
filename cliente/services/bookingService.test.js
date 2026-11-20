@@ -54,14 +54,18 @@ async function run() {
   }).serviceIds, [serviceId]);
 
   const create = mockClient({
-    create_customer_appointment_hold: {
-      data: [{ hold_id: holdId, expires_at: "2026-12-01T12:05:00Z" }], error: null
+    create_customer_appointment_hold_with_coupon: {
+      data: [{
+        hold_id: holdId, expires_at: "2026-12-01T12:05:00Z",
+        coupon_id: null, coupon_discount_amount: 0, coupon_final_amount: 200
+      }], error: null
     }
   });
   assert.deepEqual(await createBookingHold({
     client: create.client, orgId, branchId, professionalId, serviceId, startsAt: future
-  }), { holdId, expiresAt: "2026-12-01T12:05:00.000Z", couponId: null, discountAmount: 0, finalAmount: null });
-  assert.equal(create.calls[0].name, "create_customer_appointment_hold");
+  }), { holdId, expiresAt: "2026-12-01T12:05:00.000Z", couponId: null, discountAmount: 0, finalAmount: 200 });
+  assert.equal(create.calls[0].name, "create_customer_appointment_hold_with_coupon");
+  assert.equal(create.calls[0].args.p_coupon_code, null);
 
   const couponCreate = mockClient({
     create_customer_appointment_hold_with_coupon: {
@@ -109,7 +113,7 @@ async function run() {
     && !error.message.includes("SQL interno"));
 
   const conflict = mockClient({
-    create_customer_appointment_hold: { data: null, error: { code: "23P01" } }
+    create_customer_appointment_hold_with_coupon: { data: null, error: { code: "23P01" } }
   });
   await assert.rejects(() => createBookingHold({
     client: conflict.client, orgId, branchId, professionalId, serviceId, startsAt: future
