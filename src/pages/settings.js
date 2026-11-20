@@ -28,9 +28,9 @@ export async function loadSettingsPage() {
   const orgId = state.organization?.id;
   if (!host || !orgId) return;
 
-  const context=JSON.stringify([orgId,state.user?.id,state.membership?.role,state.branch?.id||null]);
+  const context=JSON.stringify([orgId,state.user?.id,state.membership?.role]);
   const request=String(Number(host.dataset.request||0)+1);host.dataset.request=request;
-  const current=()=>host.isConnected&&state.page==='Configurações'&&host.dataset.request===request&&context===JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role,state.branch?.id||null]);
+  const current=()=>host.isConnected&&state.page==='Configurações'&&host.dataset.request===request&&context===JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role]);
   host._settingsContext=null;
   host.textContent="Carregando configurações…";
   try {
