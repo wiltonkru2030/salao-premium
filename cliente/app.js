@@ -7,7 +7,7 @@ import { getCurrentSession, subscribeToAuthChanges, signInWithGoogle, signInWith
 import { getCurrentPosition } from "./services/geoSalonService.js";
 import { getLocalSettings, saveLocalSettings } from "./services/settingsService.js";
 import { renderBottomNavigation } from "./ui/bottomNavigation.js";
-import { getMyProfile } from "./services/customerProfileService.js";
+import { ensureMyProfile } from "./services/customerProfileService.js";
 
 const root = document.querySelector("#cliente-app");
 let currentSession = null;
@@ -81,7 +81,7 @@ function renderApp() {
   applyTheme();
 }
 async function loadProfile() {
-  try { profileState = await getMyProfile(); }
+  try { profileState = await ensureMyProfile(); }
   catch (error) {
     profileState = null;
     if (error && error.code !== "CUSTOMER_PROFILE_NOT_READY") console.warn("Falha ao consultar perfil global.", error.code || "PROFILE_ERROR");
