@@ -142,6 +142,9 @@ export async function createProfessionalWithServices({
   if(typeof orgId!=="string"||!orgId.trim()||cleanName.length<2||cleanName.length>120) {
     throw new TypeError("Informe a organização e o nome do profissional.");
   }
+  if(branchId&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(branchId)) {
+    throw new TypeError("A unidade selecionada não é válida.");
+  }
   if(!Number.isFinite(rate)||rate<0||rate>100)throw new TypeError("A comissão deve estar entre 0 e 100 por cento.");
   if(!["individual","mei"].includes(taxRegime))throw new TypeError("Regime fiscal inválido.");
   if(taxRegime==="mei"&&(String(cnpj??"").replace(/\D/g,"").length!==14||String(legalName??"").trim().length<2)) {
