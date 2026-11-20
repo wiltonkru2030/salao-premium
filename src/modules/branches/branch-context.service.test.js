@@ -32,6 +32,9 @@ async function run(){
   assert.equal(owner.branch.id,"main");
   const receptionist=await resolveBranchContext({client,orgId:"org-a",role:"receptionist",previousBranchId:"branch-a"});
   assert.equal(receptionist.branch.id,"branch-a");
+  const allUnits=await resolveBranchContext({client,orgId:"org-a",role:"owner",previousBranchId:"__all__"});
+  assert.equal(allUnits.branch.isAll,true);
+  assert.equal(allUnits.branch.id,null);
   const professional=await resolveBranchContext({client,orgId:"org-a",role:"professional",userId:"user-pro"});
   assert.equal(professional.branch.id,"branch-a");
   await assert.rejects(()=>resolveBranchContext({client,orgId:""}),{name:"TypeError"});
