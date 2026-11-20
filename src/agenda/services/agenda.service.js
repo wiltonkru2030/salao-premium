@@ -5,6 +5,8 @@
  * Segurança: RLS e triggers do banco são a barreira final; validações locais são apenas auxiliares.
  */
 
+import { checkAvailability } from "./availability.service.js";
+
 const PAGE_SIZE = 250;
 const ALLOWED_STATUSES = new Set(["scheduled","confirmed","arrived","in_progress","completed","cancelled","no_show"]);
 
@@ -177,7 +179,6 @@ export async function previewCreateAppointment(input,{client,orgId,opening="08:0
   const payload=normalizePayload(input,orgId);
   const candidate=toCandidate(payload);
   const existing=await readAllAppointments(client,orgId,{date:candidate.date});
-  const {checkAvailability}=await import("./availability.service.js");
   const validation=checkAvailability(candidate,existing.map(toCandidate),{opening,closing});
   return {ok:validation.valid,errors:validation.errors,preview:payload};
 }
@@ -215,7 +216,6 @@ export async function updateAppointment(id,changes,{client,orgId,opening="08:00"
   const payload=normalizePayload({...current,...changes},orgId);
   const candidate=toCandidate({...payload,id});
   const existing=await readAllAppointments(client,orgId,{date:candidate.date});
-  const {checkAvailability}=await import("./availability.service.js");
   const validation=checkAvailability(candidate,existing.map(toCandidate),{opening,closing});
   if(!validation.valid)return {ok:false,errors:validation.errors};
   try {
