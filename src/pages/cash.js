@@ -21,14 +21,20 @@ export async function loadCashPage(){
  if(!host||!state.organization?.id)return;
  try{
   const orgId=state.organization.id;
-  const selectedBranchId=host.dataset.branchId||"";
-  const branchFilter=selectedBranchId?{method:"eq",value:selectedBranchId}:{method:"is",value:null};
+  const selectedBranchId=host.dataset.branchId!==undefined?host.dataset.branchId:(state.branch?.isAll?"__all__":state.branch?.id||"");
+  const branchFilter=selectedBranchId==="__all__"?null:selectedBranchId?{method:"eq",value:selectedBranchId}:{method:"is",value:null};
   const today=new Date();today.setHours(0,0,0,0);
   const tomorrow=new Date(today);tomorrow.setDate(tomorrow.getDate()+1);
+  let registerQuery=supabase.from("cash_registers").select("id,org_id,branch_id,opening_amount,closing_amount,expected_amount,status,opened_at,closed_at,notes").eq("org_id",orgId);
+  let movementQuery=supabase.from("cash_movements").select("id,cash_register_id,branch_id,service_order_id,movement_type,category,description,amount,payment_method,created_at,sale_id").eq("org_id",orgId);
+  if(branchFilter) {
+   registerQuery=registerQuery[branchFilter.method]("branch_id",branchFilter.value);
+   movementQuery=movementQuery[branchFilter.method]("branch_id",branchFilter.value);
+  }
   const [branchResult,registerResult,movementResult,paymentResult]=await Promise.all([
    supabase.from("branches").select("id,name,is_main,active").eq("org_id",orgId).order("active",{ascending:false}).order("is_main",{ascending:false}).order("name",{ascending:true}).limit(200),
-   supabase.from("cash_registers").select("id,org_id,branch_id,opening_amount,closing_amount,expected_amount,status,opened_at,closed_at,notes").eq("org_id",orgId)[branchFilter.method]( "branch_id",branchFilter.value).order("opened_at",{ascending:false}).limit(50),
-   supabase.from("cash_movements").select("id,cash_register_id,branch_id,service_order_id,movement_type,category,description,amount,payment_method,created_at,sale_id").eq("org_id",orgId)[branchFilter.method]("branch_id",branchFilter.value).order("created_at",{ascending:false}).limit(500),
+   registerQuery.order("opened_at",{ascending:false}).limit(50),
+   movementQuery.order("created_at",{ascending:false}).limit(500),
    supabase.from("service_order_payments").select("id,order_id,cash_movement_id,amount,payment_method,paid_at").eq("org_id",orgId).not("cash_movement_id","is",null).order("paid_at",{ascending:false}).limit(500)
   ]);
   if(branchResult.error)throw branchResult.error;
