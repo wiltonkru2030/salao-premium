@@ -3,6 +3,7 @@
  * Responsabilidade: controlar sessão, navegação, ações e estados globais simples.
  * Cada tela, serviço, componente e estilo fica em arquivo próprio.
  */
+import {validateBookingSelection,isHoldExpired} from "./utils/booking-rules.js";
 import { getCurrentUser, subscribeToAuthChanges, signInWithGoogle, signInWithPasskey, registerPasskey, signOut } from "./services/authService.js";
 import { supabase } from "../src/supabase/client.js";
 import { getCurrentPosition } from "./services/geoSalonService.js";
@@ -430,17 +431,10 @@ async function runAction(action, button = null) {
         if(isCurrent(epoch)){slotsState.loading=false;renderApp();}
       }
     } else if (action === "create-hold") {
-      if (holdState?.holdId) { try { await cancelAppointmentHold(holdState.holdId); } catch { /* A reserva anterior expira automaticamente no banco. */ } requireCurrent(epoch);holdState = null; }
-      const index = Number(button?.dataset.slotIndex);
-      const slot = Number.isInteger(index)&&index>=0 ? slotsState.items[index] : null;
-      if (!slot || !slotsState.serviceId) throw new Error("Selecione um horário válido.");
-      const serviceCard=root.querySelector('[data-service-card="'+CSS.escape(slotsState.serviceId)+'"]');
-      const changedDate=serviceCard?.querySelector('input[name="date"]')?.value!==slotsState.date;
-      const changedProfessional=(serviceCard?.querySelector('select[name="professionalId"]')?.value||null)!==(slotsState.professionalId||null);
-      if(changedDate||changedProfessional)throw new Error("A seleção mudou. Consulte novamente os horários disponíveis.");
-      const enteredCode=serviceCard?.querySelector('input[name="couponCode"]')?.value.trim().toUpperCase()||"";
-      const couponCode=couponState.serviceId===slotsState.serviceId&&couponState.code===enteredCode&&couponState.preview?couponState.code:null;
-      if(enteredCode&&!couponCode)throw new Error("Aplique e valide novamente o cupom antes de reservar o horário.");
+      const index=Number(button?.dataset.slotIndex);
+      const serviceCard=slotsState.serviceId?root.querySelector('[data-service-card="'+CSS.escape(slotsState.serviceId)+'"]'):null;
+      const {slot,couponCode}=validateBookingSelection({index,slotsState,date:serviceCard?.querySelector('input[name="date"]')?.value,professionalId:serviceCard?.querySelector('select[name="professionalId"]')?.value,enteredCode:serviceCard?.querySelector('input[name="couponCode"]')?.value.trim().toUpperCase()||"",couponState});
+      if (holdState?.holdId) { await cancelAppointmentHold(holdState.holdId); requireCurrent(epoch);holdState=null; }
       const createdHold = await createAppointmentHold({
         orgId: salonDetailState.salon.org_id, branchId: salonDetailState.salon.branch_id,
         professionalId: slot.professional_id, serviceId: slotsState.serviceId, startsAt: slot.starts_at,
@@ -458,7 +452,7 @@ async function runAction(action, button = null) {
       setNotice("Horário reservado temporariamente. Confirme antes do vencimento.", "success");
     } else if (action === "confirm-booking") {
       if (!holdState?.holdId) throw new Error("A reserva temporária não está mais disponível.");
-      if(!Number.isFinite(Date.parse(holdState.expiresAt))||Date.parse(holdState.expiresAt)<=Date.now()){
+      if(isHoldExpired(holdState)){
         holdState=null;renderApp();throw new Error("Sua reserva expirou. Consulte os horários novamente.");
       }
       if (!String(profileState?.fullName || "").trim() || profileState.fullName.trim()==="Cliente") {
