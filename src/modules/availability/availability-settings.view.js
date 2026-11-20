@@ -57,6 +57,12 @@ export function renderAvailabilitySettings(data,canManage){
 
 /** Instala eventos uma única vez; cada ação recarrega a seção sem reload da página. */
 const bindingContexts=new WeakMap();
+/**
+ * Vincula eventos dos formulários de expediente, folgas e fechamentos.
+ * @param {HTMLElement} host Contêiner da página de configurações.
+ * @param {object} context Organização, filial e permissões ativas.
+ * @returns {void} Instala listeners delegados no contêiner.
+ */
 export function bindAvailabilitySettings(host,context){
  bindingContexts.set(host,context);
  if(host.dataset.availabilityBound==="true") return;
