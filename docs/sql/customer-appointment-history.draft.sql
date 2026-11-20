@@ -53,7 +53,7 @@ as $function$
   order by a.starts_at desc, a.id desc;
 $function$;
 
-revoke all on function private.get_my_customer_appointments() from public, anon;
+revoke all on function private.get_my_customer_appointments() from public, anon, authenticated;
 grant execute on function private.get_my_customer_appointments() to authenticated;
 
 create or replace function public.get_my_customer_appointments()
