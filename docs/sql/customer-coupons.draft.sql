@@ -600,6 +600,19 @@ $function$;
 revoke all on function public.cancel_customer_appointment_hold_with_coupon(uuid) from public,anon,authenticated;
 grant execute on function public.cancel_customer_appointment_hold_with_coupon(uuid) to authenticated;
 
+-- Mantém histórico de criação/edição e cópia recuperável em exclusões.
+drop trigger if exists audit_row_change on public.salon_coupons;
+create trigger audit_row_change after insert or update or delete on public.salon_coupons
+  for each row execute function private.capture_row_audit();
+
+drop trigger if exists audit_row_change on public.salon_coupon_services;
+create trigger audit_row_change after insert or update or delete on public.salon_coupon_services
+  for each row execute function private.capture_row_audit();
+
+drop trigger if exists audit_row_change on public.customer_coupon_redemptions;
+create trigger audit_row_change after insert or update or delete on public.customer_coupon_redemptions
+  for each row execute function private.capture_row_audit();
+
 comment on table public.salon_coupons is
   'Cupons de desconto configurados por salão, com validade, limites e escopo por filial/serviço.';
 comment on table public.customer_coupon_redemptions is
