@@ -24,6 +24,7 @@ Permitir que cada salão decida explicitamente se deseja aparecer no aplicativo 
    - Revogou EXECUTE herdado de PUBLIC nas funções privadas e preservou os privilégios previamente efetivos de `authenticated`.
    - Liberou a execução anônima somente para as consultas privadas de busca, catálogo e horários.
 4. `20261120064758_allow_members_read_public_profile_settings.sql`
+5. `20261120070111_coupon_fk_indexes_and_public_profile_policy_cleanup.sql`
    - Permitiu que membros ativos da organização leiam as configurações da vitrine em modo de consulta.
    - Escrita continua restrita a owner/admin.
 
