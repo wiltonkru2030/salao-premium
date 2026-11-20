@@ -54,3 +54,15 @@ color:#aaa}
 .availability-lists{margin-top:18px}
 .availability-lists h3{font-size:14px;margin:0 0 10px}
 @media(max-width:760px){.availability-grid{grid-template-columns:1fr}.availability-form{grid-template-columns:1fr}.availability-form h3,.availability-form .sp-span,.availability-form button{grid-column:1}}
+
+/* Configuração da vitrine pública: formulário responsivo e aviso claro de publicação. */
+.public-profile-panel{margin-top:18px}
+.public-profile-panel form{display:grid;gap:12px}
+.public-profile-panel .sp-modal-body{padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.public-profile-panel label{display:grid;gap:6px;font-size:12px;font-weight:600}
+.public-profile-panel input,.public-profile-panel textarea{width:100%;min-width:0;padding:10px 12px;border:1px solid var(--border-color);border-radius:9px;background:var(--surface);color:var(--text);font:inherit}
+.public-profile-panel .sp-span{grid-column:1/-1}
+.public-profile-panel .public-check{display:flex;align-items:center;gap:9px;font-weight:500}
+.public-profile-panel .public-check input{width:18px;height:18px;accent-color:var(--gold)}
+.public-profile-panel h3{margin:10px 0 0;font-size:13px}
+@media(max-width:680px){.public-profile-panel .sp-modal-body{grid-template-columns:1fr}}
