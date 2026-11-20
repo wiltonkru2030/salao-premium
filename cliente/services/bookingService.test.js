@@ -84,12 +84,12 @@ async function run() {
   }),{name:"TypeError"});
 
   const confirm = mockClient({
-    confirm_customer_appointment_hold: { data: appointmentId, error: null }
+    confirm_customer_appointment_hold_with_coupon: { data: appointmentId, error: null }
   });
   assert.equal(await confirmBooking({ client: confirm.client, holdId }), appointmentId);
 
   const cancel = mockClient({
-    cancel_customer_appointment_hold: { data: true, error: null }
+    cancel_customer_appointment_hold_with_coupon: { data: true, error: null }
   });
   assert.equal(await releaseBookingHold({ client: cancel.client, holdId }), true);
 
