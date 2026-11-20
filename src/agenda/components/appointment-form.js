@@ -89,6 +89,7 @@ export function mountAppointmentForm(){
     .catch(error=>{branchSelect.innerHTML='<option value="">Falha ao carregar unidades</option>';reportError(error,{context:'Agenda > carregar unidades'});});
   branchSelect.addEventListener('change',()=>{
     state.branch=branchOptions.find(b=>b.id===branchSelect.value)||null;
+    professionalInput.disabled=!branchSelect.value;
     professionalId.value='';professionalInput.value='';
   });
 
