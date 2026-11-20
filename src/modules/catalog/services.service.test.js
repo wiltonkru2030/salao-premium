@@ -1,0 +1,47 @@
+/**
+ * Testes do serviço de catálogo de serviços.
+ * Responsabilidade: validar paginação, payloads, escopo por organização e inativação.
+ */
+import assert from "node:assert/strict";
+import {listServices,saveService,setServiceActive} from "./services.service.js";
+
+function mockClient(tables={},error=null){
+  const calls=[];
+  const client={calls,from(table){
+    const call={table,filters:[],action:null,payload:null,range:null};calls.push(call);
+    const query={
+      select(columns){call.columns=columns;return query;},
+      insert(payload){call.action="insert";call.payload=payload;return query;},
+      update(payload){call.action="update";call.payload=payload;return query;},
+      eq(key,value){call.filters.push([key,value]);return query;},
+      order(key){call.order=key;return query;},
+      range(start,end){call.range=[start,end];return query;},
+      then(resolve,reject){
+        if(error)return Promise.resolve({data:null,error}).then(resolve,reject);
+        let rows=(tables[table]||[]).filter(row=>call.filters.every(([key,value])=>row[key]===value));
+        const [start,end]=call.range||[0,249];
+        return Promise.resolve({data:rows.slice(start,end+1),error:null}).then(resolve,reject);
+      }
+    };
+    return query;
+  }};
+  return client;
+}
+async function run(){
+  const rows=Array.from({length:251},(_,i)=>({id:"s"+i,org_id:"org-a",name:"Serviço "+i}));
+  const client=mockClient({services:rows});
+  assert.equal((await listServices({client,orgId:"org-a"})).length,251);
+  assert.deepEqual(client.calls.filter(c=>c.table==="services").map(c=>c.range),[[0,249],[250,499]]);
+  await saveService({client,orgId:"org-a",name:"Corte",category:"Cabelo",durationMinutes:30,price:80});
+  assert.equal(client.calls[2].payload.org_id,"org-a");
+  assert.equal(client.calls[2].payload.duration_minutes,30);
+  await saveService({client,orgId:"org-a",serviceId:"s1",name:"Corte atualizado",durationMinutes:45,price:90});
+  assert.deepEqual(client.calls[3].filters,[["org_id","org-a"],["id","s1"]]);
+  await setServiceActive({client,orgId:"org-a",serviceId:"s1",active:false});
+  assert.deepEqual(client.calls[4].payload,{active:false});
+  await assert.rejects(()=>saveService({client,orgId:"org-a",name:"Corte",durationMinutes:33,price:20}),{name:"TypeError"});
+  const failing=mockClient({}, {code:"42501",message:"SQL privado"});
+  await assert.rejects(()=>listServices({client:failing,orgId:"org-a"}),e=>!e.message.includes("SQL privado"));
+  console.log("Testes do catálogo de serviços: OK");
+}
+run().catch(error=>{process.stderr.write(error.message+"\n");process.exitCode=1;});
