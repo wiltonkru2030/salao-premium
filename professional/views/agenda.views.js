@@ -3,6 +3,7 @@
  * Responsabilidade: renderizar calendário mensal e compromissos do dia sem acessar DOM ou rede.
  * Integração: recebe estado e formatadores pelo controlador professional/app.js.
  */
+import { escapeHtml } from "../utils/formatters.js";
 
 /**
  * Renderiza a agenda mensal e os compromissos do dia selecionado.
