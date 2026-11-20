@@ -21,6 +21,7 @@ import { handleAgendaClick } from "./agenda.controller.js";
 import { fetchProfessionalAppointments } from "./appointments.service.js";
 import { fetchProfessionalOrders, fetchProfessionalOrderItems } from "./orders.service.js";
 import { addProfessionalServiceToOrder } from "./order-items.service.js";
+import { fetchProfessionalCommissions } from "./commissions.service.js";
 
 // Aplicação PWA do profissional: autenticação, navegação, Agenda, Comandas e Comissões.
 installGlobalErrorHandlers();
@@ -182,16 +183,11 @@ async function loadServices(){
 }
 // Carrega comissões e pagamentos do profissional autenticado.
 async function loadCommissions(){
- const [commissionResult,payoutResult]=await Promise.all([
-  supabase.from("commissions").select("id,base_amount,rate,amount,status,paid_at,created_at,professional_id,payout_id")
-   .eq("org_id",state.orgId).order("created_at",{ascending:false}).limit(250),
-  supabase.from("commission_payouts").select("id,professional_id,amount,payment_method,paid_at,notes")
-   .eq("org_id",state.orgId).order("paid_at",{ascending:false}).limit(250)
- ]);
- if(commissionResult.error)throw commissionResult.error;
- if(payoutResult.error)throw payoutResult.error;
- state.commissions=commissionResult.data||[];
- state.commissionPayouts=payoutResult.data||[];
+ const result=await fetchProfessionalCommissions({
+  client:supabase,organizationId:state.orgId,professionalId:state.professional?.id
+ });
+ state.commissions=result.commissions;
+ state.commissionPayouts=result.payouts;
 }
 async function loadOrderItems(){
  if(!state.selectedOrder)return;
