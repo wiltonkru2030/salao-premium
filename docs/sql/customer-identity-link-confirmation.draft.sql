@@ -106,6 +106,28 @@ begin
 end;
 $function$;
 
+-- Consulta mínima: a cliente autenticada pode descobrir apenas solicitações
+-- destinadas à própria identidade; não recebe cadastro ou dados de terceiros.
+create or replace function private.get_my_pending_customer_link_requests()
+returns table (
+  request_id uuid,
+  org_id uuid,
+  customer_id uuid,
+  expires_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select r.id, r.org_id, r.customer_id, r.expires_at
+  from public.customer_identity_link_requests r
+  where r.target_auth_user_id = (select auth.uid())
+    and r.status = 'pending'
+    and r.expires_at > pg_catalog.now()
+  order by r.created_at desc;
+$function$;
+
 -- Etapa 2: somente a identidade destinatária, autenticada, pode confirmar.
 create or replace function private.confirm_customer_legacy_link(p_request_id uuid)
 returns uuid
@@ -193,6 +215,15 @@ as $function$
   select private.request_customer_legacy_link(p_org_id, p_customer_id, p_target_auth_user_id);
 $function$;
 
+create or replace function public.get_my_pending_customer_link_requests()
+returns table (request_id uuid, org_id uuid, customer_id uuid, expires_at timestamptz)
+language sql
+security invoker
+set search_path = ''
+as $function$
+  select * from private.get_my_pending_customer_link_requests();
+$function$;
+
 create or replace function public.confirm_customer_legacy_link(p_request_id uuid)
 returns uuid
 language sql security invoker set search_path = ''
@@ -200,6 +231,10 @@ as $function$
   select private.confirm_customer_legacy_link(p_request_id);
 $function$;
 
+revoke all on function private.get_my_pending_customer_link_requests() from public, anon;
+grant execute on function private.get_my_pending_customer_link_requests() to authenticated;
+revoke all on function public.get_my_pending_customer_link_requests() from public, anon, authenticated;
+grant execute on function public.get_my_pending_customer_link_requests() to authenticated;
 revoke all on function private.request_customer_legacy_link(uuid,uuid,uuid) from public, anon;
 revoke all on function private.confirm_customer_legacy_link(uuid) from public, anon;
 grant execute on function private.request_customer_legacy_link(uuid,uuid,uuid) to authenticated;
