@@ -67,7 +67,7 @@ begin
   if auth.uid() is null or not private.is_org_admin(p_org_id) then
     raise exception 'Sem permissão para alterar categorias.' using errcode='42501';
   end if;
-  if p_category_type not in ('service','product') or length(v_name) not between 2 and 80 then
+  if p_category_type is null or p_category_type not in ('service','product') or length(v_name) not between 2 and 80 then
     raise exception 'Tipo ou nome de categoria inválido.' using errcode='22023';
   end if;
 
