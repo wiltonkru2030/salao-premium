@@ -314,3 +314,48 @@ Na revisão de 19/11/2026, a tela demonstrativa de Configurações foi substitu�
 
 
 - A validação CI revelou duas falhas no branch: trechos com sequências literais `\\n` no fluxo de recuperação de senha de `src/auth/auth.js` e, depois, no arquivo de teste do Caixa. As quebras de linha foram corrigidas. Um teste também apontou diferença entre maiúsculas/minúsculas na mensagem de validação; a asserção foi ajustada. A execução automatizada do HEAD final precisa confirmar que todas as etapas passam antes de considerar a entrega validada.
+
+
+---
+
+## Atualização verificada em 20/11/2026
+
+### Código e CI
+- Branch de trabalho: sync/lovable-finalization-20261113.
+- Último SHA validado: 605381ac535a12550dc611e817df287b486dae53.
+- App validation: sucesso.
+- Agenda tests: sucesso.
+- Build de produção, imports, testes agregados e sintaxe: sucesso nesse SHA.
+- Auditoria estrutural: 0 funções exportadas sem JSDoc. Isso não significa que todos os helpers privados de todos os arquivos tenham sido revisados individualmente.
+
+### Recursos confirmados no Supabase conectado
+O histórico de migrations e o schema foram consultados em modo somente leitura. Constam como aplicadas:
+- Identidade global da cliente e hardening de associação legada.
+- HOLD de agendamento, confirmação/cancelamento e validação de disponibilidade.
+- Diretório público, perfis de salão/filiais, busca, catálogo e consulta de horários.
+- Cupons, validação e resgate transacional.
+- Auditoria de perfis públicos e ajustes de políticas/grants.
+
+Tabelas de vitrine e cupons foram confirmadas com RLS habilitado. As RPCs públicas consultadas de vitrine, disponibilidade e cupons são SECURITY INVOKER; a lógica privilegiada está em private. Este registro descreve o estado observado no banco, não uma aplicação feita nesta atualização.
+
+### Implementações recentes no branch
+- Painel: gestão de cupons com modal, escopo por filial/serviço, validade e limites; serviço de domínio com paginação e testes.
+- Cliente: toda reserva, inclusive sem cupom, usa os wrappers transacionais coupon-aware; confirmação e cancelamento também usam os wrappers novos.
+- Profissional: serviços separados para leitura de comandas, inclusão de serviço e extrato de comissão.
+- Comissões do painel: leitura paginada sem limite arbitrário; gravação de regras, configuração de produtos e repasses extraída para serviço testado.
+- Auditoria de código: documentação JSDoc dos exports foi completada até zero avisos no último CI.
+
+### Pendências reais
+- Migrations versionadas, mas ainda não aplicadas: auditoria de identidade/chaves compostas, histórico de agendamentos da cliente e favoritos/notificações/preferências.
+- Snapshot de taxa de comissão no primeiro pagamento ainda não consta no histórico do Supabase conectado.
+- Estorno de comissões já pagas e compensação em repasses futuros permanecem em rascunho.
+- Hardening de 14 RPCs SECURITY DEFINER públicas permanece em rascunho; outras duas (repasse e estorno) são tratadas no rascunho financeiro.
+- Security Advisor continua reportando 16 funções SECURITY DEFINER no schema public.
+- Proteção contra senhas vazadas continua desativada no Supabase Auth e precisa de ajuste no painel.
+- Falta QA ponta a ponta em projeto de teste para reservas concorrentes, cupons, estornos, repasses, perfis distintos e recuperação da lixeira.
+- Empacotamento nativo Android/iOS e publicação nas lojas não estão concluídos.
+
+### Git e liberação
+- PR #1 permanece draft e com estado de merge dirty; não foi feito merge/rebase automático.
+- main não foi alterada por esta etapa.
+- O sistema ainda não deve ser anunciado como pronto para venda até concluir as pendências, QA real e autorização das migrations/configurações restantes.
