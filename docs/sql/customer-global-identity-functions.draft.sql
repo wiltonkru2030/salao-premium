@@ -213,7 +213,7 @@ begin
     v_actor_id,
     'customer_identity_linked',
     'customer_account_customers',
-    null,
+    p_customer_id,
     pg_catalog.jsonb_build_object(
       'customer_id', p_customer_id,
       'auth_user_id', p_auth_user_id,
