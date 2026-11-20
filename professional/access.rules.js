@@ -22,8 +22,9 @@ export function canRegisterProfessionalService(context,order) {
 }
 /** Extrato em centavos; cancelamentos não compõem o saldo, débitos aparecem separadamente. */
 export function summarizeProfessionalCommissions(rows,payouts) {
- const cents=value=>Math.round(Number(value||0)*100);
+ const cents=value=>{const amount=Number(value);if(value==null||value===""||!Number.isFinite(amount)||!Number.isSafeInteger(Math.round(amount*100))||Math.abs(amount*100-Math.round(amount*100))>0.00001)throw new Error("O extrato contém um valor financeiro inválido. Atualize os dados ou contate o salão.");return Math.round(amount*100);};
  let credit=0,debit=0,paid=0;
+ if(!Array.isArray(rows)||!Array.isArray(payouts))throw new Error("O extrato de comissões está indisponível.");
  for(const row of rows){
   const amount=cents(row.amount);
   if(row.status==="paid")paid+=amount;
