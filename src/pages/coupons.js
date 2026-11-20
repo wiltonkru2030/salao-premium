@@ -7,7 +7,7 @@
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast, btn } from "../utils.js";
-import { parseBRL } from "../utils/input-masks.js";
+import { listCoupons, buildCouponPayload, saveCoupon, deactivateCoupon, formatCouponDiscount, toCouponDateTimeInput } from "../modules/coupons/coupon.service.js";
 import { reportError } from "../utils/errors.js";
 
 let coupons = [];
@@ -16,22 +16,7 @@ let branches = [];
 let listenersInstalled = false;
 
 const canManageCoupons = () => ["owner","admin"].includes(state.membership?.role);
-const money = value => Number(value||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const dateTime = value => value ? new Date(value).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}) : "—";
-
-/** Converte uma data para o formato local exigido por input datetime-local. */
-function localDateTime(value) {
-  const date=value instanceof Date?value:new Date(value);
-  if(!Number.isFinite(date.getTime()))return "";
-  return new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);
-}
-
-/** Formata regra de desconto para a lista administrativa. */
-function discountLabel(coupon) {
-  return coupon.discount_type==="percent"
-    ? Number(coupon.discount_value).toLocaleString("pt-BR")+"% de desconto"
-    : money(coupon.discount_value)+" de desconto";
-}
 
 /** Renderiza a página de cupons sem mostrar dados fictícios. */
 export function couponsPage() {
@@ -55,8 +40,8 @@ function openCouponModal(coupon=null) {
   form.elements.discount_value.value=String(coupon?.discount_value??"");
   form.elements.max_discount_amount.value=coupon?.max_discount_amount??"";
   form.elements.minimum_amount.value=coupon?.minimum_amount??"0";
-  form.elements.starts_at.value=localDateTime(coupon?.starts_at||new Date());
-  form.elements.ends_at.value=localDateTime(coupon?.ends_at||new Date(Date.now()+30*86400000));
+  form.elements.starts_at.value=toCouponDateTimeInput(coupon?.starts_at||new Date());
+  form.elements.ends_at.value=toCouponDateTimeInput(coupon?.ends_at||new Date(Date.now()+30*86400000));
   form.elements.usage_limit.value=coupon?.usage_limit??"";
   form.elements.usage_per_customer.value=coupon?.usage_per_customer??1;
   form.elements.active.checked=Boolean(coupon?.active);
@@ -77,29 +62,14 @@ export async function loadCouponsPage() {
   }
   try {
     const orgId=state.organization.id;
-    const [couponResult,serviceResult,branchResult,mappingResult,redemptionResult]=await Promise.all([
-      supabase.from("salon_coupons").select("*").eq("org_id",orgId).order("created_at",{ascending:false}).limit(500),
-      supabase.from("services").select("id,name,active").eq("org_id",orgId).eq("active",true).order("name").limit(500),
-      supabase.from("branches").select("id,name,active").eq("org_id",orgId).eq("active",true).order("name").limit(100),
-      supabase.from("salon_coupon_services").select("coupon_id,service_id").eq("org_id",orgId).limit(5000),
-      supabase.from("customer_coupon_redemptions").select("coupon_id,status").eq("org_id",orgId).limit(5000)
-    ]);
-    for(const result of [couponResult,serviceResult,branchResult,mappingResult,redemptionResult])if(result.error)throw result.error;
-    coupons=couponResult.data||[];
-    services=serviceResult.data||[];
-    branches=branchResult.data||[];
-    const mappings=mappingResult.data||[];
-    const redemptions=redemptionResult.data||[];
-    const serviceIdsByCoupon=new Map();
-    mappings.forEach(row=>{
-      if(!serviceIdsByCoupon.has(row.coupon_id))serviceIdsByCoupon.set(row.coupon_id,[]);
-      serviceIdsByCoupon.get(row.coupon_id).push(row.service_id);
-    });
-    coupons=coupons.map(row=>({...row,serviceIds:serviceIdsByCoupon.get(row.id)||[]}));
+    const result=await listCoupons({client:supabase,orgId});
+    coupons=result.coupons;
+    services=result.services;
+    branches=result.branches;
     const serviceMap=new Map(services.map(row=>[row.id,row.name]));
     const branchMap=new Map(branches.map(row=>[row.id,row.name]));
     const usedByCoupon=new Map();
-    redemptions.filter(row=>row.status==="redeemed").forEach(row=>usedByCoupon.set(row.coupon_id,(usedByCoupon.get(row.coupon_id)||0)+1));
+    result.redemptions.filter(row=>row.status==="redeemed").forEach(row=>usedByCoupon.set(row.coupon_id,(usedByCoupon.get(row.coupon_id)||0)+1));
 
     host.innerHTML=`
       <dialog class="sp-modal" id="coupon-create-modal" aria-labelledby="coupon-modal-title">
@@ -134,7 +104,7 @@ export async function loadCouponsPage() {
       <div class="coupon-record-list">${coupons.map(coupon=>{
         const used=usedByCoupon.get(coupon.id)||0;
         const scope=coupon.serviceIds.length?coupon.serviceIds.map(id=>serviceMap.get(id)).filter(Boolean).join(", "):"Todos os serviços";
-        return '<article class="record-card coupon-record-card"><div class="record-main"><b>'+esc(coupon.code)+' · '+esc(coupon.title)+'</b><small>'+esc(discountLabel(coupon))+' · '+esc(branchMap.get(coupon.branch_id)||"Todas as unidades")+'</small><small>'+esc(scope)+'</small><small>Validade: '+esc(dateTime(coupon.starts_at))+' até '+esc(dateTime(coupon.ends_at))+'</small><small>Usos: '+used+(coupon.usage_limit?' / '+coupon.usage_limit:'')+' · '+(coupon.usage_per_customer||1)+' por cliente</small></div><div class="coupon-record-actions"><span class="status-pill '+(coupon.active?'active':'inactive')+'">'+(coupon.active?'Ativo':'Inativo')+'</span><button class="btn secondary" type="button" data-edit-coupon="'+esc(coupon.id)+'">Editar</button>'+(coupon.active?'<button class="text-button" type="button" data-deactivate-coupon="'+esc(coupon.id)+'">Desativar</button>':'')+'</div></article>';
+        return '<article class="record-card coupon-record-card"><div class="record-main"><b>'+esc(coupon.code)+' · '+esc(coupon.title)+'</b><small>'+esc(formatCouponDiscount(coupon))+' · '+esc(branchMap.get(coupon.branch_id)||"Todas as unidades")+'</small><small>'+esc(scope)+'</small><small>Validade: '+esc(dateTime(coupon.starts_at))+' até '+esc(dateTime(coupon.ends_at))+'</small><small>Usos: '+used+(coupon.usage_limit?' / '+coupon.usage_limit:'')+' · '+(coupon.usage_per_customer||1)+' por cliente</small></div><div class="coupon-record-actions"><span class="status-pill '+(coupon.active?'active':'inactive')+'">'+(coupon.active?'Ativo':'Inativo')+'</span><button class="btn secondary" type="button" data-edit-coupon="'+esc(coupon.id)+'">Editar</button>'+(coupon.active?'<button class="text-button" type="button" data-deactivate-coupon="'+esc(coupon.id)+'">Desativar</button>':'')+'</div></article>';
       }).join("")||'<div class="empty-state">Nenhum cupom cadastrado.</div>'}</div>`;
 
     if(host.dataset.bound==="true")return;
@@ -156,9 +126,8 @@ export async function loadCouponsPage() {
       if(!canManageCoupons())return toast("Somente proprietário ou administrador pode desativar cupons.");
       deactivate.disabled=true;
       try{
-        const {data,error}=await supabase.rpc("deactivate_salon_coupon",{p_org_id:orgId,p_coupon_id:deactivate.dataset.deactivateCoupon});
-        if(error)throw error;
-        if(data!==true)throw new Error("O cupom não foi encontrado.");
+        const changed=await deactivateCoupon({client:supabase,orgId,couponId:deactivate.dataset.deactivateCoupon});
+        if(!changed)throw new Error("O cupom não foi encontrado.");
         toast("Cupom desativado. O histórico de resgates foi preservado.");
         await loadCouponsPage();
       }catch(error){reportError(error,{context:"Cupons > desativar"});}
@@ -170,45 +139,17 @@ export async function loadCouponsPage() {
       event.preventDefault();
       if(!canManageCoupons())return toast("Somente proprietário ou administrador pode salvar cupons.");
       const values=new FormData(form);
-      const code=String(values.get("code")||"").trim().toUpperCase();
-      const title=String(values.get("title")||"").trim();
-      const discountType=String(values.get("discount_type")||"percent");
-      const discountValue=parseBRL(values.get("discount_value"));
-      const maxDiscountRaw=String(values.get("max_discount_amount")||"").trim();
-      const minimumAmount=parseBRL(values.get("minimum_amount"));
-      const startsAt=new Date(String(values.get("starts_at")||""));
-      const endsAt=new Date(String(values.get("ends_at")||""));
-      const usageLimitRaw=String(values.get("usage_limit")||"").trim();
-      const usagePerCustomer=Number(values.get("usage_per_customer"));
-      const serviceIds=values.getAll("service_ids").map(String);
-      if(!/^[A-Z0-9_-]{3,32}$/.test(code)||title.length<2||
-         !["percent","fixed"].includes(discountType)||!Number.isFinite(discountValue)||discountValue<=0||
-         (discountType==="percent"&&discountValue>100)||!Number.isFinite(minimumAmount)||minimumAmount<0||
-         !Number.isFinite(startsAt.getTime())||!Number.isFinite(endsAt.getTime())||endsAt<=startsAt||
-         !Number.isInteger(usagePerCustomer)||usagePerCustomer<1||
-         (usageLimitRaw&&(!Number.isInteger(Number(usageLimitRaw))||Number(usageLimitRaw)<1))){
-        toast("Confira o código, desconto, validade e limites do cupom.");
+      let payload;
+      try {
+        payload=buildCouponPayload(values,state.organization.id);
+      } catch(validationError) {
+        toast(validationError.message);
         return;
       }
       const submit=form.querySelector('[type="submit"]');
       submit.disabled=true;
       try{
-        const {data,error}=await supabase.rpc("save_salon_coupon",{
-          p_org_id:state.organization.id,
-          p_coupon_id:String(values.get("coupon_id")||"").trim()||null,
-          p_branch_id:String(values.get("branch_id")||"").trim()||null,
-          p_code:code,p_title:title,
-          p_description:String(values.get("description")||"").trim()||null,
-          p_discount_type:discountType,p_discount_value:discountValue,
-          p_max_discount_amount:maxDiscountRaw?parseBRL(maxDiscountRaw):null,
-          p_minimum_amount:minimumAmount,
-          p_starts_at:startsAt.toISOString(),p_ends_at:endsAt.toISOString(),
-          p_usage_limit:usageLimitRaw?Number(usageLimitRaw):null,
-          p_usage_per_customer:usagePerCustomer,p_active:values.get("active")==="on",
-          p_service_ids:serviceIds
-        });
-        if(error)throw error;
-        if(typeof data!=="string"||!data)throw new Error("O servidor não confirmou o cadastro do cupom.");
+        await saveCoupon({client:supabase,payload});
         document.querySelector("#coupon-create-modal")?.close();
         toast("Cupom salvo.");
         await loadCouponsPage();
