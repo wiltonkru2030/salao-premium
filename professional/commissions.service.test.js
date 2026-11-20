@@ -1,30 +1,36 @@
 /**
  * Testes do extrato individual de comissões do App Profissional.
  *
- * Responsabilidade: validar escopo por organização/profissional e tratamento de falhas.
+ * Responsabilidade: validar isolamento, paginação integral e mensagens seguras.
  * Ecossistema: App Profissional (PWA) do SALÃO PREMIUM.
- * Integração: usa cliente Supabase simulado para commissions.service.js.
+ * Integração: simula o cliente Supabase usado por commissions.service.js.
  */
 import assert from "node:assert/strict";
 import { fetchProfessionalCommissions } from "./commissions.service.js";
 
+const PAGE_SIZE = 250;
+
 /**
- * Cria cliente Supabase simulado e registra as consultas.
- * @param {object} responses Respostas por tabela.
+ * Cria cliente Supabase simulado e registra filtros, ordenação e intervalos.
+ * @param {object} responses Respostas por tabela e página.
  * @returns {{client:object,calls:Array<object>}} Cliente e consultas capturadas.
  */
 function mockClient(responses) {
   const calls = [];
   const client = {
     from(table) {
-      const call = { table, filters: [], selection: "", order: null, limit: null };
+      const call = { table, filters: [], selection: "", order: null, range: null };
       calls.push(call);
       const query = {
         select(value) { call.selection = value; return this; },
         eq(...args) { call.filters.push(args); return this; },
         order(...args) { call.order = args; return this; },
-        limit(value) { call.limit = value; return this; },
-        then(resolve, reject) { return Promise.resolve(responses[table]).then(resolve, reject); }
+        range(start, end) { call.range = [start, end]; return this; },
+        then(resolve, reject) {
+          const key = call.range?.[0] || 0;
+          const response = responses[table]?.[key] ?? responses[table];
+          return Promise.resolve(response).then(resolve, reject);
+        }
       };
       return query;
     }
@@ -32,7 +38,7 @@ function mockClient(responses) {
   return { client, calls };
 }
 
-/** Executa cenários positivos, validações e falhas de consulta. */
+/** Executa cenários de leitura, paginação, validação e falhas sem vazamento técnico. */
 async function run() {
   const commissionRows = [{ id: "commission-1", amount: 25 }];
   const payoutRows = [{ id: "payout-1", amount: 25 }];
@@ -49,8 +55,26 @@ async function run() {
   for (const call of mock.calls) {
     assert.ok(call.filters.some(([field, value]) => field === "org_id" && value === "org-1"));
     assert.ok(call.filters.some(([field, value]) => field === "professional_id" && value === "professional-1"));
-    assert.equal(call.limit, 250);
+    assert.deepEqual(call.range, [0, PAGE_SIZE - 1]);
+    assert.ok(call.order);
   }
+
+  const firstPage = Array.from({ length: PAGE_SIZE }, (_, index) => ({ id: `commission-${index}` }));
+  const secondPage = [{ id: "commission-250" }];
+  const paginated = mockClient({
+    commissions: {
+      0: { data: firstPage, error: null },
+      250: { data: secondPage, error: null }
+    },
+    commission_payouts: { data: [], error: null }
+  });
+  const complete = await fetchProfessionalCommissions({
+    client: paginated.client, organizationId: "org-1", professionalId: "professional-1"
+  });
+  assert.equal(complete.commissions.length, 251);
+  assert.equal(complete.commissions[250].id, "commission-250");
+  assert.deepEqual(paginated.calls.filter(call => call.table === "commissions").map(call => call.range),
+    [[0, 249], [250, 499]]);
 
   await assert.rejects(() => fetchProfessionalCommissions({
     client: mock.client, organizationId: "org-1", professionalId: ""
