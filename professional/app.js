@@ -1,4 +1,5 @@
 /** App Profissional (PWA): autenticação, sessão individual, Agenda, Comandas, Comissões e configurações do próprio perfil. */
+import {authenticateProfessional} from "./auth.service.js";
 import { supabase } from "../src/supabase/client.js";
 import { mountAutocomplete } from "../src/components/autocomplete.js";
 import { installGlobalErrorHandlers, reportError } from "../src/utils/errors.js";
@@ -264,18 +265,8 @@ root.addEventListener("submit",async event=>{
  event.preventDefault();const values=new FormData(event.target),login=String(values.get("login")||"").trim(),password=String(values.get("password")||"");
  const button=event.target.querySelector("button[type=submit]");button.disabled=true;button.textContent="Validando…";
  try{
-  if(login.includes("@")){
-   const {error}=await supabase.auth.signInWithPassword({email:login.toLowerCase(),password});
-   if(error)throw new Error("E-mail ou senha inválidos.");
-  }else{
-   const {data,error}=await supabase.functions.invoke("professional-cpf-login",{body:{cpf:login,password}});
-   if(error||!data?.access_token||!data?.refresh_token)throw new Error(data?.error||"CPF ou senha inválidos.");
-   const {error:sessionError}=await supabase.auth.setSession({access_token:data.access_token,refresh_token:data.refresh_token});
-   if(sessionError)throw sessionError;
-  }
-  const {data:userData,error:userError}=await supabase.auth.getUser();
-  if(userError||!userData.user)throw new Error("Não foi possível iniciar sua sessão.");
-  state.user=userData.user;state.notice="";
+  const user=await authenticateProfessional({client:supabase,login,password});
+  state.user=user;state.notice="";
   if(state.user.user_metadata?.must_change_password){changePasswordView();return;}
   await loadBase();
  }catch(error){reportError(error,{context:"App Profissional > entrar"});await endSession("Não foi possível entrar. Confira suas credenciais e permissões.");}
