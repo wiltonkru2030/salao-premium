@@ -113,3 +113,34 @@ A função proposta:
 O teste de integração foi ampliado para cobrir leitura cruzada, escrita direta proibida, proteção de `phone_verified_at`, associação repetida e tentativas de associação entre organizações. Os cenários que exigem tokens de owner e IDs operacionais de QA só são executados quando as variáveis adicionais estão configuradas.
 
 **Estado desta etapa:** arquivos de especificação e testes atualizados na branch de trabalho. Nenhuma migration foi aplicada, nenhuma tabela foi criada e nenhum dado de produção foi alterado. A migration oficial continua pendente porque o Supabase CLI não está disponível neste ambiente e os testes exigem um projeto de QA isolado.
+
+## Auditoria complementar de permissões e compatibilidade — 20/11/2026
+
+Consulta somente leitura realizada no projeto Supabase conectado:
+
+### Estado real do banco
+- A consulta a `information_schema.tables` confirmou que `customer_profiles`, `customer_tenant_memberships` e `customer_account_customers` ainda não existem. O modelo global continua apenas no repositório, sem migration aplicada.
+- `org_memberships` contém `org_id`, `user_id`, `role` e `status`; o helper `private.has_org_role(uuid,text[])` valida usuário da sessão, organização, status ativo e papel permitido.
+- `audit_logs` possui as colunas usadas no rascunho da associação: `org_id`, `actor_id`, `action`, `entity_type`, `entity_id`, `metadata` e `created_at`.
+- O papel `authenticated` possui USAGE no schema `private` e EXECUTE no helper `private.has_org_role`. Isso confirma compatibilidade de resolução da chamada no contexto atual, mas não substitui o teste da função final em QA.
+- `audit_logs` tem política de SELECT para owner/admin/manager. A consulta de políticas não encontrou política de INSERT para authenticated; a inserção de auditoria do rascunho depende, portanto, do contexto privilegiado da função SECURITY DEFINER e deve ser validada com teste real.
+
+### Security Advisors — estado observado
+A consulta Security Advisors retornou:
+- 16 avisos de funções SECURITY DEFINER no schema `public` executáveis por `authenticated`. São funções preexistentes do sistema; cada uma precisa de revisão individual de autorização e necessidade de exposição. Não revogar permissões em lote.
+- 1 aviso de proteção contra senhas vazadas desativada no Supabase Auth. Avaliar ativação nas configurações de Auth após validar impacto no fluxo de login.
+- Nenhum desses avisos foi alterado nesta etapa.
+
+Referência de remediação do aviso de funções: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable  
+Referência de remediação de senhas comprometidas: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+
+### Revisão de risco do rascunho de associação
+- A RPC exige owner/admin da organização da linha e usa `auth.uid()`; não usa metadados editáveis do usuário para autorização.
+- A FK composta protege o tenant do cadastro legado.
+- O rascunho registra a associação em `audit_logs` e é idempotente para repetição da mesma associação.
+- **Pendência de titularidade:** a ação `staff_confirmed` registra que um operador confirmou a associação, mas ainda não existe prova técnica de que a cliente confirmou que aquele cadastro legado é dela. Antes de liberar o fluxo, exigir confirmação explícita da cliente autenticada ou um processo assistido com evidência auditável e revisão humana. Telefone coincidente não é suficiente.
+- **Pendência de concorrência:** testar duas chamadas simultâneas tentando associar a mesma identidade ou o mesmo cadastro a destinos diferentes. As restrições UNIQUE protegem a integridade, mas o comportamento e a mensagem de conflito precisam ser verificados com duas sessões reais.
+- **Pendência de grants:** revisar privilégios efetivos da função privada e do wrapper público em staging; não conceder USAGE em schema privado nem EXECUTE em funções em bloco sem revisar o conjunto de objetos.
+
+### Conclusão
+O schema atual do projeto oferece os objetos operacionais necessários para construir o vínculo global, mas as três tabelas de identidade ainda não foram criadas. A especificação SQL está compatível em termos de tipos e colunas consultadas; a RPC não está validada por execução. Os avisos de segurança preexistentes permanecem abertos. Nenhuma alteração foi feita no banco e nenhum dado foi modificado.
