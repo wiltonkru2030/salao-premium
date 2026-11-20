@@ -11,15 +11,17 @@ const money=value=>Number(value||0).toLocaleString("pt-BR",{style:"currency",cur
  * @param {boolean} canManage Permissão visual.
  * @returns {string} HTML da interface.
  */
-export function renderServicesView(services,serviceCategories,canManage=false) {
+export function renderServicesView(services,serviceCategories,canManage=false,branches=[]) {
   if(!Array.isArray(services))throw new TypeError("Lista de serviços inválida.");
+  const branchNames=new Map(branches.map(branch=>[branch.id,branch.name]));
+  const branchOptions=branches.filter(branch=>branch.active).map(branch=>'<option value="'+esc(branch.id)+'">'+esc(branch.name)+'</option>').join("");
   const cards=services.map(service=>{
     const actions=canManage
       ? '<button class="btn secondary" type="button" data-edit-service="'+esc(service.id)+'">Editar</button>'+
         '<button class="text-button" type="button" data-toggle-service="'+esc(service.id)+'" data-active="'+(service.active?"true":"false")+'">'+(service.active?"Inativar":"Reativar")+'</button>'
       : "";
     return '<article class="record-card"><span class="record-main"><b>'+esc(service.name)+'</b>'+
-      '<small>'+esc(service.category||"Sem categoria")+' · '+Number(service.duration_minutes)+' min</small></span>'+
+      '<small>'+esc(service.category||"Sem categoria")+' · '+Number(service.duration_minutes)+' min · '+esc(service.branch_id?(branchNames.get(service.branch_id)||"Unidade vinculada"):"Todas as unidades")+'</small></span>'+
       '<span class="record-trailing"><b>'+money(service.price)+'</b>'+
       '<small class="status-pill '+(service.active?"active":"inactive")+'">'+(service.active?"Ativo":"Inativo")+'</small>'+actions+
       '</span></article>';
@@ -34,6 +36,7 @@ export function renderServicesView(services,serviceCategories,canManage=false) {
       (Array.isArray(serviceCategories)
         ? '<label>Categoria<select name="category"><option value="">Sem categoria</option>'+serviceCategories.map(category=>'<option value="'+esc(category.name)+'">'+esc(category.name)+'</option>').join("")+'</select></label>'
         : '<label>Categoria<input name="category" maxlength="80" placeholder="Categoria (opcional)"></label>')+
+      '<label class="sp-span">Disponibilidade por unidade<select name="branch_id"><option value="">Todas as unidades</option>'+branchOptions+'</select></label>'+ 
       '<label>Duração (minutos)<input name="duration" type="number" min="5" max="720" step="5" value="30" required></label>'+
       '<label>Preço (R$)<input name="price" type="text" inputmode="decimal" data-mask="currency" value="0,00" required></label>'+
       '<label class="sp-span">Descrição<textarea name="description" rows="3" maxlength="500" placeholder="Detalhes opcionais do serviço"></textarea></label>'+
