@@ -99,6 +99,7 @@ async function runAction(action, button = null) {
       await signOut();
       currentSession = null;
       profileState = null;
+      identityLinkRequests = [];
       renderLogin();
     } else if (action === "locate") {
       const position = await getCurrentPosition();
