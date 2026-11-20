@@ -65,7 +65,8 @@ begin
 
   select count(*) into v_service_count
   from public.services s
-  where s.org_id=p_org_id and s.id=any(p_service_ids) and s.active=true;
+  where s.org_id=p_org_id and s.id=any(p_service_ids) and s.active=true
+    and (p_branch_id is null or s.branch_id is null or s.branch_id=p_branch_id);
   if v_service_count<>cardinality(p_service_ids) then
     raise exception 'Um ou mais serviços não existem, estão inativos ou pertencem a outra organização.' using errcode='22023';
   end if;
