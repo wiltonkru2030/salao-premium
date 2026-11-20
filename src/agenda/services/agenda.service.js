@@ -120,6 +120,8 @@ async function readAllAppointments(client, orgId, filters = {}) {
         const end = new Date(start.getTime()+86400000);
         query = query.gte("starts_at",start.toISOString()).lt("starts_at",end.toISOString());
       }
+      if (filters.startAt) query = query.gte("starts_at", filters.startAt);
+      if (filters.endAt) query = query.lt("starts_at", filters.endAt);
       const professionalId = filters.professionalId || filters.professional_id || null;
       if (professionalId) query = query.eq("professional_id",professionalId);
       if (filters.status && filters.status !== "Todos") query = query.eq("status",filters.status);
