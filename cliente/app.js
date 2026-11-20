@@ -10,6 +10,9 @@ import { getLocalSettings, saveLocalSettings } from "./services/settingsService.
 import { renderBottomNavigation } from "./ui/bottomNavigation.js";
 import { renderLoginView } from "./ui/loginView.js";
 import { renderHomeView } from "./ui/homeView.js";
+import { renderSalonDetailView } from "./ui/salonDetailView.js";
+import { searchPublicSalons, getPublicSalonCatalog } from "./services/salonDirectoryService.js";
+import { getCustomerAvailableSlots, createAppointmentHold, confirmAppointmentHold, cancelAppointmentHold } from "./services/appointmentHoldService.js";
 import { renderAppointmentsView } from "./ui/appointmentsView.js";
 import { fetchMyCustomerAppointments } from "./services/appointmentsService.js";
 import { renderCustomerProfileView } from "./ui/customerProfileView.js";
@@ -26,6 +29,11 @@ let locationLabel = "Ative a localização ou escolha sua cidade";
 let profileState = null;
 let identityLinkRequests = [];
 let appointmentsState = { items: [], loading: false, error: "" };
+let directoryState = { items: [], loading: false, error: "", query: "" };
+let locationCoordinates = null;
+let salonDetailState = { salon: null, catalog: [], loading: false, error: "" };
+let slotsState = { serviceId: null, items: [], loading: false, error: "", date: "" };
+let holdState = null;
 
 /** Exibe aviso de operação na região acessível por leitor de tela. */
 function setNotice(message, type = "info") {
@@ -56,7 +64,8 @@ function renderApp() {
   else if (activePage === "identity-links") page = renderIdentityLinkRequestsView({requests: identityLinkRequests});
   else if (activePage === "profile") {
     page = renderCustomerProfileView({profile: profileState, session: currentSession, theme: getLocalSettings().theme});
-  } else page = renderHomeView({locationLabel});
+  } else if (activePage === "salon-detail") page = renderSalonDetailView({ ...salonDetailState, slots: slotsState, hold: holdState });
+  else page = renderHomeView({ locationLabel, salons: directoryState.items, loading: directoryState.loading, error: directoryState.error, query: directoryState.query });
 
   root.innerHTML =
     '<div class="client-app-shell">' +
@@ -70,6 +79,7 @@ function renderApp() {
     activePage = pageId;
     if (pageId === "profile") await loadProfile();
     if (pageId === "appointments") await loadAppointments();
+    if (pageId === "home") await loadPublicSalons();
     renderApp();
   });
   root.querySelector("[data-bottom-nav]").append(navigation);
@@ -85,6 +95,45 @@ async function loadProfile() {
     if (error?.code !== "CUSTOMER_PROFILE_NOT_READY") {
       console.warn("Falha ao preparar perfil global.", error?.code || "PROFILE_ERROR");
     }
+  }
+}
+
+/** Consulta somente salões e unidades que ativaram a publicação pública. */
+async function loadPublicSalons() {
+  directoryState = { ...directoryState, loading: true, error: "" };
+  if (activePage === "home") renderApp();
+  try {
+    const settings = getLocalSettings();
+    directoryState.items = await searchPublicSalons({
+      client: supabase, query: directoryState.query,
+      city: locationCoordinates ? null : settings.defaultCity || null,
+      latitude: locationCoordinates?.latitude ?? null,
+      longitude: locationCoordinates?.longitude ?? null,
+      limit: 30
+    });
+  } catch (error) {
+    directoryState.items = [];
+    directoryState.error = error?.message || "Não foi possível buscar salões publicados.";
+  } finally {
+    directoryState.loading = false;
+    if (activePage === "home") renderApp();
+  }
+}
+
+/** Carrega o catálogo público da unidade selecionada sem consultar tabelas operacionais diretamente. */
+async function loadSalonCatalog(salon) {
+  salonDetailState = { salon, catalog: [], loading: true, error: "" };
+  slotsState = { serviceId: null, items: [], loading: false, error: "", date: "" };
+  holdState = null;
+  activePage = "salon-detail";
+  renderApp();
+  try {
+    salonDetailState.catalog = await getPublicSalonCatalog({ client: supabase, slug: salon.slug, branchId: salon.branch_id });
+  } catch (error) {
+    salonDetailState.error = error?.message || "Não foi possível carregar o catálogo deste salão.";
+  } finally {
+    salonDetailState.loading = false;
+    renderApp();
   }
 }
 
@@ -122,16 +171,20 @@ async function runAction(action, button = null) {
       renderLogin();
     } else if (action === "locate") {
       const position = await getCurrentPosition();
+      locationCoordinates = { latitude: position.latitude, longitude: position.longitude };
       locationLabel = "Localização obtida (precisão aproximada: " + Math.round(position.accuracy) + " m)";
+      await loadPublicSalons();
       renderApp();
-      setNotice("Localização disponível neste aparelho. Ela ainda não foi enviada ao servidor.", "success");
+      setNotice("Busca próxima atualizada. A localização foi usada somente nesta consulta.", "success");
     } else if (action === "save-location") {
       const form = root.querySelector("[data-location-form]");
       const city = form?.elements.city.value.trim();
       const neighborhood = form?.elements.neighborhood.value.trim();
       if (!city || city.length < 2) throw new Error("Informe uma cidade válida.");
       saveLocalSettings({defaultCity: city, defaultNeighborhood: neighborhood || null});
+      locationCoordinates = null;
       locationLabel = neighborhood ? city + " · " + neighborhood : city;
+      await loadPublicSalons();
       renderApp();
       setNotice("Região padrão salva neste aparelho.", "success");
     } else if (action === "save-profile") {
@@ -141,6 +194,65 @@ async function runAction(action, button = null) {
       profileState = await updateMyProfile({ fullName, phone, email: profileState?.email || currentSession?.user?.email || null });
       renderApp();
       setNotice("Seus dados foram atualizados.", "success");
+    } else if (action === "search-salons" || action === "retry-salon-search") {
+      if (action === "search-salons") directoryState.query = root.querySelector("[data-salon-search] input[name=query]")?.value.trim() || "";
+      await loadPublicSalons();
+    } else if (action === "open-salon") {
+      const salon = directoryState.items.find(item => item.slug === button?.dataset.slug && item.branch_id === button?.dataset.branchId);
+      if (!salon) throw new Error("Este salão não está mais disponível na busca. Atualize os resultados.");
+      await loadSalonCatalog(salon);
+    } else if (action === "back-home") {
+      activePage = "home";
+      renderApp();
+    } else if (action === "view-slots") {
+      const serviceId = button?.dataset.serviceId;
+      const card = serviceId ? root.querySelector('[data-service-card="' + CSS.escape(serviceId) + '"]') : null;
+      const date = card?.querySelector('input[name="date"]')?.value || "";
+      const professionalId = card?.querySelector('select[name="professionalId"]')?.value || null;
+      if (!date) throw new Error("Escolha a data para consultar os horários.");
+      slotsState = { serviceId, items: [], loading: true, error: "", date };
+      renderApp();
+      try {
+        slotsState.items = await getCustomerAvailableSlots({
+          orgId: salonDetailState.salon.org_id, branchId: salonDetailState.salon.branch_id,
+          serviceId, professionalId, date, intervalMinutes: 15
+        });
+      } catch (error) {
+        slotsState.error = error?.message || "Não foi possível consultar horários.";
+      } finally {
+        slotsState.loading = false;
+        renderApp();
+      }
+    } else if (action === "create-hold") {
+      const index = Number(button?.dataset.slotIndex);
+      const slot = slotsState.items[index];
+      if (!slot || !slotsState.serviceId) throw new Error("Selecione um horário válido.");
+      holdState = await createAppointmentHold({
+        orgId: salonDetailState.salon.org_id, branchId: salonDetailState.salon.branch_id,
+        professionalId: slot.professional_id, serviceId: slotsState.serviceId, startsAt: slot.starts_at
+      });
+      renderApp();
+      setNotice("Horário reservado temporariamente. Confirme antes do vencimento.", "success");
+    } else if (action === "confirm-booking") {
+      if (!holdState?.holdId) throw new Error("A reserva temporária não está mais disponível.");
+      if (!String(profileState?.fullName || "").trim()) {
+        activePage = "profile";
+        await loadProfile();
+        renderApp();
+        setNotice("Complete seu nome no perfil antes de confirmar o agendamento.", "info");
+        return;
+      }
+      await confirmAppointmentHold(holdState.holdId);
+      holdState = null;
+      activePage = "appointments";
+      await loadAppointments();
+      renderApp();
+      setNotice("Agendamento confirmado com sucesso.", "success");
+    } else if (action === "cancel-hold") {
+      if (holdState?.holdId) await cancelAppointmentHold(holdState.holdId);
+      holdState = null;
+      renderApp();
+      setNotice("Reserva temporária cancelada.", "success");
     } else if (action === "reload-appointments") {
       await loadAppointments();
     } else if (action === "theme") {
@@ -194,9 +306,11 @@ root.addEventListener("input", event => {
 root.addEventListener("submit", event => {
   const locationForm = event.target.closest("[data-location-form]");
   const profileForm = event.target.closest("[data-profile-form]");
-  if (!locationForm && !profileForm) return;
+  const salonSearchForm = event.target.closest("[data-salon-search]");
+  if (!locationForm && !profileForm && !salonSearchForm) return;
   event.preventDefault();
   if (profileForm) runAction("save-profile", profileForm.querySelector('button[type="submit"]'));
+  else if (salonSearchForm) runAction("search-salons", salonSearchForm.querySelector('button[type="submit"]'));
   else runAction("save-location", locationForm.querySelector('button[type="submit"]'));
 });
 
@@ -212,16 +326,20 @@ async function start() {
     currentSession = await getCurrentSession();
     if (currentSession) {
       await loadProfile();
+      await loadPublicSalons();
       renderApp();
     } else renderLogin();
     subscribeToAuthChanges(async session => {
       currentSession = session;
       if (session) {
         await loadProfile();
+        await loadPublicSalons();
         renderApp();
       } else {
         profileState = null;
         identityLinkRequests = [];
+        holdState = null;
+        appointmentsState = { items: [], loading: false, error: "" };
         renderLogin();
       }
     });
