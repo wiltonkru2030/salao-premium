@@ -8,11 +8,21 @@
 const digits=value=>String(value??"").replace(/\D/g,"");
 /** Formata telefone brasileiro com DDD e limite de onze dígitos. */
 export function formatPhone(value){
- const d=digits(value).slice(0,11);
+ const raw=String(value??"").trim();
+ // Um DDI informado não pode ser confundido com o DDD brasileiro.
+ const all=digits(raw);
+ if(raw.startsWith("+")&&!/^55\d{10,11}$/.test(all))return "+"+all;
+ const d=(raw.startsWith("+")?all.slice(2):all).slice(0,11);
  if(d.length<=2)return d? "("+d : "";
  if(d.length<=6)return "("+d.slice(0,2)+") "+d.slice(2);
  if(d.length<=10)return "("+d.slice(0,2)+") "+d.slice(2,6)+"-"+d.slice(6);
  return "("+d.slice(0,2)+") "+d.slice(2,7)+"-"+d.slice(7);
+}
+/** Preserva DDI explícito na identidade global da cliente; não corta números internacionais. */
+export function formatInternationalPhone(value){
+ const raw=String(value??"").trim();
+ if(raw.startsWith("+"))return "+"+digits(raw);
+ return formatPhone(raw);
 }
 /** Formata CPF em grupos 000.000.000-00, sem validar os dígitos verificadores. */
 export function formatCpf(value){
@@ -44,10 +54,14 @@ export function parseBRL(value){
 }
 /** Detecta máscara por data-mask, nome, id ou placeholder reconhecido. */
 export function detectInputMask(input){
+ const type=String(input?.type||"text").toLowerCase();
+ // Nunca modificar credenciais nem campos de tipos incompatíveis com máscara textual.
+ if(!["text","tel","search"].includes(type))return "";
  const declared=(input?.dataset?.mask||"").toLowerCase();
  const name=(input?.name||input?.id||"").toLowerCase();
  const hint=(input?.placeholder||"").trim();
- if(declared)return declared;
+ if(declared==="none")return "";
+ if(declared)return ["cpf","cnpj","phone","phone-international","cep","currency"].includes(declared)?declared:"";
  if(/(^|[_-])cpf($|[_-])/.test(name)||hint==="000.000.000-00")return "cpf";
  if(/(^|[_-])cnpj($|[_-])/.test(name)||hint==="00.000.000/0000-00")return "cnpj";
  if(/phone|telefone|celular|whatsapp/.test(name)||/^\(00\)\s?00000-0000$/.test(hint))return "phone";
@@ -61,6 +75,7 @@ export function applyInputMask(input){
  if(mask==="cpf")input.value=formatCpf(input.value);
  else if(mask==="cnpj")input.value=formatCnpj(input.value);
  else if(mask==="phone")input.value=formatPhone(input.value);
+ else if(mask==="phone-international")input.value=formatInternationalPhone(input.value);
  else if(mask==="cep")input.value=formatCep(input.value);
  else if(mask==="currency")input.value=formatCurrency(input.value);
 }
@@ -70,15 +85,18 @@ export function installGlobalMasks(){
  document.documentElement.dataset.globalMasks="true";
  document.addEventListener("input",event=>{
   const input=event.target;
-  if(!(input instanceof HTMLInputElement))return;
+  if(!(input instanceof HTMLInputElement)||event.isComposing)return;
   const mask=detectInputMask(input);
   if(!mask)return;
   const start=input.selectionStart;
   const before=input.value;
   applyInputMask(input);
   if(start!==null&&document.activeElement===input){
-   const delta=input.value.length-before.length;
-   const pos=Math.max(0,Math.min(input.value.length,start+delta));
+   // Preserva a posição lógica do cursor pela quantidade de dígitos à esquerda.
+   const count=digits(before.slice(0,start)).length;
+   let pos=0,found=0;
+   while(pos<input.value.length&&found<count){if(/\d/.test(input.value[pos]))found++;pos++;}
+   if(start===before.length)pos=input.value.length;
    try{input.setSelectionRange(pos,pos);}catch{}
   }
  });
