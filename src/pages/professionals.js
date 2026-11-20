@@ -3,7 +3,7 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, toast, esc } from "../utils.js";
 import { reportError } from "../utils/errors.js";
-import { fetchProfessionalWorkspace, setProfessionalActive } from "../modules/professionals/professionals.service.js";
+import { fetchProfessionalWorkspace, setProfessionalActive, setTeamProfessionalAppAccess, revokeProfessionalAppAccess } from "../modules/professionals/professionals.service.js";
 
 /** Módulo Profissionais: cadastro fiscal, vínculo de serviços e controle de acesso ao App Profissional. */
 
@@ -180,8 +180,7 @@ export async function loadProfessionalsPage(){
    const userId=staffToggle.dataset.staffAppToggle,role=staffToggle.dataset.staffRole,enabled=staffToggle.checked;
    staffToggle.disabled=true;
    try {
-    const {error}=await supabase.rpc("set_professional_app_access",{p_org_id:state.organization.id,p_target_user_id:userId,p_enabled:enabled,p_scope:role==="receptionist"?"calendar_all":"all"});
-    if(error)throw error;
+    await setTeamProfessionalAppAccess({client:supabase,orgId:state.organization.id,userId,role,enabled});
     toast(enabled?"Acesso ao App liberado.":"Acesso ao App revogado.");
     await loadProfessionalsPage();
    } catch(error) {
@@ -198,8 +197,7 @@ export async function loadProfessionalsPage(){
   else{
    toggle.disabled=true;
    try {
-    const {error}=await supabase.rpc("revoke_professional_app_access",{p_org_id:state.organization.id,p_professional_id:id});
-    if(error)throw error;
+    await revokeProfessionalAppAccess({client:supabase,orgId:state.organization.id,professionalId:id});
     initialPasswords.delete(id);
     toast("Acesso ao App Profissional revogado.");
     await loadProfessionalsPage();
