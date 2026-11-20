@@ -40,3 +40,6 @@
 
 /* Módulo 06 — Comanda, Vendas e Caixa. */
 @import url('./src/styles/design-financial-operations.css');
+
+/* Módulo 07 — Financeiro, Comissões e Relatórios. */
+@import url('./src/styles/design-financial-analytics.css');
