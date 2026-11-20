@@ -4,6 +4,7 @@ import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
 import { reportError } from "../utils/errors.js";
 import { renderQuoteBuilder, renderQuoteList } from "../modules/quotes/components/quote-components.js";
+import { buildQuoteItem, makeQuotePayload, calculateQuoteTotals } from "../modules/quotes/quote.rules.js";
 import { printQuoteDocument, openQuoteSchedule } from "../modules/quotes/services/quote-workflows.js";
 
 /** @typedef {import("../types/tenant.types").TenantContext} TenantContext */
@@ -11,20 +12,15 @@ import { printQuoteDocument, openQuoteSchedule } from "../modules/quotes/service
 
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const statusName = value => ({draft:"Rascunho",pending:"Em análise",accepted:"Aceito",rejected:"Recusado",expired:"Expirado",cancelled:"Cancelado"})[value] || value;
-let customers = [], services = [], professionals = [], professionalServices = [], items = [], selectedCustomer = null, discountRules = new Set(), maxDiscount = 0, allowFixedDiscount = true, activeQuote = null;
+let customers = [], services = [], discountCatalog = [], professionals = [], professionalServices = [], items = [], selectedCustomer = null, discountRules = new Set(), maxDiscount = 0, allowFixedDiscount = true, activeQuote = null;
 
 function allowed() { return ["owner","admin","manager","receptionist"].includes(state.membership?.role); }
-function totals() {
-  const subtotal = items.reduce((sum, item) => sum + item.quantity * item.price, 0);
-  const discount = items.reduce((sum, item) => sum + item.discount, 0);
-  return { subtotal, discount, total: subtotal - discount };
-}
 function renderBuilder() {
   const host = document.querySelector("#quote-builder");
   if (!host) return;
   host.innerHTML = renderQuoteBuilder({
     items, selectedCustomer, services, professionals, discountRules,
-    maxDiscount, allowFixedDiscount,
+    maxDiscount, allowFixedDiscount, discountCatalog,
     canManageSettings: ["owner","admin","manager"].includes(state.membership?.role)
   });
 }
@@ -65,29 +61,37 @@ export async function loadQuotesPage() {
     if(branchId) {
       customerQuery=customerQuery.or("branch_id.eq."+branchId+",branch_id.is.null");
       serviceQuery=serviceQuery.or("branch_id.eq."+branchId+",branch_id.is.null");
-      professionalQuery=professionalQuery.eq("branch_id",branchId);
+      professionalQuery=professionalQuery.or("branch_id.eq."+branchId+",branch_id.is.null");
       quoteQuery=quoteQuery.eq("branch_id",branchId);
     }
-    const [customerResult,serviceResult,professionalResult,professionalServiceResult,quoteResult,settingResult,ruleResult]=await Promise.all([
+    const [customerResult,serviceResult,professionalResult,professionalServiceResult,quoteResult,settingResult,ruleResult,discountCatalogResult]=await Promise.all([
       customerQuery.order("name").limit(1000),
       serviceQuery.order("name").limit(500),
       professionalQuery.order("name").limit(500),
       supabase.from("professional_services").select("professional_id,service_id").eq("org_id",orgId),
       quoteQuery.order("created_at",{ascending:false}).limit(100),
       supabase.from("quote_settings").select("max_discount_percent,allow_fixed_discount").eq("org_id",orgId).maybeSingle(),
-      supabase.from("quote_discount_services").select("service_id").eq("org_id",orgId).eq("discount_allowed",true)
+      supabase.from("quote_discount_services").select("service_id").eq("org_id",orgId).eq("discount_allowed",true),
+      supabase.from("services").select("id,name,branch_id").eq("org_id",orgId).eq("active",true).order("name").limit(1000)
     ]);
-    for(const r of [customerResult,serviceResult,professionalResult,professionalServiceResult,quoteResult,settingResult,ruleResult]) if(r.error) throw r.error;
+    for(const r of [customerResult,serviceResult,professionalResult,professionalServiceResult,quoteResult,settingResult,ruleResult,discountCatalogResult]) if(r.error) throw r.error;
+    if(!host.isConnected||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId)return;
     customers=customerResult.data||[]; services=serviceResult.data||[]; professionals=professionalResult.data||[]; professionalServices=professionalServiceResult.data||[];
     maxDiscount=Number(settingResult.data?.max_discount_percent||0);
     allowFixedDiscount=settingResult.data?.allow_fixed_discount!==false;
     discountRules=new Set((ruleResult.data||[]).map(r=>r.service_id));
+    discountCatalog=discountCatalogResult.data||[];
+    // Não sobrescrever regras da organização quando o catálogo estiver truncado.
+    const rulesComplete=discountCatalog.length<1000&&(ruleResult.data||[]).length<1000;
+    host.dataset.discountRulesComplete=String(rulesComplete);
     host.innerHTML='<div class="quote-page-grid"><div><div id="quote-builder"></div></div><div id="quotes-list"></div></div>';
     renderBuilder();
     renderList(quoteResult.data||[],new Map(customers.map(c=>[c.id,c.name])));
     if(host.dataset.bound==="true")return;
     host.dataset.bound="true";
+    const current=()=>host.isConnected&&state.organization?.id===orgId&&(state.branch?.id||null)===branchId;
     host.addEventListener("change",event=>{
+      if(!current())return;
       if(event.target.id!=="quote-service")return;
       const serviceId=event.target.value,professionalSelect=host.querySelector("#quote-professional");
       if(!professionalSelect)return;
@@ -99,6 +103,7 @@ export async function loadQuotesPage() {
       professionalSelect.disabled=!serviceId;
     });
     host.addEventListener("input",async e=>{
+      if(!current())return;
       if(e.target.id!=="quote-customer-search")return;
       const term=e.target.value.trim().toLocaleLowerCase("pt-BR"),box=host.querySelector("#quote-customer-results");
       if(term.length<2){box.innerHTML="";return;}
@@ -110,6 +115,7 @@ export async function loadQuotesPage() {
 '</small></button>').join(""):'<div class="quote-not-found">Cliente não encontrado <button class="btn secondary" type="button" id="quote-show-quick">＋ Cadastrar cliente</button></div>';
     });
     host.addEventListener("click",async e=>{
+      if(!current())return;
       const select=e.target.closest("[data-select-customer]");
       if(select){selectedCustomer=customers.find(c=>c.id===select.dataset.selectCustomer)||null;renderBuilder();return;}
       if(e.target.closest("#quote-show-quick")){host.querySelector("#quote-quick-customer").hidden=false;host.querySelector("#quote-quick-customer-form [name=name]").focus();return;}
@@ -119,13 +125,10 @@ export async function loadQuotesPage() {
         const button=host.querySelector("#quote-save");button.disabled=true;button.textContent="Salvando orçamento…";
         try{
           const notes=host.querySelector("#quote-notes").value.trim(),validUntil=host.querySelector("#quote-valid-until").value||null;
-          const payload=items.map(item=>({
-            service_id:item.serviceId,professional_id:item.professionalId,quantity:item.quantity,
-            discount_mode:item.discountMode,
-            discount_value:item.discountMode==="percent"?(item.quantity*item.price>0?item.discount/(item.quantity*item.price)*100:0):item.discount
-          }));
+          const payload=makeQuotePayload(items);
+          calculateQuoteTotals(items);
           const {data:quote,error}=await supabase.rpc("create_quote_with_items",{
-            p_org_id:orgId,p_branch_id:state.branch?.id||null,p_customer_id:selectedCustomer.id,
+            p_org_id:orgId,p_branch_id:branchId,p_customer_id:selectedCustomer.id,
             p_valid_until:validUntil,p_notes:notes,p_items:payload
           });
           if(error)throw error;
@@ -138,14 +141,19 @@ export async function loadQuotesPage() {
       if(e.target.closest("#quote-add-item")){
         const service=services.find(s=>s.id===host.querySelector("#quote-service").value);
         if(!service){toast("Selecione um serviço válido.");return;}
-        const quantity=Number(host.querySelector("#quote-quantity").value||1),discountInput=Number(host.querySelector("#quote-discount").value||0),discountMode=host.querySelector("#quote-discount-mode").value;
-        if(!Number.isInteger(quantity)||quantity<1){toast("Informe uma quantidade válida.");return;}
-        if(discountMode==="fixed"&&!allowFixedDiscount){toast("O salão não permite desconto em valor fixo.");return;}
-        const base=quantity*Number(service.price),percent=discountMode==="fixed"?(base>0?discountInput/base*100:0):discountInput;
-        if(discountInput>0&&!discountRules.has(service.id)){toast("Este serviço não permite desconto nas regras do salão.");return;}
-        if(discountInput<0||percent>maxDiscount||discountInput>base){toast("O desconto ultrapassa o limite configurado.");return;}
-        const professional=professionals.find(p=>p.id===host.querySelector("#quote-professional").value);
-        items.push({serviceId:service.id,name:service.name,quantity,price:Number(service.price),duration:Number(service.duration_minutes),professionalId:professional?.id||null,professionalName:professional?.name||"",discount:Number((discountMode==="fixed"?discountInput:base*percent/100).toFixed(2)),discountMode});
+        try{
+          if(items.length>=100)throw new Error("O orçamento permite até 100 serviços.");
+          const professionalId=host.querySelector("#quote-professional").value;
+          const professional=professionals.find(p=>p.id===professionalId)||null;
+          if(professionalId&&!professional)throw new Error("Selecione um profissional válido.");
+          const item=buildQuoteItem({service,professional,assignments:professionalServices,
+            quantity:host.querySelector("#quote-quantity").value,
+            discountMode:host.querySelector("#quote-discount-mode").value,
+            discountValue:host.querySelector("#quote-discount").value,
+            maxDiscount,allowFixedDiscount,discountAllowed:discountRules.has(service.id)});
+          calculateQuoteTotals([...items,item]);
+          items.push(item);
+        }catch(error){toast(error.message);return;}
         renderBuilder();return;
       }
       const remove=e.target.closest("[data-remove-quote-item]");
@@ -162,6 +170,7 @@ export async function loadQuotesPage() {
       if(e.target.closest("#quote-back")){activeQuote=null;renderBuilder();renderList(quoteResult.data||[],new Map(customers.map(c=>[c.id,c.name])));return;}
     });
     host.addEventListener("submit",async e=>{
+      if(!current())return;
       if(e.target.id==="quote-quick-customer-form"){
         e.preventDefault();const form=e.target,v=new FormData(form),name=String(v.get("name")||"").trim(),phone=String(v.get("phone")||"").trim();
         if(!name||!phone){toast("Informe nome e WhatsApp.");return;}
@@ -171,7 +180,8 @@ export async function loadQuotesPage() {
       }
       if(e.target.id==="quote-discount-settings"){
         e.preventDefault();const form=e.target,percent=Number(new FormData(form).get("max_discount_percent"));
-        if(!Number.isFinite(percent)||percent<0||percent>100){toast("Informe um limite entre 0 e 100%.");return;}
+        if(host.dataset.discountRulesComplete!=="true"){toast("O catálogo de regras está incompleto. Não foi possível salvar com segurança.");return;}
+        if(!Number.isFinite(percent)||percent<0||percent>100||Number(percent.toFixed(2))!==percent){toast("Informe um limite entre 0 e 100%.");return;}
         const selected=[...form.querySelectorAll('[name="discount_service"]:checked')].map(el=>el.value),fixedAllowed=form.querySelector('[name="allow_fixed_discount"]').checked;
         try{
           const {error}=await supabase.rpc("save_quote_discount_settings",{
