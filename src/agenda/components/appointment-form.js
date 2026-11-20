@@ -16,7 +16,7 @@ export function renderAppointmentForm({appointment=null,date='',time='',pro=null
   const selectedProfessionalName=a.professionalName||(state.agendaProfessionals||[]).find(item=>item[3]===professionalId)?.[1]||'';
   return '<form class="agenda-form" data-agenda-form>'+
 
-    '<label class="form-field"><span>Unidade</span><select name="branch_id" required><option value="">Carregando unidades…</option></select></label>'+
+    '<label class="form-field"><span>Unidade</span><select name="branch_id" data-selected="'+esc(a.branch_id||state.branch?.id||'')+'" required><option value="">Carregando unidades…</option></select></label>'+
     '<label class="form-field"><span>Cliente</span><input id="appointment-customer-search" value="'+esc(a.name||'')+
 '" placeholder="Digite para buscar o cliente" autocomplete="off" required></label>'+
 
