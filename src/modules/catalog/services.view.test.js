@@ -15,3 +15,11 @@ assert.ok(!renderServicesView([service],null,false).includes('data-edit-service=
 assert.ok(renderServicesView([],[],true).includes("Nenhum serviço cadastrado."));
 assert.throws(()=>renderServicesView(null,[]),TypeError);
 console.log("Testes da interface de serviços: OK.");
+
+/** Serviços exclusivos devem identificar sua unidade e oferecer apenas filiais ativas. */
+const scoped=renderServicesView([{...service,branch_id:"b1"}],[],true,[{id:"b1",name:"Unidade Centro",active:true},{id:"b2",name:"Unidade Fechada",active:false}]);
+assert.ok(scoped.includes('name="branch_id"'));
+assert.ok(scoped.includes('value="b1">Unidade Centro'));
+assert.ok(scoped.includes("min · Unidade Centro"));
+assert.ok(!scoped.includes('value="b2"'));
+assert.ok(html.includes("Todas as unidades"));
