@@ -8,8 +8,9 @@
 - As tabelas customer_profiles, customer_tenant_memberships e customer_account_customers ainda não existem no banco inspecionado.
 
 ## Arquivos
-- customer-global-identity.draft.sql: desenho inicial de DDL/RLS, não é migration oficial e não deve ser executado em produção.
-- tests/integration/customer-global-identity-rls.test.mjs: teste de leitura cruzada com tokens de duas clientes, configurado por variáveis de ambiente.
+- docs/sql/customer-global-identity-schema.sql: desenho inicial de DDL/RLS, não é migration oficial e não deve ser executado em produção.
+- docs/sql/customer-global-identity-functions.draft.sql: rascunho da RPC de associação assistida de cadastro legado, sem aplicação no banco.
+- tests/integration/customer-global-identity-rls.test.mjs: testes de leitura cruzada, bloqueio de escrita direta e associação autorizada com tokens de QA.
 
 ## Regras de segurança do desenho
 - Perfil global por auth_user_id.
@@ -22,11 +23,11 @@
 - Nenhuma permissão para appointments, comandas, créditos ou pagamentos é concedida aqui.
 
 ## Pendências antes da migration oficial
-1. Confirmar política de criação do membership (link público do salão, convite ou primeira reserva).
-2. Implementar Edge Function ou RPC segura para criar membership e associar cliente legado.
-3. Revisar permissões de schema private e trigger function no ambiente local.
-4. Executar migration em staging.
-5. Rodar testes com duas contas e duas organizações, incluindo tentativa de escrita cruzada.
+1. Criar membership dentro da mesma transação que cria o HOLD/reserva, após validar identidade, organização, filial e disponibilidade; não criar membership apenas por abrir link público.
+2. Implementar e revisar a RPC privada de associação de cadastro legado, restrita a owner/admin do mesmo tenant, com auditoria e idempotência.
+3. Revisar grants, schema private e auditoria em ambiente local/staging.
+4. Executar a migration aprovada em staging e preservar os 17 cadastros operacionais existentes.
+5. Rodar testes com duas contas e duas organizações, incluindo tentativas de escrita cruzada e associação duplicada.
 6. Executar Security Advisors e revisar os alertas existentes.
 7. Gerar migration oficial usando Supabase CLI em ambiente local; o CLI não está disponível neste ambiente de edição.
 8. Não aplicar no banco de produção sem autorização explícita.
@@ -91,3 +92,24 @@ A associação com `customers` legado continua fora desse fluxo. Ela exigirá co
 
 **Status atualizado:** os testes negativos foram adicionados ao repositório, mas ainda precisam ser executados com duas sessões reais de QA. O endpoint/RPC de reserva ainda não existe e o banco de produção não foi alterado.
 
+
+## Atualização de implementação — associação assistida
+
+Foi adicionado `docs/sql/customer-global-identity-functions.draft.sql` com o desenho de uma RPC para associar um cadastro operacional legado à identidade global.
+
+A função proposta:
+- usa `auth.uid()` para identificar o operador autenticado;
+- exige papel owner/admin ativo na mesma organização;
+- confirma que o cadastro operacional pertence ao `org_id` informado;
+- confirma que a identidade de destino existe no Supabase Auth;
+- impede que uma identidade seja associada a dois cadastros ou que um cadastro pertença a duas identidades;
+- cria/ativa o membership de origem `legacy_link`, sem reativar vínculo suspenso;
+- registra a associação em `audit_logs`, sem copiar telefone, e-mail ou outros dados pessoais;
+- retorna o mesmo resultado em repetição da associação já confirmada;
+- expõe somente um wrapper `SECURITY INVOKER`; a lógica privilegiada permanece em `private` com `search_path` vazio.
+
+**Importante:** o membership de uma cliente que está iniciando uma reserva não será criado por um endpoint independente de slug. Ele deverá ser criado dentro da mesma transação do HOLD/reserva, depois da validação de todos os dados e regras de disponibilidade.
+
+O teste de integração foi ampliado para cobrir leitura cruzada, escrita direta proibida, proteção de `phone_verified_at`, associação repetida e tentativas de associação entre organizações. Os cenários que exigem tokens de owner e IDs operacionais de QA só são executados quando as variáveis adicionais estão configuradas.
+
+**Estado desta etapa:** arquivos de especificação e testes atualizados na branch de trabalho. Nenhuma migration foi aplicada, nenhuma tabela foi criada e nenhum dado de produção foi alterado. A migration oficial continua pendente porque o Supabase CLI não está disponível neste ambiente e os testes exigem um projeto de QA isolado.
