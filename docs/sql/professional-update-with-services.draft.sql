@@ -43,8 +43,16 @@ begin
     raise exception 'Tipo fiscal inválido.' using errcode='22023';
   end if;
   if length(coalesce(p_phone,''))>30 or length(coalesce(p_email,''))>254 or
-     (coalesce(p_email,'')<>'' and lower(btrim(p_email)) !~ '^[^[:space:]@]+@[^[:space:]@]+\\.[^[:space:]@]+
-    coalesce(p_cnpj,'') !~ '^[0-9]{14}$' or length(btrim(coalesce(p_legal_name,''))) not between 2 and 160 or length(coalesce(p_trade_name,''))>160
+     (coalesce(p_email,'')<>'' and lower(btrim(p_email)) !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$') then
+    raise exception 'Telefone ou e-mail inválido.' using errcode='22023';
+  end if;
+  if length(coalesce(p_specialty,''))>100 then
+    raise exception 'Especialidade deve ter até 100 caracteres.' using errcode='22023';
+  end if;
+  if p_tax_regime='mei' and (
+    coalesce(p_cnpj,'') !~ '^[0-9]{14}$' or
+    length(btrim(coalesce(p_legal_name,''))) not between 2 and 160 or
+    length(coalesce(p_trade_name,''))>160
   ) then
     raise exception 'Para MEI, informe CNPJ válido e razão social.' using errcode='22023';
   end if;
