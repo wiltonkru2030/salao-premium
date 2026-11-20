@@ -3,7 +3,7 @@
  * Responsabilidade: validar escopo por organização, filtros de membros e perfis relacionados.
  */
 import assert from "node:assert/strict";
-import {fetchProfessionalWorkspace,setProfessionalActive} from "./professionals.service.js";
+import {fetchProfessionalWorkspace,setProfessionalActive,setTeamProfessionalAppAccess,revokeProfessionalAppAccess} from "./professionals.service.js";
 
 function mockClient(tables={},error=null) {
   const calls=[];
