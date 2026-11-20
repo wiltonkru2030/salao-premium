@@ -22,3 +22,6 @@
 @import url('./src/styles/shared-controls.css');
 
 @import url('./src/styles/agenda-offers.css');
+
+/* Etapa 01 — escala de legibilidade aplicada por último em todo o painel. */
+@import url('./src/styles/design-readability.css');
