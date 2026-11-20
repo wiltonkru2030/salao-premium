@@ -27,6 +27,7 @@ A inspeção somente de leitura encontrou:
 5. O cadastro novo usa uma RPC que obtém `auth.uid()` do token; o navegador não escolhe o ID de usuário.
 6. A cliente pode ler somente a própria conta e os vínculos dela. A equipe autorizada pode consultar e vincular registros dentro da própria organização.
 7. Nenhuma permissão de leitura de agendamentos, comandas, pagamentos ou finanças será concedida nesta primeira etapa.
+8. O SQL revoga privilégios padrão das duas tabelas antes de conceder somente `SELECT` em `customer_accounts` e `SELECT`/`INSERT` em `customer_account_customers`; as políticas RLS continuam obrigatórias.
 
 ## Fluxo de login e cadastro
 
