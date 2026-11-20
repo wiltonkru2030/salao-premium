@@ -14,6 +14,7 @@ function mockClient(tables={},error=null){
       insert(payload){call.action="insert";call.payload=payload;return query;},
       update(payload){call.action="update";call.payload=payload;return query;},
       eq(key,value){call.filters.push([key,value]);return query;},
+      or(expression){call.or=expression;return query;},
       order(key){call.order=key;return query;},
       range(start,end){call.range=[start,end];return query;},
       then(resolve,reject){
@@ -31,6 +32,9 @@ async function run(){
   const rows=Array.from({length:251},(_,i)=>({id:"p"+i,org_id:"org-a",name:"Produto "+i}));
   const client=mockClient({products:rows});
   assert.equal((await listProducts({client,orgId:"org-a"})).length,251);
+  const branchClient=mockClient({products:[]});
+  await listProducts({client:branchClient,orgId:"org-a",branchId:"11111111-1111-4111-8111-111111111111"});
+  assert.equal(branchClient.calls[0].or,"branch_id.eq.11111111-1111-4111-8111-111111111111,branch_id.is.null");
   await saveProduct({client,orgId:"org-a",name:"Shampoo",sku:"SH-01",category:"Cabelo",costPrice:10,salePrice:25,stockQuantity:12,minStock:2});
   assert.equal(client.calls[2].payload.org_id,"org-a");
   assert.equal(client.calls[2].payload.stock_quantity,12);
