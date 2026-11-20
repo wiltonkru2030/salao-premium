@@ -1,5 +1,6 @@
 /* Estilos do App Profissional/PWA: compartilha os tokens do design system e define a composição mobile do profissional. */
 @import url('../src/styles/design-system.css');
+@import url('../src/styles/shared-controls.css');
 :root{font-family:var(--sp-font-ui);color:var(--sp-ink);background:var(--sp-paper);font-synthesis:none;--ink:var(--sp-ink);--muted:var(--sp-muted);--line:var(--sp-line);--gold:var(--sp-gold);--soft:var(--sp-soft);--gold-soft:var(--sp-gold-soft)}
 *{box-sizing:border-box}
 html{background:#fff}
