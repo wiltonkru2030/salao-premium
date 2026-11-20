@@ -94,7 +94,7 @@ function openPackageDialog(ctrl,pkg=null){
 /** Cliques dos botões são convertidos em intenções; nenhuma reserva ocorre sem confirmação. */
 async function onClick(ctrl,event){
  const button=event.target.closest?.("[data-offer-action],[data-offer-tab],[data-offer-customer]");
- if(!button||ctrl.data.loading||ctrl.data.busy)return;
+ if(!button||ctrl.data.loading||ctrl.data.busy||context(ctrl.state)!==ctrl.data.ctx)return;
  const st=ctrl.data,root=ctrl.root;
  if(button.dataset.offerTab){
   if(!["waitlist","packages"].includes(button.dataset.offerTab))return;
@@ -247,7 +247,7 @@ async function onSubmit(ctrl,event){
  }
 }
 function onInput(ctrl,event){
- if(event.target.id!=="offer-customer-search")return;
+ if(event.target.id!=="offer-customer-search"||context(ctrl.state)!==ctrl.data.ctx)return;
  const field=event.target,st=ctrl.data,seq=++ctrl.customerSeq;
  const form=field.closest("form");form.elements.customer_id.value="";
  const results=ctrl.root.querySelector("#offer-customer-results");
