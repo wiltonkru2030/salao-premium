@@ -65,6 +65,7 @@ export async function fetchProfessionalOrders({ client, organizationId }) {
       .select("id,order_number,status,total,assigned_professional_id,customer_id")
       .eq("org_id", organizationId)
       .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
       .limit(100),
     "Não foi possível carregar as comandas. Verifique sua conexão e tente novamente."
   );
@@ -93,7 +94,8 @@ export async function fetchProfessionalOrderItems({ client, organizationId, orde
       .select("id,item_type,description,quantity,unit_price,total,professional_id,performed_at")
       .eq("org_id", organizationId)
       .eq("order_id", orderId)
-      .order("created_at"),
+      .order("created_at")
+      .order("id"),
     "Não foi possível carregar os itens da comanda. Tente novamente."
   );
 }
