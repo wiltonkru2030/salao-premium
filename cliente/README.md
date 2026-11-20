@@ -3,29 +3,35 @@
 Aplicativo independente servido em /cliente/, separado da autenticação administrativa e profissional.
 
 ## Estrutura modular
-- services/: autenticação, API, perfil, GPS, catálogo, agendamento, cupons, favoritos, notificações, configurações e termos.
-- ui/: componentes de navegação e entrada de PIN.
+- services/: autenticação, API, perfil, GPS, catálogo, reservas, histórico, cupons, favoritos, notificações e configurações.
+- ui/: telas de login, início, agendamentos, perfil, vínculos e navegação.
 - styles/: tema, reset, layout, componentes, páginas e responsividade.
 - app.js: composição da aplicação e ciclo de sessão.
 
-## Implementado nesta etapa
-- Autenticação Google e Passkey encapsulada em services/authService.js.
+## Implementado
+- Autenticação global encapsulada em services/authService.js: Google e Passkey.
 - API HTTP padronizada com timeout e erros em português.
-- Validação de perfil global existente.
-- Leitura de GPS sob ação explícita da cliente e cálculo de distância Haversine.
+- Perfil global idempotente por auth.uid(), com edição de nome e celular.
+- Máscara de telefone brasileiro e normalização E.164; telefone não é marcado como verificado.
 - Preferências locais não sensíveis e limpeza restrita de cache.
-- Estrutura de navegação após autenticação.
-- Telas de login, Home, agendamentos e perfil separadas em módulos de UI.
-- Fallback manual para cidade e bairro, com preferência local.
-- Contratos de serviços separados. Funcionalidades dependentes de tabelas/RPCs ainda não implantadas falham explicitamente e não simulam sucesso.
+- Leitura de localização sob ação explícita da cliente; localização não é enviada automaticamente.
+- Solicitações de associação de cadastros legados com confirmação da própria cliente.
+- Estrutura de histórico de agendamentos, paginação e estados de carregamento/vazio/erro.
 
-## Segurança
-- Identidade global depende de auth.uid(); nunca confiar em identificador enviado pelo navegador.
-- Google e Passkey são os métodos de autenticação principal.
-- PIN de quatro dígitos não é autenticação autônoma. O componente de entrada não persiste PIN.
-- Não associar clientes antigos automaticamente por telefone, nome ou data de nascimento.
-- Não expor chave service_role em código do navegador.
-- Dados operacionais continuam isolados por organização e filial.
+## Banco e segurança
+- As migrations customer_global_identity, customer_identity_link_hardening e customer_appointment_holds constam no histórico do Supabase.
+- RLS do perfil global limita leitura/alteração à identidade autenticada.
+- Membership e mapeamento entre identidade e cadastro legado não podem ser gravados diretamente pela cliente.
+- A confirmação de vínculo e de reserva ocorre por RPC autenticada e transacional.
+- Não confiar em identificadores de usuário/cliente enviados pelo navegador.
+- Não expor service_role no código público.
+- PIN de quatro dígitos não é autenticação autônoma nem substitui Google/Passkey.
 
-## Não liberar em produção
-O aplicativo ainda não tem catálogo público, agendamento transacional, histórico, cupons ou notificações integrados. O perfil global depende da migration e dos testes RLS. A autenticação depende da configuração Google/Passkey no Supabase.
+## Pendências que bloqueiam liberação comercial
+- O diretório público de salões, a vitrine, catálogo e busca geográfica ainda não estão implantados.
+- A reserva temporária existe no banco, mas disponibilidade/expediente e a interface de seleção ainda precisam ser integrados.
+- O histórico visual está implementado, mas sua RPC get_my_customer_appointments está somente em docs/sql/customer-appointment-history.draft.sql e ainda não foi aplicada.
+- Cupons, favoritos, notificações e preferências remotas ainda não estão integrados.
+- Configuração e teste ponta a ponta de Google/Passkey precisam ser concluídos no ambiente de autenticação.
+
+Nenhuma funcionalidade pendente deve exibir dados fictícios ou afirmar sucesso sem confirmação do backend.
