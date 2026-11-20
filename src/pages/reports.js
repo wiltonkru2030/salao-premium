@@ -7,7 +7,8 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, metric } from "../utils.js";
 import { reportError } from "../utils/errors.js";
-import { readFinancePages, sumFinanceAmounts } from "../modules/finance/finance-pagination.js";
+import {queryReports} from "../modules/reports/reports.service.js";
+import {calculateReportIndicators} from "../modules/reports/reports.rules.js";
 
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dateInputValue = date => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0")].join("-");
@@ -44,37 +45,16 @@ export async function loadReportsPage() {
   const period = monthInput.value || dateInputValue(new Date());
   host.dataset.period = period;
   const request=String(Number(host.dataset.request||0)+1);host.dataset.request=request;
-  const current=()=>host.isConnected&&state.organization?.id===orgId&&host.dataset.period===period&&host.dataset.request===request;
+  const userId=state.user?.id,role=state.membership?.role;
+  const current=()=>host.isConnected&&state.user?.id===userId&&state.membership?.role===role&&state.organization?.id===orgId&&host.dataset.period===period&&host.dataset.request===request;
   const { start, end, startIso, endIso } = monthBounds(period);
   host.querySelector(".result-count").textContent = "Consultando " + dateLabel(start) + "…";
 
   try {
-    // Cada fonte utiliza uma data de referência própria; nenhuma lista tem limite silencioso.
-    const query=(table,fields,dateField,configure=q=>q)=>()=>configure(supabase.from(table).select(fields).eq("org_id",orgId).gte(dateField,startIso).lt(dateField,endIso)).order(dateField,{ascending:false}).order("id",{ascending:false});
-    const [payments,refunds,movements,closedOrders,orders,appointments,commissions,paidCommissions]=await Promise.all([
-      readFinancePages(query("service_order_payments","id,amount,status,paid_at","paid_at")),
-      readFinancePages(query("service_order_payments","id,amount,status,refunded_at","refunded_at",q=>q.eq("status","refunded"))),
-      readFinancePages(query("cash_movements","id,movement_type,category,amount,created_at","created_at")),
-      readFinancePages(query("service_orders","id,status,total,closed_at","closed_at",q=>q.eq("status","closed"))),
-      readFinancePages(query("service_orders","id,status,created_at","created_at")),
-      readFinancePages(query("appointments","id,status,starts_at","starts_at")),
-      readFinancePages(query("commissions","id,amount,status,created_at","created_at")),
-      readFinancePages(query("commissions","id,amount,paid_at","paid_at",q=>q.eq("status","paid")))
-    ]);
+    const data=await queryReports({supabase,orgId,startIso,endIso});
     if(!current())return;
-    const sum=sumFinanceAmounts;
-    const received=sum(payments,row=>["confirmed","refunded"].includes(row.status));
-    const refunded=sum(refunds);
-    const cashIn=sum(movements,row=>row.movement_type==="income");
-    const cashOut=sum(movements,row=>row.movement_type==="expense");
-    const generatedCommission=sum(commissions,row=>row.status!=="cancelled");
-    const paidCommission=sum(paidCommissions);
-    const completedAppointments=appointments.filter(row=>row.status==="completed").length;
-    const cancelledAppointments=appointments.filter(row=>row.status==="cancelled").length;
-    const noShows=appointments.filter(row=>row.status==="no_show").length;
-    const averageTicket=closedOrders.length?sum(closedOrders,()=>true,"total")/closedOrders.length:0;
-    const pendingOrders=orders.filter(row=>["open","in_progress","awaiting_payment","partially_paid"].includes(row.status)).length;
-
+    const {payments,closedOrders,appointments}=data;
+    const {received,refunded,cashIn,cashOut,generatedCommission,paidCommission,completedAppointments,cancelledAppointments,noShows,averageTicket,pendingOrders}=calculateReportIndicators(data);
     const appointmentStatus = [
       ["Concluídos", completedAppointments],
       ["Cancelados", cancelledAppointments],
