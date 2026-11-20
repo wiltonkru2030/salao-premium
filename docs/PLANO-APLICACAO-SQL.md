@@ -16,9 +16,9 @@ Os arquivos marcados como draft são documentos de revisão, não migrations apl
 - 20261120065524_customer_coupons_transactional.sql, 20261120065604_restrict_legacy_hold_private_entrypoints.sql e 20261120070111_coupon_fk_indexes_and_public_profile_policy_cleanup.sql — cupons e reserva/resgate transacional.
 
 ## Rascunhos ainda pendentes
-1. docs/sql/audit-composite-record-identifiers.draft.sql — auditoria/lixeira das tabelas globais e identificadores de chaves compostas; depende das tabelas de identidade global já aplicadas.
-2. supabase/migrations/20261120072000_customer_appointment_history.sql — RPC de histórico da própria identidade global autenticada (versionada, ainda não aplicada); docs/sql/customer-appointment-history.draft.sql permanece como referência.
-3. docs/sql/customer-engagement.draft.sql — favoritos, notificações internas por trigger e preferências globais.
+1. supabase/migrations/20261120071000_audit_composite_record_identifiers.sql — auditoria/lixeira das tabelas globais e identificadores de chaves compostas (versionada, ainda não aplicada).
+2. supabase/migrations/20261120072000_customer_appointment_history.sql — RPC de histórico da própria identidade global autenticada (versionada, ainda não aplicada).
+3. supabase/migrations/20261120073000_customer_engagement.sql — favoritos, notificações internas por trigger e preferências globais (versionada, ainda não aplicada).
 4. supabase/migrations/20261119170000_snapshot_commission_rate_on_first_payment.sql — congela a regra de comissão no primeiro pagamento do item. Está versionada, mas não consta no histórico do Supabase conectado.
 5. docs/sql/commission-refund-reversals.draft.sql — débito de comissões já pagas, compensação automática no próximo repasse e wrappers SECURITY INVOKER.
 6. docs/sql/security-definer-api-hardening.draft.sql — move 14 implementações SECURITY DEFINER do schema public para private, mantendo contratos PostgREST em wrappers SECURITY INVOKER.
