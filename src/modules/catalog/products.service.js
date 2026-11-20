@@ -24,14 +24,16 @@ function requireContext(client,orgId) {
  * @param {object} options Cliente Supabase e organização.
  * @returns {Promise<Array<object>>} Produtos ativos e inativos com dados de estoque.
  */
-export async function listProducts({client,orgId}={}) {
+export async function listProducts({client,orgId,branchId=null}={}) {
   requireContext(client,orgId);
   const rows=[];
   try {
     for(let offset=0;;offset+=PAGE_SIZE) {
-      const {data,error}=await client.from("products")
-        .select("id,name,sku,category,cost_price,sale_price,stock_quantity,min_stock,active")
-        .eq("org_id",orgId).order("name").range(offset,offset+PAGE_SIZE-1);
+      let query=client.from("products")
+        .select("id,name,sku,category,cost_price,sale_price,stock_quantity,min_stock,active,branch_id")
+        .eq("org_id",orgId);
+      if(branchId)query=query.or("branch_id.eq."+branchId+",branch_id.is.null");
+      const {data,error}=await query.order("name").range(offset,offset+PAGE_SIZE-1);
       if(error)throw error;
       const page=Array.isArray(data)?data:[];
       rows.push(...page);
@@ -47,7 +49,7 @@ export async function listProducts({client,orgId}={}) {
  * @returns {Promise<void>} Resolve após persistir o produto.
  */
 export async function saveProduct({
-  client,orgId,productId=null,name,sku=null,category=null,
+  client,orgId,branchId=null,productId=null,name,sku=null,category=null,
   costPrice,salePrice,stockQuantity=0,minStock=0
 }={}) {
   requireContext(client,orgId);
@@ -67,7 +69,7 @@ export async function saveProduct({
   try {
     const result=productId
       ? await client.from("products").update(payload).eq("org_id",orgId).eq("id",productId)
-      : await client.from("products").insert({org_id:orgId,...payload,stock_quantity:stock,active:true});
+      : await client.from("products").insert({org_id:orgId,branch_id:branchId||null,...payload,stock_quantity:stock,active:true});
     if(result.error)throw result.error;
   } catch(error) { throw mapProductError(error); }
 }
