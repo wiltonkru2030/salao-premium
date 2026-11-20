@@ -43,6 +43,9 @@ async function run(){
   await assert.rejects(()=>saveProduct({client,orgId:"org-a",name:"Shampoo",costPrice:1,salePrice:25,sku:"x".repeat(65)}),{name:"TypeError"});
   const failing=mockClient({}, {code:"42501",message:"SQL privado"});
   await assert.rejects(()=>listProducts({client:failing,orgId:"org-a"}),e=>!e.message.includes("SQL privado"));
+  const network=mockClient();
+  network.from=()=>{throw new Error("network SQL secret");};
+  await assert.rejects(()=>setProductActive({client:network,orgId:"org-a",productId:"p1",active:false}),e=>!e.message.includes("network SQL secret"));
   console.log("Testes do catálogo de produtos: OK");
 }
 run().catch(error=>{process.stderr.write(error.message+"\n");process.exitCode=1;});
