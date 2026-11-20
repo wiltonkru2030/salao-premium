@@ -11,7 +11,9 @@ export function runConflictUnitChecks(){
   ['rejeita fora do expediente',!validateAppointment({...base,time:'19:45',duration:30},items).valid],
   ['rejeita duração inválida',!validateAppointment({...base,duration:0},items).valid],
   ['rejeita cliente vazio',!validateAppointment({...base,name:''},items).valid],
-  ['permite reutilizar horário cancelado',validateAppointment({...base,time:'09:00'},[{...items[0],status:'Cancelado'}]).valid]
+  ['permite reutilizar horário cancelado',validateAppointment({...base,time:'09:00'},[{...items[0],status:'Cancelado'}]).valid],
+  ['aceita UUID de profissional do banco',!validateAppointment({...base,pro:'professional-uuid'},[{...items[0],pro:'professional-uuid'}]).valid],
+  ['permite horário de agendamento marcado como no_show',validateAppointment({...base,time:'09:00'},[{...items[0],status:'no_show'}]).valid]
  ];
  return {passed:checks.filter(x=>x[1]).length,total:checks.length,checks};
 }
