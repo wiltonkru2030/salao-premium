@@ -46,7 +46,7 @@ function toCalendarAppointment(row,professionalIndex) {
 // Compõe filtros, resumo e calendário sem executar consultas ao banco.
 function buildContent() {
   const host=document.querySelector('#agenda-db-content');
-  if(!host)return;
+  if(!host||state.page!=='Agenda')return;
   const professionals=state.agendaProfessionals||[];
   if(!professionals.length){
     host.innerHTML='<div class="empty-state"><b>Nenhum profissional ativo</b><small>Cadastre um profissional para começar a organizar a agenda.</small></div>';
@@ -100,7 +100,9 @@ export async function loadAgendaPage() {
   if(!host)return;
   const orgId=state.organization.id,userId=state.user.id,branchId=state.branch?.id||null;
   const version=++loadVersion;
-  const isCurrent=()=>host.isConnected&&version===loadVersion&&state.organization?.id===orgId&&state.user?.id===userId&&(state.branch?.id||null)===branchId;
+  const requestedDate=dateKey(state.date),requestedView=state.view;
+  // Impede que uma resposta antiga substitua outra data, visualização ou página.
+  const isCurrent=()=>host.isConnected&&state.page==='Agenda'&&version===loadVersion&&state.organization?.id===orgId&&state.user?.id===userId&&(state.branch?.id||null)===branchId&&dateKey(state.date)===requestedDate&&state.view===requestedView;
   // Painel independente: não bloqueia o calendário nem recarrega a página.
   void mountAgendaOffers({client:supabase,state,onBooked:loadAgendaPage})
     .catch(error=>reportError(error,{context:"Agenda > módulos complementares",notify:false}));
