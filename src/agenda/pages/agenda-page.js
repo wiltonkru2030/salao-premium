@@ -32,7 +32,7 @@ function toCalendarAppointment(row,professionalIndex) {
     id:row.id,name:row.customer_name,phone:row.customer_phone||'',service:row.service_name,
     pro:professionalIndex,professional_id:row.professional_id,
     professionalName:row.professional_name||'Profissional',
-    customer_id:row.customer_id,service_id:row.service_id,
+    customer_id:row.customer_id,service_id:row.service_id,branch_id:row.branch_id||null,
     date:start.date,time:start.time,duration,price:row.price,
     status:dbStatus(row.status),dbStatus:row.status,notes:row.notes||'',
     booking_source:row.booking_source,created_by_name:row.created_by_name||'',
