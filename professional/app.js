@@ -3,6 +3,18 @@ import { supabase } from "../src/supabase/client.js";
 import { mountAutocomplete } from "../src/components/autocomplete.js";
 import { installGlobalErrorHandlers, reportError } from "../src/utils/errors.js";
 import { installGlobalMasks } from "../src/utils/input-masks.js";
+import {
+  escapeHtml as esc,
+  formatMoney as money,
+  toDateKey as dateKey,
+  formatMonthLabel as monthLabel,
+  formatDateLabel as dateLabel,
+  formatTime as timeLabel,
+  formatDateTime as dateTimeLabel,
+  formatBookingSource as sourceLabel,
+  formatStatus as statusLabel,
+  getAppointmentClass as appointmentClass
+} from "./utils/formatters.js";
 
 // Aplicação PWA do profissional: autenticação, navegação, Agenda, Comandas e Comissões.
 installGlobalErrorHandlers();
@@ -16,15 +28,7 @@ const state={
  commissions:[],commissionPayouts:[],selectedOrder:null,orderItems:[],notice:""
 };
 let disposeAutocomplete=null;
-const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-const dateKey=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
-const monthLabel=d=>d.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
-const dateLabel=d=>d.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"});
-const timeLabel=v=>new Date(v).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
-const dateTimeLabel=v=>new Date(v).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
-const sourceLabel=v=>({customer:"Cliente",salon:"Salão",professional:"Profissional"})[v]||"Salão";
-const statusLabel=v=>({scheduled:"Agendado",confirmed:"Confirmado",arrived:"Cliente chegou",in_progress:"Em atendimento",completed:"Finalizado",cancelled:"Cancelado",no_show:"Falta",open:"Aberta",awaiting_payment:"Aguardando pagamento",partially_paid:"Pagamento parcial",closed:"Finalizada"})[v]||v||"—";
+// Formatadores puros são mantidos em professional/utils/formatters.js.
 function showNotice(message){state.notice=message;render();}
 function clearAutocomplete(){disposeAutocomplete?.();disposeAutocomplete=null;}
 // Renderiza a tela de autenticação do profissional.
@@ -47,12 +51,6 @@ function shell(content){
  root.innerHTML='<div class="app-shell"><header class="top"><div><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Olá, '+esc(greeting.split(" ")[0])+'</h1></div><button class="icon-button" data-action="logout" aria-label="Sair">↪</button></header>'+
  '<main class="content">'+(state.notice?'<div class="notice">'+esc(state.notice)+'</div>':'')+content+'</main>'+
  '<nav class="nav">'+links.map(([label,icon])=>'<button data-page="'+label+'" class="'+(state.page===label?"active":"")+'"><span>'+icon+'</span>'+label+'</button>').join("")+'</nav></div>';
-}
-function appointmentClass(a){
- if(a.status==="in_progress")return "progress";
- if(a.status==="completed"||a.status==="confirmed")return "success";
- if(a.status==="cancelled"||a.status==="no_show")return "released";
- return "scheduled";
 }
 function appointmentCard(a){
  const duration=Math.max(0,Math.round((new Date(a.ends_at)-new Date(a.starts_at))/60000));
