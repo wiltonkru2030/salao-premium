@@ -9,6 +9,7 @@ import { getCurrentPosition } from "./services/geoSalonService.js";
 import { getLocalSettings, saveLocalSettings, getRemoteSettings, saveRemoteSettings } from "./services/settingsService.js";
 import { listFavorites, addFavorite, removeFavorite } from "./services/favoritesService.js";
 import { listNotifications, markNotificationRead, markAllNotificationsRead } from "./services/notificationService.js";
+import { validatePublicCoupon } from "./services/couponService.js";
 import { renderBottomNavigation } from "./ui/bottomNavigation.js";
 import { renderLoginView } from "./ui/loginView.js";
 import { renderHomeView } from "./ui/homeView.js";
@@ -41,6 +42,7 @@ let holdState = null;
 let favoritesState = { items: [], loading: false, error: "" };
 let favoriteOrgIds = new Set();
 let notificationsState = { items: [], loading: false, error: "" };
+let couponState = { serviceId: null, code: "", preview: null, loading: false, error: "" };
 
 /** Exibe aviso de operação na região acessível por leitor de tela. */
 function setNotice(message, type = "info") {
@@ -73,7 +75,7 @@ function renderApp() {
     page = renderCustomerProfileView({profile: profileState, session: currentSession, theme: getLocalSettings().theme});
   } else if (activePage === "favorites") page = renderFavoritesView(favoritesState);
   else if (activePage === "notifications") page = renderNotificationsView(notificationsState);
-  else if (activePage === "salon-detail") page = renderSalonDetailView({ ...salonDetailState, slots: slotsState, hold: holdState, isFavorite: favoriteOrgIds.has(salonDetailState.salon?.org_id) });
+  else if (activePage === "salon-detail") page = renderSalonDetailView({ ...salonDetailState, slots: slotsState, hold: holdState, isFavorite: favoriteOrgIds.has(salonDetailState.salon?.org_id), couponState });
   else page = renderHomeView({ locationLabel, salons: directoryState.items, loading: directoryState.loading, error: directoryState.error, query: directoryState.query });
 
   root.innerHTML =
@@ -145,6 +147,7 @@ async function loadSalonCatalog(salon) {
   }
   salonDetailState = { salon, catalog: [], loading: true, error: "" };
   slotsState = { serviceId: null, items: [], loading: false, error: "", date: "" };
+  couponState = {serviceId:null,code:"",preview:null,loading:false,error:""};
   activePage = "salon-detail";
   renderApp();
   try {
@@ -221,6 +224,7 @@ async function runAction(action, button = null) {
       identityLinkRequests = [];
       favoritesState = {items:[],loading:false,error:""};
       favoriteOrgIds = new Set();
+      couponState = {serviceId:null,code:"",preview:null,loading:false,error:""};
       notificationsState = {items:[],loading:false,error:""};
       renderLogin();
     } else if (action === "locate") {
@@ -299,8 +303,28 @@ async function runAction(action, button = null) {
     } else if (action === "back-home") {
       activePage = "home";
       renderApp();
+    } else if (action === "validate-coupon") {
+      const serviceId=button?.dataset.serviceId;
+      const card=serviceId?root.querySelector('[data-service-card="'+CSS.escape(serviceId)+'"]'):null;
+      const code=card?.querySelector('input[name="couponCode"]')?.value.trim().toUpperCase()||"";
+      if(!code)throw new Error("Digite o código do cupom.");
+      couponState={serviceId,code,preview:null,loading:true,error:""};
+      renderApp();
+      try {
+        couponState.preview=await validatePublicCoupon({
+          client:supabase,orgId:salonDetailState.salon.org_id,
+          branchId:salonDetailState.salon.branch_id,serviceId,code
+        });
+        setNotice("Cupom válido. O desconto será reservado junto com o horário.","success");
+      } catch(error) {
+        couponState.error=error?.message||"Não foi possível validar o cupom.";
+      } finally {
+        couponState.loading=false;
+        renderApp();
+      }
     } else if (action === "view-slots") {
       const serviceId = button?.dataset.serviceId;
+      if(couponState.serviceId!==serviceId)couponState={serviceId:null,code:"",preview:null,loading:false,error:""};
       const card = serviceId ? root.querySelector('[data-service-card="' + CSS.escape(serviceId) + '"]') : null;
       const date = card?.querySelector('input[name="date"]')?.value || "";
       const professionalId = card?.querySelector('select[name="professionalId"]')?.value || null;
@@ -323,9 +347,14 @@ async function runAction(action, button = null) {
       const index = Number(button?.dataset.slotIndex);
       const slot = slotsState.items[index];
       if (!slot || !slotsState.serviceId) throw new Error("Selecione um horário válido.");
+      const serviceCard=root.querySelector('[data-service-card="'+CSS.escape(slotsState.serviceId)+'"]');
+      const enteredCode=serviceCard?.querySelector('input[name="couponCode"]')?.value.trim().toUpperCase()||"";
+      const couponCode=couponState.serviceId===slotsState.serviceId&&couponState.code===enteredCode&&couponState.preview?couponState.code:null;
+      if(enteredCode&&!couponCode)throw new Error("Aplique e valide novamente o cupom antes de reservar o horário.");
       const createdHold = await createAppointmentHold({
         orgId: salonDetailState.salon.org_id, branchId: salonDetailState.salon.branch_id,
-        professionalId: slot.professional_id, serviceId: slotsState.serviceId, startsAt: slot.starts_at
+        professionalId: slot.professional_id, serviceId: slotsState.serviceId, startsAt: slot.starts_at,
+        couponCode
       });
       holdState = { ...createdHold, orgId: salonDetailState.salon.org_id, branchId: salonDetailState.salon.branch_id };
       renderApp();
