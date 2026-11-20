@@ -4,7 +4,7 @@ import { installGlobalMasks } from './utils/input-masks.js';
 import { installGlobalErrorHandlers, reportError } from './utils/errors.js';
 import { startAuth, getCurrentUserContext } from './auth/auth.js';
 import { installAgendaController } from './agenda/controllers/agenda-controller.js';
-import { render } from './layout/render.js';
+import { render as renderApp } from './layout/render.js';
 
 // Inicializa máscaras, mensagens de erro e eventos da Agenda antes do primeiro render.
 installGlobalMasks();
@@ -33,7 +33,7 @@ document.addEventListener("change",async event=>{
     state.agendaAppointments=[];
     state.agendaProfessionals=[];
     state.dbBlockedTimes=[];
-    render();
+    renderApp();
   }catch(error){
     reportError(error,{context:"SaaS > trocar organização"});
     select.value=state.organization?.id||"";
@@ -49,7 +49,7 @@ startAuth(context=>{
   state.membership=context.membership;
   state.availableOrganizations=context.availableOrganizations||[];
   state.branch=null;
-  render();
+  renderApp();
   // A tela inicial foi montada; erros posteriores pertencem ao tratamento global da aplicação.
   window.__SALAO_PREMIUM_BOOTED__=true;
 });
