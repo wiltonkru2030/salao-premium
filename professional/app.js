@@ -1,7 +1,7 @@
 /** App Profissional (PWA): autenticação, sessão individual, Agenda, Comandas, Comissões e configurações do próprio perfil. */
 import {authenticateProfessional} from "./auth.service.js";
 import { supabase } from "../src/supabase/client.js";
-import { mountAutocomplete } from "../src/components/autocomplete.js";
+import {bindOrderService} from "./order-service.controller.js";
 import { installGlobalErrorHandlers, reportError } from "../src/utils/errors.js";
 import { installGlobalMasks } from "../src/utils/input-masks.js";
 import {
@@ -23,7 +23,6 @@ import { handleAgendaClick } from "./agenda.controller.js";
 import { fetchProfessionalAppointments } from "./appointments.service.js";
 import {fetchProfessionalServices} from "./services.service.js";
 import { fetchProfessionalOrders, fetchProfessionalOrderItems } from "./orders.service.js";
-import { addProfessionalServiceToOrder } from "./order-items.service.js";
 import { fetchProfessionalCommissions } from "./commissions.service.js";
 import { resolveProfessionalContexts, allowedProfessionalPages, canRegisterProfessionalService, summarizeProfessionalCommissions } from "./access.rules.js";
 
@@ -40,7 +39,7 @@ const state={
 };
 let disposeAutocomplete=null;
 let sessionEpoch=0;
-let registeringService=false;
+const serviceLock={active:false};
 /** Limpa dados privados antes de exibir a tela de acesso. */
 function clearPrivateState(){sessionEpoch++;clearAutocomplete();Object.assign(state,{user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,organization:null,page:"Agenda",appointments:[],orders:[],services:[],commissions:[],commissionPayouts:[],selectedAppointment:null,selectedOrder:null,orderItems:[]});}
 async function endSession(notice=""){clearPrivateState();state.notice=notice;loginView();try{const {error}=await supabase.auth.signOut({scope:"local"});if(error)throw error;}catch(error){reportError(error,{context:"App Profissional > encerrar sessão"});}}
@@ -180,41 +179,10 @@ async function loadOrderItems(){
 async function chooseOrder(id){
  state.selectedOrder=state.orders.find(o=>o.id===id)||null;state.orderItems=[];render();await loadOrderItems();
 }
+/** Monta o controlador de serviços da comanda atual. */
 function bindAutocomplete(){
- const input=document.querySelector("#service-search"),button=document.querySelector("#add-service");if(!input||!button)return;
  disposeAutocomplete?.();
- let selected=null;
- disposeAutocomplete=mountAutocomplete(input,{
-  search:async term=>state.services.filter(s=>s.name.toLocaleLowerCase("pt-BR").includes(term.toLocaleLowerCase("pt-BR"))).slice(0,8),
-  getLabel:item=>item.name+" · "+money(item.price),
-  onSelect:item=>{selected=item;button.disabled=!item;}
- });
- button.addEventListener("click",async()=>{
-  if(registeringService||!selected||!state.user||!canRegisterProfessionalService(state,state.selectedOrder))return;
-  registeringService=true;
-  const epoch=sessionEpoch;
-  const orderId=state.selectedOrder.id;
-  const service=selected;
-  button.disabled=true;button.textContent="Registrando…";
-  try{
-   await addProfessionalServiceToOrder({
-    client:supabase,organizationId:state.orgId,orderId,service,
-    professionalId:state.professional.id,userId:state.user.id
-   });
-   if(epoch!==sessionEpoch)return;
-   await loadOrders();if(epoch!==sessionEpoch)return;
-   if(state.page==="Comandas"&&state.selectedOrder?.id===orderId)await chooseOrder(orderId);
-   showNotice("Serviço registrado na comanda.");
-  }catch(error){
-   reportError(error,{context:"App Profissional > registrar serviço realizado"});
-   showNotice(error?.message||"Não foi possível registrar o serviço. Tente novamente.");
-  }finally{
-   // Garante que o botão não permaneça travado após falhas de gravação ou atualização.
-   registeringService=false;
-   button.disabled=!selected;
-   button.textContent="Registrar serviço";
-  }
- });
+ disposeAutocomplete=bindOrderService({root,state,client:supabase,getEpoch:()=>sessionEpoch,lock:serviceLock,loadOrders,chooseOrder,showNotice,reportError});
 }
 root.addEventListener("click",async event=>{
  try{
