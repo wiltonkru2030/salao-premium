@@ -602,6 +602,12 @@ $function$;
 revoke all on function public.deactivate_salon_coupon(uuid,uuid) from public,anon,authenticated;
 grant execute on function public.deactivate_salon_coupon(uuid,uuid) to authenticated;
 
+-- As RPCs antigas permitiam criar/confirmar HOLD sem validar a vitrine pública e sem
+-- consumir o cupom. Os clientes devem usar exclusivamente os wrappers transacionais abaixo.
+revoke all on function public.create_customer_appointment_hold(uuid,uuid,uuid,uuid,timestamptz) from public,anon,authenticated;
+revoke all on function public.confirm_customer_appointment_hold(uuid) from public,anon,authenticated;
+revoke all on function public.cancel_customer_appointment_hold(uuid) from public,anon,authenticated;
+
 create or replace function private.compute_customer_coupon(
   p_org_id uuid,p_branch_id uuid,p_service_id uuid,p_coupon_code text
 )
