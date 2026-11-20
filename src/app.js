@@ -33,7 +33,10 @@ async function refreshBranchContext() {
 
 document.addEventListener("change",async event=>{
   if(event.target?.id==="branch-switcher") {
-    const selected=state.availableBranches.find(branch=>branch.id===String(event.target.value||""));
+    const selectedValue=String(event.target.value||"");
+    const selected=selectedValue==="__all__"
+      ?{id:null,name:"Todas as unidades",isAll:true}
+      :state.availableBranches.find(branch=>branch.id===selectedValue);
     if(!selected)return;
     state.branch=selected;
     state.agendaAppointments=[];
