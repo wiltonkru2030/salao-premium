@@ -191,25 +191,29 @@ root.addEventListener("click",async event=>{
   const orgControl=event.target.closest("[data-context-org]");
   if(orgControl&&state.user){orgControl.disabled=true;try{await loadBase(orgControl.dataset.contextOrg);}catch(error){await endSession("Não foi possível acessar este salão.");}return;}
   if(!state.user||!state.orgId)return;
+  const epoch=sessionEpoch;
   // O controlador especializado consome eventos da Agenda antes das ações gerais.
   if(await handleAgendaClick({event,state,loadAppointments,render}))return;
+  if(epoch!==sessionEpoch)return;
   const page=event.target.closest("[data-page]");
  if(page){if(!allowedProfessionalPages(state).includes(page.dataset.page))return;state.page=page.dataset.page;state.selectedOrder=null;state.selectedAppointment=null;state.notice="";render();return;}
  const order=event.target.closest("[data-order]");
  if(order&&allowedProfessionalPages(state).includes("Comandas")){await chooseOrder(order.dataset.order);return;}
  if(action==="back-orders"){state.selectedOrder=null;state.orderItems=[];render();}
 
- if(action==="save-profile"){
+ if(action==="save-profile"&&state.page==="Configurações"){
   const name=String(document.querySelector("#profile-name")?.value||"").trim(),phone=String(document.querySelector("#profile-phone")?.value||"").trim();
-  if(!name){showNotice("Informe seu nome.");return;}
+  if(!name||name.length>120){showNotice("Informe um nome válido de até 120 caracteres.");return;}
   const {error}=await supabase.from("profiles").update({full_name:name,phone}).eq("id",state.user.id);
+  if(epoch!==sessionEpoch)return;
   if(error){reportError(error,{context:"App Profissional > salvar perfil"});showNotice("Não foi possível salvar o perfil. Tente novamente.");return;}
   state.profile={...state.profile,full_name:name,phone};showNotice("Perfil atualizado.");
  }
- if(action==="change-password"){
+ if(action==="change-password"&&state.page==="Configurações"){
   const password=String(document.querySelector("#settings-password")?.value||"");
   if(password.length<10){showNotice("A senha deve ter pelo menos 10 caracteres.");return;}
   const {error}=await supabase.auth.updateUser({password});
+  if(epoch!==sessionEpoch)return;
   if(error){reportError(error,{context:"App Profissional > alterar senha"});showNotice("Não foi possível alterar a senha. Confira os requisitos e tente novamente.");return;}
   showNotice("Senha atualizada.");
  }
