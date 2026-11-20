@@ -17,6 +17,7 @@ const money=value=>Number(value||0).toLocaleString("pt-BR",{style:"currency",cur
 const dateTime=value=>value?new Date(value).toLocaleString("pt-BR"):"—";
 const paymentMethodLabel=value=>({pix:"PIX",cash:"Dinheiro",credit_card:"Cartão de crédito",debit_card:"Cartão de débito",transfer:"Transferência",voucher:"Voucher",other:"Outro"})[value]||"Outro";
 const categoryLabel=value=>({service_order:"Recebimento de Comanda",service_order_refund:"Estorno de Comanda",professional_commission:"Comissão profissional"})[value]||"Movimentação";
+let cashLoadSequence=0;
 const canOperate=()=>["owner","admin","manager","receptionist","finance"].includes(state.membership?.role);
 
 
@@ -34,21 +35,26 @@ export function cashPage(){
 export async function loadCashPage(){
  const host=document.querySelector("#cash-manager");
  if(!host||!state.organization?.id)return;
+ const branchId=state.branch?.id||null;
+ const requestId=++cashLoadSequence;
  try{
   const orgId=state.organization.id;
+  const scopeBranch=query=>branchId?query.eq("branch_id",branchId):query.is("branch_id",null);
   const today=new Date();today.setHours(0,0,0,0);
   const tomorrow=new Date(today);tomorrow.setDate(tomorrow.getDate()+1);
   const [registerResult,movementResult,paymentResult]=await Promise.all([
-   supabase.from("cash_registers").select("id,opening_amount,closing_amount,expected_amount,status,opened_at,closed_at,notes").eq("org_id",orgId).is("branch_id",null).order("opened_at",{ascending:false}).limit(20),
-   supabase.from("cash_movements").select("id,cash_register_id,service_order_id,movement_type,category,description,amount,payment_method,created_at,sale_id").eq("org_id",orgId).order("created_at",{ascending:false}).limit(500),
-   supabase.from("service_order_payments").select("id,order_id,cash_movement_id,amount,payment_method,paid_at").eq("org_id",orgId).not("cash_movement_id","is",null).order("paid_at",{ascending:false}).limit(500)
+   scopeBranch(supabase.from("cash_registers").select("id,branch_id,opening_amount,closing_amount,expected_amount,status,opened_at,closed_at,notes").eq("org_id",orgId)).order("opened_at",{ascending:false}).limit(20),
+   scopeBranch(supabase.from("cash_movements").select("id,branch_id,cash_register_id,service_order_id,movement_type,category,description,amount,payment_method,created_at,sale_id").eq("org_id",orgId)).order("created_at",{ascending:false}).limit(500),
+   scopeBranch(supabase.from("service_order_payments").select("id,branch_id,order_id,cash_movement_id,amount,payment_method,paid_at").eq("org_id",orgId)).not("cash_movement_id","is",null).order("paid_at",{ascending:false}).limit(500)
   ]);
+  if(requestId!==cashLoadSequence||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId||!host.isConnected||state.page!=="Caixa")return;
   if(registerResult.error)throw registerResult.error;
   if(movementResult.error)throw movementResult.error;
   if(paymentResult.error)throw paymentResult.error;
   const registers=registerResult.data||[],movements=movementResult.data||[];
   const paymentRows=paymentResult.data||[],orderIds=[...new Set([...paymentRows.map(p=>p.order_id),...movements.map(m=>m.service_order_id).filter(Boolean)])];
   const {data:orderRows,error:orderError}=orderIds.length?await supabase.from("service_orders").select("id,order_number,customer_id").eq("org_id",orgId).in("id",orderIds):{data:[],error:null};
+  if(requestId!==cashLoadSequence||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId||!host.isConnected||state.page!=="Caixa")return;
   if(orderError)throw orderError;
   const customerIds=[...new Set((orderRows||[]).map(o=>o.customer_id).filter(Boolean))];
   const {data:customerRows,error:customerError}=customerIds.length?await supabase.from("customers").select("id,name").eq("org_id",orgId).in("id",customerIds):{data:[],error:null};
@@ -57,6 +63,7 @@ export async function loadCashPage(){
   const orderMap=new Map((orderRows||[]).map(o=>[o.id,{...o,customerName:customerNames.get(o.customer_id)||"Cliente"}]));
   const paymentMap=new Map(paymentRows.map(p=>[p.cash_movement_id,{...p,order:orderMap.get(p.order_id)}]));
   const active=registers.find(r=>r.status==="open")||null;
+  host._cashContext={orgId,branchId,active};
   const todayMoves=movements.filter(m=>new Date(m.created_at)>=today&&new Date(m.created_at)<tomorrow);
   const sum=(rows,type)=>rows.filter(m=>m.movement_type===type).reduce((total,m)=>total+Number(m.amount||0),0);
   const income=sum(todayMoves,"income"),expense=sum(todayMoves,"expense"),net=income-expense;
@@ -100,12 +107,13 @@ export async function loadCashPage(){
     button.disabled=true;button.textContent="Salvando…";
     try{
      const values=new FormData(form);
+     const current=host._cashContext||{};
      if(form.matches("#cash-open-form")){
-      const {data,error}=await openCashRegister({supabase,orgId,openingAmount:values.get("opening_amount")});
+      const {data,error}=await openCashRegister({supabase,orgId:current.orgId,branchId:current.branchId,openingAmount:values.get("opening_amount")});
       if(error)throw error;
       toast("Caixa aberto e registrado.");
      }else{
-      const {data,error}=await closeCashRegister({supabase,cashRegisterId:active?.id,closingAmount:values.get("closing_amount")});
+      const {data,error}=await closeCashRegister({supabase,cashRegisterId:current.active?.id,closingAmount:values.get("closing_amount")});
       if(error)throw error;
       toast("Caixa fechado. Diferença: "+money(data?.difference||0)+
 ".");
@@ -116,6 +124,7 @@ export async function loadCashPage(){
    });
   }
  }catch(error){
+  if(requestId!==cashLoadSequence||!host.isConnected||state.page!=="Caixa")return;
   reportError(error,{context:"Caixa > carregar movimentações"});
   host.innerHTML='<div class="empty-state"><b>Não foi possível carregar o Caixa.</b><small>Confira sua permissão e tente novamente.</small></div>';
  }

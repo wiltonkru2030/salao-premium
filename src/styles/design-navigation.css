@@ -28,3 +28,6 @@
 .tenant-switcher select{max-width:220px;min-width:120px;height:34px;padding:0 28px 0 10px;border:1px solid var(--sp-line);border-radius:7px;background:var(--sp-paper);color:var(--sp-ink);font:inherit;font-size:11px}
 .tenant-switcher select:focus-visible{outline:2px solid var(--sp-gold);outline-offset:2px}
 @media(max-width:760px){.tenant-switcher span{display:none}.tenant-switcher select{max-width:150px;min-width:100px}}
+
+.branch-switcher select{max-width:190px}
+@media(max-width:760px){.branch-switcher select{max-width:125px;min-width:90px}}

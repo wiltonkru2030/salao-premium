@@ -8,6 +8,7 @@ import { parseBRL } from "../utils/input-masks.js";
 import { buildComandaDetails } from "../modules/comanda/components/comanda-detail.js";
 import { currency, statusLabel, paymentStatusLabel, paymentMethodLabel } from "../modules/comanda/comanda.formatters.js";
 import { registerComandaPayment, cancelComanda } from "../modules/comanda/services/comanda-operations.js";
+import { scopeServiceCatalog } from "../modules/services/service-scope.js";
 
 /** @typedef {import("../types/tenant.types").TenantContext} TenantContext */
 /** @typedef {import("../types/operations.types").ServiceOrderRecord} ServiceOrderRecord */
@@ -16,6 +17,7 @@ import { registerComandaPayment, cancelComanda } from "../modules/comanda/servic
 /** Módulo Comandas: consulta comandas, monta detalhes e executa lançamentos e pagamentos. */
 
 let cleanup=[];
+let comandaLoadSequence=0;
 let selectedOrder=null;
 let selectedService=null;
 let selectedProduct=null;
@@ -39,20 +41,21 @@ function canManage(){return ["owner","admin","manager","receptionist"].includes(
 function canPay(){return canManage()||state.membership?.professional_app_scope==="all";}
 // Carrega itens, pagamentos, cliente, profissional e catálogo da comanda.
 async function queryDetails(order,orgId){
- const [items,payments,customer,professional,services,products,professionals]=await Promise.all([
-  supabase.from("service_order_items").select("id,item_type,description,quantity,unit_price,discount,total,professional_id,created_at").eq("org_id",orgId).eq("order_id",order.id).order("created_at"),
+ const [items,payments,customer,professional,services,products,professionals,assignments]=await Promise.all([
+  supabase.from("service_order_items").select("id,item_type,service_id,description,quantity,unit_price,discount,total,professional_id,created_at").eq("org_id",orgId).eq("order_id",order.id).order("created_at"),
   supabase.from("service_order_payments").select("id,amount,payment_method,status,paid_at,refunded_at,refund_cash_movement_id").eq("org_id",orgId).eq("order_id",order.id).order("paid_at"),
-  order.customer_id?supabase.from("customers").select("id,name,phone").eq("org_id",orgId).eq("id",order.customer_id).maybeSingle():Promise.resolve({data:null,error:null}),
-  order.assigned_professional_id?supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("id",order.assigned_professional_id).maybeSingle():Promise.resolve({data:null,error:null}),
-  supabase.from("services").select("id,name,price,duration_minutes").eq("org_id",orgId).eq("active",true).order("name").limit(250),
-  supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).eq("active",true).order("name").limit(250),
-  supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("active",true).order("name").limit(200)
+  order.customer_id?(order.branch_id?supabase.from("customers").select("id,name,phone").eq("org_id",orgId).eq("branch_id",order.branch_id).eq("id",order.customer_id).maybeSingle():supabase.from("customers").select("id,name,phone").eq("org_id",orgId).is("branch_id",null).eq("id",order.customer_id).maybeSingle()):Promise.resolve({data:null,error:null}),
+  order.assigned_professional_id?(order.branch_id?supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("branch_id",order.branch_id).eq("id",order.assigned_professional_id).maybeSingle():supabase.from("professionals").select("id,name").eq("org_id",orgId).is("branch_id",null).eq("id",order.assigned_professional_id).maybeSingle()):Promise.resolve({data:null,error:null}),
+  scopeServiceCatalog(supabase.from("services").select("id,name,price,duration_minutes,branch_id").eq("org_id",orgId).eq("active",true),order.branch_id||null).order("name").limit(250),
+  (order.branch_id?supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).eq("branch_id",order.branch_id).eq("active",true):supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).is("branch_id",null).eq("active",true)).order("name").limit(250),
+  (order.branch_id?supabase.from("professionals").select("id,name").eq("org_id",orgId).eq("branch_id",order.branch_id).eq("active",true):supabase.from("professionals").select("id,name").eq("org_id",orgId).is("branch_id",null).eq("active",true)).order("name").limit(200),
+  supabase.from("professional_services").select("professional_id,service_id").eq("org_id",orgId)
  ]);
- for(const [label,result] of [["itens",items],["pagamentos",payments],["cliente",customer],["profissional",professional],["serviços",services],["produtos",products],["equipe",professionals]]) {
+ for(const [label,result] of [["itens",items],["pagamentos",payments],["cliente",customer],["profissional",professional],["serviços",services],["produtos",products],["equipe",professionals],["serviços habilitados",assignments]]) {
   if(result.error) throw new Error("Falha ao carregar "+label+
 ": "+userErrorMessage(result.error));
  }
- return {items:items.data||[],payments:payments.data||[],customer:customer.data,professional:professional.data,services:services.data||[],products:products.data||[],professionals:professionals.data||[]};
+ return {items:items.data||[],payments:payments.data||[],customer:customer.data,professional:professional.data,services:services.data||[],products:products.data||[],professionals:professionals.data||[],assignments:assignments.data||[]};
 }
 // Desenha detalhes e formulários de serviço, produto e pagamento.
 function renderOrderDetails(host,order,data,orgId){
@@ -62,24 +65,22 @@ function renderOrderDetails(host,order,data,orgId){
   canEditItems:editable&&["owner","admin","manager"].includes(state.membership?.role)&&!data.payments.some(p=>p.status==="confirmed"),
   canRefund:["owner","admin","manager","finance"].includes(state.membership?.role)
  });
- const {items,payments,customer,professional,services,products,professionals}=data;
+ const {items,payments,customer,professional,services,products,professionals,assignments}=data;
  const {paid,balance,allowEdit,allowPay,canEditItems}=view;
  host.innerHTML=view.html;
  clearAutocomplete();
  if(editable&&allowEdit){
   selectedService=null;selectedProduct=null;
   cleanup.push(mountAutocomplete(host.querySelector("#comanda-service"),{
-   search:async term=>{const {data,error}=await supabase.from("services").select("id,name,price,duration_minutes").eq("org_id",orgId).eq("active",true).ilike("name","%"+term+
-"%").order("name").limit(8);if(error)throw error;return data||[];},
+   search:async term=>{const {data,error}=await scopeServiceCatalog(supabase.from("services").select("id,name,price,duration_minutes,branch_id").eq("org_id",orgId).eq("active",true),order.branch_id||null).ilike("name","%"+term+"%").order("name").limit(8);if(error)throw error;return data||[];},
    getLabel:item=>item.name+
 " · "+currency(item.price)+
 " · "+Number(item.duration_minutes)+
 " min",
-   onSelect:item=>selectedService=item
+   onSelect:item=>{selectedService=item;const select=host.querySelector("#comanda-service-form [name=professional_id]");if(select){const allowed=new Set(assignments.filter(link=>link.service_id===item.id).map(link=>link.professional_id));select.innerHTML='<option value="">Sem profissional</option>'+professionals.filter(person=>allowed.has(person.id)).map(person=>'<option value="'+person.id+'">'+esc(person.name)+'</option>').join("");}}
   }));
   cleanup.push(mountAutocomplete(host.querySelector("#comanda-product"),{
-   search:async term=>{const {data,error}=await supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).eq("active",true).gt("stock_quantity",0).ilike("name","%"+term+
-"%").order("name").limit(8);if(error)throw error;return data||[];},
+   search:async term=>{const base=supabase.from("products").select("id,name,sale_price,stock_quantity").eq("org_id",orgId).eq("active",true).gt("stock_quantity",0);const query=order.branch_id?base.eq("branch_id",order.branch_id):base.is("branch_id",null);const {data,error}=await query.ilike("name","%"+term+"%").order("name").limit(8);if(error)throw error;return data||[];},
    getLabel:item=>item.name+
 " · "+currency(item.sale_price)+
 " · Estoque: "+Number(item.stock_quantity||0),
@@ -166,21 +167,30 @@ function renderOrderDetails(host,order,data,orgId){
  */
 export async function loadComandaPage(orderId=null){
  const host=document.querySelector("#comanda-manager");if(!host)return;
+ const requestId=++comandaLoadSequence;
  clearAutocomplete();
  try{
   const {orgId}=await tenant();
+  if(requestId!==comandaLoadSequence||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId||!host.isConnected||state.page!=="Comanda")return;
   if(orderId||selectedOrder){
-   const {data:order,error}=await supabase.from("service_orders").select("id,order_number,status,total,subtotal,discount,notes,customer_id,assigned_professional_id,appointment_id,created_at,branch_id").eq("org_id",orgId).eq("id",orderId||selectedOrder).maybeSingle();
+   let orderQuery=supabase.from("service_orders").select("id,order_number,status,total,subtotal,discount,notes,customer_id,assigned_professional_id,appointment_id,created_at,branch_id").eq("org_id",orgId).eq("id",orderId||selectedOrder);
+   orderQuery=branchId?orderQuery.eq("branch_id",branchId):orderQuery.is("branch_id",null);
+   const {data:order,error}=await orderQuery.maybeSingle();
    if(error)throw error;if(!order)throw new Error("Comanda não encontrada.");
-   selectedOrder=order.id;const details=await queryDetails(order,orgId);renderOrderDetails(host,order,details,orgId);return;
+   selectedOrder=order.id;const details=await queryDetails(order,orgId);
+   if(requestId!==comandaLoadSequence||state.organization?.id!==orgId||!host.isConnected||state.page!=="Comanda")return;
+   renderOrderDetails(host,order,details,orgId);return;
   }
-  const {data:orders,error}=await supabase.from("service_orders").select("id,order_number,status,total,created_at,customer_id,assigned_professional_id").eq("org_id",orgId).order("created_at",{ascending:false}).limit(200);
+  let ordersQuery=supabase.from("service_orders").select("id,order_number,status,total,created_at,customer_id,assigned_professional_id,branch_id").eq("org_id",orgId);
+  ordersQuery=branchId?ordersQuery.eq("branch_id",branchId):ordersQuery.is("branch_id",null);
+  const {data:orders,error}=await ordersQuery.order("created_at",{ascending:false}).limit(200);
   if(error)throw error;
   const customersIds=[...new Set((orders||[]).map(o=>o.customer_id).filter(Boolean))],professionalIds=[...new Set((orders||[]).map(o=>o.assigned_professional_id).filter(Boolean))];
   const [customers,professionals]=await Promise.all([
    customersIds.length?supabase.from("customers").select("id,name").eq("org_id",orgId).in("id",customersIds):Promise.resolve({data:[]}),
    professionalIds.length?supabase.from("professionals").select("id,name").eq("org_id",orgId).in("id",professionalIds):Promise.resolve({data:[]})
   ]);
+  if(requestId!==comandaLoadSequence||state.organization?.id!==orgId||!host.isConnected||state.page!=="Comanda")return;
   if(customers.error)throw new Error("Falha ao carregar clientes das comandas: "+userErrorMessage(customers.error));
   if(professionals.error)throw new Error("Falha ao carregar profissionais das comandas: "+userErrorMessage(professionals.error));
   const customerMap=new Map((customers.data||[]).map(c=>[c.id,c.name])),professionalMap=new Map((professionals.data||[]).map(p=>[p.id,p.name]));
@@ -224,5 +234,7 @@ export async function loadComandaPage(orderId=null){
     host.querySelectorAll("[data-open-comanda]").forEach(card=>card.style.display=card.textContent.toLocaleLowerCase("pt-BR").includes(q)?"":"none");
    });
   }
- }catch(error){reportError(error,{context:"Comanda > carregar dados"});host.innerHTML='<div class="empty-state">Não foi possível carregar as comandas. Atualize a página e tente novamente.</div>';}
+ }catch(error){
+  if(requestId!==comandaLoadSequence||!host.isConnected||state.page!=="Comanda")return;
+  reportError(error,{context:"Comanda > carregar dados"});host.innerHTML='<div class="empty-state">Não foi possível carregar as comandas. Atualize a página e tente novamente.</div>';}
 }

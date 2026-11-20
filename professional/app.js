@@ -151,7 +151,7 @@ async function loadBase(){
  state.profile=profileResult.data;state.organization=orgResult.data;
  const allowedScopes=["self","calendar_all","all"];
  if(state.role==="professional"){
-  const {data:pro,error:proError}=await supabase.from("professionals").select("id,name,profile_id,org_id,active,access_enabled")
+  const {data:pro,error:proError}=await supabase.from("professionals").select("id,name,profile_id,org_id,branch_id,active,access_enabled")
    .eq("profile_id",state.user.id).eq("org_id",state.orgId).eq("active",true).eq("access_enabled",true).maybeSingle();
   if(proError||!pro)throw new Error("Seu cadastro profissional não está ativo ou o acesso foi desabilitado.");
   state.professional=pro;state.scope="self";
@@ -185,7 +185,7 @@ async function loadOrders(){
  if(error)throw error;state.orders=data||[];
 }
 async function loadServices(){
- let query=supabase.from("services").select("id,name,category,duration_minutes,price").eq("org_id",state.orgId).eq("active",true).order("name").limit(250);
+ let query=scopeServiceCatalog(supabase.from("services").select("id,name,category,duration_minutes,price,branch_id").eq("org_id",state.orgId).eq("active",true),state.professional?.branch_id||null).order("name").limit(250);
  if(state.professional){
   const {data:links,error:linkError}=await supabase.from("professional_services").select("service_id").eq("org_id",state.orgId).eq("professional_id",state.professional.id);
   if(linkError)throw linkError;

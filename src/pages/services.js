@@ -1,35 +1,40 @@
 /**
  * Módulo: Serviços.
- * Responsabilidade: consultar o catálogo e cadastrar serviços disponíveis na Agenda e Comandas.
- * Não faz: atribuir profissionais ou registrar atendimentos.
+ * Responsabilidade: manter catálogo compartilhado e serviços exclusivos por unidade.
+ * Serviços compartilhados são somente leitura dentro de uma filial; podem ser copiados
+ * para personalização local sem alterar as demais unidades.
  */
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, toast, btn } from "../utils.js";
 import { parseBRL } from "../utils/input-masks.js";
 import { reportError } from "../utils/errors.js";
+import { scopeServiceCatalog } from "../modules/services/service-scope.js";
 
 let modalListenerInstalled = false;
-
+let servicesLoadSequence = 0;
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function servicesPage() {
-  return head("Serviços", "Cadastre os serviços que aparecem na agenda, nas comandas e no App Profissional.",
+  return head("Serviços", "Gerencie o catálogo compartilhado e os serviços específicos de cada unidade.",
     btn("＋ Novo serviço", "open-service-modal", "primary")) +
     '<div id="services-manager"><div class="empty-state">Carregando serviços…</div></div>';
 }
 
-/** Consulta os serviços e conecta os eventos do modal uma única vez. */
 export async function loadServicesPage() {
   const host = document.querySelector("#services-manager");
   if (!host || !state.organization?.id) return;
-
+  const orgId = state.organization.id;
+  const branchId = state.branch?.id || null;
+  const requestId = ++servicesLoadSequence;
   let services;
   try {
-    const result = await supabase.from("services")
-      .select("id,name,category,duration_minutes,price,active")
-      .eq("org_id", state.organization.id).order("name").limit(500);
+    const query = supabase.from("services")
+      .select("id,org_id,branch_id,name,category,duration_minutes,price,description,active")
+      .eq("org_id", orgId);
+    const result = await scopeServiceCatalog(query, branchId).order("name").limit(500);
     if (result.error) throw result.error;
+    if (requestId !== servicesLoadSequence || state.organization?.id !== orgId || (state.branch?.id || null) !== branchId || !host.isConnected) return;
     services = result.data || [];
   } catch (error) {
     reportError(error, { context: "Serviços > carregar lista" });
@@ -37,20 +42,24 @@ export async function loadServicesPage() {
     return;
   }
 
+  host._services = services;
+  host._branchId = branchId;
+  host._orgId = orgId;
+  const localOnly = branchId !== null;
   host.innerHTML = `
     <dialog class="sp-modal" id="service-create-modal" aria-labelledby="service-modal-title">
       <div class="sp-modal-shell">
         <header class="sp-modal-head">
-          <div><h2 id="service-modal-title">Novo serviço</h2><p>Defina o serviço, a categoria, a duração e o preço.</p></div>
+          <div><h2 id="service-modal-title">Novo serviço</h2><p>Defina nome, categoria, duração e preço para esta unidade.</p></div>
           <button class="sp-modal-close" type="button" data-close-service-modal aria-label="Fechar">×</button>
         </header>
         <form id="service-create-form">
           <div class="sp-modal-body">
             <label class="sp-span">Nome do serviço<input name="name" required maxlength="120" placeholder="Ex.: Corte feminino"></label>
-            <label>Categoria<input name="category" placeholder="Cabelo, unhas, estética…"></label>
+            <label>Categoria<input name="category" maxlength="80" placeholder="Cabelo, unhas, estética…"></label>
             <label>Duração (minutos)<input name="duration" type="number" min="5" max="720" step="5" value="30" required></label>
             <label>Preço (R$)<input name="price" type="text" inputmode="decimal" data-mask="currency" value="0,00" required></label>
-            <label class="sp-span">Descrição<textarea name="description" rows="3" placeholder="Detalhes opcionais do serviço"></textarea></label>
+            <label class="sp-span">Descrição<textarea name="description" rows="3" maxlength="1000" placeholder="Detalhes opcionais do serviço"></textarea></label>
           </div>
           <footer class="sp-modal-foot">
             <button class="btn secondary" type="button" data-close-service-modal>Cancelar</button>
@@ -60,61 +69,152 @@ export async function loadServicesPage() {
       </div>
     </dialog>
     <div class="list-toolbar"><span class="result-count">${services.length} serviços</span></div>
-    <div class="record-list">${services.map(service => `
+    <div class="record-list">${services.map(service => {
+      const shared = localOnly && !service.branch_id;
+      const origin = service.branch_id ? "Exclusivo desta unidade" : localOnly ? "Compartilhado pela organização" : "Catálogo compartilhado";
+      const actions = shared
+        ? '<button class="btn secondary" type="button" data-copy-service="' + service.id + '">Copiar para esta unidade</button>'
+        : '<button class="btn secondary" type="button" data-edit-service="' + service.id + '">Editar</button><button class="btn secondary" type="button" data-toggle-service="' + service.id + '" data-active="' + (service.active ? "true" : "false") + '">' + (service.active ? "Desativar" : "Ativar") + '</button>';
+      return `
       <article class="record-card">
-        <span class="record-main"><b>${esc(service.name)}</b><small>${esc(service.category || "Sem categoria")} · ${Number(service.duration_minutes)} min</small></span>
-        <span class="record-trailing"><b>${money(service.price)}</b><small>${service.active ? "Ativo" : "Inativo"}</small></span>
-      </article>`).join("") || '<div class="empty-state">Nenhum serviço cadastrado.</div>'}
-    </div>`;
+        <span class="record-main"><b>${esc(service.name)}</b><small>${esc(service.category || "Sem categoria")} · ${Number(service.duration_minutes)} min · ${origin}</small></span>
+        <span class="record-trailing"><b>${money(service.price)}</b><small>${service.active ? "Ativo" : "Inativo"}</small>
+          <span class="record-actions">${actions}</span>
+        </span>
+      </article>`;
+    }).join("") || '<div class="empty-state">Nenhum serviço cadastrado nesta unidade.</div>'}</div>`;
 
   if (host.dataset.bound === "true") return;
   host.dataset.bound = "true";
-
-  // O botão do cabeçalho fica fora do host; por isso o clique é delegado ao documento.
   if (!modalListenerInstalled) {
     modalListenerInstalled = true;
     document.addEventListener("click", event => {
-    const dialog = document.querySelector("#service-create-modal");
-    if (!dialog) return;
-    if (event.target.closest('[data-action="open-service-modal"]')) {
-      if (!dialog.open) dialog.showModal();
-    } else if (event.target.closest("[data-close-service-modal]") || event.target === dialog) {
-      if (dialog.open) dialog.close();
-    }
+      const dialog = document.querySelector("#service-create-modal");
+      if (!dialog) return;
+      if (event.target.closest('[data-action="open-service-modal"]')) {
+        const form = dialog.querySelector("#service-create-form");
+        form.reset();
+        form.dataset.serviceId = "";
+        dialog.querySelector("#service-modal-title").textContent = "Novo serviço";
+        form.querySelector('[type="submit"]').textContent = "Cadastrar serviço";
+        if (!dialog.open) dialog.showModal();
+      } else if (event.target.closest("[data-close-service-modal]") || event.target === dialog) {
+        if (dialog.open) dialog.close();
+      }
     });
   }
+
+  host.addEventListener("click", async event => {
+    const currentServices = host._services || [];
+    const currentBranchId = host._branchId || null;
+    const currentOrgId = host._orgId;
+    const copy = event.target.closest("[data-copy-service]");
+    if (copy) {
+      if (!currentBranchId) return;
+      const source = currentServices.find(item => item.id === copy.dataset.copyService);
+      if (!source) return;
+      if (currentServices.some(item => item.branch_id === currentBranchId && item.name.trim().toLocaleLowerCase("pt-BR") === source.name.trim().toLocaleLowerCase("pt-BR"))) {
+        toast("Esta unidade já possui um serviço com esse nome.");
+        return;
+      }
+      copy.disabled = true;
+      try {
+        const { error } = await supabase.from("services").insert({
+          org_id: currentOrgId,
+          branch_id: currentBranchId,
+          name: source.name,
+          category: source.category,
+          duration_minutes: source.duration_minutes,
+          price: source.price,
+          description: source.description,
+          active: source.active
+        });
+        if (error) throw error;
+        toast("Serviço copiado. Agora ele pode ser editado sem alterar as outras unidades.");
+        await loadServicesPage();
+      } catch (error) {
+        reportError(error, { context: "Serviços > copiar para unidade" });
+        copy.disabled = false;
+      }
+      return;
+    }
+
+    const edit = event.target.closest("[data-edit-service]");
+    if (edit) {
+      const service = currentServices.find(item => item.id === edit.dataset.editService);
+      const dialog = host.querySelector("#service-create-modal");
+      if (!service || !dialog || (currentBranchId && service.branch_id !== currentBranchId)) return;
+      const form = dialog.querySelector("#service-create-form");
+      form.dataset.serviceId = service.id;
+      form.elements.name.value = service.name || "";
+      form.elements.category.value = service.category || "";
+      form.elements.duration.value = service.duration_minutes || 30;
+      form.elements.price.value = Number(service.price || 0).toFixed(2).replace(".", ",");
+      form.elements.description.value = service.description || "";
+      dialog.querySelector("#service-modal-title").textContent = "Editar serviço";
+      form.querySelector('[type="submit"]').textContent = "Salvar alterações";
+      dialog.showModal();
+      return;
+    }
+
+    const toggle = event.target.closest("[data-toggle-service]");
+    if (toggle) {
+      const service = currentServices.find(item => item.id === toggle.dataset.toggleService);
+      if (!service || (currentBranchId && service.branch_id !== currentBranchId)) return;
+      const active = toggle.dataset.active === "true";
+      if (!window.confirm(active ? "Desativar este serviço? Ele deixará de aparecer para novos agendamentos e comandas." : "Reativar este serviço?")) return;
+      toggle.disabled = true;
+      try {
+        let query = supabase.from("services").update({ active: !active })
+          .eq("org_id", currentOrgId).eq("id", service.id);
+        query = currentBranchId ? query.eq("branch_id", currentBranchId) : query.is("branch_id", null);
+        const { error } = await query;
+        if (error) throw error;
+        toast(active ? "Serviço desativado." : "Serviço reativado.");
+        await loadServicesPage();
+      } catch (error) {
+        reportError(error, { context: "Serviços > alterar situação" });
+        toggle.disabled = false;
+      }
+    }
+  });
 
   host.addEventListener("submit", async event => {
     if (!event.target.matches("#service-create-form")) return;
     event.preventDefault();
-
-    const form = event.target;
-    const values = new FormData(form);
-    const submit = form.querySelector('[type="submit"]');
+    const form = event.target, values = new FormData(form), submit = form.querySelector('[type="submit"]');
     const name = String(values.get("name") || "").trim();
-    const duration = Number(values.get("duration"));
-    const price = parseBRL(values.get("price"));
-
+    const duration = Number(values.get("duration")), price = parseBRL(values.get("price"));
     if (!name || !Number.isFinite(duration) || duration < 5 || duration > 720 ||
         !Number.isFinite(price) || price < 0) {
       toast("Confira o nome, duração e preço.");
       return;
     }
-
     submit.disabled = true;
     try {
-      const { error } = await supabase.from("services").insert({
-        org_id: state.organization.id,
+      const payload = {
         name,
         category: String(values.get("category") || "").trim() || null,
         duration_minutes: duration,
         price,
         description: String(values.get("description") || "").trim() || null,
-        active: true
-      });
-      if (error) throw error;
+        branch_id: host._branchId || null
+      };
+      const serviceId = form.dataset.serviceId;
+      let result;
+      if (serviceId) {
+        let query = supabase.from("services").update(payload)
+          .eq("org_id", host._orgId).eq("id", serviceId);
+        query = host._branchId ? query.eq("branch_id", host._branchId) : query.is("branch_id", null);
+        result = await query;
+      } else {
+        result = await supabase.from("services").insert({
+          ...payload, org_id: host._orgId, active: true
+        });
+      }
+      if (result.error) throw result.error;
       host.querySelector("#service-create-modal")?.close();
-      toast("Serviço cadastrado.");
+      toast(serviceId ? "Serviço atualizado." : "Serviço cadastrado.");
       await loadServicesPage();
     } catch (error) {
       reportError(error, { context: "Serviços > salvar cadastro" });

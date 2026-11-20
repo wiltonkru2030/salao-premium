@@ -73,6 +73,19 @@ function renderCurrentPage() {
 }
 
 /** Seletor de tenant aparece somente para contas com mais de uma organização ativa. */
+function renderBranchControl() {
+  const branches = state.availableBranches || [];
+  if (!branches.length) {
+    return ["owner", "admin"].includes(state.membership?.role)
+      ? ''
+      : '<span class="unit-indicator">Sem unidade autorizada</span>';
+  }
+  const selectedId = state.branch?.id || '__main__';
+  return '<label class="tenant-switcher branch-switcher"><span>Unidade</span><select id="branch-switcher" aria-label="Selecionar unidade">' +
+    branches.map(branch => '<option value="' + esc(branch.id || '__main__') + '" ' + (String(branch.id || '__main__') === String(selectedId) ? 'selected' : '') + '>' + esc(branch.name) + '</option>').join('') +
+    '</select></label>';
+}
+
 function renderTenantControl() {
   const organizations = state.availableOrganizations || [];
   if (organizations.length <= 1) {
@@ -109,6 +122,7 @@ function renderApplicationShell(navigation, content) {
         </div>
         <div class="topbar-right">
           ${renderTenantControl()}
+          ${renderBranchControl()}
           <button class="icon-btn notification-btn" data-action="notifications" aria-label="Notificações">♧</button>
           <button class="icon-btn" data-action="sign-out" aria-label="Sair da conta" title="Sair da conta">↪</button>
         </div>
@@ -121,6 +135,11 @@ function renderApplicationShell(navigation, content) {
 /** Aciona somente o carregador do módulo que está visível na rota atual. */
 function loadCurrentPageData() {
   const loaders = {
+    Dashboard: loadDashboardPage,
+    Vendas: loadRecordsPage,
+    Financeiro: loadRecordsPage,
+    Relatórios: loadRecordsPage,
+    Unidades: loadRecordsPage,
     Agenda: loadAgendaPage,
     Profissionais: loadProfessionalsPage,
     Comanda: loadComandaPage,

@@ -6,6 +6,9 @@ import { state } from "../../state.js";
 import { $, toast } from "../../utils.js";
 import { parseBRL } from "../../utils/input-masks.js";
 import { reportError } from "../../utils/errors.js";
+import { scopeServiceCatalog } from "../../modules/services/service-scope.js";
+
+const scopeBranchRecord = (query, branchId) => branchId ? query.eq("branch_id", branchId) : query.is("branch_id", null);
 import { render } from "../../layout/render.js";
 import { appointmentDrawer, renderDrawer, openDrawer } from "../../components/drawer.js";
 import { supabase } from "../../supabase/client.js";
@@ -39,10 +42,12 @@ async function refreshAgendaAndDrawer() {
 }
 // Busca comandas reutilizáveis e decide o vínculo antes de criar o agendamento.
 async function findOpenCustomerOrders(customerId) {
-  const {data,error}=await supabase.from('service_orders')
+  let query=supabase.from('service_orders')
     .select('id,order_number,status')
     .eq('org_id',state.organization.id)
-    .eq('customer_id',customerId)
+    .eq('customer_id',customerId);
+  query=state.branch?.id?query.eq('branch_id',state.branch.id):query.is('branch_id',null);
+  const {data,error}=await query
     .in('status',['open','in_progress','partially_paid','awaiting_payment'])
     .order('created_at',{ascending:false}).limit(20);
   if(error) throw error;
@@ -77,19 +82,21 @@ export async function saveAppointment(form) {
   if(!date||!time||!Number.isFinite(duration)||duration<5||!Number.isFinite(price)||price<0)throw new Error('Confira data, horário, duração e valor.');
   const start=makeTimestamp(date,time);
   const end=new Date(start.getTime()+duration*60000);
+  const existing=appointmentActionRow();
+  const appointmentBranchId=existing?.id?(existing.branch_id??null):(state.branch?.id??null);
   const [customerResult,serviceResult,professionalResult]=await Promise.all([
-    supabase.from('customers').select('id,name,phone').eq('org_id',state.organization.id).eq('id',customerId).maybeSingle(),
-    supabase.from('services').select('id,name,price,duration_minutes').eq('org_id',state.organization.id).eq('id',serviceId).maybeSingle(),
-    supabase.from('professionals').select('id,name').eq('org_id',state.organization.id).eq('id',professionalId).maybeSingle()
+    scopeBranchRecord(supabase.from('customers').select('id,name,phone').eq('org_id',state.organization.id).eq('id',customerId),appointmentBranchId).maybeSingle(),
+    scopeServiceCatalog(supabase.from('services').select('id,name,price,duration_minutes,branch_id').eq('org_id',state.organization.id).eq('id',serviceId),appointmentBranchId).maybeSingle(),
+    scopeBranchRecord(supabase.from('professionals').select('id,name').eq('org_id',state.organization.id).eq('id',professionalId),appointmentBranchId).maybeSingle()
   ]);
   if(customerResult.error)throw customerResult.error;
   if(serviceResult.error)throw serviceResult.error;
   if(professionalResult.error)throw professionalResult.error;
   if(!customerResult.data||!serviceResult.data||!professionalResult.data)throw new Error('Um dos registros selecionados não existe ou está inativo.');
 
-  const existing=appointmentActionRow();
   const payload={
     org_id:state.organization.id,
+    branch_id:existing?.id?(existing.branch_id??null):(state.branch?.id??null),
     customer_id:customerId,
     professional_id:professionalId,
     service_id:serviceId,
@@ -243,13 +250,15 @@ export async function saveBlockTime(form) {
   if(!professionalId||!date||!startTime||!endTime||!reason)throw new Error('Preencha todos os campos do bloqueio.');
   const start=makeTimestamp(date,startTime),end=makeTimestamp(date,endTime);
   if(end<=start)throw new Error('O horário final deve ser posterior ao inicial.');
-  const {data:appointments,error:appointmentError}=await supabase.from('appointments')
+  let conflictQuery=supabase.from('appointments')
     .select('id,customer_name').eq('org_id',state.organization.id).eq('professional_id',professionalId)
-    .not('status','in','(cancelled,no_show)').lt('starts_at',end.toISOString()).gt('ends_at',start.toISOString()).limit(1);
+    .not('status','in','(cancelled,no_show)').lt('starts_at',end.toISOString()).gt('ends_at',start.toISOString());
+  conflictQuery=state.branch?.id?conflictQuery.eq('branch_id',state.branch.id):conflictQuery.is('branch_id',null);
+  const {data:appointments,error:appointmentError}=await conflictQuery.limit(1);
   if(appointmentError)throw appointmentError;
   if(appointments?.length)throw new Error('Já existe um agendamento neste intervalo ('+appointments[0].customer_name+').');
   const {error}=await supabase.from('appointment_blocks').insert({
-    org_id:state.organization.id,professional_id:professionalId,
+    org_id:state.organization.id,branch_id:state.branch?.id||null,professional_id:professionalId,
     starts_at:start.toISOString(),ends_at:end.toISOString(),reason,created_by:state.user.id
   });
   if(error)throw error;

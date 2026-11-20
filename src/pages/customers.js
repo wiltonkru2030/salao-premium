@@ -9,6 +9,7 @@ import { head, esc, toast, btn } from "../utils.js";
 import { reportError } from "../utils/errors.js";
 
 let modalListenerInstalled = false;
+let customersLoadSequence=0;
 
 export function customersPage() {
   return head("Clientes", "Cadastre e mantenha os dados dos clientes em um único lugar.",
@@ -20,16 +21,17 @@ export function customersPage() {
 export async function loadCustomersPage() {
   const host = document.querySelector("#customers-manager");
   if (!host || !state.organization?.id) return;
-
+  const orgId=state.organization.id,branchId=state.branch?.id||null,requestId=++customersLoadSequence;
   let customers;
   try {
-    const result = await supabase.from("customers")
-      .select("id,name,phone,email,birth_date,active")
-      .eq("org_id", state.organization.id)
-      .order("name").limit(500);
+    let query=supabase.from("customers").select("id,name,phone,email,birth_date,active,branch_id").eq("org_id",orgId);
+    query=branchId?query.eq("branch_id",branchId):query.is("branch_id",null);
+    const result=await query.order("name").limit(500);
     if (result.error) throw result.error;
+    if(requestId!==customersLoadSequence||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId||!host.isConnected)return;
     customers = result.data || [];
   } catch (error) {
+    if(requestId!==customersLoadSequence||state.organization?.id!==orgId||(state.branch?.id||null)!==branchId||!host.isConnected)return;
     reportError(error, { context: "Clientes > carregar lista" });
     host.innerHTML = '<div class="empty-state">Não foi possível carregar os clientes. Atualize a página e tente novamente.</div>';
     return;
@@ -94,7 +96,8 @@ export async function loadCustomersPage() {
     submit.disabled = true;
     try {
       const { error } = await supabase.from("customers").insert({
-        org_id: state.organization.id,
+        org_id: orgId,
+        branch_id: branchId,
         name,
         phone: String(values.get("phone") || "").trim() || null,
         email: String(values.get("email") || "").trim() || null,

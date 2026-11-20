@@ -4,6 +4,7 @@ import { state } from "../state.js";
 import { head, esc, toast } from "../utils.js";
 import { mountAutocomplete } from "../components/autocomplete.js";
 import { reportError } from "../utils/errors.js";
+import { scopeServiceCatalog } from "../modules/services/service-scope.js";
 
 let cleanupSearch=null;
 let selectedProfessionalFilter=null;
@@ -29,15 +30,17 @@ export async function loadCommissionsPage(){
  cleanupSearch?.();cleanupSearch=null;
  try{
   const orgId=state.organization.id;
+  const branchId=state.branch?.id||null;
+  const scopeBranch=query=>branchId?query.eq("branch_id",branchId):query.is("branch_id",null);
   const [commissionResult,professionalResult,payoutResult,settingsResult,serviceResult,ruleResult]=await Promise.all([
-   supabase.from("commissions").select("id,professional_id,base_amount,rate,amount,status,paid_at,created_at,payout_id,sale_id,appointment_id,item_type,service_order_item_id,service_order_payment_id")
-    .eq("org_id",orgId).order("created_at",{ascending:false}).limit(1000),
-   supabase.from("professionals").select("id,name,active").eq("org_id",orgId).order("name").limit(500),
-   supabase.from("commission_payouts").select("id,professional_id,amount,payment_method,paid_at,notes,cash_movement_id")
-    .eq("org_id",orgId).order("paid_at",{ascending:false}).limit(300),
-   supabase.from("app_settings").select("id,setting_value").eq("org_id",orgId).is("branch_id",null).eq("setting_key","product_commission").limit(1),
-   supabase.from("services").select("id,name,active").eq("org_id",orgId).eq("active",true).order("name").limit(500),
-   supabase.from("commission_rules").select("id,professional_id,service_id,rate,active,item_type").eq("org_id",orgId).eq("item_type","service").eq("active",true).order("created_at",{ascending:false}).limit(1000)
+   scopeBranch(supabase.from("commissions").select("id,branch_id,professional_id,base_amount,rate,amount,status,paid_at,created_at,payout_id,sale_id,appointment_id,item_type,service_order_item_id,service_order_payment_id")
+    .eq("org_id",orgId)).order("created_at",{ascending:false}).limit(1000),
+   scopeBranch(supabase.from("professionals").select("id,name,active").eq("org_id",orgId)).order("name").limit(500),
+   scopeBranch(supabase.from("commission_payouts").select("id,branch_id,professional_id,amount,payment_method,paid_at,notes,cash_movement_id")
+    .eq("org_id",orgId)).order("paid_at",{ascending:false}).limit(300),
+   scopeBranch(supabase.from("app_settings").select("id,branch_id,setting_value").eq("org_id",orgId).eq("setting_key","product_commission")).limit(1),
+   scopeServiceCatalog(supabase.from("services").select("id,name,active,branch_id").eq("org_id",orgId).eq("active",true),branchId).order("name").limit(500),
+   scopeBranch(supabase.from("commission_rules").select("id,branch_id,professional_id,service_id,rate,active,item_type").eq("org_id",orgId).eq("item_type","service").eq("active",true)).order("created_at",{ascending:false}).limit(1000)
   ]);
   if(commissionResult.error)throw commissionResult.error;
   if(professionalResult.error)throw professionalResult.error;
@@ -72,7 +75,7 @@ export async function loadCommissionsPage(){
   const professionalMap=new Map(professionals.map(p=>[p.id,p]));
   const visible=selectedProfessionalFilter?commissions.filter(c=>c.professional_id===selectedProfessionalFilter):commissions;
   // Os handlers são registrados uma vez; mantenha os dados atuais da renderização no host.
-  host._commissionConfig={orgId,productSetting,serviceRules,professionalMap,visible};
+  host._commissionConfig={orgId,branchId,productSetting,serviceRules,professionalMap,visible};
   const totals=visible.reduce((acc,c)=>{acc[c.status]=(acc[c.status]||0)+Number(c.amount||0);return acc;},{});
   const pending=Number(totals.pending||0)+Number(totals.approved||0),paid=Number(totals.paid||0);
   const groups=new Map();
@@ -168,7 +171,7 @@ export async function loadCommissionsPage(){
     const form=event.target;
     if(!form.matches("#product-commission-settings")&&!form.matches("#service-commission-rule-form")&&!form.matches("[data-update-commission-rule]"))return;
     event.preventDefault();
-    const current=host._commissionConfig||{},orgId=current.orgId,productSetting=current.productSetting,serviceRules=current.serviceRules||[];
+    const current=host._commissionConfig||{},orgId=current.orgId,branchId=current.branchId||null,productSetting=current.productSetting,serviceRules=current.serviceRules||[];
     if(!canManageCommissionSettings()){toast("Somente proprietário ou administrador pode alterar regras de comissão.");return;}
     const button=form.querySelector('[type="submit"]');
     if(form.matches("[data-update-commission-rule]")){
@@ -177,7 +180,7 @@ export async function loadCommissionsPage(){
      if(serviceRules.some(rule=>rule.id!==ruleId&&rule.professional_id===professionalId&&rule.service_id===serviceId)){toast("Já existe outra regra para este profissional e serviço.");return;}
      button.disabled=true;button.textContent="Salvando…";
      try{
-      const {error}=await supabase.from("commission_rules").update({professional_id:professionalId,service_id:serviceId,rate}).eq("org_id",orgId).eq("id",ruleId);
+      const {error}=await (branchId ? supabase.from("commission_rules").update({professional_id:professionalId,service_id:serviceId,rate}).eq("org_id",orgId).eq("id",ruleId).eq("branch_id",branchId) : supabase.from("commission_rules").update({professional_id:professionalId,service_id:serviceId,rate}).eq("org_id",orgId).eq("id",ruleId).is("branch_id",null));
       if(error)throw error;
       toast("Regra atualizada.");await loadCommissionsPage();
      }catch(error){reportError(error,{context:"Comissões > editar regra por serviço"});}
@@ -190,7 +193,7 @@ export async function loadCommissionsPage(){
      if(serviceRules.some(rule=>rule.professional_id===professionalId&&rule.service_id===serviceId)){toast("Já existe uma regra para este profissional e serviço. Exclua a regra anterior antes de cadastrar outra.");return;}
      button.disabled=true;button.textContent="Salvando…";
      try{
-      const {error}=await supabase.from("commission_rules").insert({org_id:orgId,professional_id:professionalId,service_id:serviceId,item_type:"service",rate,active:true});
+      const {error}=await supabase.from("commission_rules").insert({org_id:orgId,branch_id:branchId,professional_id:professionalId,service_id:serviceId,item_type:"service",rate,active:true});
       if(error)throw error;
       toast("Regra de comissão salva.");
       await loadCommissionsPage();
@@ -207,7 +210,7 @@ export async function loadCommissionsPage(){
      if(productSetting){
       result=await supabase.from("app_settings").update(payload).eq("org_id",orgId).eq("id",productSetting.id);
      }else{
-      result=await supabase.from("app_settings").insert({org_id:orgId,branch_id:null,setting_key:"product_commission",...payload});
+      result=await supabase.from("app_settings").insert({org_id:orgId,branch_id:current.branchId,setting_key:"product_commission",...payload});
      }
      if(result.error)throw result.error;
      toast(enabled?"Comissão de produtos ativada.":"Comissão de produtos desativada.");
@@ -219,7 +222,7 @@ export async function loadCommissionsPage(){
   if(host.dataset.bound!=="true"){
    host.dataset.bound="true";
    host.addEventListener("click",async event=>{
-    const current=host._commissionConfig||{},orgId=current.orgId,professionalMap=current.professionalMap||new Map(),visible=current.visible||[];
+    const current=host._commissionConfig||{},orgId=current.orgId,branchId=current.branchId||null,professionalMap=current.professionalMap||new Map(),visible=current.visible||[];
     if(event.target.closest("[data-clear-commission-filter]")){
      selectedProfessionalFilter=null;await loadCommissionsPage();return;
     }
@@ -228,7 +231,8 @@ export async function loadCommissionsPage(){
      if(!canManageCommissionSettings()){toast("Você não tem permissão para alterar regras.");return;}
      if(!window.confirm("Excluir esta regra específica? O sistema voltará a usar a comissão padrão do profissional."))return;
      deleteRule.disabled=true;
-     const {error}=await supabase.from("commission_rules").delete().eq("org_id",orgId).eq("id",deleteRule.dataset.deleteCommissionRule);
+     const result=branchId?await supabase.from("commission_rules").delete().eq("org_id",orgId).eq("id",deleteRule.dataset.deleteCommissionRule).eq("branch_id",branchId):await supabase.from("commission_rules").delete().eq("org_id",orgId).eq("id",deleteRule.dataset.deleteCommissionRule).is("branch_id",null);
+     const {error}=result;
      if(error){reportError(error,{context:"Comissões > excluir regra"});deleteRule.disabled=false;return;}
      toast("Regra removida.");await loadCommissionsPage();return;
     }

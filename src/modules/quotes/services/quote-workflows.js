@@ -17,9 +17,13 @@ export async function printQuoteDocument({ quote, orgId, supabase, state, esc, m
   }
   printWindow.opener = null;
 
+  const branchQuery = supabase.from("branches").select("name,document,address,phone,is_main").eq("org_id", orgId);
+  const scopedBranchQuery = quote.branch_id
+    ? branchQuery.eq("id", quote.branch_id)
+    : branchQuery.eq("is_main", true);
   const [orgResult, branchResult, professionalResult] = await Promise.all([
     supabase.from("organizations").select("name,document,phone").eq("id", orgId).single(),
-    supabase.from("branches").select("name,document,address,phone,is_main").eq("org_id", orgId).eq("is_main", true).maybeSingle(),
+    scopedBranchQuery.maybeSingle(),
     supabase.from("professionals").select("id,name").eq("org_id", orgId)
   ]);
   if (orgResult.error) throw orgResult.error;
@@ -107,9 +111,13 @@ export async function printQuoteDocument({ quote, orgId, supabase, state, esc, m
  * habilitação profissional, bloqueios e conflitos com a Agenda existente.
  */
 export async function openQuoteSchedule({ quote, orgId, supabase, host, esc, toast, reportError, loadQuotesPage, openQuote }) {
+  const professionalQuery = supabase.from("professionals").select("id,name").eq("org_id", orgId).eq("active", true);
+  const scopedProfessionals = quote.branch_id
+    ? professionalQuery.eq("branch_id", quote.branch_id)
+    : professionalQuery.is("branch_id", null);
   const [itemsResult, professionalResult, assignmentResult] = await Promise.all([
     supabase.from("quote_items").select("id,service_id,professional_id,description,quantity,duration_minutes,total").eq("org_id", orgId).eq("quote_id", quote.id).order("sort_order"),
-    supabase.from("professionals").select("id,name").eq("org_id", orgId).eq("active", true).order("name"),
+    scopedProfessionals.order("name"),
     supabase.from("professional_services").select("professional_id,service_id").eq("org_id", orgId)
   ]);
   if (itemsResult.error) throw itemsResult.error;

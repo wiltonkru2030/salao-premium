@@ -12,7 +12,7 @@ import { currency, statusLabel, paymentStatusLabel, paymentMethodLabel } from ".
  * @returns {{html:string,paid:number,balance:number,editable:boolean,allowEdit:boolean,allowPay:boolean,canEditItems:boolean}}
  */
 export function buildComandaDetails(order,data,permissions){
- const {items,payments,customer,professional,services,products,professionals}=data;
+ const {items,payments,customer,professional,services,products,professionals,assignments=[]}=data;
  const paid=payments.filter(p=>p.status==="confirmed").reduce((s,p)=>s+Number(p.amount||0),0);
  const balance=Math.max(0,Number(order.total||0)-paid);
  const editable=["open","in_progress","partially_paid","awaiting_payment"].includes(order.status);
@@ -20,7 +20,8 @@ export function buildComandaDetails(order,data,permissions){
  const allowPay=permissions.canPay;
  const canEditItems=permissions.canEditItems;
  const itemEditors=canEditItems?'<section class="settings-card"><h3>Editar itens</h3>'+items.map(i=>{
-  const options='<option value="">Sem profissional</option>'+professionals.map(p=>'<option value="'+p.id+
+  const allowed=assignments.filter(link=>link.service_id===i.service_id).map(link=>link.professional_id);
+  const options='<option value="">Sem profissional</option>'+professionals.filter(p=>i.item_type!=="service"||allowed.includes(p.id)).map(p=>'<option value="'+p.id+
 '"'+(i.professional_id===p.id?' selected':'')+
 '>'+esc(p.name)+
 '</option>').join("");
@@ -43,14 +44,12 @@ export function buildComandaDetails(order,data,permissions){
  ${payments.length?payments.map(p=>'<div class="setting-row"><span>'+currency(p.amount)+'<small>'+esc(paymentMethodLabel(p.payment_method))+' · '+new Date(p.paid_at).toLocaleString("pt-BR")+(p.refunded_at?' · Estornado em '+new Date(p.refunded_at).toLocaleString("pt-BR"):'')+'</small></span><b>'+esc(paymentStatusLabel(p.status))+'</b></div>').join(""):'<div class="empty-state">Nenhum pagamento registrado.</div>'}
  <div class="setting-row"><span>Total recebido</span><b>${currency(paid)}</b></div><div class="setting-row"><span>Saldo restante</span><b>${currency(balance)}</b></div></section>
  ${editable&&allowEdit?`
- <section class="settings-card"><h3>Adicionar serviço</h3><form id="comanda-service-form"><label>Serviço<input id="comanda-service" class="field" placeholder="Digite para buscar" autocomplete="off" required></label><label>Profissional (opcional)<select name="professional_id" class="field"><option value="">Sem profissional</option>${professionals.map(p=>'<option value="'+p.id+
-'">'+esc(p.name)+
-'</option>').join("")}</select></label><button class="btn primary" type="submit">Adicionar serviço</button></form></section><section class="settings-card"><h3>Adicionar produto</h3><form id="comanda-product-form"><label>Produto<input id="comanda-product" class="field" placeholder="Digite para buscar" autocomplete="off" required></label><label>Quantidade<input name="quantity" class="field" type="number" min="0.001" step="0.001" value="1" required></label><label>Profissional (opcional)<select name="professional_id" class="field"><option value="">Sem profissional</option>${professionals.map(p=>'<option value="'+p.id+
+ <section class="settings-card"><h3>Adicionar serviço</h3><form id="comanda-service-form"><label>Serviço<input id="comanda-service" class="field" placeholder="Digite para buscar" autocomplete="off" required></label><label>Profissional (opcional)<select name="professional_id" class="field"><option value="">Selecione o serviço primeiro</option></select></label><button class="btn primary" type="submit">Adicionar serviço</button></form></section><section class="settings-card"><h3>Adicionar produto</h3><form id="comanda-product-form"><label>Produto<input id="comanda-product" class="field" placeholder="Digite para buscar" autocomplete="off" required></label><label>Quantidade<input name="quantity" class="field" type="number" min="0.001" step="0.001" value="1" required></label><label>Profissional (opcional)<select name="professional_id" class="field"><option value="">Sem profissional</option>${professionals.map(p=>'<option value="'+p.id+
 '">'+esc(p.name)+
 '</option>').join("")}</select></label><button class="btn primary" type="submit">Adicionar produto</button><p class="demo-note">O estoque será baixado ao quitar a comanda.</p></form></section>`:''}
  ${editable&&allowPay?`
  <section class="settings-card"><h3>Receber pagamento</h3><form id="comanda-payment-form"><label>Valor recebido (R$)<input name="amount" class="field" type="text" inputmode="decimal" data-mask="currency" value="${balance.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}" required></label><label>Forma de pagamento<select name="payment_method" class="field" required><option value="pix">PIX</option><option value="cash">Dinheiro</option><option value="credit_card">Cartão de crédito</option><option value="debit_card">Cartão de débito</option><option value="transfer">Transferência</option><option value="voucher">Voucher</option><option value="other">Outro</option></select></label><button class="btn primary" type="submit" ${balance<=0?"disabled":""}>Registrar pagamento</button><p class="demo-note">Cada recebimento, inclusive parcial, gera uma entrada no Caixa. Na quitação, o sistema finaliza a venda, baixa o estoque e gera as comissões configuradas.</p></form></section>`:''}
- ${editable&&allowEdit?(()=>{
+ ${editable&&(allowEdit||(payments.some(p=>p.status==="confirmed")&&permissions.canRefund))?(()=>{
   const hasConfirmedPayment=payments.some(p=>p.status==="confirmed");
   const canRefund=permissions.canRefund;
   if(hasConfirmedPayment&&!canRefund)return '<section class="settings-card"><p class="demo-note">Esta comanda possui recebimentos. O estorno integral e o cancelamento exigem perfil de administração ou financeiro.</p></section>';
