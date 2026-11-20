@@ -3,6 +3,11 @@ import { esc, status, initials, field } from '../../utils.js';
 import { renderAppointmentForm } from './appointment-form.js';
 import { state } from '../../state.js';
 
+/**
+ * Renderiza o painel lateral de detalhes do agendamento.
+ * @param {object} d Agendamento selecionado e permissões de ações disponíveis.
+ * @returns {string} HTML do drawer de detalhes.
+ */
 export function renderAppointmentDrawer(d) {
   const a=d.appointment;
   if(d.editing||!a){
