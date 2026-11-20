@@ -20,6 +20,10 @@ import {
 assert.equal(escapeHtml(`<script>"&'</script>`), "&lt;script&gt;&quot;&amp;&#39;&lt;/script&gt;");
 assert.equal(formatMoney(12.5), (12.5).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }));
 assert.equal(formatMoney(Number.NaN), "R$ —");
+assert.equal(formatMoney(null), "R$ —");
+assert.equal(formatMoney(undefined), "R$ —");
+assert.equal(formatMoney(""), "R$ —");
+assert.equal(formatMoney(0), (0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }));
 assert.equal(toDateKey(new Date(2026, 10, 19)), "2026-11-19");
 assert.equal(toDateKey(new Date("data inválida")), "");
 assert.match(formatMonthLabel(new Date(2026, 10, 19)), /novembro de 2026/i);
