@@ -16,6 +16,7 @@ function mockClient(tables={},error=null) {
       insert(payload){call.action="insert";call.payload=payload;return query;},
       update(payload){call.action="update";call.payload=payload;return query;},
       eq(key,value){call.filters.push([key,value]);return query;},
+      or(expression){call.or=expression;return query;},
       order(key){call.order=key;return query;},
       range(start,end){call.range=[start,end];return query;},
       then(resolve,reject){
@@ -34,9 +35,13 @@ async function run(){
   const rows=Array.from({length:501},(_,i)=>({id:"c"+i,org_id:"org-a",name:"Cliente "+i}));
   const client=mockClient({customers:rows});
   assert.equal((await listCustomers({client,orgId:"org-a"})).length,501);
+  const branchClient=mockClient({customers:[]});
+  await listCustomers({client:branchClient,orgId:"org-a",branchId:"11111111-1111-4111-8111-111111111111"});
+  assert.equal(branchClient.calls[0].or,"branch_id.eq.11111111-1111-4111-8111-111111111111,branch_id.is.null");
   assert.deepEqual(client.calls.filter(call=>call.table==="customers").map(call=>call.range),[[0,249],[250,499],[500,749]]);
-  await saveCustomer({client,orgId:"org-a",name:" Maria ",phone:"(11) 99999-0000",email:"MARIA@EMAIL.COM",birthDate:"1990-01-02"});
+  await saveCustomer({client,orgId:"org-a",branchId:"11111111-1111-4111-8111-111111111111",name:" Maria ",phone:"(11) 99999-0000",email:"MARIA@EMAIL.COM",birthDate:"1990-01-02"});
   assert.equal(client.calls[3].payload.org_id,"org-a");
+  assert.equal(client.calls[3].payload.branch_id,"11111111-1111-4111-8111-111111111111");
   assert.equal(client.calls[3].payload.email,"maria@email.com");
   assert.equal(client.calls[3].payload.name,"Maria");
   await saveCustomer({client,orgId:"org-a",customerId:"c1",name:"Maria Atualizada",birthDate:""});
