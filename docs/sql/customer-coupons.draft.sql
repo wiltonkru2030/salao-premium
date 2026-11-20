@@ -1,4 +1,6 @@
--- RASCUNHO — cupons públicos com reserva transacional vinculada ao HOLD de agendamento.
+-- RASCUNHO SUPERSEDED — histórico do módulo de cupons.
+-- NÃO EXECUTAR: as migrations oficiais 20261120065524, 20261120065604 e 20261120070111 estão aplicadas no Supabase conectado.
+-- Este arquivo não representa o contrato ativo; use as migrations versionadas e os testes correspondentes.
 -- Não aplicar em produção sem revisão e autorização explícita.
 -- Cada reserva do app da cliente aplica o cupom a um único serviço; o backend recalcula e reserva o uso.
 
