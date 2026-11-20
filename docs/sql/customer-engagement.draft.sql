@@ -50,6 +50,10 @@ drop policy if exists customer_favorites_delete_own on public.customer_favorites
 create policy customer_favorites_delete_own on public.customer_favorites
   for delete to authenticated using (auth_user_id=(select auth.uid()));
 
+drop trigger if exists audit_row_change on public.customer_favorites;
+create trigger audit_row_change after insert or update or delete on public.customer_favorites
+  for each row execute function private.capture_row_audit();
+
 create or replace function private.list_my_favorite_salons()
 returns table (
   org_id uuid,
@@ -132,6 +136,10 @@ create policy customer_notifications_update_own on public.customer_notifications
   for update to authenticated using (auth_user_id=(select auth.uid()))
   with check (auth_user_id=(select auth.uid()));
 
+drop trigger if exists audit_row_change on public.customer_notifications;
+create trigger audit_row_change after insert or update or delete on public.customer_notifications
+  for each row execute function private.capture_row_audit();
+
 create or replace function private.notify_customer_appointment_changes()
 returns trigger
 language plpgsql
@@ -180,11 +188,17 @@ begin
   insert into public.customer_notifications(auth_user_id,org_id,appointment_id,kind,title,body)
   select distinct link.auth_user_id,new.org_id,new.id,v_kind,v_title,v_body
   from public.customer_account_customers link
+  join public.customer_tenant_memberships membership
+    on membership.org_id=link.org_id
+   and membership.auth_user_id=link.auth_user_id
+   and membership.status='active'
   where link.org_id=new.org_id and link.customer_id=new.customer_id;
 
   return new;
 end;
 $function$;
+
+revoke all on function private.notify_customer_appointment_changes() from public,anon,authenticated;
 
 drop trigger if exists customer_appointment_notification_trigger on public.appointments;
 create trigger customer_appointment_notification_trigger
