@@ -346,3 +346,20 @@ Foram adicionados `src/modules/availability/availability.service.js` e `availabi
 A página `src/pages/settings.js` agora carrega e exibe a seção de expediente, integrada ao componente `src/modules/availability/availability-settings.view.js` e ao serviço `availability.service.js`. Owner/admin podem cadastrar e excluir horários semanais, fechamentos excepcionais e afastamentos. O formulário é responsivo e as gravações continuam protegidas no banco por RLS. A troca de unidade atualiza o contexto dos eventos sem recarregar a página.
 
 O teste puro `npm run test:availability` foi adicionado ao conjunto `npm run test:all`. **Execução de CI desta alteração ainda não foi confirmada**; a consulta de workflows/status não retornou execuções associadas aos commits mais recentes.
+
+
+### Integração da disponibilidade com a Agenda administrativa
+
+Migration `20261120063615_enforce_availability_on_admin_appointments` aplicada ao Supabase e registrada no histórico. O trigger `appointments_prevent_overlap` agora também valida, quando o agendamento possui unidade:
+- unidade ativa e pertencente à mesma organização;
+- compatibilidade do profissional com a unidade;
+- intervalo integral dentro do expediente semanal da unidade;
+- intervalo integral dentro do expediente semanal do profissional;
+- fechamentos extraordinários e afastamentos;
+- conflitos com agendamentos, bloqueios e HOLDs.
+
+A regra é executada no PostgreSQL, inclusive em remarcações por arrastar/soltar e em fluxos de gravação que não passam pelo formulário. A verificação de expediente só roda quando a unidade/profissional/horário é criado ou alterado; mudanças isoladas de status não invalidam um atendimento já marcado se o expediente for editado posteriormente.
+
+O formulário administrativo da Agenda agora carrega as unidades ativas da organização, seleciona automaticamente a única unidade quando existir apenas uma, exige escolha explícita quando houver várias e filtra a lista de profissionais pela unidade selecionada. O `branch_id` passa a ser persistido e preservado no modelo do calendário.
+
+**Limitação remanescente:** registros legados e fluxos que ainda enviam `branch_id = null` não passam pela nova validação de expediente. A tela de orçamentos e o agendamento público ainda precisam adotar seleção explícita de unidade. A regra de duração customizada ainda não distingue override autorizado de alteração comum.
