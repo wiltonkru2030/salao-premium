@@ -122,9 +122,14 @@ async function loadPublicSalons() {
 
 /** Carrega o catálogo público da unidade selecionada sem consultar tabelas operacionais diretamente. */
 async function loadSalonCatalog(salon) {
+  if (holdState && (holdState.orgId !== salon.org_id || holdState.branchId !== salon.branch_id)) {
+    const previousHold = holdState;
+    holdState = null;
+    try { await cancelAppointmentHold(previousHold.holdId); }
+    catch { console.warn("Não foi possível cancelar a reserva anterior automaticamente."); }
+  }
   salonDetailState = { salon, catalog: [], loading: true, error: "" };
   slotsState = { serviceId: null, items: [], loading: false, error: "", date: "" };
-  holdState = null;
   activePage = "salon-detail";
   renderApp();
   try {
@@ -227,10 +232,11 @@ async function runAction(action, button = null) {
       const index = Number(button?.dataset.slotIndex);
       const slot = slotsState.items[index];
       if (!slot || !slotsState.serviceId) throw new Error("Selecione um horário válido.");
-      holdState = await createAppointmentHold({
+      const createdHold = await createAppointmentHold({
         orgId: salonDetailState.salon.org_id, branchId: salonDetailState.salon.branch_id,
         professionalId: slot.professional_id, serviceId: slotsState.serviceId, startsAt: slot.starts_at
       });
+      holdState = { ...createdHold, orgId: salonDetailState.salon.org_id, branchId: salonDetailState.salon.branch_id };
       renderApp();
       setNotice("Horário reservado temporariamente. Confirme antes do vencimento.", "success");
     } else if (action === "confirm-booking") {
