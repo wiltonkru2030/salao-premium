@@ -13,7 +13,7 @@ export function renderIdentityLinkRequestsView({requests = [], loading = false} 
   const cards = requests.map(item => {
     const expiry = new Date(item.expiresAt).toLocaleString("pt-BR", {dateStyle:"short",timeStyle:"short"});
     const phone = item.phoneSuffix ? "Telefone terminado em ••" + escapeClientHtml(item.phoneSuffix) : "Telefone não informado";
-    return '<article class="profile-card identity-link-card"><div><strong>' + escapeClientHtml(item.salonName) + '</strong><span>Cadastro: ' + escapeClientHtml(item.customerName) + '</span><small>' + phone + '</small><small>Expira em ' + escapeClientHtml(expiry) + '</small></div><button type="button" class="primary-button" data-action="confirm-identity-link" data-request-id="' + escapeClientHtml(item.requestId) + '">Confirmar vínculo</button></article>';
+    return '<article class="profile-card identity-link-card"><div><strong>' + escapeClientHtml(item.salonName) + '</strong><span>Cadastro: ' + escapeClientHtml(item.customerName) + '</span><small>' + phone + '</small><small>Expira em ' + escapeClientHtml(expiry) + '</small></div><button type="button" class="client-button primary compact" data-action="confirm-identity-link" data-request-id="' + escapeClientHtml(item.requestId) + '">Confirmar vínculo</button></article>';
   }).join("");
   return '<section class="page-content"><div class="page-heading"><span class="eyebrow">SEGURANÇA DA CONTA</span><h1>Vínculos com salões</h1><p>Confira os dados antes de permitir que seu cadastro antigo seja associado à sua conta.</p></div>' +
     (cards || '<div class="empty-state"><strong>Nenhuma solicitação pendente</strong><p>Quando um salão solicitar a associação de um cadastro antigo, ela aparecerá aqui para sua confirmação.</p></div>') +
