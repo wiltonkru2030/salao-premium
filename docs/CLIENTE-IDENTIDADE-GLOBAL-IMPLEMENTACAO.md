@@ -332,3 +332,10 @@ A RPC privada `private.create_customer_appointment_hold` agora:
 **Verificação realizada:** as quatro tabelas existem no Supabase com RLS habilitado; a definição atual da função foi consultada após a migration; o Security Advisor continua apontando 16 funções SECURITY DEFINER antigas em outros módulos e a proteção contra senhas vazadas desativada.
 
 **Limitações que permanecem:** não foi criada ainda a tela administrativa para configurar esses intervalos, nem a consulta/grade visual de horários livres. A disponibilidade é validada na criação do HOLD, mas a jornada da cliente ainda precisa integrar a descoberta e seleção de horários. Testes ponta a ponta com contas reais continuam pendentes.
+
+
+### Serviço de administração da disponibilidade
+
+Foram adicionados `src/modules/availability/availability.service.js` e `availability.utils.js` para consultar e manter expedientes da unidade/profissionais, fechamentos e afastamentos. O serviço exige sessão autenticada e depende das políticas RLS do banco para limitar escrita a owner/admin. Testes puros de validação estão em `availability.utils.test.js` e foram incluídos em `npm run test:availability` e `npm run test:all`.
+
+**Atenção:** o serviço de dados está criado, mas ainda não foi conectado a uma tela administrativa; a gestão visual de horários continua pendente.
