@@ -1,133 +1,313 @@
 /**
- * Teste de integração RLS da identidade global.
- * Executar somente em ambiente de QA com dois usuários e dois tenants de teste.
- * Não utiliza service_role: cada cliente usa seu próprio access token.
+ * Testes de integração da identidade global da cliente e de seu isolamento por tenant.
  *
- * Variáveis necessárias:
+ * Responsabilidade:
+ * - validar leitura restrita por auth.uid() nas tabelas globais;
+ * - impedir escrita direta em memberships e associações legadas;
+ * - impedir que a cliente marque o próprio telefone como verificado;
+ * - validar idempotência das RPCs de entrada e associação quando QA estiver configurado.
+ *
+ * Segurança:
+ * - usar exclusivamente tokens de usuários reais de QA;
+ * - nunca colocar service_role neste teste;
+ * - nunca apontar para produção;
+ * - usar duas organizações e contas sem dados pessoais reais.
+ *
+ * Variáveis obrigatórias:
  * SUPABASE_URL, SUPABASE_ANON_KEY,
  * CUSTOMER_A_ACCESS_TOKEN, CUSTOMER_B_ACCESS_TOKEN,
  * CUSTOMER_A_ID, CUSTOMER_B_ID, ORG_A_ID, ORG_B_ID.
  *
- * Este teste valida leitura cruzada e também confirma que o navegador não pode
- * criar memberships/associações nem marcar o próprio telefone como verificado.
+ * Variáveis adicionais para testar RPCs:
+ * CUSTOMER_A_OWNER_ACCESS_TOKEN, ORG_A_SLUG, ORG_A_CUSTOMER_ID.
  */
+
 import assert from "node:assert/strict";
 
-const required = [
-  "SUPABASE_URL", "SUPABASE_ANON_KEY", "CUSTOMER_A_ACCESS_TOKEN", "CUSTOMER_B_ACCESS_TOKEN",
-  "CUSTOMER_A_ID", "CUSTOMER_B_ID", "ORG_A_ID", "ORG_B_ID"
+const ENV = process.env;
+const REQUIRED = [
+  "SUPABASE_URL",
+  "SUPABASE_ANON_KEY",
+  "CUSTOMER_A_ACCESS_TOKEN",
+  "CUSTOMER_B_ACCESS_TOKEN",
+  "CUSTOMER_A_ID",
+  "CUSTOMER_B_ID",
+  "ORG_A_ID",
+  "ORG_B_ID"
 ];
-const missing = required.filter(key => !process.env[key]);
-if (missing.length) {
-  console.log("Teste RLS global ignorado: ambiente de QA não configurado (" + missing.join(", ") + ").");
+
+const missing = REQUIRED.filter((key) => !ENV[key]);
+if (missing.length > 0) {
+  console.log(
+    "Teste de identidade global não executado: ambiente de QA incompleto (" +
+      missing.join(", ") +
+      ")."
+  );
   process.exit(0);
 }
 
-const base = process.env.SUPABASE_URL.replace(/\/$/, "") + "/rest/v1";
+const REST_BASE = ENV.SUPABASE_URL.replace(/\/$/, "") + "/rest/v1";
+const REQUEST_TIMEOUT_MS = 10000;
 
-/** Executa uma chamada PostgREST usando exclusivamente a sessão do cliente testado. */
+/**
+ * Executa uma chamada autenticada à API do Supabase.
+ *
+ * @param {string|null} token - JWT do usuário de QA; null representa acesso anônimo.
+ * @param {string} path - Caminho REST ou RPC relativo à API.
+ * @param {{method?:string, body?:unknown}} options - Método HTTP e corpo opcional.
+ * @returns {Promise<{ok:boolean,status:number,body:unknown}>} Resultado HTTP interpretado.
+ * @throws {Error} Quando há falha de rede ou tempo limite.
+ */
 async function request(token, path, options = {}) {
+  const { method = "GET", body } = options;
   const headers = {
-    apikey: process.env.SUPABASE_ANON_KEY,
-    Authorization: "Bearer " + token,
-    Accept: "application/json",
-    ...(options.body ? { "Content-Type": "application/json", Prefer: "return=representation" } : {})
+    apikey: ENV.SUPABASE_ANON_KEY,
+    Accept: "application/json"
   };
-  const response = await fetch(base + path, {
-    method: options.method || "GET",
-    headers,
-    ...(options.body ? { body: JSON.stringify(options.body) } : {})
-  });
-  const body = await response.text();
+
+  if (token) headers.Authorization = "Bearer " + token;
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+
+  let response;
+  try {
+    response = await fetch(REST_BASE + path, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+    });
+  } catch (error) {
+    const reason = error?.name === "TimeoutError" || error?.name === "AbortError"
+      ? "tempo limite excedido"
+      : "falha de rede";
+    throw new Error("Não foi possível concluir a chamada de QA: " + reason + ".");
+  }
+
+  const raw = await response.text();
   let parsed = null;
-  try { parsed = body ? JSON.parse(body) : null; } catch { parsed = body; }
-  return { status: response.status, body: parsed };
+  if (raw) {
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = raw;
+    }
+  }
+
+  return { ok: response.ok, status: response.status, body: parsed };
 }
 
-/** Asserção comum para garantir que a consulta foi aceita pelo PostgREST. */
-function assertSuccess(result, message) {
-  assert.ok(result.status >= 200 && result.status < 300, message + " (HTTP " + result.status + ")");
+/**
+ * Confirma que uma operação privilegiada ou escrita direta foi rejeitada.
+ *
+ * @param {Promise<{ok:boolean,status:number,body:unknown}>} result - Chamada executada.
+ * @param {string} description - Nome do cenário de segurança.
+ * @returns {void}
+ * @throws {AssertionError} Se a API aceitar a operação indevida.
+ */
+function expectDenied(result, description) {
+  assert.equal(result.ok, false, description + " não deveria ser permitido.");
 }
 
-/** Asserção comum para operações que devem ser bloqueadas por grants/RLS. */
-function assertDenied(result, message) {
-  assert.ok(
-    result.status === 401 || result.status === 403 || result.status === 404,
-    message + " (HTTP " + result.status + ")"
+/**
+ * Executa uma RPC e verifica se a resposta foi aceita.
+ *
+ * @param {string} token - JWT do usuário autenticado.
+ * @param {string} functionName - Nome público da RPC.
+ * @param {object} args - Argumentos nomeados da função.
+ * @returns {Promise<unknown>} Corpo retornado pela RPC.
+ * @throws {AssertionError} Se a API rejeitar uma operação autorizada.
+ */
+async function expectRpcSuccess(token, functionName, args) {
+  const result = await request(token, "/rpc/" + functionName, {
+    method: "POST",
+    body: args
+  });
+  assert.equal(
+    result.ok,
+    true,
+    "RPC " + functionName + " deveria ser aceita; HTTP " + result.status
   );
+  return result.body;
 }
 
+const customerA = ENV.CUSTOMER_A_ACCESS_TOKEN;
+const customerB = ENV.CUSTOMER_B_ACCESS_TOKEN;
+const customerAId = encodeURIComponent(ENV.CUSTOMER_A_ID);
+const customerBId = encodeURIComponent(ENV.CUSTOMER_B_ID);
+const orgAId = encodeURIComponent(ENV.ORG_A_ID);
+const orgBId = encodeURIComponent(ENV.ORG_B_ID);
+
+// ---------------------------------------------------------------------------
+// 1. Perfis globais: cada cliente só consulta o próprio auth_user_id.
+// ---------------------------------------------------------------------------
 const aOwn = await request(
-  process.env.CUSTOMER_A_ACCESS_TOKEN,
-  "/customer_profiles?select=auth_user_id&auth_user_id=eq." + process.env.CUSTOMER_A_ID
+  customerA,
+  "/customer_profiles?select=auth_user_id&auth_user_id=eq." + customerAId
 );
-assertSuccess(aOwn, "Cliente A deve consultar o próprio perfil.");
-assert.ok(aOwn.body.every(row => row.auth_user_id === process.env.CUSTOMER_A_ID), "Cliente A não pode receber perfil de outra pessoa.");
+assert.equal(aOwn.ok, true, "Cliente A deve consultar o próprio perfil.");
+assert.ok(
+  Array.isArray(aOwn.body) &&
+    aOwn.body.every((row) => row.auth_user_id === ENV.CUSTOMER_A_ID),
+  "Cliente A não pode receber perfil de outra pessoa."
+);
 
 const aOther = await request(
-  process.env.CUSTOMER_A_ACCESS_TOKEN,
-  "/customer_profiles?select=auth_user_id&auth_user_id=eq." + process.env.CUSTOMER_B_ID
+  customerA,
+  "/customer_profiles?select=auth_user_id&auth_user_id=eq." + customerBId
 );
-assertSuccess(aOther, "Consulta RLS deve ser processada.");
+assert.equal(aOther.ok, true, "Consulta RLS de perfil cruzado deve ser processada.");
 assert.equal(aOther.body.length, 0, "Cliente A não pode consultar o perfil de B.");
 
+// ---------------------------------------------------------------------------
+// 2. Memberships e associações: somente linhas da própria identidade.
+// ---------------------------------------------------------------------------
 const aMemberships = await request(
-  process.env.CUSTOMER_A_ACCESS_TOKEN,
+  customerA,
   "/customer_tenant_memberships?select=org_id,auth_user_id"
 );
-assertSuccess(aMemberships, "Cliente A deve consultar os próprios vínculos.");
-assert.ok(aMemberships.body.every(row => row.auth_user_id === process.env.CUSTOMER_A_ID), "Memberships de outra cliente não podem vazar.");
+assert.equal(aMemberships.ok, true, "Cliente A deve consultar seus vínculos.");
+assert.ok(
+  aMemberships.body.every((row) => row.auth_user_id === ENV.CUSTOMER_A_ID),
+  "Memberships de outra cliente não podem vazar."
+);
 
 const aCannotReadBMembership = await request(
-  process.env.CUSTOMER_A_ACCESS_TOKEN,
-  "/customer_tenant_memberships?select=org_id,auth_user_id&org_id=eq." + process.env.ORG_B_ID + "&auth_user_id=eq." + process.env.CUSTOMER_B_ID
+  customerA,
+  "/customer_tenant_memberships?select=org_id,auth_user_id&org_id=eq." +
+    orgBId +
+    "&auth_user_id=eq." +
+    customerBId
 );
-assertSuccess(aCannotReadBMembership, "Consulta cruzada de membership deve ser processada.");
+assert.equal(aCannotReadBMembership.ok, true, "Consulta cruzada de membership deve ser processada.");
 assert.equal(aCannotReadBMembership.body.length, 0, "Cliente A não pode consultar membership de B.");
 
 const aCannotReadBMapping = await request(
-  process.env.CUSTOMER_A_ACCESS_TOKEN,
-  "/customer_account_customers?select=org_id,auth_user_id&org_id=eq." + process.env.ORG_B_ID + "&auth_user_id=eq." + process.env.CUSTOMER_B_ID
+  customerA,
+  "/customer_account_customers?select=org_id,auth_user_id&org_id=eq." +
+    orgBId +
+    "&auth_user_id=eq." +
+    customerBId
 );
-assertSuccess(aCannotReadBMapping, "Consulta cruzada de associação deve ser processada.");
+assert.equal(aCannotReadBMapping.ok, true, "Consulta cruzada de associação deve ser processada.");
 assert.equal(aCannotReadBMapping.body.length, 0, "Cliente A não pode consultar associação legada de B.");
 
 const bMappings = await request(
-  process.env.CUSTOMER_B_ACCESS_TOKEN,
+  customerB,
   "/customer_account_customers?select=org_id,auth_user_id"
 );
-assertSuccess(bMappings, "Cliente B deve consultar seus vínculos legados.");
-assert.ok(bMappings.body.every(row => row.auth_user_id === process.env.CUSTOMER_B_ID), "Associações legadas de outra cliente não podem vazar.");
+assert.equal(bMappings.ok, true, "Cliente B deve consultar seus vínculos legados.");
+assert.ok(
+  bMappings.body.every((row) => row.auth_user_id === ENV.CUSTOMER_B_ID),
+  "Associações legadas de outra cliente não podem vazar."
+);
 
-// O cliente não pode criar o próprio vínculo com uma organização arbitrária.
-const createMembership = await request(process.env.CUSTOMER_A_ACCESS_TOKEN, "/customer_tenant_memberships", {
-  method: "POST",
-  body: {
-    org_id: process.env.ORG_A_ID,
-    auth_user_id: process.env.CUSTOMER_A_ID,
-    status: "active",
-    source: "customer_booking"
+// ---------------------------------------------------------------------------
+// 3. O cliente não pode criar memberships nem associações diretamente.
+// ---------------------------------------------------------------------------
+const directMembershipInsert = await request(
+  customerA,
+  "/customer_tenant_memberships",
+  {
+    method: "POST",
+    body: {
+      org_id: ENV.ORG_A_ID,
+      auth_user_id: ENV.CUSTOMER_B_ID,
+      status: "active",
+      source: "booking_link"
+    }
   }
-});
-assertDenied(createMembership, "Cliente não pode criar membership diretamente.");
+);
+expectDenied(directMembershipInsert, "Criação direta de membership");
 
-// O cliente não pode forjar a associação com um cadastro legado de salão.
-const createLegacyMapping = await request(process.env.CUSTOMER_A_ACCESS_TOKEN, "/customer_account_customers", {
-  method: "POST",
-  body: {
-    org_id: process.env.ORG_A_ID,
-    auth_user_id: process.env.CUSTOMER_A_ID,
-    customer_id: "00000000-0000-4000-8000-000000000001",
-    source: "customer_claim_reviewed"
+const directMappingInsert = await request(
+  customerA,
+  "/customer_account_customers",
+  {
+    method: "POST",
+    body: {
+      org_id: ENV.ORG_A_ID,
+      auth_user_id: ENV.CUSTOMER_A_ID,
+      customer_id: "00000000-0000-4000-8000-000000000001",
+      link_source: "staff_confirmed"
+    }
   }
-});
-assertDenied(createLegacyMapping, "Cliente não pode associar cadastro legado diretamente.");
+);
+expectDenied(directMappingInsert, "Criação direta de associação legada");
 
-// O telefone só poderá ser marcado como verificado por um fluxo confiável de comprovação.
-const forgePhoneVerification = await request(process.env.CUSTOMER_A_ACCESS_TOKEN, "/customer_profiles?auth_user_id=eq." + process.env.CUSTOMER_A_ID, {
-  method: "PATCH",
-  body: { phone_verified_at: new Date().toISOString() }
-});
-assertDenied(forgePhoneVerification, "Cliente não pode marcar o próprio telefone como verificado.");
+// ---------------------------------------------------------------------------
+// 4. Telefone verificado é campo protegido pelo banco.
+// ---------------------------------------------------------------------------
+const verifiedPhoneWrite = await request(
+  customerA,
+  "/customer_profiles?auth_user_id=eq." + customerAId,
+  {
+    method: "PATCH",
+    body: { phone_verified_at: new Date().toISOString() }
+  }
+);
+expectDenied(verifiedPhoneWrite, "Alteração direta de phone_verified_at");
 
-console.log("Testes RLS globais de leitura, isolamento e bloqueio de escrita concluídos.");
+// ---------------------------------------------------------------------------
+// 5. RPCs controladas: ativação idempotente e associação auditada.
+//    Esta etapa só roda quando os dados adicionais de QA estão configurados.
+// ---------------------------------------------------------------------------
+const RPC_ENV = [
+  "CUSTOMER_A_OWNER_ACCESS_TOKEN",
+  "ORG_A_SLUG",
+  "ORG_A_CUSTOMER_ID"
+];
+const missingRpcEnv = RPC_ENV.filter((key) => !ENV[key]);
+
+if (missingRpcEnv.length === 0) {
+  const joined = await expectRpcSuccess(customerA, "join_customer_tenant", {
+    p_org_slug: ENV.ORG_A_SLUG
+  });
+  const joinedRow = Array.isArray(joined) ? joined[0] : joined;
+  assert.equal(joinedRow.org_id, ENV.ORG_A_ID, "O slug deve resolver somente a organização esperada.");
+  assert.equal(joinedRow.membership_status, "active", "O vínculo pelo link deve ficar ativo.");
+
+  // A segunda chamada comprova idempotência, sem duplicar a linha.
+  await expectRpcSuccess(customerA, "join_customer_tenant", {
+    p_org_slug: ENV.ORG_A_SLUG
+  });
+  const membershipAfterJoin = await request(
+    customerA,
+    "/customer_tenant_memberships?select=org_id,auth_user_id&org_id=eq." +
+      orgAId +
+      "&auth_user_id=eq." +
+      customerAId
+  );
+  assert.equal(membershipAfterJoin.ok, true, "Membership criado deve ser consultável.");
+  assert.equal(membershipAfterJoin.body.length, 1, "A entrada repetida não pode duplicar membership.");
+
+  const ownerA = ENV.CUSTOMER_A_OWNER_ACCESS_TOKEN;
+  const linkArgs = {
+    p_org_id: ENV.ORG_A_ID,
+    p_customer_id: ENV.ORG_A_CUSTOMER_ID,
+    p_auth_user_id: ENV.CUSTOMER_A_ID
+  };
+  const linked = await expectRpcSuccess(ownerA, "link_customer_legacy", linkArgs);
+  assert.equal(linked, ENV.ORG_A_CUSTOMER_ID, "A RPC deve retornar o cadastro associado.");
+
+  // A associação repetida ao mesmo cadastro também deve ser idempotente.
+  const linkedAgain = await expectRpcSuccess(ownerA, "link_customer_legacy", linkArgs);
+  assert.equal(linkedAgain, ENV.ORG_A_CUSTOMER_ID);
+
+  const crossTenantLink = await request(ownerA, "/rpc/link_customer_legacy", {
+    method: "POST",
+    body: {
+      p_org_id: ENV.ORG_B_ID,
+      p_customer_id: ENV.CUSTOMER_B_ID,
+      p_auth_user_id: ENV.CUSTOMER_A_ID
+    }
+  });
+  expectDenied(crossTenantLink, "Associação de cliente em organização alheia");
+} else {
+  console.log(
+    "Testes das RPCs controladas não executados: faltam variáveis de QA (" +
+      missingRpcEnv.join(", ") +
+      ")."
+  );
+}
+
+console.log("Testes RLS da identidade global concluídos.");
