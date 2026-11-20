@@ -51,3 +51,34 @@ assert.match(normalized,/grant execute on function public\.save_public_salon_pro
 assert.match(normalized,/grant usage on schema private to anon,authenticated/);
 
 console.log("Contrato estático do diretório público: OK (não equivale à execução no PostgreSQL).");
+
+/** Confere também as migrations aplicadas, não apenas o rascunho histórico. */
+const migrationDirectory = new URL("../../supabase/migrations/", import.meta.url);
+const migrationFiles = [
+  "20261120064407_public_salon_directory_and_availability.sql",
+  "20261120064553_align_public_profiles_with_settings.sql",
+  "20261120064639_restrict_private_schema_public_api.sql",
+  "20261120064758_allow_members_read_public_profile_settings.sql"
+];
+const appliedSql = (await Promise.all(migrationFiles.map(file =>
+  readFile(new URL(file, migrationDirectory), "utf8")
+))).join("\\n").toLowerCase();
+
+for (const table of ["salon_public_profiles", "branch_public_profiles"]) {
+  assert.match(appliedSql, new RegExp("create table public\\." + table + "\\b"));
+  assert.match(appliedSql, new RegExp("alter table public\\." + table + " enable row level security"));
+}
+for (const rpc of ["save_public_salon_profile", "search_public_salons", "get_public_salon_catalog", "get_customer_available_slots"]) {
+  assert.match(appliedSql, new RegExp("create or replace function public\\." + rpc + "\\b"));
+  assert.match(appliedSql, new RegExp("create or replace function private\\." + rpc + "\\b"));
+}
+assert.match(appliedSql, /grant usage on schema private to anon, authenticated/);
+assert.match(appliedSql, /grant execute on function private\\.search_public_salons[\\s\\S]*?to anon/);
+assert.match(appliedSql, /grant execute on function private\\.get_public_salon_catalog[\\s\\S]*?to anon/);
+assert.match(appliedSql, /grant execute on function private\\.get_customer_available_slots[\\s\\S]*?to anon/);
+assert.doesNotMatch(appliedSql, /grant execute on function private\\.save_public_salon_profile[\\s\\S]*?to anon/);
+assert.match(appliedSql, /appointment_holds/);
+assert.match(appliedSql, /branch_closures/);
+assert.match(appliedSql, /professional_time_off/);
+
+console.log("Contrato estático do diretório público e migrations: OK (não equivale à execução no PostgreSQL).");
