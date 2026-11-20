@@ -18,6 +18,7 @@ import {
 import { renderProfessionalPasswordChangeView, renderProfessionalLoginView } from "./views/auth.views.js";
 import { renderAgendaView } from "./views/agenda.views.js";
 import { handleAgendaClick } from "./agenda.controller.js";
+import { fetchProfessionalAppointments } from "./appointments.service.js";
 
 // Aplicação PWA do profissional: autenticação, navegação, Agenda, Comandas e Comissões.
 installGlobalErrorHandlers();
@@ -154,11 +155,12 @@ async function loadBase(){
 }
 // Carrega somente agendamentos permitidos pelo escopo profissional.
 async function loadAppointments(){
- const start=new Date(state.month.getFullYear(),state.month.getMonth(),1),end=new Date(state.month.getFullYear(),state.month.getMonth()+1,1);
- const {data,error}=await supabase.from("appointments")
-  .select("id,starts_at,ends_at,customer_name,customer_phone,service_name,professional_name,status,price,booking_source,created_by_name,notes,professional_id")
-  .eq("org_id",state.orgId).gte("starts_at",start.toISOString()).lt("starts_at",end.toISOString()).order("starts_at").limit(1000);
- if(error)throw error;state.appointments=data||[];
+ const appointments=await fetchProfessionalAppointments({
+  client:supabase,
+  organizationId:state.orgId,
+  month:state.month
+ });
+ state.appointments=appointments;
 }
 // Carrega comandas visíveis ao usuário autenticado.
 async function loadOrders(){
