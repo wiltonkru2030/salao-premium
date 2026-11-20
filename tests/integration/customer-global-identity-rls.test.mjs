@@ -250,9 +250,8 @@ const verifiedPhoneWrite = await request(
 expectDenied(verifiedPhoneWrite, "Alteração direta de phone_verified_at");
 
 // ---------------------------------------------------------------------------
-// 5. RPC controlada: associação assistida, autorizada e idempotente.
-//    A ativação de membership por reserva será testada junto da RPC transacional
-//    de HOLD/agendamento, quando esse fluxo estiver implementado.
+// 5. Associação legado em duas etapas: solicitação pelo salão e confirmação
+//    pela identidade cliente destinatária. Não há RPC de associação imediata.
 // ---------------------------------------------------------------------------
 const RPC_ENV = [
   "CUSTOMER_A_OWNER_ACCESS_TOKEN",
@@ -263,74 +262,122 @@ const missingRpcEnv = RPC_ENV.filter((key) => !ENV[key]);
 
 if (missingRpcEnv.length === 0) {
   const ownerA = ENV.CUSTOMER_A_OWNER_ACCESS_TOKEN;
-  const linkArgs = {
+  const requestArgs = {
     p_org_id: ENV.ORG_A_ID,
     p_customer_id: ENV.ORG_A_CUSTOMER_ID,
-    p_auth_user_id: ENV.CUSTOMER_A_ID
+    p_target_auth_user_id: ENV.CUSTOMER_A_ID
   };
 
-  // A cliente não pode invocar a função reservada à equipe do salão.
-  const customerCannotLink = await request(customerA, "/rpc/link_customer_legacy", {
-    method: "POST",
-    body: linkArgs
-  });
-  expectDenied(customerCannotLink, "Associação de cadastro por conta de cliente");
+  // Cliente, sessão anônima e profissional não podem solicitar associação.
+  const customerCannotRequest = await request(
+    customerA,
+    "/rpc/request_customer_legacy_link",
+    { method: "POST", body: requestArgs }
+  );
+  expectDenied(customerCannotRequest, "Solicitação de associação por conta de cliente");
 
-  const anonymousCannotLink = await request(null, "/rpc/link_customer_legacy", {
-    method: "POST",
-    body: linkArgs
-  });
-  expectDenied(anonymousCannotLink, "Associação de cadastro por sessão anônima");
+  const anonymousCannotRequest = await request(
+    null,
+    "/rpc/request_customer_legacy_link",
+    { method: "POST", body: requestArgs }
+  );
+  expectDenied(anonymousCannotRequest, "Solicitação de associação por sessão anônima");
 
   if (ENV.CUSTOMER_A_PROFESSIONAL_ACCESS_TOKEN) {
-    const professionalCannotLink = await request(
+    const professionalCannotRequest = await request(
       ENV.CUSTOMER_A_PROFESSIONAL_ACCESS_TOKEN,
-      "/rpc/link_customer_legacy",
-      { method: "POST", body: linkArgs }
+      "/rpc/request_customer_legacy_link",
+      { method: "POST", body: requestArgs }
     );
-    expectDenied(professionalCannotLink, "Associação de cadastro por profissional");
+    expectDenied(professionalCannotRequest, "Solicitação de associação por profissional");
   }
 
-  const linked = await expectRpcSuccess(ownerA, "link_customer_legacy", linkArgs);
-  assert.equal(linked, ENV.ORG_A_CUSTOMER_ID, "A RPC deve retornar o cadastro associado.");
+  const requestId = await expectRpcSuccess(
+    ownerA,
+    "request_customer_legacy_link",
+    requestArgs
+  );
+  assert.ok(typeof requestId === "string" && requestId.length > 10,
+    "A solicitação deve retornar um identificador.");
 
-  // Repetir a mesma associação não pode criar uma segunda linha.
-  const linkedAgain = await expectRpcSuccess(ownerA, "link_customer_legacy", linkArgs);
+  // Outra identidade não pode confirmar solicitação destinada à cliente A.
+  const otherCustomerCannotConfirm = await request(
+    customerB,
+    "/rpc/confirm_customer_legacy_link",
+    { method: "POST", body: { p_request_id: requestId } }
+  );
+  expectDenied(otherCustomerCannotConfirm, "Confirmação por identidade diferente da destinatária");
+
+  // A lista de solicitações só deve retornar pedidos dirigidos ao auth.uid().
+  const pending = await expectRpcSuccess(
+    customerA,
+    "get_my_pending_customer_link_requests",
+    {}
+  );
+  assert.ok(Array.isArray(pending), "A RPC deve retornar uma lista.");
+  assert.ok(pending.some((item) => item.request_id === requestId),
+    "A cliente destinatária deve visualizar sua solicitação pendente.");
+  assert.ok(pending.every((item) => item.org_id === ENV.ORG_A_ID),
+    "A lista não pode incluir solicitações de outra organização.");
+
+  // Somente a cliente autenticada como destinatária efetiva o vínculo.
+  const linked = await expectRpcSuccess(
+    customerA,
+    "confirm_customer_legacy_link",
+    { p_request_id: requestId }
+  );
+  assert.equal(linked, ENV.ORG_A_CUSTOMER_ID,
+    "A confirmação deve retornar o cadastro legado associado.");
+
+  // Repetir a confirmação do mesmo pedido é idempotente.
+  const linkedAgain = await expectRpcSuccess(
+    customerA,
+    "confirm_customer_legacy_link",
+    { p_request_id: requestId }
+  );
   assert.equal(linkedAgain, ENV.ORG_A_CUSTOMER_ID);
 
   const mapping = await request(
     customerA,
     "/customer_account_customers?select=org_id,auth_user_id,customer_id&org_id=eq." +
-      orgAId +
-      "&auth_user_id=eq." +
-      customerAId
+      orgAId + "&auth_user_id=eq." + customerAId
   );
   assert.equal(mapping.ok, true, "A cliente deve consultar sua associação confirmada.");
-  assert.equal(mapping.body.length, 1, "A associação idempotente deve existir uma única vez.");
+  assert.equal(mapping.body.length, 1, "Deve existir somente uma associação para a identidade.");
   assert.equal(mapping.body[0].customer_id, ENV.ORG_A_CUSTOMER_ID);
 
-  const crossTenantLink = await request(ownerA, "/rpc/link_customer_legacy", {
-    method: "POST",
-    body: {
-      p_org_id: ENV.ORG_B_ID,
-      p_customer_id: ENV.ORG_B_CUSTOMER_ID,
-      p_auth_user_id: ENV.CUSTOMER_A_ID
+  // Um owner da organização A não pode solicitar vínculo em B nem misturar
+  // um cadastro pertencente a B com a organização A.
+  const crossTenantRequest = await request(
+    ownerA,
+    "/rpc/request_customer_legacy_link",
+    {
+      method: "POST",
+      body: {
+        p_org_id: ENV.ORG_B_ID,
+        p_customer_id: ENV.ORG_B_CUSTOMER_ID,
+        p_target_auth_user_id: ENV.CUSTOMER_A_ID
+      }
     }
-  });
-  expectDenied(crossTenantLink, "Associação de cliente em organização alheia");
+  );
+  expectDenied(crossTenantRequest, "Solicitação de associação em organização alheia");
 
-  const mismatchedCustomerLink = await request(ownerA, "/rpc/link_customer_legacy", {
-    method: "POST",
-    body: {
-      p_org_id: ENV.ORG_A_ID,
-      p_customer_id: ENV.ORG_B_CUSTOMER_ID,
-      p_auth_user_id: ENV.CUSTOMER_A_ID
+  const mismatchedCustomerRequest = await request(
+    ownerA,
+    "/rpc/request_customer_legacy_link",
+    {
+      method: "POST",
+      body: {
+        p_org_id: ENV.ORG_A_ID,
+        p_customer_id: ENV.ORG_B_CUSTOMER_ID,
+        p_target_auth_user_id: ENV.CUSTOMER_A_ID
+      }
     }
-  });
-  expectDenied(mismatchedCustomerLink, "Associação de cadastro pertencente a outro salão");
+  );
+  expectDenied(mismatchedCustomerRequest, "Cadastro legado pertencente a outro salão");
 } else {
   console.log(
-    "Teste da RPC de associação não executado: faltam variáveis de QA (" +
+    "Testes das RPCs de associação em duas etapas não executados: faltam variáveis de QA (" +
       missingRpcEnv.join(", ") +
       ")."
   );
