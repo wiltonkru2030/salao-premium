@@ -16,6 +16,10 @@ const dateLabel = value => value ? new Date(value + (String(value).length === 10
 const labels = { pending: "Pendente", paid: "Paga", cancelled: "Cancelada" };
 const methodOptions = [["cash","Dinheiro"],["pix","PIX"],["credit_card","Cartão de crédito"],["debit_card","Cartão de débito"],["transfer","Transferência"],["voucher","Voucher"],["other","Outro"]];
 
+/**
+ * Renderiza a página de despesas e o estado inicial de carregamento.
+ * @returns {string} HTML da página com ações condicionadas ao perfil financeiro.
+ */
 export function expensesPage() {
   return head("Despesas", "Cadastre compromissos, registre pagamentos e acompanhe vencimentos.",
     canManage() ? btn("＋ Nova despesa", "open-expense-modal", "primary") : "") +
