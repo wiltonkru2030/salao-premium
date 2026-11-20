@@ -7,10 +7,13 @@ const PAGE_SIZE=250;
 
 /** Converte erros PostgREST em mensagens pt-BR sem expor SQL. */
 function mapCategoryError(error) {
-  if(error?.code==="23505")return new Error("Já existe uma categoria com esse nome neste catálogo.");
-  if(error?.code==="42501")return new Error("Somente proprietário ou administrador pode alterar categorias.");
-  if(["PGRST202","PGRST205","42P01","42883"].includes(error?.code))return new Error("O módulo de categorias ainda não foi ativado no banco.");
-  return new Error("Não foi possível concluir a operação de categorias.");
+  let message="Não foi possível concluir a operação de categorias.";
+  if(error?.code==="23505")message="Já existe uma categoria com esse nome neste catálogo.";
+  else if(error?.code==="42501")message="Somente proprietário ou administrador pode alterar categorias.";
+  else if(["PGRST202","PGRST205","42P01","42883"].includes(error?.code))message="O módulo de categorias ainda não foi ativado no banco.";
+  const mapped=new Error(message);
+  mapped.code=error?.code||null;
+  return mapped;
 }
 
 /** Valida cliente e organização para consultas do catálogo. */
