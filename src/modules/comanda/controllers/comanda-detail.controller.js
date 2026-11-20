@@ -2,6 +2,7 @@
  * Controlador dos formulários de detalhes da Comanda.
  * Recebe dependências e permissões da página; não compõe HTML.
  */
+import {calculateComandaItemTotal} from "../comanda-money.js";
 import {mountAutocomplete} from "../../../components/autocomplete.js";
 import {currency} from "../comanda.formatters.js";
 import {parseBRL} from "../../../utils/input-masks.js";
@@ -41,8 +42,8 @@ export function bindComandaDetails({host,order,orgId,supabase,tenant,toast,repor
   host.querySelectorAll("[data-edit-comanda-item]").forEach(form=>form.addEventListener("submit",async e=>{
    e.preventDefault();const submit=form.querySelector('[type="submit"]');if(!submit||submit.disabled)return;
    const values=new FormData(form),quantity=Number(values.get("quantity")),unitPrice=Number(values.get("unit_price")),discount=Number(values.get("discount")),professionalId=String(values.get("professional_id")||"");
-   const base=quantity*unitPrice,total=base-discount;
-   if(!Number.isFinite(quantity)||quantity<=0||!Number.isFinite(unitPrice)||unitPrice<0||!Number.isFinite(discount)||discount<0||discount>base){toast("Confira quantidade, preço e desconto.");return;}
+   let total;
+   try{total=calculateComandaItemTotal(quantity,unitPrice,discount);}catch(error){toast(error.message);return;}
    submit.disabled=true;submit.textContent="Salvando…";
    try{
     requireCurrent();
@@ -74,7 +75,7 @@ export function bindComandaDetails({host,order,orgId,supabase,tenant,toast,repor
     requireCurrent();
     if(isProfessional&&professionalId!==professionals.find(item=>item.id===professionalId)?.id)throw new Error("Você só pode lançar serviços no seu próprio atendimento.");
 
-    const {error}=await supabase.from("service_order_items").insert({org_id:orgId,order_id:order.id,item_type:"service",service_id:selectedService.id,professional_id:professionalId||null,description:selectedService.name,quantity:1,unit_price:price,total:price,created_by:user.id});
+    const {error}=await supabase.from("service_order_items").insert({org_id:orgId,order_id:order.id,item_type:"service",service_id:selectedService.id,professional_id:professionalId||null,description:selectedService.name,quantity:1,unit_price:price,total:calculateComandaItemTotal(1,price),created_by:user.id});
     if(error)throw error;
     toast("Serviço adicionado.");await refresh();
    }catch(error){reportError(error,{context:"Comanda > adicionar serviço"});}
@@ -90,7 +91,7 @@ export function bindComandaDetails({host,order,orgId,supabase,tenant,toast,repor
    try{
     requireCurrent();
     const {user}=await tenant();requireCurrent();
-    const {error}=await supabase.from("service_order_items").insert({org_id:orgId,order_id:order.id,item_type:"product",product_id:selectedProduct.id,professional_id:professionalId||null,description:selectedProduct.name,quantity,unit_price:price,total:price*quantity,created_by:user.id});
+    const {error}=await supabase.from("service_order_items").insert({org_id:orgId,order_id:order.id,item_type:"product",product_id:selectedProduct.id,professional_id:professionalId||null,description:selectedProduct.name,quantity,unit_price:price,total:calculateComandaItemTotal(quantity,price),created_by:user.id});
     if(error)throw error;
     toast("Produto adicionado.");await refresh();
    }catch(error){reportError(error,{context:"Comanda > adicionar produto"});}
