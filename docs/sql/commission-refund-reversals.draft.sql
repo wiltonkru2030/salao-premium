@@ -49,6 +49,19 @@ begin
   if not private.has_org_role(v_order.org_id,array['owner','admin','manager','finance']) then
     raise exception 'Somente administração ou financeiro pode devolver uma comanda paga.'; end if;
   if v_order.status<>'closed' then raise exception 'A devolução se aplica somente a comandas quitadas. Para as demais, use o cancelamento.'; end if;
+  -- Mesmo bloqueio usado no pagamento: serializa devolução e repasse por profissional.
+  perform p.id
+    from public.professionals p
+    join (
+      select distinct c.professional_id
+        from public.commissions c
+        join public.service_order_items i on i.org_id=c.org_id and i.id=c.service_order_item_id
+       where i.org_id=v_order.org_id and i.order_id=v_order.id
+         and c.status in ('pending','approved','paid')
+    ) affected on affected.professional_id=p.id
+   where p.org_id=v_order.org_id
+   order by p.id
+   for update of p;
   select id into v_register from public.cash_registers
    where org_id=v_order.org_id and (branch_id is not distinct from v_order.branch_id or branch_id is null) and status='open'
    order by (branch_id is not null) desc,opened_at desc limit 1 for update;
@@ -63,19 +76,6 @@ begin
      where id=v_payment.id;
     v_total:=v_total+v_payment.amount; v_count:=v_count+1;
   end loop;
-  -- Mesmo bloqueio usado no pagamento: serializa devolução e repasse por profissional.
-  perform p.id
-    from public.professionals p
-    join (
-      select distinct c.professional_id
-        from public.commissions c
-        join public.service_order_items i on i.org_id=c.org_id and i.id=c.service_order_item_id
-       where i.org_id=v_order.org_id and i.order_id=v_order.id
-         and c.status in ('pending','approved','paid')
-    ) affected on affected.professional_id=p.id
-   where p.org_id=v_order.org_id
-   order by p.id
-   for update of p;
   update public.commissions c set status='cancelled'
    where c.org_id=v_order.org_id and c.status in ('pending','approved')
      and c.service_order_item_id in (select i.id from public.service_order_items i where i.org_id=v_order.org_id and i.order_id=v_order.id);
