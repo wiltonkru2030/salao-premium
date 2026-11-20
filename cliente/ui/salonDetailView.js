@@ -92,9 +92,14 @@ export function renderSalonDetailView({
   }).join("");
   let holdContent = "";
   if (hold) {
+    const heldService = catalog.find(item => item.service_id === hold.serviceId);
+    const total = hold.finalAmount === null || hold.finalAmount === undefined
+      ? heldService?.price
+      : hold.finalAmount;
+    const totalLabel = Number.isFinite(Number(total)) ? money(total) : "Valor conforme catálogo";
     holdContent = '<section class="booking-confirm-card"><h3>Horário reservado temporariamente</h3><p>Confirme antes de ' +
       escapeClientHtml(timeLabel(hold.expiresAt)) + ' para concluir o agendamento.</p>' +
-      (hold.discountAmount > 0 ? '<p class="coupon-preview">Desconto: ' + escapeClientHtml(money(hold.discountAmount)) + ' · Total: ' + escapeClientHtml(money(hold.finalAmount)) + '</p>' : '<p>Total: ' + escapeClientHtml(money(hold.finalAmount)) + '</p>') +
+      (hold.discountAmount > 0 ? '<p class="coupon-preview">Desconto: ' + escapeClientHtml(money(hold.discountAmount)) + ' · Total: ' + escapeClientHtml(totalLabel) + '</p>' : '<p>Total: ' + escapeClientHtml(totalLabel) + '</p>') +
       '<button class="client-button" data-action="confirm-booking">Confirmar agendamento</button>' +
       '<button class="text-button" data-action="cancel-hold">Cancelar reserva temporária</button></section>';
   }
