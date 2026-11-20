@@ -8,6 +8,7 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, metric } from "../utils.js";
 import { reportError } from "../utils/errors.js";
+import { fetchFinanceWorkspace } from "../modules/finance/finance.service.js";
 
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dateLabel = value => value ? new Date(value).toLocaleDateString("pt-BR") : "—";
@@ -37,25 +38,10 @@ export async function loadFinancePage() {
     const startIso = monthStart.toISOString();
     const endIso = nextMonth.toISOString();
 
-    const [movementResult, expenseResult] = await Promise.all([
-      supabase.from("cash_movements")
-        .select("id,movement_type,category,description,amount,payment_method,created_at,branch_id")
-        .eq("org_id", orgId)
-        .gte("created_at", startIso)
-        .lt("created_at", endIso)
-        .order("created_at", { ascending: false })
-        .limit(500),
-      supabase.from("expenses")
-        .select("id,description,category,amount,due_date,paid_at,status,supplier,created_at,branch_id")
-        .eq("org_id", orgId)
-        .order("due_date", { ascending: true })
-        .limit(500)
-    ]);
-    if (movementResult.error) throw movementResult.error;
-    if (expenseResult.error) throw expenseResult.error;
+    const {movements,expenses}=await fetchFinanceWorkspace({
+      client:supabase,orgId,startIso,endIso,limit:500
+    });
 
-    const movements = movementResult.data || [];
-    const expenses = expenseResult.data || [];
     const sum = (rows, predicate) => rows.filter(predicate).reduce((total, row) => total + Number(row.amount || 0), 0);
     const incoming = sum(movements, row => row.movement_type === "income");
     const outgoing = sum(movements, row => row.movement_type === "expense");
