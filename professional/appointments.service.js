@@ -30,6 +30,7 @@ export async function fetchProfessionalAppointments({
   client,
   organizationId,
   month,
+  professionalId = null,
   limit = 1000
 }) {
   if (!client || typeof client.from !== "function") {
@@ -49,13 +50,15 @@ export async function fetchProfessionalAppointments({
   const end = new Date(month.getFullYear(), month.getMonth() + 1, 1);
 
   try {
-    const { data, error } = await client
+    let query = client
       .from("appointments")
       .select("id,starts_at,ends_at,customer_name,customer_phone,service_name,professional_name,status,price,booking_source,created_by_name,notes,professional_id")
       .eq("org_id", organizationId)
       .gte("starts_at", start.toISOString())
-      .lt("starts_at", end.toISOString())
-      .order("starts_at")
+      .lt("starts_at", end.toISOString());
+    // O escopo individual não depende apenas das permissões amplas de uma conta administrativa.
+    if (professionalId) query = query.eq("professional_id", professionalId);
+    const { data, error } = await query.order("starts_at")
       .limit(limit);
 
     if (error) {
