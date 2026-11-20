@@ -18,6 +18,7 @@ import { quotesPage, loadQuotesPage } from '../pages/quotes.js';
 import { couponsPage, loadCouponsPage } from '../pages/coupons.js';
 import { servicesPage, loadServicesPage } from '../pages/services.js';
 import { productsPage, loadProductsPage } from '../pages/products.js';
+import { categoriesPage, loadCategoriesPage } from '../pages/categories.js';
 import { salesPage, loadSalesPage } from '../pages/sales.js';
 import { cashPage, loadCashPage } from '../pages/cash.js';
 import { financePage, loadFinancePage } from '../pages/finance.js';
@@ -66,6 +67,7 @@ const pageViews = {
   Cupons: couponsPage,
   Serviços: servicesPage,
   "Produtos e estoque": productsPage,
+  Categorias: categoriesPage,
   Vendas: salesPage,
   Caixa: cashPage,
   Financeiro: financePage,
@@ -147,6 +149,7 @@ function loadCurrentPageData() {
     Clientes: loadCustomersPage,
     Serviços: loadServicesPage,
     "Produtos e estoque": loadProductsPage,
+    Categorias: loadCategoriesPage,
     Vendas: loadSalesPage,
     Recuperar: loadRecycleBinPage,
     Comissões: loadCommissionsPage,
