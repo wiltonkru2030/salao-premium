@@ -97,12 +97,8 @@ assert.match(appliedSql, /status='redeemed'/);
 assert.match(appliedSql, /create trigger appointment_hold_release_coupon_trigger/);
 assert.match(appliedSql, /create trigger audit_row_change after insert or update or delete on public\.salon_coupons/);
 assert.match(appliedSql, /create trigger audit_row_change after insert or update or delete on public\.customer_coupon_redemptions/);
-for (const legacy of [
-  "private.create_customer_appointment_hold(uuid,uuid,uuid,uuid,timestamptz)",
-  "private.confirm_customer_appointment_hold(uuid)",
-  "private.cancel_customer_appointment_hold(uuid)"
-]) {
-  assert.ok(appliedSql.includes("revoke all on function " + legacy + " from public,anon,authenticated"));
-}
+assert.match(appliedSql, /revoke all on function private\\.create_customer_appointment_hold\\(\\s*uuid,uuid,uuid,uuid,timestamptz\\s*\\) from public,anon,authenticated/);
+assert.match(appliedSql, /revoke all on function private\\.confirm_customer_appointment_hold\\(uuid\\) from public,anon,authenticated/);
+assert.match(appliedSql, /revoke all on function private\\.cancel_customer_appointment_hold\\(uuid\\) from public,anon,authenticated/);
 
 console.log("Contrato estático das migrations de cupons: OK (não equivale à execução transacional no PostgreSQL).");
