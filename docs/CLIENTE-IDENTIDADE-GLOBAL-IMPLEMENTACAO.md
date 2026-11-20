@@ -64,3 +64,30 @@ A estrutura atual do banco foi conferida por consulta somente leitura. Resultado
 
 **Status:** modelo lógico compatível com as chaves e tipos encontrados, mas ainda não está pronto para produção. A migration permanece como rascunho e depende dos fluxos backend e da validação RLS real.
 
+## Testes de segurança ampliados — 20/11/2026
+
+O teste `tests/integration/customer-global-identity-rls.test.mjs` foi ampliado para validar, com tokens de duas sessões reais:
+
+- leitura do próprio perfil e ausência de leitura do perfil alheio;
+- leitura apenas dos próprios memberships e associações legadas;
+- bloqueio de criação direta de membership pelo navegador;
+- bloqueio de criação direta de associação a cadastro legado;
+- bloqueio de alteração de `phone_verified_at` pela própria cliente.
+
+A execução continua condicionada a um projeto Supabase de QA com as variáveis documentadas no cabeçalho do teste. Se o ambiente não estiver configurado, o script informa que foi ignorado; esse resultado não é aprovação de segurança.
+
+### Fluxo backend definido para a próxima implementação
+
+A criação de membership não será exposta como endpoint genérico que aceite apenas `org_id`. Isso permitiria que uma conta se vinculasse arbitrariamente a qualquer salão.
+
+O membership deverá ser criado dentro da mesma transação que cria um HOLD/reserva válida, após o backend confirmar:
+- sessão autenticada e titularidade via `auth.uid()`;
+- organização e filial ativas e pertencentes entre si;
+- serviços públicos ativos e disponíveis naquela filial;
+- regras de agenda, duração, profissional e conflito;
+- criação efetiva do HOLD com expiração e chave de idempotência.
+
+A associação com `customers` legado continua fora desse fluxo. Ela exigirá confirmação de titularidade separada, auditada e sem correspondência automática por telefone.
+
+**Status atualizado:** os testes negativos foram adicionados ao repositório, mas ainda precisam ser executados com duas sessões reais de QA. O endpoint/RPC de reserva ainda não existe e o banco de produção não foi alterado.
+
