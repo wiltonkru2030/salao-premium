@@ -33,10 +33,10 @@ function ensureProfileSchema(error) {
  * Nome e e-mail de metadados são apenas dados de perfil; nunca autorizam acesso.
  * O banco continua usando auth.uid() e RLS para limitar a linha ao usuário atual.
  */
-export async function ensureMyProfile() {
+export async function ensureMyProfile(expectedUserId = null) {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   const user = userData?.user;
-  if (userError || !user) throw new Error("Entre na sua conta para preparar seu perfil.");
+  if (userError || !user || (expectedUserId && user.id !== expectedUserId)) throw new Error("Entre na sua conta para preparar seu perfil.");
   const metadata = user.user_metadata || {};
   const fullName = String(metadata.full_name || metadata.name || "Cliente").trim().slice(0, 120) || "Cliente";
   const { error } = await supabase.from("customer_profiles").upsert({
@@ -46,12 +46,12 @@ export async function ensureMyProfile() {
     preferences: {}
   }, { onConflict: "auth_user_id", ignoreDuplicates: true });
   if (error) ensureProfileSchema(error);
-  return getMyProfile();
+  return getMyProfile(user.id);
 }
 
-export async function getMyProfile() {
+export async function getMyProfile(expectedUserId = null) {
   const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) throw new Error("Entre na sua conta para consultar seu perfil.");
+  if (userError || !userData?.user || (expectedUserId && userData.user.id !== expectedUserId)) throw new Error("Entre na sua conta para consultar seu perfil.");
   const { data, error } = await supabase.from("customer_profiles")
     .select("auth_user_id,full_name,phone_e164,phone_verified_at,email,avatar_url,preferences")
     .eq("auth_user_id", userData.user.id)
@@ -60,10 +60,10 @@ export async function getMyProfile() {
   return mapProfile(data);
 }
 
-export async function updateMyProfile(input) {
+export async function updateMyProfile(input, expectedUserId = null) {
   const valid = validateGlobalCustomerProfile(input);
   const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) throw new Error("Sua sessão não está disponível. Entre novamente.");
+  if (userError || !userData?.user || (expectedUserId && userData.user.id !== expectedUserId)) throw new Error("Sua sessão não está disponível. Entre novamente.");
   const { data, error } = await supabase.from("customer_profiles")
     .update({
       full_name: valid.fullName,
