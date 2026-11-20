@@ -15,6 +15,8 @@ import {
   formatStatus as statusLabel,
   getAppointmentClass as appointmentClass
 } from "./utils/formatters.js";
+import { renderProfessionalPasswordChangeView, renderProfessionalLoginView } from "./views/auth.views.js";
+import { renderAgendaView } from "./views/agenda.views.js";
 
 // Aplicação PWA do profissional: autenticação, navegação, Agenda, Comandas e Comissões.
 installGlobalErrorHandlers();
@@ -71,24 +73,9 @@ function appointmentDetails(){
  '<div class="detail-row"><span>Observações</span><b>'+esc(a.notes||"—")+'</b></div></section>';
 }
 // Apresenta calendário mensal e lista de agendamentos do profissional.
+// Delega a composição visual da agenda para uma view sem efeitos colaterais.
 function agendaView(){
- const year=state.month.getFullYear(),month=state.month.getMonth(),first=new Date(year,month,1),offset=first.getDay(),days=new Date(year,month+1,0).getDate(),prevDays=new Date(year,month,0).getDate();
- const marks=new Set(state.appointments.map(a=>dateKey(new Date(a.starts_at))));
- const cells=[];
- for(let i=0;i<42;i++){
-  let d,inside=true;
-  if(i<offset){d=new Date(year,month-1,prevDays-offset+i+1);inside=false;}
-  else if(i>=offset+days){d=new Date(year,month+1,i-offset-days+1);inside=false;}
-  else d=new Date(year,month,i-offset+1);
-  const key=dateKey(d),classes=[inside?"":"outside",key===dateKey(state.selectedDate)?"selected":"",key===dateKey(new Date())?"today":""].join(" ");
-  cells.push('<button class="day '+classes+'" data-date="'+key+'">'+d.getDate()+(marks.has(key)?'<i class="dot"></i>':'')+'</button>');
- }
- const selected=state.appointments.filter(a=>dateKey(new Date(a.starts_at))===dateKey(state.selectedDate)).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at));
- return '<div class="section-title"><h2>Agenda mensal</h2><span class="muted">'+(state.scope==="calendar_all"||state.scope==="all"?"Agenda completa autorizada":"Somente sua agenda")+'</span></div>'+
- '<div class="calendar-head"><button data-action="prev-month">‹</button><strong>'+esc(monthLabel(state.month))+'</strong><button data-action="next-month">›</button></div>'+
- '<div class="calendar">'+["D","S","T","Q","Q","S","S"].map(d=>'<div class="weekday">'+d+'</div>').join("")+cells.join("")+'</div>'+
- '<div class="section-title section-title--tight-spaced"><h2>'+esc(dateLabel(state.selectedDate))+'</h2><span class="muted">'+selected.length+' agendamento(s)</span></div>'+
- (selected.length?selected.map(appointmentCard).join(""):'<div class="empty">Nenhum agendamento neste dia.</div>')+appointmentDetails();
+ return renderAgendaView({state,dateKey,monthLabel,dateLabel,appointmentCard,appointmentDetails});
 }
 // Apresenta comandas autorizadas e seus detalhes.
 function ordersView(){
