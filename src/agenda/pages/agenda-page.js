@@ -5,6 +5,7 @@ import { supabase } from '../../supabase/client.js';
 import { head, btn, initials, esc } from '../../utils.js';
 import { fetchAgendaCalendar } from '../services/calendar-query.service.js';
 import { reportError } from '../../utils/errors.js';
+import {mountAgendaOffers} from '../controllers/agenda-offers.controller.js';
 
 /** @typedef {import('../../types/tenant.types').TenantContext} TenantContext */
 /** @typedef {import('../../types/operations.types').AppointmentRecord} AppointmentRecord */
@@ -80,7 +81,8 @@ function buildContent() {
 export function agenda() {
   return head('Agenda','Gerencie horários, atendimentos e disponibilidade dos profissionais.',btn('＋ Novo agendamento','new-appointment','primary'))+
 
-    '<div id="agenda-db-content"><div class="empty-state">Carregando agenda do banco…</div></div>';
+    '<div id="agenda-db-content"><div class="empty-state">Carregando agenda do banco…</div></div>'+ 
+    '<section id="agenda-offers-panel" class="surface agenda-offers-panel" aria-label="Pacotes e lista de espera"><p>Carregando módulos complementares…</p></section>';
 }
 // Consulta profissionais, agendamentos e bloqueios da organização ativa.
 /**
@@ -99,6 +101,9 @@ export async function loadAgendaPage() {
   const orgId=state.organization.id,userId=state.user.id,branchId=state.branch?.id||null;
   const version=++loadVersion;
   const isCurrent=()=>host.isConnected&&version===loadVersion&&state.organization?.id===orgId&&state.user?.id===userId&&(state.branch?.id||null)===branchId;
+  // Painel independente: não bloqueia o calendário nem recarrega a página.
+  void mountAgendaOffers({client:supabase,state,onBooked:loadAgendaPage})
+    .catch(error=>reportError(error,{context:"Agenda > módulos complementares",notify:false}));
   state.agendaProfessionals=[];state.agendaAppointments=[];state.dbBlockedTimes=[];
   host.innerHTML='<div class="empty-state">Carregando agenda…</div>';
   try{
