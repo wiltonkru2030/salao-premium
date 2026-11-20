@@ -169,18 +169,36 @@ export async function loadProfessionalsPage(){
   if(staffToggle){
    const userId=staffToggle.dataset.staffAppToggle,role=staffToggle.dataset.staffRole,enabled=staffToggle.checked;
    staffToggle.disabled=true;
-   const {error}=await supabase.rpc("set_professional_app_access",{p_org_id:state.organization.id,p_target_user_id:userId,p_enabled:enabled,p_scope:role==="receptionist"?"calendar_all":"all"});
-   staffToggle.disabled=false;
-   if(error){reportError(error,{context:"Profissionais > alterar acesso da equipe"});staffToggle.checked=!enabled;return;}
-   toast(enabled?"Acesso ao App liberado.":"Acesso ao App revogado.");await loadProfessionalsPage();return;
+   try {
+    const {error}=await supabase.rpc("set_professional_app_access",{p_org_id:state.organization.id,p_target_user_id:userId,p_enabled:enabled,p_scope:role==="receptionist"?"calendar_all":"all"});
+    if(error)throw error;
+    toast(enabled?"Acesso ao App liberado.":"Acesso ao App revogado.");
+    await loadProfessionalsPage();
+   } catch(error) {
+    reportError(error,{context:"Profissionais > alterar acesso da equipe"});
+    staffToggle.checked=!enabled;
+   } finally {
+    if(staffToggle.isConnected)staffToggle.disabled=false;
+   }
+   return;
   }
   const toggle=event.target.closest("[data-professional-toggle]");if(!toggle)return;
   const id=toggle.dataset.professionalToggle;
   if(toggle.checked){const ok=await provision(toggle,"create");if(!ok)toggle.checked=false;}
   else{
-   toggle.disabled=true;const {error}=await supabase.rpc("revoke_professional_app_access",{p_org_id:state.organization.id,p_professional_id:id});toggle.disabled=false;
-   if(error){reportError(error,{context:"Profissionais > revogar acesso ao App"});toggle.checked=true;return;}
-   initialPasswords.delete(id);toast("Acesso ao App Profissional revogado.");await loadProfessionalsPage();
+   toggle.disabled=true;
+   try {
+    const {error}=await supabase.rpc("revoke_professional_app_access",{p_org_id:state.organization.id,p_professional_id:id});
+    if(error)throw error;
+    initialPasswords.delete(id);
+    toast("Acesso ao App Profissional revogado.");
+    await loadProfessionalsPage();
+   } catch(error) {
+    reportError(error,{context:"Profissionais > revogar acesso ao App"});
+    toggle.checked=true;
+   } finally {
+    if(toggle.isConnected)toggle.disabled=false;
+   }
   }
  });
  host.addEventListener("submit",async event=>{
