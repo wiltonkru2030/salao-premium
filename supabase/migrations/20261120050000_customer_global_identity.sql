@@ -1,6 +1,6 @@
 -- SALÃO PREMIUM — identidade global da cliente (migration oficial versionada).
 -- Criada em 20/11/2026 após auditoria do schema operacional.
--- APLICAR SOMENTE EM AMBIENTE LOCAL/QA PRIMEIRO. NÃO FOI EXECUTADA EM PRODUÇÃO.
+-- Aplicada no Supabase conectado em 20/11/2026 (versão registrada: 20261120041015).
 --
 -- Cria perfil global, memberships por organização, mapeamento legado com FK
 -- composta e fluxo de associação em duas etapas com confirmação da cliente.
@@ -9,7 +9,7 @@
 --
 -- Pré-requisitos verificados no projeto: organizations(id), customers(org_id,id),
 -- auth.users, private.has_org_role(uuid,text[]) e audit_logs.
--- Revisar novamente em staging antes de aplicar.
+-- Pré-condições conferidas antes da aplicação: chaves compostas, colunas de auditoria e helper privado.
 
 begin;
 
