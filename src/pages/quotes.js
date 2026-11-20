@@ -111,6 +111,7 @@ export async function loadQuotesPage() {
       if(e.target.closest("#quote-show-quick")){host.querySelector("#quote-quick-customer").hidden=false;host.querySelector("#quote-quick-customer-form [name=name]").focus();return;}
       if(e.target.closest("#quote-quick-cancel")){host.querySelector("#quote-quick-customer").hidden=true;return;}
       if(e.target.closest("#quote-save")){
+        if(!branchId){toast("Selecione uma unidade específica para gerar o orçamento.");return;}
         if(!selectedCustomer||!items.length){toast("Selecione um cliente e adicione ao menos um serviço.");return;}
         const button=host.querySelector("#quote-save");if(!button||button.disabled)return;button.disabled=true;button.textContent="Salvando orçamento…";
         try{
@@ -122,6 +123,8 @@ export async function loadQuotesPage() {
             p_valid_until:validUntil,p_notes:notes,p_items:payload
           });
           if(error)throw error;
+          if(!current())return;
+          items=[];selectedCustomer=null;
           toast("Orçamento #"+quote.quote_number+
 " gerado e marcado como Em análise.");
           await openQuote(quote.id,orgId);
@@ -152,8 +155,8 @@ export async function loadQuotesPage() {
       if(open){await openQuote(open.dataset.openQuote,orgId);return;}
       const status=e.target.closest("[data-quote-status]");
       if(status){await changeQuoteStatus(status.dataset.quoteId,status.dataset.quoteStatus,orgId);return;}
-      if(e.target.closest("#quote-schedule")){await openQuoteSchedule({quote:activeQuote,orgId,supabase,host,esc,toast,reportError,loadQuotesPage,openQuote});return;}
-      if(e.target.closest("#quote-print")){await printQuoteDocument({quote:activeQuote,orgId,supabase,state,esc,money,statusName,toast});return;}
+      if(e.target.closest("#quote-schedule")){try{await openQuoteSchedule({quote:activeQuote,orgId,supabase,host,esc,toast,reportError,loadQuotesPage,openQuote,isCurrent:current});}catch(error){if(current())reportError(error,{context:"Orçamentos > preparar horários"});}return;}
+      if(e.target.closest("#quote-print")){try{await printQuoteDocument({quote:activeQuote,orgId,supabase,state,esc,money,statusName,toast,isCurrent:current});}catch(error){if(current())reportError(error,{context:"Orçamentos > imprimir PDF"});}return;}
       if(e.target.closest("#quote-whatsapp")){const phone=activeQuote?.customer?.phone||"";if(!phone){toast("Cadastre o WhatsApp do cliente para compartilhar.");return;}let digits=phone.replace(/\D/g,"");if(digits.length===10||digits.length===11)digits="55"+digits;window.open("https://wa.me/"+digits+
 "?text="+encodeURIComponent("Olá! Seu orçamento do "+(state.organization?.name||"salão")+
 " está pronto. Vou anexar o PDF nesta conversa."),"_blank","noopener");return;}
@@ -164,9 +167,10 @@ export async function loadQuotesPage() {
       const orgId=state.organization.id,branchId=state.branch?.id||null;
       if(e.target.id==="quote-quick-customer-form"){
         e.preventDefault();const form=e.target,v=new FormData(form),name=String(v.get("name")||"").trim(),phone=String(v.get("phone")||"").trim();
-        if(!name||!phone){toast("Informe nome e WhatsApp.");return;}
+        if(!branchId){toast("Selecione uma unidade antes de cadastrar o cliente.");return;}
+        if(!name||!phone||![10,11].includes(phone.replace(/\D/g,"").length)){toast("Informe nome e WhatsApp válido com DDD.");return;}
         const button=form.querySelector('[type=submit]');if(!button||button.disabled)return;button.disabled=true;
-        try{const {data,error}=await supabase.from("customers").insert({org_id:orgId,branch_id:state.branch?.id||null,name,phone}).select("id,name,phone").single();if(error)throw error;customers.push(data);selectedCustomer=data;toast("Cliente cadastrado e vinculado ao orçamento.");renderBuilder();}
+        try{const {data,error}=await supabase.from("customers").insert({org_id:orgId,branch_id:branchId,name,phone}).select("id,name,phone").single();if(error)throw error;if(!current())return;customers.push(data);selectedCustomer=data;toast("Cliente cadastrado e vinculado ao orçamento.");renderBuilder();}
         catch(error){reportError(error,{context:"Orçamentos > cadastro rápido"});}finally{button.disabled=false;}
       }
       if(e.target.id==="quote-discount-settings"){
@@ -179,6 +183,7 @@ export async function loadQuotesPage() {
             p_org_id:orgId,p_max_discount_percent:percent,p_allow_fixed_discount:fixedAllowed,p_service_ids:selected
           });
           if(error)throw error;
+          if(!current())return;
           maxDiscount=percent;allowFixedDiscount=fixedAllowed;discountRules=new Set(selected);toast("Regras de desconto salvas.");renderBuilder();
         }catch(error){reportError(error,{context:"Orçamentos > regras de desconto"});}
       }
@@ -193,8 +198,12 @@ export async function loadQuotesPage() {
 }
 async function changeQuoteStatus(id,status,orgId){
   const update=status==="accepted"?{status,accepted_at:new Date().toISOString()}:status==="rejected"?{status,rejected_at:new Date().toISOString()}:{status};
-  const {error}=await supabase.from("quotes").update(update).eq("org_id",orgId).eq("id",id);
-  if(error){reportError(error,{context:"Orçamentos > alterar status"});return;}
+  const previous=activeQuote?.id===id?activeQuote.status:null;
+  if(!previous||!(previous==="pending"&&["accepted","rejected"].includes(status)||previous==="accepted"&&status==="cancelled"))return;
+  const context=quoteContext,version=loadVersion;
+  const {data,error}=await supabase.from("quotes").update(update).eq("org_id",orgId).eq("id",id).eq("status",previous).select("id").maybeSingle();
+  if(context!==quoteContext||version!==loadVersion)return;
+  if(error||!data){reportError(error||new Error("O orçamento foi alterado. Atualize a lista."),{context:"Orçamentos > alterar status"});return;}
   toast("Status do orçamento atualizado.");await loadQuotesPage();
 }
 let detailVersion=0;
