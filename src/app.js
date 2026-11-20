@@ -4,6 +4,7 @@ import { installGlobalMasks } from './utils/input-masks.js';
 import { installGlobalErrorHandlers, reportError } from './utils/errors.js';
 import { startAuth, getCurrentUserContext } from './auth/auth.js';
 import { installAgendaController } from './agenda/controllers/agenda-controller.js';
+import { render } from './layout/render.js';
 
 // Inicializa máscaras, mensagens de erro e eventos da Agenda antes do primeiro render.
 installGlobalMasks();
