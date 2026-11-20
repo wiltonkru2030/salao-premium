@@ -57,3 +57,32 @@ export function clearTemporaryCache() {
     throw new Error("Não foi possível limpar os dados temporários.");
   }
 }
+
+
+/**
+ * Consulta preferências remotas sincronizadas entre aparelhos.
+ * @param {object} options Cliente Supabase autenticado.
+ * @returns {Promise<object>} Preferências autorizadas pelo perfil global.
+ */
+export async function getRemoteSettings({client}={}) {
+  if(!client||typeof client.rpc!=="function")throw new TypeError("A conexão das preferências não está disponível.");
+  const {data,error}=await client.rpc("get_my_customer_preferences");
+  if(error)throw new Error(["PGRST202","42883"].includes(error.code)
+    ?"A sincronização das preferências ainda está sendo ativada."
+    :"Não foi possível carregar suas preferências.");
+  return data&&typeof data==="object"&&!Array.isArray(data)?data:{};
+}
+
+/**
+ * Salva somente as preferências permitidas no perfil global.
+ * @param {object} options Cliente Supabase e alterações de preferências.
+ * @returns {Promise<object>} Preferências persistidas.
+ */
+export async function saveRemoteSettings({client,patch={}}={}) {
+  if(!client||typeof client.rpc!=="function")throw new TypeError("A conexão das preferências não está disponível.");
+  const {data,error}=await client.rpc("update_my_customer_preferences",{p_preferences:patch});
+  if(error)throw new Error(["PGRST202","42883"].includes(error.code)
+    ?"A sincronização das preferências ainda está sendo ativada."
+    :"Não foi possível salvar suas preferências.");
+  return data&&typeof data==="object"&&!Array.isArray(data)?data:{};
+}
