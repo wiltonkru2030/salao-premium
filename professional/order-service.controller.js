@@ -16,6 +16,8 @@ export function bindOrderService({root,state,client,getEpoch,lock,loadOrders,cho
  const click=async()=>{
   if(lock.active||!selected||!state.user||!canRegisterProfessionalService(state,state.selectedOrder))return;
   lock.active=true;
+  const operation=Symbol("registro-servico");
+  lock.operation=operation;
   const epoch=getEpoch();
   const orderId=state.selectedOrder.id;
   const orgId=state.orgId,userId=state.user.id,professionalId=state.professional.id;
@@ -40,8 +42,14 @@ export function bindOrderService({root,state,client,getEpoch,lock,loadOrders,cho
    if(current())showNotice("Não foi possível concluir o registro ou atualizar a comanda. Confira os itens antes de tentar novamente.");
   }finally{
    // Garante que o botão não permaneça travado após falhas de gravação ou atualização.
-   lock.active=false;
-   if(button.isConnected){button.disabled=!selected||!current()||!canRegisterProfessionalService(state,state.selectedOrder);button.textContent="Registrar serviço";}
+   if(lock.operation===operation){
+    lock.active=false;
+    lock.operation=null;
+   }
+   if(button.isConnected&&current()){
+    button.disabled=!selected||lock.active||!canRegisterProfessionalService(state,state.selectedOrder);
+    button.textContent="Registrar serviço";
+   }
   }
  };
  button.addEventListener("click",click);
