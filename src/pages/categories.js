@@ -10,7 +10,9 @@ import {head,esc,toast,btn} from "../utils.js";
 import {reportError} from "../utils/errors.js";
 import {listCatalogCategories,saveCatalogCategory,setCatalogCategoryActive} from "../modules/catalog/categories.service.js";
 
-let categories=[];
+import {createCatalogPageState} from "../modules/catalog/catalog-page-state.js";
+
+const categoryPageState=createCatalogPageState();
 let selectedType="service";
 let documentListenerBound=false;
 const canManageCategories=()=>["owner","admin"].includes(state.membership?.role);
@@ -47,7 +49,7 @@ export function categoriesPage() {
 }
 
 /** Renderiza o conteúdo atual a partir das categorias já carregadas. */
-function renderCategoryManager(host) {
+function renderCategoryManager(host,categories) {
   const visible=categories.filter(category=>category.category_type===selectedType);
   const cards=visible.map(category=>{
     const actions=canManageCategories()
@@ -80,10 +82,14 @@ function renderCategoryManager(host) {
 export async function loadCategoriesPage() {
   const host=document.querySelector("#categories-manager");
   if(!host||!state.organization?.id)return;
+  const orgId=state.organization.id;
+  const request=categoryPageState.begin(host,orgId);
   try {
-    categories=await listCatalogCategories({client:supabase,orgId:state.organization.id});
-    renderCategoryManager(host);
+    const categories=await listCatalogCategories({client:supabase,orgId});
+    if(!categoryPageState.commit(host,request,state.organization?.id,categories))return;
+    renderCategoryManager(host,categories);
   } catch(error) {
+    if(!categoryPageState.isCurrent(host,request,state.organization?.id))return;
     reportError(error,{context:"Categorias > carregar"});
     host.innerHTML='<div class="empty-state">Não foi possível carregar categorias. Verifique se a migration de categorias foi aplicada no ambiente.</div>';
     return;
@@ -96,7 +102,10 @@ export async function loadCategoriesPage() {
     document.addEventListener("click",event=>{
     const dialog=document.querySelector("#category-create-modal");
     if(!dialog)return;
-    if(event.target.closest('[data-action="open-category-modal"]')&&canManageCategories())openCategoryModal();
+    if(event.target.closest('[data-action="open-category-modal"]')&&canManageCategories()) {
+      const snapshot=categoryPageState.current(document.querySelector("#categories-manager"),state.organization?.id);
+      if(snapshot&&!snapshot.pending)openCategoryModal();
+    }
     else if(event.target.closest("[data-close-category-modal]")||event.target===dialog) {
       if(dialog.open)dialog.close();
     }
@@ -104,34 +113,43 @@ export async function loadCategoriesPage() {
   }
 
   host.addEventListener("click",async event=>{
+    const snapshot=categoryPageState.current(host,state.organization?.id);
+    if(!snapshot||snapshot.pending)return;
     const tab=event.target.closest("[data-category-type]");
     if(tab) {
       selectedType=tab.dataset.categoryType;
-      renderCategoryManager(host);
+      renderCategoryManager(host,snapshot.rows);
       return;
     }
     const edit=event.target.closest("[data-edit-category]");
     if(edit) {
       if(!canManageCategories())return toast("Somente proprietário ou administrador pode editar categorias.");
-      openCategoryModal(categories.find(category=>category.id===edit.dataset.editCategory)||null);
+      const row=snapshot.rows.find(category=>category.id===edit.dataset.editCategory);
+      if(!row)return toast("Categoria não encontrada. Atualize a lista.");
+      openCategoryModal(row);
       return;
     }
     const toggle=event.target.closest("[data-toggle-category]");
     if(!toggle)return;
     if(!canManageCategories())return toast("Somente proprietário ou administrador pode alterar categorias.");
-    const nextActive=toggle.dataset.active!=="true";
+    const row=snapshot.rows.find(category=>category.id===toggle.dataset.toggleCategory);
+    if(!row||toggle.disabled)return;
+    const nextActive=!row.active;
     if(!window.confirm(nextActive?"Reativar esta categoria?":"Inativar esta categoria? Itens existentes manterão sua classificação."))return;
     toggle.disabled=true;
+    snapshot.pending=true;
     try {
       const changed=await setCatalogCategoryActive({
-        client:supabase,orgId:state.organization.id,categoryId:toggle.dataset.toggleCategory,active:nextActive
+        client:supabase,orgId:snapshot.orgId,categoryId:row.id,active:nextActive
       });
+      if(!categoryPageState.isCurrent(host,snapshot,state.organization?.id))return;
       if(!changed)throw new Error("A categoria não foi encontrada.");
       toast(nextActive?"Categoria reativada.":"Categoria inativada.");
       await loadCategoriesPage();
     } catch(error) {
-      reportError(error,{context:"Categorias > alterar situação"});
+      if(categoryPageState.isCurrent(host,snapshot,state.organization?.id))reportError(error,{context:"Categorias > alterar situação"});
     } finally {
+      snapshot.pending=false;
       if(toggle.isConnected)toggle.disabled=false;
     }
   });
@@ -143,24 +161,31 @@ export async function loadCategoriesPage() {
     if(!canManageCategories())return toast("Somente proprietário ou administrador pode salvar categorias.");
     const values=new FormData(form);
     const submit=form.querySelector('[type="submit"]');
+    const snapshot=categoryPageState.current(host,state.organization?.id);
+    const categoryId=String(values.get("category_id")||"").trim()||null;
+    if(!snapshot||!submit||submit.disabled||snapshot.pending)return;
+    const existing=categoryId?snapshot.rows.find(row=>row.id===categoryId):null;
+    if(categoryId&&!existing)return toast("Categoria não encontrada. Atualize a lista.");
     const name=String(values.get("name")||"").trim();
     if(name.length<2||name.length>80) {
       toast("Informe um nome entre 2 e 80 caracteres.");
       return;
     }
     submit.disabled=true;
+    snapshot.pending=true;
     try {
       await saveCatalogCategory({
-        client:supabase,orgId:state.organization.id,
-        categoryId:String(values.get("category_id")||"").trim()||null,
-        categoryType:String(values.get("category_type")||selectedType),name
+        client:supabase,orgId:snapshot.orgId,
+        categoryId,categoryType:existing?.category_type||selectedType,name
       });
-      document.querySelector("#category-create-modal")?.close();
+      if(!categoryPageState.isCurrent(host,snapshot,state.organization?.id))return;
+      host.querySelector("#category-create-modal")?.close();
       toast(values.get("category_id")?"Categoria atualizada.":"Categoria cadastrada.");
       await loadCategoriesPage();
     } catch(error) {
-      reportError(error,{context:"Categorias > salvar"});
+      if(categoryPageState.isCurrent(host,snapshot,state.organization?.id))reportError(error,{context:"Categorias > salvar"});
     } finally {
+      snapshot.pending=false;
       if(submit.isConnected)submit.disabled=false;
     }
   });
