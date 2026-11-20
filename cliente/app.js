@@ -12,6 +12,7 @@ import { listFavorites, addFavorite, removeFavorite } from "./services/favorites
 import { listNotifications, markNotificationRead, markAllNotificationsRead } from "./services/notificationService.js";
 import { validatePublicCoupon } from "./services/couponService.js";
 import {renderClientShell} from "./ui/clientShell.js";
+import {bindClientEvents} from "./ui/clientEvents.js";
 import { renderBottomNavigation } from "./ui/bottomNavigation.js";
 import { renderLoginView } from "./ui/loginView.js";
 import { renderHomeView } from "./ui/homeView.js";
@@ -557,23 +558,7 @@ async function runAction(action, button = null) {
   }
 }
 
-/** Intercepta envio do fallback de cidade e encaminha o evento ao serviço de preferências. */
-root.addEventListener("submit", event => {
-  const locationForm = event.target.closest("[data-location-form]");
-  const profileForm = event.target.closest("[data-profile-form]");
-  const salonSearchForm = event.target.closest("[data-salon-search]");
-  if (!locationForm && !profileForm && !salonSearchForm) return;
-  event.preventDefault();
-  if (profileForm) runAction("save-profile", profileForm.querySelector('button[type="submit"]'));
-  else if (salonSearchForm) runAction("search-salons", salonSearchForm.querySelector('button[type="submit"]'));
-  else runAction("save-location", locationForm.querySelector('button[type="submit"]'));
-});
-
-/** Centraliza os cliques das telas sem registrar listeners a cada renderização. */
-root.addEventListener("click", event => {
-  const button = event.target.closest("[data-action]");
-  if (button) runAction(button.dataset.action, button);
-});
+bindClientEvents(root,runAction);
 
 /** Eventos Auth são síncronos. Consultas são agendadas fora do lock do Supabase. */
 function start(){
