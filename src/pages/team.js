@@ -27,10 +27,16 @@ export function teamPage() {
 export async function loadTeamPage() {
   const host=document.querySelector("#team-manager");
   if(!host||!state.organization?.id)return;
+  const orgId=state.organization.id,userId=state.user?.id,role=state.membership?.role;
+  const request=String(Number(host.dataset.request||0)+1);host.dataset.request=request;
+  // Mantém o resultado associado ao tenant e à página que iniciaram a consulta.
+  const current=()=>host.isConnected&&state.page==='Equipe e permissões'&&state.organization?.id===orgId&&state.user?.id===userId&&state.membership?.role===role&&host.dataset.request===request;
   let members,profiles;
   try {
-    ({members,profiles}=await fetchTeamWorkspace({client:supabase,orgId:state.organization.id}));
+    ({members,profiles}=await fetchTeamWorkspace({client:supabase,orgId}));
+    if(!current())return;
   } catch(error) {
+    if(!current())return;
     reportError(error,{context:"Equipe > carregar usuários"});
     host.innerHTML='<div class="empty-state"><b>Não foi possível carregar a equipe.</b><small>Atualize a página e tente novamente.</small></div>';
     return;
