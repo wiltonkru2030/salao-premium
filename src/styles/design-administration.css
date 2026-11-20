@@ -1,0 +1,36 @@
+/* SALÃO PREMIUM — Módulo 08: administração, unidades e permissões.
+ * Apenas apresentação: não define acesso, validação ou operações de banco.
+ * Usa tokens globais da marca e mantém legibilidade em telas pequenas.
+ */
+:is(#settings-manager,#team-manager,#branches-manager){min-width:0}
+:is(#settings-manager,#team-manager,#branches-manager) .surface,
+:is(#settings-manager,#team-manager,#branches-manager) .record-card{
+  min-width:0;border-color:var(--sp-line);background:var(--sp-paper);
+}
+#settings-manager .settings-panel{padding:clamp(16px,2.5vw,25px);border-radius:12px}
+#settings-manager .section-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+#settings-manager .section-heading h2{font-family:var(--sp-font-heading);font-size:clamp(18px,2vw,22px);line-height:1.3}
+#settings-manager .section-heading p{font-size:12px;line-height:1.6;color:var(--sp-muted);margin:5px 0 0}
+#settings-manager .settings-branch-select{display:grid;gap:7px;max-width:390px;margin:0 0 16px;font-size:12px;font-weight:600;color:var(--sp-muted)}
+#settings-manager .settings-branch-select select{width:100%;min-height:44px;min-width:0;padding:8px 12px;border:1px solid var(--sp-line-strong);border-radius:var(--sp-control-radius);background:var(--sp-paper);color:var(--sp-ink);font:500 13px var(--sp-font-ui)}
+#settings-manager .settings-branch-select select:focus-visible{outline:2px solid var(--sp-gold);outline-offset:2px}
+:is(#team-manager,#branches-manager) .list-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0}
+:is(#team-manager,#branches-manager) .result-count{font-size:12px;color:var(--sp-muted)}
+:is(#team-manager,#branches-manager) .record-list{display:grid;gap:10px}
+:is(#team-manager,#branches-manager) .record-card{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border:1px solid var(--sp-line);border-radius:11px}
+:is(#team-manager,#branches-manager) .record-main{display:grid;gap:5px;min-width:0;flex:1 1 200px}
+:is(#team-manager,#branches-manager) .record-main b{font-size:14px;font-weight:600;color:var(--sp-ink);overflow-wrap:anywhere}
+:is(#team-manager,#branches-manager) .record-main small{font-size:12px;line-height:1.55;color:var(--sp-muted);overflow-wrap:anywhere}
+:is(#team-manager,#branches-manager) .record-trailing{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:9px;max-width:100%}
+:is(#team-manager,#branches-manager) .record-trailing small{font-size:12px;line-height:1.5}
+:is(#team-manager,#branches-manager) :is(button,.btn){min-height:40px;white-space:normal}
+:is(#settings-manager,#team-manager,#branches-manager) .demo-note{font-size:12px;line-height:1.65;color:var(--sp-muted)}
+:is(#settings-manager,#team-manager,#branches-manager) .empty-state{line-height:1.65;font-size:13px}
+@media(max-width:680px){
+ #settings-manager .settings-panel{padding:16px}
+ #settings-manager .section-heading .btn{width:100%}
+ :is(#team-manager,#branches-manager) .record-card{padding:14px;align-items:stretch;flex-direction:column;gap:12px}
+ :is(#team-manager,#branches-manager) .record-trailing{justify-content:flex-start;width:100%}
+ :is(#team-manager,#branches-manager) .record-trailing .btn{flex:1 1 160px}
+ #settings-manager .public-profile-panel .sp-modal-body{grid-template-columns:1fr}
+}
