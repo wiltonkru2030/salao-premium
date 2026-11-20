@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import {
   normalizeCustomerPhone,
+  formatCustomerPhoneInput,
+  formatCustomerPhoneDisplay,
   normalizeGlobalCustomerName,
   normalizeTenantSlug,
   validateGlobalCustomerProfile
@@ -32,4 +34,9 @@ assert.deepEqual(profile, {
   email: "ana@example.com",
   avatarUrl: "https://cdn.example.com/avatar.png"
 });
+
+assert.equal(formatCustomerPhoneInput("67999991234"), "(67) 99999-1234");
+assert.equal(formatCustomerPhoneInput("6799991234"), "(67) 9999-1234");
+assert.equal(formatCustomerPhoneDisplay("+5567999991234"), "(67) 99999-1234");
+assert.equal(formatCustomerPhoneDisplay(null), "");
 console.log("Testes de perfil global da cliente: OK");
