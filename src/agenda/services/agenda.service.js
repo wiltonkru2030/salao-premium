@@ -71,6 +71,7 @@ function normalizePayload(input, orgId) {
   if (!Number.isFinite(price) || price < 0) throw new TypeError("Informe um valor válido para o serviço.");
   return {
     org_id: orgId,
+    branch_id: input.branch_id.trim(),
     customer_id: input.customer_id,
     professional_id: professionalId,
     service_id: input.service_id,
@@ -244,7 +245,6 @@ export async function previewMoveAppointment(id,changes,context={}) {
   const payload=normalizePayload({...current,...changes},context.orgId);
   const candidate=toCandidate({...payload,id});
   const existing=await readAllAppointments(context.client,context.orgId,{date:candidate.date});
-  const {checkAvailability}=await import("./availability.service.js");
   const validation=checkAvailability(candidate,existing.map(toCandidate),{opening:context.opening||"08:00",closing:context.closing||"20:00"});
   return {ok:validation.valid,errors:validation.errors,preview:payload};
 }
