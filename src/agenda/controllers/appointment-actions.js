@@ -68,24 +68,29 @@ export async function saveAppointment(form) {
   const customerId=String(values.get('customer_id')||'');
   const serviceId=String(values.get('service_id')||'');
   const professionalId=String(values.get('professional_id')||'');
+  const branchId=String(values.get('branch_id')||'');
   const date=String(values.get('date')||'');
   const time=String(values.get('time')||'');
   const duration=Number(values.get('duration'));
   const price=parseBRL(values.get('price'));
   const notes=String(values.get('notes')||'').trim();
+  if(!branchId)throw new Error('Selecione a unidade onde o atendimento será realizado.');
   if(!customerId||!serviceId||!professionalId)throw new Error('Escolha o cliente, serviço e profissional nas sugestões.');
   if(!date||!time||!Number.isFinite(duration)||duration<5||!Number.isFinite(price)||price<0)throw new Error('Confira data, horário, duração e valor.');
   const start=makeTimestamp(date,time);
   const end=new Date(start.getTime()+duration*60000);
-  const [customerResult,serviceResult,professionalResult]=await Promise.all([
+  const [customerResult,serviceResult,professionalResult,branchResult]=await Promise.all([
     supabase.from('customers').select('id,name,phone').eq('org_id',state.organization.id).eq('id',customerId).maybeSingle(),
     supabase.from('services').select('id,name,price,duration_minutes').eq('org_id',state.organization.id).eq('id',serviceId).maybeSingle(),
-    supabase.from('professionals').select('id,name').eq('org_id',state.organization.id).eq('id',professionalId).maybeSingle()
+    supabase.from('professionals').select('id,name,branch_id').eq('org_id',state.organization.id).eq('id',professionalId).maybeSingle(),
+    supabase.from('branches').select('id,name,active').eq('org_id',state.organization.id).eq('id',branchId).eq('active',true).maybeSingle()
   ]);
   if(customerResult.error)throw customerResult.error;
   if(serviceResult.error)throw serviceResult.error;
   if(professionalResult.error)throw professionalResult.error;
-  if(!customerResult.data||!serviceResult.data||!professionalResult.data)throw new Error('Um dos registros selecionados não existe ou está inativo.');
+  if(branchResult.error)throw branchResult.error;
+  if(!customerResult.data||!serviceResult.data||!professionalResult.data||!branchResult.data)throw new Error('Um dos registros selecionados não existe ou está inativo.');
+  if(professionalResult.data.branch_id&&professionalResult.data.branch_id!==branchId)throw new Error('O profissional selecionado não atende nesta unidade.');
 
   const existing=appointmentActionRow();
   if(state.membership?.role==='professional') {
@@ -95,6 +100,7 @@ export async function saveAppointment(form) {
   }
   const payload={
     org_id:state.organization.id,
+    branch_id:branchId,
     customer_id:customerId,
     professional_id:professionalId,
     service_id:serviceId,
