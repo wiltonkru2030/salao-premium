@@ -21,6 +21,11 @@ A etapa 1 é dependência das etapas 2, 4 e 5. O histórico depende das tabelas 
 1. supabase/migrations/20261119170000_snapshot_commission_rate_on_first_payment.sql — congela a regra de comissão no primeiro pagamento do item.
 2. docs/sql/commission-refund-reversals.draft.sql — débito de comissões já pagas, compensação automática no próximo repasse e wrappers SECURITY INVOKER.
 
+## Hardening de RPCs
+- docs/sql/security-definer-api-hardening.draft.sql — move 14 implementações SECURITY DEFINER do schema public para private, mantendo contratos PostgREST em wrappers SECURITY INVOKER.
+- O rascunho de estorno também migra pay_professional_commissions e refund_service_order. Os dois rascunhos devem ser revisados em conjunto para não criar funções duplicadas.
+- O hardening preserva execução para authenticated e service_role, mas não concede acesso a anon.
+
 O rascunho de reversão pressupõe as tabelas atuais de comissões e repasses. Deve ser testado com pagamentos parciais, comissão já paga, estorno total e repasse líquido.
 
 ## Não incluído nesta etapa
