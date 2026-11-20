@@ -15,9 +15,9 @@ assert.equal((sql.match(/as \$function\$/g)||[]).length,(sql.match(/\$function\$
 assert.doesNotMatch(normalized,/drop\s+table|truncate\s+table/);
 
 for(const table of ["salon_public_profiles","branch_public_profiles"]) {
-  assert.match(normalized,new RegExp("create table if not exists public\\."+table+"\\b"));
-  assert.match(normalized,new RegExp("alter table public\\."+table+" enable row level security"));
-  assert.match(normalized,new RegExp("create trigger audit_row_change after insert or update or delete on public\\."+table));
+  assert.match(normalized,new RegExp("create table if not exists public\."+table+"\\b"));
+  assert.match(normalized,new RegExp("alter table public\."+table+" enable row level security"));
+  assert.match(normalized,new RegExp("create trigger audit_row_change after insert or update or delete on public\."+table));
 }
 assert.match(normalized,/revoke all on public\.salon_public_profiles,public\.branch_public_profiles from public,anon/);
 assert.match(normalized,/where sp\.is_published/);
@@ -67,12 +67,12 @@ const appliedSql = (await Promise.all(migrationFiles.map(file =>
 ))).join("\n").toLowerCase();
 
 for (const table of ["salon_public_profiles", "branch_public_profiles"]) {
-  assert.match(appliedSql, new RegExp("create table public\\." + table + "\\b"));
-  assert.match(appliedSql, new RegExp("alter table public\\." + table + " enable row level security"));
+  assert.match(appliedSql, new RegExp("create table public\." + table + "\\b"));
+  assert.match(appliedSql, new RegExp("alter table public\." + table + " enable row level security"));
 }
 for (const rpc of ["save_public_salon_profile", "search_public_salons", "get_public_salon_catalog", "get_customer_available_slots"]) {
-  assert.match(appliedSql, new RegExp("create or replace function public\\." + rpc + "\\b"));
-  assert.match(appliedSql, new RegExp("create or replace function private\\." + rpc + "\\b"));
+  assert.match(appliedSql, new RegExp("create or replace function public\." + rpc + "\\b"));
+  assert.match(appliedSql, new RegExp("create or replace function private\." + rpc + "\\b"));
 }
 assert.match(appliedSql, /grant usage on schema private to anon, authenticated/);
 assert.ok(appliedSql.includes("grant execute on function private.search_public_salons"));
