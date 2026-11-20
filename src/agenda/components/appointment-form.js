@@ -4,6 +4,7 @@ import { mountAutocomplete } from '../../components/autocomplete.js';
 import { supabase } from '../../supabase/client.js';
 import { state } from '../../state.js';
 import { parseBRL } from '../../utils/input-masks.js';
+import { reportError } from '../../utils/errors.js';
 
 let cleanups=[];
 function clearAppointmentAutocomplete(){cleanups.forEach(fn=>fn());cleanups=[];}
@@ -83,7 +84,7 @@ export function mountAppointmentForm(){
       state.branch=branchOptions.find(b=>b.id===branchSelect.value)||null;
       if(!branchOptions.length)branchSelect.innerHTML='<option value="">Nenhuma unidade ativa cadastrada</option>';
     })
-    .catch(error=>{branchSelect.innerHTML='<option value="">Falha ao carregar unidades</option>';console.error('Agenda > unidades:',error);});
+    .catch(error=>{branchSelect.innerHTML='<option value="">Falha ao carregar unidades</option>';reportError(error,{context:'Agenda > carregar unidades'});});
   branchSelect.addEventListener('change',()=>{
     state.branch=branchOptions.find(b=>b.id===branchSelect.value)||null;
     professionalId.value='';professionalInput.value='';
