@@ -108,8 +108,14 @@ export async function loadQuotesPage() {
       const orgId=state.organization.id,branchId=state.branch?.id||null;
       const select=e.target.closest("[data-select-customer]");
       if(select){selectedCustomer=customers.find(c=>c.id===select.dataset.selectCustomer)||null;renderBuilder();return;}
-      if(e.target.closest("#quote-show-quick")){host.querySelector("#quote-quick-customer").hidden=false;host.querySelector("#quote-quick-customer-form [name=name]").focus();return;}
-      if(e.target.closest("#quote-quick-cancel")){host.querySelector("#quote-quick-customer").hidden=true;return;}
+      if(e.target.closest("#quote-show-quick")){
+        const dialog=host.querySelector("#quote-quick-customer");
+        if(dialog&&!dialog.open){dialog.showModal();dialog.querySelector("[name=name]")?.focus();}
+        return;
+      }
+      if(e.target.closest("#quote-quick-cancel,[data-close-quote-customer]")||e.target===host.querySelector("#quote-quick-customer")){
+        host.querySelector("#quote-quick-customer")?.close();return;
+      }
       if(e.target.closest("#quote-save")){
         if(!branchId){toast("Selecione uma unidade específica para gerar o orçamento.");return;}
         if(!selectedCustomer||!items.length){toast("Selecione um cliente e adicione ao menos um serviço.");return;}
@@ -170,7 +176,7 @@ export async function loadQuotesPage() {
         if(!branchId){toast("Selecione uma unidade antes de cadastrar o cliente.");return;}
         if(!name||!phone||![10,11].includes(phone.replace(/\D/g,"").length)){toast("Informe nome e WhatsApp válido com DDD.");return;}
         const button=form.querySelector('[type=submit]');if(!button||button.disabled)return;button.disabled=true;
-        try{const {data,error}=await supabase.from("customers").insert({org_id:orgId,branch_id:branchId,name,phone}).select("id,name,phone").single();if(error)throw error;if(!current())return;customers.push(data);selectedCustomer=data;toast("Cliente cadastrado e vinculado ao orçamento.");renderBuilder();}
+        try{const {data,error}=await supabase.from("customers").insert({org_id:orgId,branch_id:branchId,name,phone}).select("id,name,phone").single();if(error)throw error;if(!current())return;customers.push(data);selectedCustomer=data;host.querySelector("#quote-quick-customer")?.close();toast("Cliente cadastrado e vinculado ao orçamento.");renderBuilder();}
         catch(error){reportError(error,{context:"Orçamentos > cadastro rápido"});}finally{button.disabled=false;}
       }
       if(e.target.id==="quote-discount-settings"){
