@@ -90,8 +90,10 @@ export async function loadSettingsPage() {
         ` : '<div class="empty-state">Nenhuma unidade cadastrada. Cadastre uma unidade antes de editar seus dados.</div>'}
       </section>
 
+      ${renderAvailabilitySettings(availability, canManage)}
+
       <section class="surface settings-panel" style="margin-top:18px">
-        <div class="section-heading"><div>${renderAvailabilitySettings(availability, canManage)}<h2>Preferências do sistema</h2><p>Recursos que ainda não possuem persistência validada no banco.</p></div></div>
+        <div class="section-heading"><div><h2>Preferências do sistema</h2><p>Recursos que ainda não possuem persistência validada no banco.</p></div></div>
         <div class="record-list">
           <article class="record-card"><span class="record-main"><b>Disponibilidade online</b><small>Expediente e exceções são configurados na seção acima. Regras de antecedência e políticas de cancelamento ainda estão pendentes.</small></span><span class="record-trailing"><small>Em implementação</small></span></article>
           <article class="record-card"><span class="record-main"><b>Notificações</b><small>Envio de lembretes e integrações de WhatsApp/e-mail não estão ativados por esta tela.</small></span><span class="record-trailing"><small>Em implementação</small></span></article>
