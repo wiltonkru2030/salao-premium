@@ -1,4 +1,6 @@
--- RASCUNHO — diretório público opt-in do SALÃO PREMIUM.
+-- RASCUNHO SUPERSEDED — histórico do diretório público.
+-- NÃO EXECUTAR: o contrato oficial foi aplicado nas migrations 20261120064407, 20261120064553, 20261120064639 e 20261120064758.
+-- Este arquivo não representa o schema ativo; use as migrations versionadas e os testes correspondentes.
 -- Não aplicar em produção sem revisão e autorização explícita.
 -- Nenhuma tabela operacional recebe SELECT público; somente RPCs retornam campos autorizados.
 
