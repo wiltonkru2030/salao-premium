@@ -91,7 +91,13 @@ export function renderPackages({packages=[],services=[],isManager=false}={}){
  ' · '+e(item.quantity)+' vez(es)'+(item.pause_after_minutes?' · pausa '+e(item.pause_after_minutes)+' min':'')+'</li>').join("")+'</ol>'+
  '<small>Preço de referência: '+(p.reference_price==null?"Não definido":e(money(p.reference_price)))+
  ' · Não gera cobrança automaticamente.</small></article>').join(""):'<p>Nenhum pacote cadastrado para esta unidade.</p>')+'</div>'+
- (isManager?renderPackageModal({services}):'');
+ (isManager?renderPackageModal({services})+
+ '<dialog class="sp-modal offer-dialog" id="offer-package-status-dialog" aria-labelledby="offer-package-status-title"><div class="sp-modal-shell">'+
+ '<header class="sp-modal-head"><h2 id="offer-package-status-title">Alterar situação do combo</h2>'+
+ '<button type="button" class="sp-modal-close" data-offer-action="close-dialog" aria-label="Fechar">×</button></header>'+
+ '<form id="offer-package-status-form"><div class="sp-modal-body"><p id="offer-package-status-summary"></p></div>'+
+ '<footer class="sp-modal-foot"><button type="button" class="btn secondary" data-offer-action="close-dialog">Voltar</button>'+
+ '<button type="submit" class="btn primary">Confirmar alteração</button></footer></form></div></dialog>':'');
 }
 /** Formulário de pacote com etapas adicionáveis e ordem preservada. */
 export function renderPackageModal({services=[],name="",description="",referencePrice="",items=[{service_id:"",quantity:1,pause_after_minutes:0}],editing=false}={}){
