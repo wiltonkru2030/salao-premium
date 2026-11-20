@@ -6,3 +6,5 @@
 @import url("./styles/responsive.css");
 
 @import url("../src/styles/shared-controls.css");
+
+@import url('./styles/loyalty.css');
