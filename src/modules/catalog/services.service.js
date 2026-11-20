@@ -60,10 +60,12 @@ export async function saveService({
     duration_minutes:duration,price:amount,
     description:String(description??"").trim()||null
   };
-  const result=serviceId
-    ? await client.from("services").update(payload).eq("org_id",orgId).eq("id",serviceId)
-    : await client.from("services").insert({org_id:orgId,...payload,active:true});
-  if(result.error)throw mapServiceError(result.error);
+  try {
+    const result=serviceId
+      ? await client.from("services").update(payload).eq("org_id",orgId).eq("id",serviceId)
+      : await client.from("services").insert({org_id:orgId,...payload,active:true});
+    if(result.error)throw result.error;
+  } catch(error) { throw mapServiceError(error); }
 }
 
 /**
@@ -74,6 +76,8 @@ export async function saveService({
 export async function setServiceActive({client,orgId,serviceId,active}={}) {
   requireContext(client,orgId);
   if(!serviceId||typeof active!=="boolean")throw new TypeError("Selecione um serviço e um estado válidos.");
-  const {error}=await client.from("services").update({active}).eq("org_id",orgId).eq("id",serviceId);
-  if(error)throw mapServiceError(error);
+  try {
+    const {error}=await client.from("services").update({active}).eq("org_id",orgId).eq("id",serviceId);
+    if(error)throw error;
+  } catch(error) { throw mapServiceError(error); }
 }
