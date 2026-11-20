@@ -4,6 +4,7 @@
  * Cada tela, serviço, componente e estilo fica em arquivo próprio.
  */
 import {validateBookingSelection,isHoldExpired} from "./utils/booking-rules.js";
+import {startClientSession} from "./services/client-session.js";
 import { getCurrentUser, subscribeToAuthChanges, signInWithGoogle, signInWithPasskey, registerPasskey, signOut } from "./services/authService.js";
 import { supabase } from "../src/supabase/client.js";
 import { getCurrentPosition } from "./services/geoSalonService.js";
@@ -560,32 +561,5 @@ async function runAction(action, button = null) {
 
 bindClientEvents(root,runAction);
 
-/** Eventos Auth são síncronos. Consultas são agendadas fora do lock do Supabase. */
-function start(){
-  renderLogin();
-  subscribeToAuthChanges((session)=>{
-    const id=session?.user?.id||null;
-    if(id===currentUserId){currentSession=session;return;}
-    resetAccountState(id);currentSession=session;
-    if(!id){renderLogin();return;}
-    const epoch=sessionEpoch;
-    root.innerHTML='<main class="page-content"><div class="empty-state"><span class="spinner"></span><p>Verificando sua conta…</p></div></main>';
-    setTimeout(async()=>{
-      try{
-        if(!isCurrent(epoch))return;
-        const user=await getCurrentUser();
-        requireCurrent(epoch);
-        if(user?.id!==id)throw new Error("Sessão inválida.");
-        await loadProfile();requireCurrent(epoch);
-        await Promise.all([loadPublicSalons(),loadFavorites()]);requireCurrent(epoch);
-        renderApp();
-      }catch(error){
-        if(!isCurrent(epoch))return;
-        currentSession=null;resetAccountState(null);
-        renderLogin("Não foi possível verificar sua sessão. Entre novamente.");
-        try{await signOut();}catch{/* Não exibir dados privados quando encerrar a sessão falhar. */}
-      }
-    },0);
-  });
-}
-start();
+startClientSession({subscribeToAuthChanges,getCurrentUser,signOut,getUserId:()=>currentUserId,setSession:session=>{currentSession=session;},resetAccountState,getEpoch:()=>sessionEpoch,isCurrent,requireCurrent,renderLogin,renderLoading:()=>{root.innerHTML='<main class="page-content"><div class="empty-state"><span class="spinner"></span><p>Verificando sua conta…</p></div></main>';},loadProfile,loadPublicSalons,loadFavorites,renderApp});
+
