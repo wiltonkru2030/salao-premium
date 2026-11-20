@@ -29,7 +29,7 @@ export async function loadFinancePage() {
 
   const branchId=state.branch?.id||null,userId=state.user?.id;
   const request=String(Number(host.dataset.request||0)+1);host.dataset.request=request;
-  const current=()=>host.isConnected&&state.organization?.id===orgId&&(state.branch?.id||null)===branchId&&state.user?.id===userId&&host.dataset.request===request;
+  const current=()=>host.isConnected&&state.page==='Financeiro'&&state.organization?.id===orgId&&(state.branch?.id||null)===branchId&&state.user?.id===userId&&host.dataset.request===request;
   host.textContent="Carregando informações financeiras…";
   try {
     const now = new Date();
