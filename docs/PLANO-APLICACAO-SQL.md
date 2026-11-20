@@ -22,6 +22,7 @@ Os arquivos marcados como draft são documentos de revisão, não migrations apl
 4. supabase/migrations/20261119170000_snapshot_commission_rate_on_first_payment.sql — congela a regra de comissão no primeiro pagamento do item. Está versionada, mas não consta no histórico do Supabase conectado.
 5. docs/sql/commission-refund-reversals.draft.sql — débito de comissões já pagas, compensação automática no próximo repasse e wrappers SECURITY INVOKER.
 6. docs/sql/security-definer-api-hardening.draft.sql — move 14 implementações SECURITY DEFINER do schema public para private, mantendo contratos PostgREST em wrappers SECURITY INVOKER.
+7. supabase/migrations/20261120074000_catalog_categories.sql — categorias administráveis de serviços/produtos, backfill das categorias textuais existentes e sincronização de renomeação (versionada, ainda não aplicada).
 
 Os rascunhos de hardening e estorno precisam ser revisados em conjunto: o rascunho de estorno também migra pay_professional_commissions e refund_service_order. Não executar os dois isoladamente sem reconciliar as funções duplicadas.
 
