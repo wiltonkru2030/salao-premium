@@ -70,6 +70,10 @@ function buildContent() {
   html+='<div class="agenda-help">Selecione um atendimento para confirmar, reagendar, registrar chegada, abrir uma comanda ou cancelar. Alterações são registradas no banco e na auditoria.</div>';
   host.innerHTML=html;
 }
+/**
+ * Renderiza o shell da página de Agenda e seu estado inicial de carregamento.
+ * @returns {string} HTML da página administrativa.
+ */
 export function agenda() {
   return head('Agenda','Gerencie horários, atendimentos e disponibilidade dos profissionais.',btn('＋ Novo agendamento','new-appointment','primary'))+
 
@@ -126,5 +130,14 @@ export async function loadAgendaPage() {
 '</small></div>';
   }
 }
+/**
+ * Atualiza somente o conteúdo visual da agenda usando o estado já carregado.
+ * @returns {void} Recompõe filtros, resumo e calendário sem nova consulta.
+ */
 export function refreshAgendaContent(){buildContent();}
+/**
+ * Localiza no estado em memória a representação visual de um agendamento.
+ * @param {string|number} id Identificador do agendamento.
+ * @returns {object|null} Agendamento encontrado ou null.
+ */
 export function findAppointmentView(id){return (state.agendaAppointments||[]).find(a=>String(a.id)===String(id))||null;}
