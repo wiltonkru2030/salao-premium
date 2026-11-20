@@ -20,3 +20,31 @@
 .appointment-salon{margin:9px 0 4px;font-size:12px;font-weight:600}
 .appointment-meta{margin:4px 0;color:var(--color-muted);font-size:11px}
 .appointment-price{display:block;margin-top:12px;font-size:13px}
+
+/* Diretório público e catálogo: cartões responsivos com identidade visual discreta. */
+.salon-search-form{display:grid;gap:8px;margin:18px 0}
+.salon-search-form label,.service-result-card label{font-size:11px;font-weight:600;color:var(--color-muted)}
+.salon-search-form>div{display:flex;gap:8px}
+.salon-search-form input,.service-result-card input,.service-result-card select{width:100%;min-width:0;padding:12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);color:var(--color-text);font:inherit;font-size:13px}
+.salon-result-list,.service-result-list{display:grid;gap:11px}
+.salon-result-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid var(--color-border);border-radius:14px;background:var(--color-surface)}
+.salon-result-main{display:flex;align-items:center;gap:11px;min-width:0}
+.salon-result-main>div{display:grid;gap:3px;min-width:0}
+.salon-result-main strong{font-size:13px}
+.salon-result-main span:not(.salon-avatar),.salon-result-main small{font-size:11px;color:var(--color-muted)}
+.salon-avatar{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:12px;background:var(--color-gold-soft);font-weight:700}
+.service-result-card{display:grid;gap:11px;padding:15px;border:1px solid var(--color-border);border-radius:15px;background:var(--color-surface)}
+.service-result-heading{display:flex;justify-content:space-between;gap:12px}
+.service-result-heading>div{display:grid;gap:4px}
+.service-result-heading strong{font-size:14px}
+.service-result-heading small{font-size:11px;color:var(--color-muted)}
+.service-result-heading>b{white-space:nowrap;font-size:13px}
+.service-result-card>p{margin:0;color:var(--color-muted);font-size:12px}
+.service-result-card label{display:grid;gap:6px}
+.available-slot-list{display:flex;flex-wrap:wrap;gap:8px}
+.slot-option{padding:9px 12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);color:var(--color-text);font:inherit;font-size:12px}
+.slot-option:active{border-color:var(--color-gold)}
+.booking-confirm-card{display:grid;gap:10px;margin-top:18px;padding:16px;border:1px solid var(--color-gold);border-radius:15px;background:var(--color-surface)}
+.booking-confirm-card h3,.booking-confirm-card p{margin:0}
+.client-error-text{margin:0;color:var(--color-danger);font-size:12px}
+.text-button{padding:8px 0;border:0;background:transparent;color:var(--color-muted);font:inherit;font-size:12px;text-align:left}
