@@ -48,7 +48,7 @@
     "test:catalog-categories": "node src/modules/catalog/categories.service.test.js && node src/modules/catalog/categories.view.test.js",
     "test:sql-catalog-categories": "node docs/sql/catalog-categories.migration.test.mjs",
     "test:customers-service": "node src/modules/customers/customers.service.test.js && node src/modules/customers/customer-page-state.test.js && node src/modules/customers/customers.view.test.js && node src/modules/customers/customers.controller.test.js",
-    "test:professionals-service": "node src/modules/professionals/professionals.service.test.js && node src/modules/professionals/professionals.validation.test.js",
+    "test:professionals-service": "node src/modules/professionals/professionals.service.test.js && node src/modules/professionals/professionals.validation.test.js && node src/modules/professionals/professionals.view.test.js",
     "test:branches-service": "node src/modules/branches/branches.service.test.js",
     "test:team-service": "node src/modules/team/team.service.test.js",
     "test:sql-payment-centavos": "node docs/sql/strict-payment-centavos-private.draft.test.mjs",
