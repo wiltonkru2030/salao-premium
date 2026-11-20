@@ -38,8 +38,9 @@ function paint(ctrl){
 }
 /** Consulta as fontes em paralelo; descarta respostas de organização ou sessão anterior. */
 async function refresh(ctrl){
- const st=ctrl.data,seq=++ctrl.seq,ctx=context(ctrl.state);
+ const st=ctrl.data,ctx=context(ctrl.state);
  if(st.loading)return;
+ const seq=++ctrl.seq;
  st.loading=true;st.error="";paint(ctrl);
  try{
   const params={client:ctrl.client,orgId:st.orgId,branchId:st.branchId};
@@ -149,17 +150,18 @@ async function onClick(ctrl,event){
  }
  if(action==="search-openings"){
   const date=root.querySelector("#offer-match-date")?.value||"";
+  const seq=++ctrl.matchSeq;
   st.matchDate=date;st.matches=[];st.searched=false;st.error="";
   st.loading=true;paint(ctrl);
   try{
    const slots=await findAppointmentWaitlistOpenings({
     client:ctrl.client,orgId:st.orgId,branchId:st.branchId,date
    });
-   if(context(ctrl.state)===st.ctx&&ctrl.root.isConnected){
+   if(context(ctrl.state)===st.ctx&&ctrl.root.isConnected&&ctrl.data===st&&ctrl.matchSeq===seq){
     st.matches=slots;st.searched=true;
    }
-  }catch(error){if(context(ctrl.state)===st.ctx)st.error=error.message;}
-  finally{if(context(ctrl.state)===st.ctx&&root.isConnected){st.loading=false;paint(ctrl);}}
+  }catch(error){if(context(ctrl.state)===st.ctx&&ctrl.data===st&&ctrl.matchSeq===seq)st.error=error.message||"Não foi possível consultar as vagas.";}
+  finally{if(context(ctrl.state)===st.ctx&&ctrl.data===st&&ctrl.matchSeq===seq&&root.isConnected){st.loading=false;paint(ctrl);}}
   return;
  }
  if(action==="preview-match"){
@@ -268,15 +270,19 @@ function onInput(ctrl,event){
 export async function mountAgendaOffers({client,state,onBooked}={}){
  const root=document.querySelector("#agenda-offers-panel");
  if(!root||!client||!state)return;
- if(!staffRoles.has(state.membership?.role)){root.innerHTML="";return;}
+ if(!staffRoles.has(state.membership?.role)){
+  if(root._offersController){root._offersController.seq++;root._offersController.matchSeq++;root._offersController.customerSeq++;root._offersController.data=null;}
+  root.innerHTML="";return;
+ }
  if(!state.organization?.id||!state.branch?.id){
+  if(root._offersController){root._offersController.seq++;root._offersController.matchSeq++;root._offersController.customerSeq++;root._offersController.data=null;}
   root.innerHTML='<p class="offer-hint">Selecione uma unidade específica para utilizar pacotes e lista de espera.</p>';
   return;
  }
  const ctx=context(state);
  let ctrl=root._offersController;
  if(!ctrl){
-  ctrl={root,client,state,onBooked,seq:0,customerSeq:0,data:null};
+  ctrl={root,client,state,onBooked,seq:0,matchSeq:0,customerSeq:0,data:null};
   root._offersController=ctrl;
   root.addEventListener("click",event=>{void onClick(ctrl,event).catch(error=>{
    if(context(ctrl.state)===ctrl.data.ctx){
@@ -288,6 +294,7 @@ export async function mountAgendaOffers({client,state,onBooked}={}){
  }
  ctrl.client=client;ctrl.state=state;ctrl.onBooked=onBooked;
  if(ctrl.data?.ctx===ctx&&(ctrl.data.loaded||ctrl.data.loading))return;
+ ctrl.seq++;ctrl.matchSeq++;ctrl.customerSeq++;
  const tz=state.organization?.timezone||"America/Sao_Paulo";
  ctrl.data={
   ctx,orgId:state.organization.id,branchId:state.branch.id,timezone:tz,
