@@ -398,3 +398,11 @@ Tabelas de vitrine e cupons foram confirmadas com RLS habilitado. As RPCs públi
 - App validation: sucesso no SHA 6f4b4ba6584b557b8cc9409e065eaa8d883005ac.
 - Agenda tests: sucesso no mesmo SHA.
 - O sucesso de CI não substitui QA visual/E2E autenticado nem valida execução de migrations ainda não aplicadas.
+
+
+### Equipe e permissões
+- Criado src/modules/team/team.service.js para consultar memberships/perfis e controlar liberação do App Profissional à recepção.
+- A RPC de alteração agora recebe org_id explicitamente, reduzindo dependência da organização inferida pelo usuário.
+- A tela src/pages/team.js usa o serviço e mantém a autorização final no banco.
+- Testes em src/modules/team/team.service.test.js incluídos no test:all.
+- App validation e Agenda tests passaram no SHA 0d77ae3f8b18f49d29c4e2ce5f7a2d7fba99506d.
