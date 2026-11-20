@@ -14,6 +14,11 @@ const statusName = value => ({
   cancelled: "Cancelado"
 })[value] || "Status não identificado";
 
+/**
+ * Renderiza o construtor de orçamento com itens, responsáveis e regras de desconto.
+ * @param {object} options Itens selecionados, cliente, catálogo, profissionais e permissões.
+ * @returns {string} HTML do formulário e resumo financeiro do orçamento.
+ */
 export function renderQuoteBuilder({ items, selectedCustomer, services, professionals, discountRules, maxDiscount, allowFixedDiscount, canManageSettings }) {
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.price, 0);
   const discount = items.reduce((sum, item) => sum + item.discount, 0);
@@ -113,6 +118,12 @@ export function renderQuoteBuilder({ items, selectedCustomer, services, professi
     </section>`;
 }
 
+/**
+ * Renderiza a lista de orçamentos recentes e seus estados.
+ * @param {Array<object>} quotes Orçamentos retornados pelo serviço.
+ * @param {Map<string,string>} customersById Mapa de identificador para nome do cliente.
+ * @returns {string} HTML da lista de registros.
+ */
 export function renderQuoteList(quotes, customersById) {
   const quoteRows = quotes.map(quote => `
     <article class="record-card">
