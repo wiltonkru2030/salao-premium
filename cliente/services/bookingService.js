@@ -161,7 +161,7 @@ export async function createBookingHold({
  */
 export async function confirmBooking({ client, holdId } = {}) {
   requireUuid(client, holdId, "Reserva temporária");
-  const { data, error } = await client.rpc("confirm_customer_appointment_hold_with_coupon", { p_hold_id: holdId });
+  const { data, error } = await client.rpc("confirm_customer_appointment_hold", { p_hold_id: holdId });
   if (error) throw mapBookingError(error);
   if (typeof data !== "string" || !UUID_PATTERN.test(data)) {
     throw new Error("O servidor não retornou a confirmação do agendamento.");
@@ -177,7 +177,7 @@ export async function confirmBooking({ client, holdId } = {}) {
  */
 export async function releaseBookingHold({ client, holdId } = {}) {
   requireUuid(client, holdId, "Reserva temporária");
-  const { data, error } = await client.rpc("cancel_customer_appointment_hold_with_coupon", { p_hold_id: holdId });
+  const { data, error } = await client.rpc("cancel_customer_appointment_hold", { p_hold_id: holdId });
   if (error) throw mapBookingError(error);
   return data === true;
 }
