@@ -169,6 +169,7 @@ async function runAction(action, button = null) {
       renderApp();
       setNotice("Chave de acesso cadastrada com sucesso.", "success");
     } else if (action === "sign-out") {
+      if (holdState?.holdId) { try { await cancelAppointmentHold(holdState.holdId); } catch { /* O HOLD possui expiração automática no backend. */ } }
       await signOut();
       currentSession = null;
       profileState = null;
