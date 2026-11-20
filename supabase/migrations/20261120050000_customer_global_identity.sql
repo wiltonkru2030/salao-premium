@@ -308,9 +308,9 @@ begin
     raise exception 'Solicitação já utilizada.' using errcode = '23505';
   end if;
   if v_request.status <> 'pending' or v_request.expires_at <= pg_catalog.now() then
-    update public.customer_identity_link_requests
-       set status = 'expired'
-     where id = p_request_id and status = 'pending';
+    -- Não atualizar para expired e lançar exceção na mesma transação: o RAISE
+    -- faria rollback da atualização. Solicitações expiradas são ocultadas da
+    -- consulta da cliente e podem ser renovadas pelo owner/admin via UPSERT.
     raise exception 'Esta solicitação expirou ou foi cancelada.' using errcode = '22023';
   end if;
 
