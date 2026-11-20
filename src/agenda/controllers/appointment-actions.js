@@ -2,6 +2,7 @@
  * Casos de uso da Agenda: validação, gravação e integração com Comanda.
  * Funções recebem o estado autenticado e executam operações persistentes com org_id.
  */
+import { startAgendaOrder } from "../services/agenda-order.service.js";
 import { state } from "../../state.js";
 import { $, toast } from "../../utils.js";
 import { parseBRL } from "../../utils/input-masks.js";
@@ -207,6 +208,7 @@ export async function updateAppointmentStatus(appointment,status) {
  * @throws {Error} Quando o vínculo ou a abertura da comanda falhar.
  */
 export async function openAppointmentOrder(appointment) {
+  const orgId=state.organization?.id,userId=state.user?.id;
   if(appointment.dbStatus==='cancelled'||appointment.dbStatus==='completed'||appointment.dbStatus==='no_show') {
     throw new Error('Este agendamento não pode abrir uma comanda.');
   }
@@ -220,25 +222,9 @@ export async function openAppointmentOrder(appointment) {
     existingId=choice.orderId;
     forceNew=choice.forceNew;
   }
-  let result=null;
-  if(appointment.appointment_group_id){
-    // A RPC abre todos os serviços do grupo dentro de uma única transação no banco.
-    const {data,error}=await supabase.rpc('start_appointment_group_service_order',{
-      p_appointment_id:appointment.id,
-      p_existing_order_id:existingId,
-      p_force_new:forceNew
-    });
-    if(error)throw error;
-    result=data;
-  }else{
-    const {data,error}=await supabase.rpc('start_appointment_service_order',{
-      p_appointment_id:appointment.id,
-      p_existing_order_id:existingId,
-      p_force_new:forceNew
-    });
-    if(error)throw error;
-    result=data;
-  }
+  if(state.organization?.id!==orgId||state.user?.id!==userId)throw new Error("O contexto do salão mudou. Abra o atendimento novamente.");
+  const result=await startAgendaOrder({client:supabase,orgId,appointment,existingId,forceNew});
+  if(state.organization?.id!==orgId||state.user?.id!==userId)return;
   state.drawer=null;
   await loadAgendaPage();
   const count=Number(result?.service_count||1);
