@@ -20,6 +20,7 @@ import {ordersView,commissionsView,settingsView} from "./views/workspace.views.j
 import { renderAgendaView } from "./views/agenda.views.js";
 import { handleAgendaClick } from "./agenda.controller.js";
 import { fetchProfessionalAppointments } from "./appointments.service.js";
+import {fetchProfessionalServices} from "./services.service.js";
 import { fetchProfessionalOrders, fetchProfessionalOrderItems } from "./orders.service.js";
 import { addProfessionalServiceToOrder } from "./order-items.service.js";
 import { fetchProfessionalCommissions } from "./commissions.service.js";
@@ -149,20 +150,11 @@ async function loadOrders(){
  const rows=await fetchProfessionalOrders({client:supabase,organizationId:state.orgId});
  if(epoch===sessionEpoch)state.orders=rows;
 }
+/** Carrega o catálogo apenas para o contexto profissional atual. */
 async function loadServices(){
  const epoch=sessionEpoch;
- let query=supabase.from("services").select("id,name,category,duration_minutes,price").eq("org_id",state.orgId).eq("active",true).order("name").limit(250);
- if(state.professional){
-  const {data:links,error:linkError}=await supabase.from("professional_services").select("service_id").eq("org_id",state.orgId).eq("professional_id",state.professional.id);
-  if(epoch!==sessionEpoch)return;
-  if(linkError)throw linkError;
-  const ids=[...new Set((links||[]).map(row=>row.service_id))];
-  if(!ids.length){state.services=[];return;}
-  query=query.in("id",ids);
- }
- const {data,error}=await query;
- if(epoch!==sessionEpoch)return;
- if(error)throw error;state.services=data||[];
+ const rows=await fetchProfessionalServices({client:supabase,organizationId:state.orgId,professionalId:state.professional?.id});
+ if(epoch===sessionEpoch)state.services=rows;
 }
 // Carrega comissões e pagamentos do profissional autenticado.
 async function loadCommissions(){
