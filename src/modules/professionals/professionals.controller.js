@@ -2,6 +2,7 @@
  * Controlador da equipe: eventos, cadastro e permissões.
  * Recebe contexto e serviços da página, sem gerar marcação.
  */
+import {requestProfessionalAccess} from "./professional-access.service.js";
 import {onlyDigits,validCpf,validCnpj} from "./professionals.validation.js";
 /**
  * Instala eventos delegados uma vez por montagem.
@@ -97,6 +98,8 @@ export function bindProfessionalEvents({host,client,state,initialPasswords,canMa
   if(!event.target.matches("#professional-create-form"))return;
   event.preventDefault();
   if(!canManageProfessionals()){toast("Somente proprietário ou administrador pode cadastrar profissionais.");return;}
+  const orgId=state.organization?.id;
+  const userId=state.user?.id;
   let button;
   try{
   const form=event.target;button=form.querySelector('[type="submit"]');if(!button||button.disabled)return;const v=new FormData(form);
@@ -107,15 +110,17 @@ export function bindProfessionalEvents({host,client,state,initialPasswords,canMa
   if(!serviceIds.length){toast("Selecione ao menos um serviço que o profissional atende.");return;}
   button.disabled=true;button.textContent="Salvando…";
    const professionalId=await createProfessionalWithServices({
-    client,orgId:state.organization.id,branchId:state.branch?.id||null,name,phone,email,
+    client,orgId,branchId:state.branch?.id||null,name,phone,email,
     commissionRate:rate,taxRegime,cnpj,
     legalName:v.get("legal_name"),tradeName:v.get("trade_name"),
     specialty:v.get("specialty"),serviceIds
    });
+   if(!host.isConnected||state.organization?.id!==orgId||state.user?.id!==userId||!canManageProfessionals())return;
    const enableApp=v.get("enable_app")==="on";
   let appNotice="";
   if(enableApp){
-   const {data:access,error:accessError}=await client.functions.invoke("manage-professional-access",{body:{action:"create",org_id:state.organization.id,professional_id:professionalId,cpf}});
+   const {data:access,error:accessError}=await requestProfessionalAccess({client,action:"create",orgId,professionalId,cpf});
+   if(!host.isConnected||state.organization?.id!==orgId||state.user?.id!==userId||!canManageProfessionals())return;
    if(accessError||!access?.success){
     if(accessError)reportError(accessError,{context:"Profissionais > liberar App durante cadastro"});
     appNotice="Cadastro salvo, mas não foi possível liberar o App. Você pode liberar depois no cartão do profissional.";
@@ -129,20 +134,24 @@ export function bindProfessionalEvents({host,client,state,initialPasswords,canMa
   host.querySelector("#professional-service-filter").value="";
   host.querySelector("#professional-create-modal")?.close();button.disabled=false;button.textContent="Salvar profissional";
   toast(appNotice||"Profissional cadastrado e serviços vinculados.");await loadProfessionalsPage();
-  }catch(error){reportError(error,{context:"Profissionais > salvar cadastro"});if(button){button.disabled=false;button.textContent="Salvar profissional";}}
+  }catch(error){reportError(error,{context:"Profissionais > salvar cadastro"});}finally{if(button?.isConnected){button.disabled=false;button.textContent="Salvar profissional";}}
  });
+ /** Provisiona acesso e descarta respostas de contexto antigo. */
  async function provision(button,action){
+  const orgId=state.organization?.id,userId=state.user?.id;
   const id=button.dataset.professionalReset||button.dataset.professionalToggle;
   const card=host.querySelector('[data-professional-card="'+id+'"]');
   const cpf=onlyDigits(card?.querySelector('[data-professional-cpf="'+id+'"]')?.value);
   if(!validCpf(cpf)){toast("Informe um CPF válido do profissional.");return false;}
   button.disabled=true;
   try {
-   const {data,error}=await client.functions.invoke("manage-professional-access",{body:{action,org_id:state.organization.id,professional_id:id,cpf}});
+   const {data,error}=await requestProfessionalAccess({client,action,orgId,professionalId:id,cpf});
+   if(!host.isConnected||state.organization?.id!==orgId||state.user?.id!==userId||!canManageProfessionals())return false;
    if(error||!data?.success){toast("Não foi possível criar o acesso.");return false;}
    if(data.temporary_password)initialPasswords.set(id,data.temporary_password);
    toast(action==="reset"?"Senha temporária redefinida.":"Acesso ao App Profissional liberado.");
    await loadProfessionalsPage();
+   if(!host.isConnected||state.organization?.id!==orgId||state.user?.id!==userId||!canManageProfessionals())return true;
    const target=host.querySelector('[data-professional-card="'+id+'"]');
    if(target&&data.temporary_password){const pass=target.querySelector('[data-initial-password="'+id+'"]');if(pass)pass.value=data.temporary_password;const copy=target.querySelector('[data-professional-copy="'+id+'"]');if(copy)copy.disabled=false;window.alert("Senha temporária de "+data.professional_name+":\\n"+data.temporary_password+"\\n\\nEntregue ao profissional por um canal seguro.");}
    return true;
