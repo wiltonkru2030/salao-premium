@@ -6,6 +6,8 @@ export async function registerComandaPayment({supabase,orderId,amount,paymentMet
   const value=Number(amount);
   if(!orderId)throw new Error("Comanda não identificada.");
   if(!Number.isFinite(value)||value<=0)throw new Error("Informe um valor de pagamento válido.");
+  // Não arredondar silenciosamente: o valor recebido precisa representar centavos exatos.
+  if(Number(value.toFixed(2))!==value)throw new Error("Informe o pagamento com até duas casas decimais.");
   if(!["pix","cash","credit_card","debit_card","transfer","voucher","other"].includes(paymentMethod)) {
     throw new Error("Selecione uma forma de pagamento válida.");
   }
