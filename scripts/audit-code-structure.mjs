@@ -9,7 +9,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
-const roots = ["src", "professional", "scripts", "tests"];
+const roots = ["src", "cliente", "professional", "scripts", "tests", "docs/sql", "supabase/functions"];
 const ignored = new Set(["node_modules", "dist", "build", ".git"]);
 const files = [];
 
@@ -24,20 +24,23 @@ async function walk(directory) {
     if (ignored.has(entry.name)) continue;
     const fullPath = path.join(directory, entry.name);
     if (entry.isDirectory()) await walk(fullPath);
-    else if (entry.isFile() && /\.(js|mjs|css|d\.ts)$/.test(entry.name)) files.push(fullPath);
+    else if (entry.isFile() && /\.(js|mjs|css|ts)$/.test(entry.name)) files.push(fullPath);
   }
 }
 
 /** Confere se a declaração exportada é precedida por um bloco JSDoc. */
 function hasJsDocBefore(lines, index) {
-  for (let cursor = index - 1; cursor >= 0 && !lines[cursor].trim(); cursor -= 1) {
-    // Ignora linhas vazias entre o comentário e a declaração.
+  let cursor=index-1;
+  while(cursor>=0&&!lines[cursor].trim())cursor--;
+  if(cursor<0||!lines[cursor].trim().endsWith("*/"))return false;
+  // Para no início do comentário imediatamente anterior, sem atravessar código.
+  while(cursor>=0){
+    const line=lines[cursor].trim();
+    if(line.startsWith("/**"))return true;
+    if(line.startsWith("/*")||(!line.startsWith("*")&&cursor!==index-1))return false;
+    cursor--;
   }
-  let cursor = index - 1;
-  while (cursor >= 0 && !lines[cursor].trim()) cursor -= 1;
-  if (cursor < 0 || !lines[cursor].trim().endsWith("*/")) return false;
-  while (cursor >= 0 && !lines[cursor].trim().startsWith("/**")) cursor -= 1;
-  return cursor >= 0;
+  return false;
 }
 
 for (const root of roots) await walk(root);
@@ -54,9 +57,9 @@ for (const file of files) {
   const maxLine = Math.max(0, ...lines.map(line => line.length));
   const firstCode = lines.find(line => line.trim())?.trim() || "";
 
-  if (file.endsWith(".js") || file.endsWith(".mjs")) {
+  if (/\.(js|mjs|ts)$/.test(file)) {
     jsFiles += 1;
-    if (!firstCode.startsWith("/**") && !firstCode.startsWith("//")) {
+    if (!firstCode.startsWith("/*") && !firstCode.startsWith("//")) {
       findings.push({ file, kind: "sem descrição inicial do módulo" });
     }
     lines.forEach((line, index) => {
