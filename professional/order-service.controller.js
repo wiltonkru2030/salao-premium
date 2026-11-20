@@ -30,7 +30,11 @@ export function bindOrderService({root,state,client,getEpoch,lock,loadOrders,cho
    if(!current())return;
    await loadOrders();if(!current())return;
    if(state.page==="Comandas"&&state.selectedOrder?.id===orderId)await chooseOrder(orderId);
-   if(current())showNotice("Serviço registrado na comanda.");
+   if(current()){
+    selected=null;
+    input.value="";
+    showNotice("Serviço registrado na comanda.");
+   }
   }catch(error){
    if(current())reportError(error,{context:"App Profissional > registrar serviço realizado"});
    if(current())showNotice("Não foi possível concluir o registro ou atualizar a comanda. Confira os itens antes de tentar novamente.");
