@@ -46,7 +46,7 @@ export async function loadReportsPage() {
   host.dataset.period = period;
   const request=String(Number(host.dataset.request||0)+1);host.dataset.request=request;
   const userId=state.user?.id,role=state.membership?.role;
-  const current=()=>host.isConnected&&state.user?.id===userId&&state.membership?.role===role&&state.organization?.id===orgId&&host.dataset.period===period&&host.dataset.request===request;
+  const current=()=>host.isConnected&&state.page==='Relatórios'&&state.user?.id===userId&&state.membership?.role===role&&state.organization?.id===orgId&&host.dataset.period===period&&host.dataset.request===request;
   const { start, end, startIso, endIso } = monthBounds(period);
   host.querySelector(".result-count").textContent = "Consultando " + dateLabel(start) + "…";
 
