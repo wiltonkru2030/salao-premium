@@ -176,6 +176,26 @@ create policy appointment_blocks_insert_staff on public.appointment_blocks
     )
   );
 
+-- Resolve a filial do profissional autenticado sem recursão de RLS.
+create or replace function private.current_professional_branch_id(p_org_id uuid)
+returns uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select p.branch_id
+  from public.professionals p
+  where p.org_id=p_org_id
+    and p.id=private.current_professional_id(p_org_id)
+  limit 1;
+$function$;
+
+comment on function private.current_professional_branch_id(uuid) is
+  'Retorna a filial do profissional autenticado na organização indicada, sem depender da RLS da tabela professionals.';
+revoke all on function private.current_professional_branch_id(uuid) from public,anon;
+grant execute on function private.current_professional_branch_id(uuid) to authenticated;
+
 -- Acesso amplo de Agenda no App Profissional não revela profissionais de outras unidades.
 drop policy if exists professionals_select_scoped_app on public.professionals;
 create policy professionals_select_scoped_app on public.professionals
@@ -184,12 +204,8 @@ create policy professionals_select_scoped_app on public.professionals
     private.has_org_role(org_id,array['owner','admin','manager','receptionist'])
     or (
       private.professional_app_scope(org_id) in ('calendar_all','all')
-      and exists (
-        select 1 from public.professionals own
-        where own.org_id=professionals.org_id
-          and own.id=private.current_professional_id(professionals.org_id)
-          and professionals.branch_id is not distinct from own.branch_id
-      )
+      and private.current_professional_branch_id(org_id) is not null
+      and professionals.branch_id=private.current_professional_branch_id(org_id)
     )
     or profile_id=(select auth.uid())
   );
