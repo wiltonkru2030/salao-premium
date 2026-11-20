@@ -61,12 +61,14 @@ export async function saveCatalogCategory({client,orgId,categoryId=null,category
   if(!["service","product"].includes(categoryType)||cleanName.length<2||cleanName.length>80) {
     throw new TypeError("Informe um tipo e nome de categoria válido (2 a 80 caracteres).");
   }
-  const {data,error}=await client.rpc("save_catalog_category",{
-    p_org_id:orgId,p_category_id:categoryId||null,p_category_type:categoryType,p_name:cleanName
-  });
-  if(error)throw mapCategoryError(error);
-  if(typeof data!=="string"||!data)throw new Error("O servidor não confirmou a categoria.");
-  return data;
+  try {
+    const {data,error}=await client.rpc("save_catalog_category",{
+      p_org_id:orgId,p_category_id:categoryId||null,p_category_type:categoryType,p_name:cleanName
+    });
+    if(error)throw error;
+    if(typeof data!=="string"||!data)throw new Error("O servidor não confirmou a categoria.");
+    return data;
+  } catch(error) { throw mapCategoryError(error); }
 }
 
 /**
@@ -77,9 +79,11 @@ export async function saveCatalogCategory({client,orgId,categoryId=null,category
 export async function setCatalogCategoryActive({client,orgId,categoryId,active}={}) {
   requireContext(client,orgId);
   if(!categoryId||typeof active!=="boolean")throw new TypeError("Selecione uma categoria e situação válidas.");
-  const {data,error}=await client.rpc("set_catalog_category_active",{
-    p_org_id:orgId,p_category_id:categoryId,p_active:active
-  });
-  if(error)throw mapCategoryError(error);
-  return data===true;
+  try {
+    const {data,error}=await client.rpc("set_catalog_category_active",{
+      p_org_id:orgId,p_category_id:categoryId,p_active:active
+    });
+    if(error)throw error;
+    return data===true;
+  } catch(error) { throw mapCategoryError(error); }
 }
