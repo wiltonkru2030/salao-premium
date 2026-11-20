@@ -1,0 +1,63 @@
+/* SALÃO PREMIUM | Etapa 01: contrato global de legibilidade e responsividade.
+ * Responsabilidade: unificar escala tipográfica, áreas clicáveis e largura de conteúdo.
+ * Não altera lógica, permissões ou dados; respeita os tokens oficiais da marca.
+ * Carregado por último para substituir tamanhos legados de 7–11px.
+ */
+:root{
+  --sp-body-readable:14px;
+  --sp-caption-readable:12px;
+  --sp-section-readable:16px;
+  --sp-title-readable:clamp(24px,2.2vw,32px);
+}
+body{font-size:var(--sp-body-readable)}
+.nav-item{font-size:13px;line-height:1.4;min-height:44px}
+.nav-group-label{font-size:11px;line-height:1.5}
+.brand b{font-size:13px}
+.brand small,.sidebar-footer small{font-size:11px;letter-spacing:.35px}
+.sidebar-footer b{font-size:12px}
+.breadcrumb,.unit-indicator{font-size:12px}
+.page-head h1{font-size:var(--sp-title-readable);line-height:1.2}
+.page-head p{font-size:13px;line-height:1.55;color:var(--sp-muted)}
+.eyebrow,.professional-kicker{font-size:11px;letter-spacing:1.1px}
+.btn{font-size:13px;min-height:44px}
+.icon-btn{min-width:44px;min-height:44px}
+.metric-top,.metric-card small,.section-heading p,.demo-note{font-size:12px;line-height:1.5}
+.metric-card strong{font-size:clamp(23px,2vw,30px)}
+.section-heading h2{font-size:var(--sp-section-readable);line-height:1.4}
+.appointment-preview time,.preview-info b,.preview-info small{font-size:12px}
+.record-main b,.record-trailing>b{font-size:13px;line-height:1.45}
+.record-main small,.record-trailing small{font-size:12px;line-height:1.45}
+th,td{font-size:12px;line-height:1.5}
+th{font-weight:600}
+.status,.subtle-tag,.result-count{font-size:11px}
+.tenant-switcher,.branch-switcher,.tenant-switcher select,.branch-switcher select{font-size:12px}
+:where(input,select,textarea){font-size:14px;max-width:100%}
+:where(.surface,.metric-card,.settings-card){min-width:0}
+:where(.record-main,.record-trailing){min-width:0}
+@media(max-width:1050px){
+ .page-content{padding:24px 20px 44px}
+ .page-head h1{font-size:26px}
+}
+@media(max-width:700px){
+ .page-content{padding:20px 16px 40px}
+ .page-head p{font-size:13px;max-width:none}
+ .nav-item{font-size:14px;min-height:46px}
+ .metric-card{padding:15px}
+ .metric-card strong{font-size:22px}
+ .metric-card small,.metric-top{font-size:12px}
+ .section-heading h2{font-size:15px}
+ .record-main b,.record-trailing>b{font-size:13px}
+ .record-main small,.record-trailing small{font-size:12px}
+ .head-actions .btn{font-size:13px;min-height:44px}
+ .appointment-block b{font-size:12px}
+ .appointment-block small,.appointment-time,.appointment-status{font-size:11px}
+ .status{font-size:11px}
+ .summary-grid small,.summary-grid b{font-size:13px}
+ .settings-nav button{font-size:12px;min-height:44px}
+ .page-head,.section-heading{min-width:0}
+}
+@media(max-width:420px){
+ .metrics{grid-template-columns:1fr 1fr}
+ .metric-card strong{font-size:20px;overflow-wrap:anywhere}
+ .topbar{gap:6px}
+}
