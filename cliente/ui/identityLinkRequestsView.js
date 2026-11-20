@@ -6,6 +6,11 @@
  */
 import { escapeClientHtml } from "./view-utils.js";
 
+/**
+ * Renderiza solicitações pendentes com dados mínimos e ação explícita de consentimento.
+ * @param {{requests?:Array<object>,loading?:boolean}} options - Estado já carregado pelo serviço.
+ * @returns {string} HTML seguro da tela de vínculos.
+ */
 export function renderIdentityLinkRequestsView({requests = [], loading = false} = {}) {
   if (loading) {
     return '<section class="page-content"><div class="page-heading"><span class="eyebrow">SEGURANÇA DA CONTA</span><h1>Vínculos com salões</h1></div><p role="status">Carregando solicitações…</p></section>';
