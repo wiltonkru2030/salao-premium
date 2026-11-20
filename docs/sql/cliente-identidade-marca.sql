@@ -181,6 +181,10 @@ revoke all on function public.register_customer_account(text, text, date) from p
 grant execute on function public.register_customer_account(text, text, date) to authenticated;
 
 -- O Data API exige GRANT explícito; RLS continua responsável pelo isolamento de linhas.
+-- Revoga privilégios herdados/default antes de conceder somente o necessário.
+revoke all on table public.customer_accounts from public, anon, authenticated;
+revoke all on table public.customer_account_customers from public, anon, authenticated;
+
 grant select on public.customer_accounts to authenticated;
 grant select, insert on public.customer_account_customers to authenticated;
 
