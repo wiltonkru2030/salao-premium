@@ -3,14 +3,16 @@
  * Responsabilidade: validar chamadas RPC e mensagens seguras.
  */
 import assert from "node:assert/strict";
-import { getRemoteSettings, saveRemoteSettings, setSettingsAccount, getLocalSettings, saveLocalSettings } from "./settingsService.js";
+import { getRemoteSettings, saveRemoteSettings, setSettingsAccount, getLocalSettings, saveLocalSettings, sanitizeSettings } from "./settingsService.js";
 function mockClient(response){const calls=[];return {calls,client:{rpc:async(name,args)=>{calls.push({name,args});return response;}}};}
 async function run(){
+  assert.deepEqual(sanitizeSettings({theme:"invalid",reminders:"true",promotions:false,defaultCity:"  São Paulo  ",auth_user_id:"other"}),{promotions:false,defaultCity:"São Paulo"});
+  assert.deepEqual(sanitizeSettings(null),{});
   const prefs={theme:"dark",defaultCity:"Três Lagoas",reminders:true};
   const get=mockClient({data:prefs,error:null});
   assert.deepEqual(await getRemoteSettings({client:get.client}),prefs);
   const save=mockClient({data:{...prefs,promotions:false},error:null});
-  assert.equal((await saveRemoteSettings({client:save.client,patch:{promotions:false}})).promotions,false);
+  assert.equal((await saveRemoteSettings({client:save.client,patch:{promotions:false,auth_user_id:"other",theme:"invalid"}})).promotions,false);
   assert.deepEqual(save.calls[0],{name:"update_my_customer_preferences",args:{p_preferences:{promotions:false}}});
   const missing=mockClient({data:null,error:{code:"PGRST202"}});
   await assert.rejects(()=>getRemoteSettings({client:missing.client}),/ainda está sendo ativada/);
