@@ -63,6 +63,9 @@ function normalizePayload(input, orgId) {
   if (!customerName || !serviceName || !professionalId || !input.customer_id || !input.service_id) {
     throw new TypeError("Selecione cliente, serviço e profissional válidos.");
   }
+  if (typeof input.branch_id !== "string" || !input.branch_id.trim()) {
+    throw new TypeError("Selecione a unidade do salão antes de agendar.");
+  }
   if (end.getTime()-start.getTime() > 720*60000) throw new TypeError("A duração do atendimento ultrapassa o limite permitido.");
   const price = Number(input.price);
   if (!Number.isFinite(price) || price < 0) throw new TypeError("Informe um valor válido para o serviço.");
