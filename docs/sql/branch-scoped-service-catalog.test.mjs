@@ -13,6 +13,8 @@ assert.match(normalized,/add column if not exists branch_id uuid/);
 assert.match(normalized,/foreign key\(org_id,branch_id\) references public\.branches\(org_id,id\)/);
 assert.match(normalized,/services_org_branch_active_name_idx/);
 assert.match(normalized,/drop policy if exists services_select_professional_app/);
+assert.match(normalized,/drop policy if exists branches_select_staff/);
+assert.match(normalized,/p\.branch_id=branches\.id/);
 assert.match(normalized,/private\.has_org_role\(org_id,array\['owner','admin','manager','receptionist'\]\)/);
 assert.match(normalized,/private\.professional_app_scope\(org_id\)='self'/);
 assert.match(normalized,/ps\.professional_id=private\.current_professional_id\(services\.org_id\)/);
