@@ -1,6 +1,11 @@
 /** Componente: calendário mensal. Responsabilidade: montar a grade mensal e indicar dias com agendamentos/bloqueios. */
 import {dateKey} from '../utils/date.utils.js';
 import {esc} from '../../utils.js';
+/**
+ * Renderiza a grade mensal de agendamentos e bloqueios.
+ * @param {object} options Data de referência, profissional, agendamentos e bloqueios.
+ * @returns {string} HTML da grade mensal.
+ */
 export function renderMonthCalendar({date,pro,appointments,blockedTimes=[]}){
  const first=new Date(date.getFullYear(),date.getMonth(),1),offset=(first.getDay()+6)%7,days=new Date(date.getFullYear(),date.getMonth()+1,0).getDate(),cells=Math.ceil((offset+days)/7)*7;
  return '<section class="month-calendar surface"><div class="month-weekdays">'+['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="month-grid">'+Array.from({length:cells},(_,i)=>{
