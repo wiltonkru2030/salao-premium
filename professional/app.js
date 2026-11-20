@@ -19,6 +19,7 @@ import { renderProfessionalPasswordChangeView, renderProfessionalLoginView } fro
 import { renderAgendaView } from "./views/agenda.views.js";
 import { handleAgendaClick } from "./agenda.controller.js";
 import { fetchProfessionalAppointments } from "./appointments.service.js";
+import { fetchProfessionalOrders, fetchProfessionalOrderItems } from "./orders.service.js";
 
 // Aplicação PWA do profissional: autenticação, navegação, Agenda, Comandas e Comissões.
 installGlobalErrorHandlers();
@@ -164,8 +165,7 @@ async function loadAppointments(){
 }
 // Carrega comandas visíveis ao usuário autenticado.
 async function loadOrders(){
- const {data,error}=await supabase.from("service_orders").select("id,order_number,status,total,assigned_professional_id,customer_id").eq("org_id",state.orgId).order("created_at",{ascending:false}).limit(100);
- if(error)throw error;state.orders=data||[];
+ state.orders=await fetchProfessionalOrders({client:supabase,organizationId:state.orgId});
 }
 async function loadServices(){
  let query=supabase.from("services").select("id,name,category,duration_minutes,price").eq("org_id",state.orgId).eq("active",true).order("name").limit(250);
@@ -194,9 +194,10 @@ async function loadCommissions(){
 }
 async function loadOrderItems(){
  if(!state.selectedOrder)return;
- const {data,error}=await supabase.from("service_order_items").select("id,item_type,description,quantity,unit_price,total,professional_id,performed_at")
-  .eq("org_id",state.orgId).eq("order_id",state.selectedOrder.id).order("created_at");
- if(error)throw error;state.orderItems=data||[];render();
+ state.orderItems=await fetchProfessionalOrderItems({
+  client:supabase,organizationId:state.orgId,orderId:state.selectedOrder.id
+ });
+ render();
 }
 async function chooseOrder(id){
  state.selectedOrder=state.orders.find(o=>o.id===id)||null;state.orderItems=[];render();await loadOrderItems();
