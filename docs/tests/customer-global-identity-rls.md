@@ -99,17 +99,18 @@ credenciais privilegiadas no cliente.
 
 Depois de aplicar a migration aprovada em ambiente de QA, configurar:
 - `CUSTOMER_A_OWNER_ACCESS_TOKEN`: sessão do owner/admin da Org A;
+- `CUSTOMER_A_PROFESSIONAL_ACCESS_TOKEN`: sessão de profissional da Org A (opcional, para validar bloqueio);
 - `ORG_A_CUSTOMER_ID`: cadastro legado de teste pertencente à Org A;
 - `ORG_B_CUSTOMER_ID`: cadastro legado de teste pertencente à Org B.
 
 O script `tests/integration/customer-global-identity-rls.test.mjs` também deve confirmar:
 
-1. Cliente A não executa a RPC de associação de cadastro legado.
-2. Owner A associa a identidade autenticada A ao cadastro de teste A.
-3. Repetir a mesma associação retorna sucesso sem duplicar o vínculo ou a auditoria.
-4. Owner A não associa a identidade A a um cadastro da Org B.
-5. Owner A não consegue executar a associação informando a Org B.
-6. Profissional e usuário sem papel owner/admin não conseguem associar cadastros.
+1. Cliente A e sessão anônima não executam a RPC de associação de cadastro legado.
+2. Profissional A não executa a RPC (quando o token opcional estiver configurado).
+3. Owner A associa a identidade autenticada A ao cadastro de teste A.
+4. Repetir a mesma associação retorna sucesso sem duplicar o vínculo ou a auditoria.
+5. Owner A não associa a identidade A a um cadastro da Org B.
+6. Owner A não consegue executar a associação informando a Org B.
 7. Duas chamadas concorrentes para o mesmo par (org_id, auth_user_id, customer_id) não criam duplicidade; conflito com outro cadastro deve falhar.
 
 A criação de membership durante uma reserva deverá ser testada junto da RPC transacional de HOLD/agendamento. Não deve existir teste que crie membership apenas por abrir o link público de um salão.
