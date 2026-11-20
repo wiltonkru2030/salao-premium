@@ -14,6 +14,7 @@ function mockClient(tables={},error=null) {
       update(payload){call.action="update";call.payload=payload;return query;},
       maybeSingle(){return query;},
       eq(key,value){call.filters.push(["eq",key,value]);return query;},
+      or(expression){call.or=expression;return query;},
       in(key,values){call.filters.push(["in",key,values]);return query;},
       order(key){call.orders.push(key);return query;},
       limit(value){call.limit=value;return query;},
@@ -55,6 +56,7 @@ async function run() {
   });
   await fetchProfessionalWorkspace({client:branchClient,orgId:"org-a",currentUserId:"owner-a",branchId:"11111111-1111-4111-8111-111111111111"});
   assert.ok(branchClient.calls.find(call=>call.table==="professionals").filters.some(filter=>filter[1]==="branch_id"&&filter[2]==="11111111-1111-4111-8111-111111111111"));
+  assert.equal(branchClient.calls.find(call=>call.table==="services").or,"branch_id.eq.11111111-1111-4111-8111-111111111111,branch_id.is.null");
 
   await assert.rejects(()=>fetchProfessionalWorkspace({client,orgId:"",currentUserId:"owner-a"}),{name:"TypeError"});
   await setProfessionalActive({client,orgId:"org-a",professionalId:"pro-a",active:false});
