@@ -111,9 +111,7 @@ export async function loadServicesPage() {
       '<button class="sp-modal-close" type="button" data-close-service-modal aria-label="Fechar">×</button></header>'+
       '<form id="service-create-form"><input type="hidden" name="service_id"><div class="sp-modal-body">'+
       '<label class="sp-span">Nome do serviço<input name="name" required maxlength="120" placeholder="Ex.: Corte feminino"></label>'+
-      (Array.isArray(serviceCategories)
-        ? '<label>Categoria<select name="category"><option value="">Sem categoria</option>'+serviceCategories.map(category=>'<option value="'+esc(category.name)+'">'+esc(category.name)+'</option>').join("")+'</select></label>'
-        : '<label>Categoria\${categoryField}</label>')+
+      '<label>Categoria'+categoryField+'</label>'+
       '<label>Duração (minutos)<input name="duration" type="number" min="5" max="720" step="5" value="30" required></label>'+
       '<label>Preço (R$)<input name="price" type="text" inputmode="decimal" data-mask="currency" value="0,00" required></label>'+
       '<label class="sp-span">Descrição<textarea name="description" rows="3" maxlength="500" placeholder="Detalhes opcionais do serviço"></textarea></label>'+
