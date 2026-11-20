@@ -31,11 +31,14 @@ export async function loadSalesPage() {
   try {
     ({sales:rows,customers,itemsBySale}=await fetchSalesWorkspace({client:supabase,orgId,limit:200}));
   } catch(error) {
+    if (!host.isConnected || state.organization?.id !== orgId) return;
     reportError(error,{context:"Vendas > carregar histórico"});
     host.innerHTML='<div class="empty-state"><b>Não foi possível carregar as vendas.</b><small>Verifique sua conexão e suas permissões. Tente novamente.</small></div>';
     return;
   }
 
+  if (!host.isConnected || state.organization?.id !== orgId) return;
+  try {
     const totalSales = rows.length;
     const gross = rows.filter(row => row.status !== "cancelled" && row.status !== "refunded")
       .reduce((sum, row) => sum + Number(row.total || 0), 0);
