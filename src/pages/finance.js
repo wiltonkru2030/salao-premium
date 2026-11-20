@@ -8,6 +8,7 @@ import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
 import { head, esc, metric } from "../utils.js";
 import { reportError } from "../utils/errors.js";
+import { sumFinanceAmounts } from "../modules/finance/finance-pagination.js";
 import { fetchFinanceWorkspace } from "../modules/finance/finance.service.js";
 
 const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -31,6 +32,9 @@ export async function loadFinancePage() {
   const orgId = state.organization?.id;
   if (!host || !orgId) return;
 
+  const branchId=state.branch?.id||null;
+  const request=String(Number(host.dataset.request||0)+1);host.dataset.request=request;
+  const current=()=>host.isConnected&&state.organization?.id===orgId&&(state.branch?.id||null)===branchId&&host.dataset.request===request;
   try {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -39,10 +43,11 @@ export async function loadFinancePage() {
     const endIso = nextMonth.toISOString();
 
     const {movements,expenses}=await fetchFinanceWorkspace({
-      client:supabase,orgId,branchId:state.branch?.id||null,startIso,endIso,limit:500
+      client:supabase,orgId,branchId,startIso,endIso,limit:500
     });
 
-    const sum = (rows, predicate) => rows.filter(predicate).reduce((total, row) => total + Number(row.amount || 0), 0);
+    if(!current())return;
+    const sum=sumFinanceAmounts;
     const incoming = sum(movements, row => row.movement_type === "income");
     const outgoing = sum(movements, row => row.movement_type === "expense");
     const paidExpenses = sum(expenses, row => row.status === "paid" && row.paid_at && new Date(row.paid_at) >= monthStart && new Date(row.paid_at) < nextMonth);
@@ -77,10 +82,11 @@ export async function loadFinancePage() {
       '<div class="record-list">' + (movementRows || '<div class="empty-state">Nenhuma movimentação no caixa neste mês.</div>') + '</div></div>' +
       '<div class="surface finance-section"><div class="section-heading"><div><h2>Despesas cadastradas</h2><p>Despesas pagas no mês: ' + money(paidExpenses) + '</p></div>' +
       '<span class="result-count">' + expenses.length + ' registros</span></div>' +
-      '<p class="demo-note">As despesas são compromissos cadastrados; não são somadas novamente às saídas do caixa. A lista considera até 500 registros.</p>' +
+      '<p class="demo-note">As despesas são compromissos cadastrados; não são somadas novamente às saídas do caixa. O resultado inclui todas as páginas consultadas.</p>' +
       '<div class="record-list">' + (expenseRows || '<div class="empty-state">Nenhuma despesa cadastrada.</div>') + '</div></div>';
 
   } catch (error) {
+    if(!current())return;
     const diagnostic = reportError(error, { context: "Financeiro > carregar indicadores", notify: false });
     host.innerHTML = '<div class="empty-state"><b>Não foi possível carregar o Financeiro.</b><small>Verifique sua conexão e suas permissões. Código ' + esc(diagnostic.id) + '</small></div>';
   }
