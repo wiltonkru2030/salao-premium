@@ -103,12 +103,12 @@ function renderTenantControl() {
 /** Seletor de unidade física; a organização continua sendo o limite principal do tenant. */
 function renderBranchControl() {
   const branches=state.availableBranches||[];
+  if(state.membership?.role==="professional") {
+    return '<span class="unit-indicator">'+esc(state.branch?.name||"Unidade não vinculada")+'</span>';
+  }
   if(!branches.length)return "";
   if(branches.length===1) {
     return '<span class="unit-indicator">'+esc(branches[0].name)+'</span>';
-  }
-  if(state.membership?.role==="professional") {
-    return '<span class="unit-indicator">'+esc(state.branch?.name||"Unidade vinculada")+'</span>';
   }
   return '<label class="branch-switcher"><span>Unidade</span><select id="branch-switcher" aria-label="Trocar unidade">'+
     branches.map(branch=>'<option value="'+esc(branch.id)+'" '+(branch.id===state.branch?.id?"selected":"")+'>'+
