@@ -56,31 +56,33 @@ export function renderAvailabilitySettings(data,canManage){
 }
 
 /** Instala eventos uma única vez; cada ação recarrega a seção sem reload da página. */
-export function bindAvailabilitySettings(host,{orgId,branchId,canManage,reload}){
+const bindingContexts=new WeakMap();
+export function bindAvailabilitySettings(host,context){
+ bindingContexts.set(host,context);
  if(host.dataset.availabilityBound==="true") return;
  host.dataset.availabilityBound="true";
  host.addEventListener("submit",async event=>{
   const form=event.target;
   if(!["branch-hours-form","professional-hours-form","branch-closure-form","professional-timeoff-form"].includes(form.id)) return;
   event.preventDefault();
-  if(!canManage) return toast("Seu perfil não pode configurar a disponibilidade.");
+  const current=bindingContexts.get(host);\n  if(!current?.canManage) return toast("Seu perfil não pode configurar a disponibilidade.");
   const values=new FormData(form), get=key=>String(values.get(key)||"").trim();
   const button=form.querySelector('[type="submit"]'); button.disabled=true;
   try{
-   if(form.id==="branch-hours-form") await addBranchBusinessHours(orgId,branchId,{weekday:Number(get("weekday")),opensAt:get("opens_at"),closesAt:get("closes_at")});
-   if(form.id==="professional-hours-form") await addProfessionalWorkingHours(orgId,get("professional_id"),{weekday:Number(get("weekday")),startsAt:get("starts_at"),endsAt:get("ends_at")});
-   if(form.id==="branch-closure-form") await addBranchClosure(orgId,branchId,{startsAt:get("starts_at"),endsAt:get("ends_at"),reason:get("reason")});
-   if(form.id==="professional-timeoff-form") await addProfessionalTimeOff(orgId,get("professional_id"),{startsAt:get("starts_at"),endsAt:get("ends_at"),reason:get("reason")});
-   toast("Disponibilidade atualizada."); await reload();
+   if(form.id==="branch-hours-form") await addBranchBusinessHours(current.orgId,current.branchId,{weekday:Number(get("weekday")),opensAt:get("opens_at"),closesAt:get("closes_at")});
+   if(form.id==="professional-hours-form") await addProfessionalWorkingHours(current.orgId,get("professional_id"),{weekday:Number(get("weekday")),startsAt:get("starts_at"),endsAt:get("ends_at")});
+   if(form.id==="branch-closure-form") await addBranchClosure(current.orgId,current.branchId,{startsAt:get("starts_at"),endsAt:get("ends_at"),reason:get("reason")});
+   if(form.id==="professional-timeoff-form") await addProfessionalTimeOff(current.orgId,get("professional_id"),{startsAt:get("starts_at"),endsAt:get("ends_at"),reason:get("reason")});
+   toast("Disponibilidade atualizada."); await current.reload();
   }catch(error){reportError(error,{context:"Configurações > expediente e disponibilidade"});}
   finally{if(button.isConnected) button.disabled=false;}
  });
  host.addEventListener("click",async event=>{
   const button=event.target.closest("[data-delete-availability]"); if(!button) return;
-  if(!canManage) return toast("Seu perfil não pode excluir horários.");
+  const current=bindingContexts.get(host);\n  if(!current?.canManage) return toast("Seu perfil não pode excluir horários.");
   if(!window.confirm("Deseja excluir este registro de disponibilidade?")) return;
   button.disabled=true;
-  try{await removeAvailabilityEntry(button.dataset.deleteAvailability,button.dataset.id,orgId);toast("Registro excluído.");await reload();}
+  try{await removeAvailabilityEntry(button.dataset.deleteAvailability,button.dataset.id,current.orgId);toast("Registro excluído.");await current.reload();}
   catch(error){reportError(error,{context:"Configurações > excluir disponibilidade"});button.disabled=false;}
  });
 }
