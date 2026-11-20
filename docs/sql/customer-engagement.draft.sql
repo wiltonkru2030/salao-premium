@@ -6,6 +6,25 @@ begin;
 
 grant usage on schema private to authenticated;
 
+create or replace function private.is_public_salon(p_org_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select exists (
+    select 1
+    from public.salon_public_profiles p
+    join public.branch_public_profiles bp on bp.org_id=p.org_id and bp.is_published
+    join public.branches b on b.org_id=bp.org_id and b.id=bp.branch_id and b.active
+    where p.org_id=p_org_id and p.is_published
+  );
+$function$;
+
+revoke all on function private.is_public_salon(uuid) from public,anon;
+grant execute on function private.is_public_salon(uuid) to authenticated;
+
 create table if not exists public.customer_favorites (
   auth_user_id uuid not null references auth.users(id) on delete cascade,
   org_id uuid not null references public.organizations(id) on delete cascade,
@@ -24,10 +43,7 @@ create policy customer_favorites_select_own on public.customer_favorites
 drop policy if exists customer_favorites_insert_own_published on public.customer_favorites;
 create policy customer_favorites_insert_own_published on public.customer_favorites
   for insert to authenticated with check (
-    auth_user_id=(select auth.uid()) and exists (
-      select 1 from public.salon_public_profiles p
-      where p.org_id=customer_favorites.org_id and p.is_published
-    )
+    auth_user_id=(select auth.uid()) and private.is_public_salon(org_id)
   );
 
 drop policy if exists customer_favorites_delete_own on public.customer_favorites;
