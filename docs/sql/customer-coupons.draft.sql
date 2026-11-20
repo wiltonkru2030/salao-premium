@@ -264,6 +264,12 @@ declare
   v_price numeric(12,2);
 begin
   if v_user is null then raise exception 'Entre na sua conta para reservar um horário.' using errcode='42501'; end if;
+  if not exists (
+    select 1 from public.salon_public_profiles sp
+    join public.branch_public_profiles bp on bp.org_id=sp.org_id and bp.branch_id=p_branch_id and bp.is_published
+    join public.branches b on b.org_id=bp.org_id and b.id=bp.branch_id and b.active
+    where sp.org_id=p_org_id and sp.is_published
+  ) then raise exception 'Este salão ainda não está disponível para agendamento público.' using errcode='22023'; end if;
 
   if nullif(btrim(p_coupon_code),'') is not null then
     select c.* into v_coupon
