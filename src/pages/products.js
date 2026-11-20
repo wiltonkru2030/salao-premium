@@ -11,8 +11,10 @@ import { head, esc, toast, btn } from "../utils.js";
 import { parseBRL, applyInputMask } from "../utils/input-masks.js";
 import { reportError } from "../utils/errors.js";
 import { listProducts, saveProduct, setProductActive } from "../modules/catalog/products.service.js";
+import { listCatalogCategories } from "../modules/catalog/categories.service.js";
 
 let modalListenerInstalled=false;
+let productCategories=null;
 const canManageProducts=()=>["owner","admin"].includes(state.membership?.role);
 const money=value=>Number(value||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
@@ -29,7 +31,15 @@ function openProductModal(product=null) {
   form.elements.product_id.value=product?.id||"";
   form.elements.name.value=product?.name||"";
   form.elements.sku.value=product?.sku||"";
-  form.elements.category.value=product?.category||"";
+  const categoryField=form.elements.category;
+  if(categoryField.tagName==="SELECT"&&product?.category&&
+     ![...categoryField.options].some(option=>option.value===product.category)) {
+    const option=document.createElement("option");
+    option.value=product.category;
+    option.textContent=product.category+" (inativa)";
+    categoryField.add(option);
+  }
+  categoryField.value=product?.category||"";
   form.elements.cost_price.value=Number(product?.cost_price||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
   form.elements.sale_price.value=Number(product?.sale_price||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
   form.elements.stock_quantity.value=Number(product?.stock_quantity||0);
@@ -62,6 +72,14 @@ export async function loadProductsPage() {
   let products;
   try {
     products=await listProducts({client:supabase,orgId:state.organization.id});
+    try {
+      productCategories=await listCatalogCategories({
+        client:supabase,orgId:state.organization.id,categoryType:"product",activeOnly:true
+      });
+    } catch(categoryError) {
+      if(["PGRST202","PGRST205","42P01","42883"].includes(categoryError?.code))productCategories=null;
+      else throw categoryError;
+    }
   } catch(error) {
     reportError(error,{context:"Produtos > carregar lista"});
     host.innerHTML='<div class="empty-state">Não foi possível carregar os produtos. Atualize a página e tente novamente.</div>';
@@ -88,7 +106,9 @@ export async function loadProductsPage() {
       '<form id="product-create-form"><input type="hidden" name="product_id"><div class="sp-modal-body">'+
       '<label class="sp-span">Nome do produto<input name="name" required maxlength="120" placeholder="Nome do produto"></label>'+
       '<label>SKU / Código<input name="sku" maxlength="64" placeholder="Código interno"></label>'+
-      '<label>Categoria<input name="category" maxlength="80" placeholder="Ex.: Cuidados capilares"></label>'+
+      (Array.isArray(productCategories)
+        ? '<label>Categoria<select name="category"><option value="">Sem categoria</option>'+productCategories.map(category=>'<option value="'+esc(category.name)+'">'+esc(category.name)+'</option>').join("")+'</select></label>'
+        : '<label>Categoria<input name="category" maxlength="80" placeholder="Ex.: Cuidados capilares"></label>')+
       '<label>Custo (R$)<input name="cost_price" type="text" inputmode="decimal" data-mask="currency" value="0,00"></label>'+
       '<label>Preço de venda (R$)<input name="sale_price" type="text" inputmode="decimal" data-mask="currency" value="0,00"></label>'+
       '<label>Estoque inicial / atual<input name="stock_quantity" type="number" min="0" step="0.001" value="0"></label>'+
