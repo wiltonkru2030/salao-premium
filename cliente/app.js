@@ -338,7 +338,6 @@ async function runAction(action, button = null) {
       const orgId=button?.dataset.orgId||salonDetailState.salon?.org_id;
       if(!orgId)throw new Error("Não foi possível identificar o salão.");
       if(favoriteOrgIds.has(orgId))await removeFavorite({client:supabase,orgId});
-      requireCurrent(epoch);
       else await addFavorite({client:supabase,orgId});
       requireCurrent(epoch);
       await loadFavorites();
