@@ -62,7 +62,7 @@ const migrationFiles = [
 ];
 const appliedSql = (await Promise.all(migrationFiles.map(file =>
   readFile(new URL(file, migrationDirectory), "utf8")
-))).join("\\n").toLowerCase();
+))).join("\n").toLowerCase();
 
 for (const table of ["salon_public_profiles", "branch_public_profiles"]) {
   assert.match(appliedSql, new RegExp("create table public\\." + table + "\\b"));
@@ -76,7 +76,7 @@ assert.match(appliedSql, /grant usage on schema private to anon, authenticated/)
 assert.ok(appliedSql.includes("grant execute on function private.search_public_salons"));
 assert.ok(appliedSql.includes("grant execute on function private.get_public_salon_catalog"));
 assert.ok(appliedSql.includes("grant execute on function private.get_customer_available_slots"));
-assert.ok(!appliedSql.split("\\n").some(line =>
+assert.ok(!appliedSql.split("\n").some(line =>
   line.includes("grant execute on function private.save_public_salon_profile") && line.includes("to anon")
 ));
 assert.match(appliedSql, /appointment_holds/);
