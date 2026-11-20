@@ -4,7 +4,7 @@
  * Segurança: a validação definitiva de disponibilidade deve ser repetida no backend.
  */
 import {timeToMinutes} from './duration.utils.js';
-const releasesSlot=item=>['Cancelado','Falta'].includes(item.status);
+const releasesSlot=item=>['Cancelado','Falta','cancelled','no_show'].includes(item.status);
 /** Localiza agendamento do mesmo profissional/dia com intervalo sobreposto, ignorando o próprio registro. */
 export function findConflict(items,candidate,ignoreId=candidate.id){
  const start=timeToMinutes(candidate.time),end=start+Number(candidate.duration||0);
@@ -25,7 +25,7 @@ export function validateAppointment(candidate,items,{opening='08:00',closing='20
  else {const d=new Date(candidate.date+'T12:00:00');if(Number.isNaN(d.getTime())||d.toISOString().slice(0,10)!==candidate.date)errors.push('A data informada não existe.')}
  if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(candidate.time||''))errors.push('Informe um horário válido.');
  if(!Number.isInteger(Number(candidate.duration))||Number(candidate.duration)<=0||Number(candidate.duration)>720)errors.push('A duração deve ser um número inteiro entre 1 e 720 minutos.');
- if(!Number.isInteger(Number(candidate.pro))||Number(candidate.pro)<0)errors.push('Selecione um profissional válido.');
+ const validProfessional=(typeof candidate.pro==='string'&&candidate.pro.trim().length>0)||(Number.isInteger(Number(candidate.pro))&&Number(candidate.pro)>=0);\n if(!validProfessional)errors.push('Selecione um profissional válido.');
  if(!errors.length){
   const start=timeToMinutes(candidate.time),end=start+Number(candidate.duration);
   if(start<timeToMinutes(opening)||end>timeToMinutes(closing))errors.push('O atendimento deve ficar entre '+opening+' e '+closing+'.');
