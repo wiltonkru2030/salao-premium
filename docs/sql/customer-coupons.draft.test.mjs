@@ -66,3 +66,43 @@ assert.match(normalized,/status='redeemed'/);
 assert.match(normalized,/private\.create_customer_appointment_hold\(/);
 
 console.log("Contrato estático do SQL de cupons: OK (não equivale à execução no PostgreSQL).");
+
+/** Confere também as migrations efetivamente aplicadas no Supabase. */
+const migrationDirectory = new URL("../../supabase/migrations/", import.meta.url);
+const migrationFiles = [
+  "20261120065524_customer_coupons_transactional.sql",
+  "20261120065604_restrict_legacy_hold_private_entrypoints.sql"
+];
+const appliedSql = (await Promise.all(migrationFiles.map(file =>
+  readFile(new URL(file, migrationDirectory), "utf8")
+))).join("\n").toLowerCase();
+
+for (const table of ["salon_coupons", "salon_coupon_services", "customer_coupon_redemptions"]) {
+  assert.match(appliedSql, new RegExp("create table public\\." + table + "\\b"));
+  assert.match(appliedSql, new RegExp("alter table public\\." + table + " enable row level security"));
+}
+for (const rpc of [
+  "save_salon_coupon","deactivate_salon_coupon","validate_public_coupon",
+  "create_customer_appointment_hold_with_coupon","confirm_customer_appointment_hold_with_coupon",
+  "cancel_customer_appointment_hold_with_coupon"
+]) {
+  assert.match(appliedSql, new RegExp("create or replace function public\\." + rpc + "\\b"));
+  assert.match(appliedSql, new RegExp("create or replace function private\\." + rpc + "\\b"));
+}
+assert.match(appliedSql, /private\\.has_org_role\(p_org_id,array\['owner','admin'\]::text\[\]\)/);
+assert.match(appliedSql, /for update/);
+assert.match(appliedSql, /set price=v_hold\.coupon_final_amount/);
+assert.match(appliedSql, /status='released'/);
+assert.match(appliedSql, /status='redeemed'/);
+assert.match(appliedSql, /create trigger appointment_hold_release_coupon_trigger/);
+assert.match(appliedSql, /create trigger audit_row_change after insert or update or delete on public\.salon_coupons/);
+assert.match(appliedSql, /create trigger audit_row_change after insert or update or delete on public\.customer_coupon_redemptions/);
+for (const legacy of [
+  "private.create_customer_appointment_hold(uuid,uuid,uuid,uuid,timestamptz)",
+  "private.confirm_customer_appointment_hold(uuid)",
+  "private.cancel_customer_appointment_hold(uuid)"
+]) {
+  assert.ok(appliedSql.includes("revoke all on function " + legacy + " from public,anon,authenticated"));
+}
+
+console.log("Contrato estático das migrations de cupons: OK (não equivale à execução transacional no PostgreSQL).");
