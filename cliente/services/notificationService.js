@@ -28,11 +28,11 @@ function mapNotificationError(error) {
  * @returns {Promise<Array<object>>} Notificações da própria conta.
  */
 export async function listNotifications({client,limit=50}={}) {
-  await currentUser(client);
+  const user=await currentUser(client);
   if(!Number.isInteger(limit)||limit<1||limit>100)throw new TypeError("Quantidade de notificações inválida.");
   const {data,error}=await client.from("customer_notifications")
     .select("id,org_id,appointment_id,kind,title,body,read_at,created_at")
-    .order("created_at",{ascending:false}).limit(limit);
+    .eq("auth_user_id",user.id).order("created_at",{ascending:false}).order("id",{ascending:false}).limit(limit);
   if(error)throw mapNotificationError(error);
   return Array.isArray(data)?data:[];
 }
@@ -43,12 +43,12 @@ export async function listNotifications({client,limit=50}={}) {
  * @returns {Promise<boolean>} true se o registro foi atualizado.
  */
 export async function markNotificationRead({client,notificationId}={}) {
-  await currentUser(client);
+  const user=await currentUser(client);
   if(typeof notificationId!=="string"||!/^([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.test(notificationId)) {
     throw new TypeError("Notificação inválida.");
   }
   const {data,error}=await client.from("customer_notifications").update({read_at:new Date().toISOString()})
-    .eq("id",notificationId).select("id").maybeSingle();
+    .eq("auth_user_id",user.id).eq("id",notificationId).is("read_at",null).select("id").maybeSingle();
   if(error)throw mapNotificationError(error);
   return Boolean(data?.id);
 }
