@@ -8,32 +8,27 @@ Os arquivos marcados como draft são documentos de revisão, não migrations apl
 4. validação do painel, app da cliente e app profissional;
 5. autorização explícita para produção e plano de rollback.
 
-## Diretório e app da cliente
-1. docs/sql/customer-public-directory.draft.sql — perfis públicos do salão e filiais, RLS, busca, catálogo e gravação owner/admin.
-2. docs/sql/customer-availability-slots.draft.sql — consulta de horários, limitada a salões e unidades publicados.
-3. docs/sql/audit-composite-record-identifiers.draft.sql — complementa auditoria e lixeira das tabelas globais e chaves compostas; depende das tabelas de identidade global já aplicadas.
-4. docs/sql/customer-appointment-history.draft.sql — histórico da própria identidade global autenticada.
-5. docs/sql/customer-engagement.draft.sql — favoritos, notificações internas por trigger e preferências globais.
-6. docs/sql/customer-coupons.draft.sql — gestão de cupons, validação, reserva transacional no HOLD e resgate na confirmação.
+## Migrations já aplicadas no Supabase conectado
+- 20261120041015_customer_global_identity.sql e 20261120041034_customer_identity_link_hardening.sql — perfil global, memberships, mapeamento legado e confirmação autenticada.
+- 20261120041443_customer_appointment_holds.sql, 20261120041450_customer_appointment_holds_rpc_security.sql, 20261120041537_customer_appointment_hold_cancellation.sql e 20261120041630_customer_appointment_holds_private_rpc.sql — HOLDs transacionais e wrappers invoker.
+- 20261120041928_customer_booking_business_and_professional_availability.sql e 20261120063615_enforce_availability_on_admin_appointments.sql — expediente, folgas, fechamentos e conflitos.
+- 20261120064407_public_salon_directory_and_availability.sql, 20261120064553_align_public_profiles_with_settings.sql, 20261120064639_restrict_private_schema_public_api.sql e 20261120064758_allow_members_read_public_profile_settings.sql — vitrine, catálogo, busca pública e consulta de horários.
+- 20261120065524_customer_coupons_transactional.sql, 20261120065604_restrict_legacy_hold_private_entrypoints.sql e 20261120070111_coupon_fk_indexes_and_public_profile_policy_cleanup.sql — cupons e reserva/resgate transacional.
 
-A etapa 1 é pré-requisito das etapas 2, 5 e 6. As etapas 3 e 4 dependem das migrations de identidade global já aplicadas. A etapa 6 depende também de appointments, appointment_holds e serviços ativos.
+## Rascunhos ainda pendentes
+1. docs/sql/audit-composite-record-identifiers.draft.sql — auditoria/lixeira das tabelas globais e identificadores de chaves compostas; depende das tabelas de identidade global já aplicadas.
+2. docs/sql/customer-appointment-history.draft.sql — histórico da própria identidade global autenticada.
+3. docs/sql/customer-engagement.draft.sql — favoritos, notificações internas por trigger e preferências globais.
+4. supabase/migrations/20261119170000_snapshot_commission_rate_on_first_payment.sql — congela a regra de comissão no primeiro pagamento do item. Está versionada, mas não consta no histórico do Supabase conectado.
+5. docs/sql/commission-refund-reversals.draft.sql — débito de comissões já pagas, compensação automática no próximo repasse e wrappers SECURITY INVOKER.
+6. docs/sql/security-definer-api-hardening.draft.sql — move 14 implementações SECURITY DEFINER do schema public para private, mantendo contratos PostgREST em wrappers SECURITY INVOKER.
 
-## Comissões
-1. supabase/migrations/20261119170000_snapshot_commission_rate_on_first_payment.sql — congela a regra de comissão no primeiro pagamento do item. Está versionada, mas não consta no histórico do Supabase conectado.
-2. docs/sql/commission-refund-reversals.draft.sql — débito de comissões já pagas, compensação automática no próximo repasse e wrappers SECURITY INVOKER. Ainda não aplicada.
-
-O rascunho de reversão pressupõe as tabelas atuais de comissões e repasses. Deve ser testado com pagamentos parciais, comissão já paga, estorno total e repasse líquido.
-
-## Hardening de RPCs
-- docs/sql/security-definer-api-hardening.draft.sql — move 14 implementações SECURITY DEFINER do schema public para private, mantendo contratos PostgREST em wrappers SECURITY INVOKER.
-- O rascunho de estorno também migra pay_professional_commissions e refund_service_order. Os dois rascunhos devem ser revisados em conjunto para não criar funções duplicadas.
-- O hardening preserva execução para authenticated e service_role, mas não concede acesso a anon.
-- Confirmar que private não está na lista de schemas expostos pela API.
+Os rascunhos de hardening e estorno precisam ser revisados em conjunto: o rascunho de estorno também migra pay_professional_commissions e refund_service_order. Não executar os dois isoladamente sem reconciliar as funções duplicadas.
 
 ## Auditoria global
 - docs/sql/audit-composite-record-identifiers.draft.sql — atualiza a função de auditoria para registrar identificadores de chaves compostas e instala gatilhos nas tabelas de identidade global. Ainda não aplicada.
 
 ## Não incluído nesta etapa
 - Definir faixas de comissão progressiva por meta/período, se o negócio realmente exigir faixas variáveis.
-- Aplicar os rascunhos em produção.
+- Aplicar os rascunhos pendentes em produção.
 - Envio de notificações push, e-mail ou WhatsApp.
