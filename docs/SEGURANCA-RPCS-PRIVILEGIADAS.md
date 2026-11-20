@@ -64,7 +64,7 @@ Não considerar o módulo financeiro aprovado para produção até concluir essa
 
 ## Contratos financeiros adicionais
 
-Em 20/11/2026, foi aplicada a migration `20261120073500_complete_branch_cash_register_and_cash_summary`:
+Em 20/11/2026, foi aplicada a migration `20261120073222_complete_branch_cash_register_and_cash_summary`:
 - `open_cash_register_for_branch`: wrapper público `SECURITY INVOKER`; implementação privada valida papel, filial ativa e serializa abertura concorrente por filial.
 - `get_cash_register_summary`: wrapper público `SECURITY INVOKER`; implementação privada valida o acesso ao caixa e retorna totais de dinheiro físico.
 - `close_cash_register`: a implementação privada foi corrigida para calcular o valor esperado apenas com movimentos em dinheiro (`payment_method = 'cash'`), pois PIX e cartões não fazem parte do dinheiro contado na gaveta.
