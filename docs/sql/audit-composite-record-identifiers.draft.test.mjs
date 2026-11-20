@@ -28,4 +28,14 @@ for(const table of [
 ]) {
   assert.match(normalized,new RegExp("create trigger audit_row_change after insert or update or delete on public\\."+table));
 }
+const migration=await readFile(
+  new URL("../../supabase/migrations/20261120071000_audit_composite_record_identifiers.sql",import.meta.url),"utf8"
+);
+assert.match(migration,/create or replace function private\.capture_row_audit/);
+assert.match(migration,/create trigger audit_row_change after insert or update or delete on public\.customer_profiles/);
+assert.match(migration,/create trigger audit_row_change after insert or update or delete on public\.customer_tenant_memberships/);
+assert.match(migration,/create trigger audit_row_change after insert or update or delete on public\.customer_account_customers/);
+assert.match(migration,/create trigger audit_row_change after insert or update or delete on public\.customer_identity_link_requests/);
+assert.match(migration,/revoke all on function private\.capture_row_audit\(\) from public,anon,authenticated/);
+
 console.log("Contrato estático da auditoria global: OK (não equivale à execução no PostgreSQL).");
