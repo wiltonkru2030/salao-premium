@@ -68,11 +68,14 @@ export function bindCustomerEvents({host,client,customerPageState,customerContex
     const snapshot=customerPageState.current(host,customerContextKey());
     const customer=snapshot?.customers.find(row=>row.id===toggle.dataset.toggleCustomer);
     if(!customer||toggle.disabled)return;
+    // Captura o contexto antes da confirmação para evitar gravação em outra unidade.
+    const context=getContext();
     const nextActive=!customer.active;
     if(!window.confirm(nextActive?"Reativar este cliente?":"Inativar este cliente? O histórico de atendimentos será preservado."))return;
+    if(!customerPageState.isCurrent(host,snapshot,customerContextKey()))return;
     toggle.disabled=true;
     try {
-      await setCustomerActive({client,orgId:getContext().orgId,customerId:customer.id,active:nextActive});
+      await setCustomerActive({client,orgId:context.orgId,customerId:customer.id,active:nextActive});
       if(!customerPageState.isCurrent(host,snapshot,customerContextKey()))return;
       toast(nextActive?"Cliente reativado.":"Cliente inativado.");
       await loadCustomersPage();
@@ -94,10 +97,12 @@ export function bindCustomerEvents({host,client,customerPageState,customerContex
     const snapshot=customerPageState.current(host,customerContextKey());
     if(!snapshot||!submit||submit.disabled)return;
     if(customerId&&!snapshot.customers.some(row=>row.id===customerId))return toast("Cliente não encontrado. Atualize a lista.");
+    // Mantém o contexto original durante toda a operação assíncrona.
+    const context=getContext();
     submit.disabled=true;
     try {
       await saveCustomer({
-        client,orgId:getContext().orgId,branchId:getContext().branchId,customerId,
+        client,orgId:context.orgId,branchId:context.branchId,customerId,
         name:values.get("name"),phone:values.get("phone"),
         email:values.get("email"),birthDate:values.get("birth_date")
       });
