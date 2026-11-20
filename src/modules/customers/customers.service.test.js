@@ -11,6 +11,8 @@ function mockClient(tables={},error=null) {
     const call={table,filters:[],range:null,payload:null};calls.push(call);
     const query={
       select(columns){call.columns=columns;return query;},
+      maybeSingle(){return query;},
+      single(){return query;},
       insert(payload){call.action="insert";call.payload=payload;return query;},
       update(payload){call.action="update";call.payload=payload;return query;},
       eq(key,value){call.filters.push([key,value]);return query;},
@@ -19,6 +21,8 @@ function mockClient(tables={},error=null) {
       then(resolve,reject){
         if(error)return Promise.resolve({data:null,error}).then(resolve,reject);
         const rows=(tables[table]||[]).filter(row=>call.filters.every(([key,value])=>row[key]===value));
+        if(call.action==="insert")return Promise.resolve({data:{id:"created-customer"},error:null}).then(resolve,reject);
+        if(call.action==="update"&&!call.range)return Promise.resolve({data:rows[0]||null,error:null}).then(resolve,reject);
         const [start,end]=call.range||[0,249];
         return Promise.resolve({data:rows.slice(start,end+1),error:null}).then(resolve,reject);
       }
