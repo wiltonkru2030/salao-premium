@@ -204,7 +204,32 @@ assert.ok(
 );
 
 // ---------------------------------------------------------------------------
-// 3. O cliente não pode criar memberships nem associações diretamente.
+// 3. Solicitações de vínculo não podem ser consultadas nem alteradas via tabela.
+//    O cliente usa somente as RPCs autenticadas de consentimento.
+// ---------------------------------------------------------------------------
+const directLinkRequestsRead = await request(
+  customerA,
+  "/customer_identity_link_requests?select=id"
+);
+expectDenied(directLinkRequestsRead, "Leitura direta da tabela de solicitações");
+
+const directLinkRequestsInsert = await request(
+  customerA,
+  "/customer_identity_link_requests",
+  {
+    method: "POST",
+    body: {
+      org_id: ENV.ORG_A_ID,
+      customer_id: ENV.ORG_A_CUSTOMER_ID || "00000000-0000-4000-8000-000000000001",
+      target_auth_user_id: ENV.CUSTOMER_A_ID,
+      requested_by: ENV.CUSTOMER_A_ID
+    }
+  }
+);
+expectDenied(directLinkRequestsInsert, "Criação direta de solicitação de vínculo");
+
+// ---------------------------------------------------------------------------
+// 4. O cliente não pode criar memberships nem associações diretamente.
 // ---------------------------------------------------------------------------
 const directMembershipInsert = await request(
   customerA,
@@ -237,7 +262,7 @@ const directMappingInsert = await request(
 expectDenied(directMappingInsert, "Criação direta de associação legada");
 
 // ---------------------------------------------------------------------------
-// 4. Telefone verificado é campo protegido pelo banco.
+// 5. Telefone verificado é campo protegido pelo banco.
 // ---------------------------------------------------------------------------
 const verifiedPhoneWrite = await request(
   customerA,
@@ -250,7 +275,7 @@ const verifiedPhoneWrite = await request(
 expectDenied(verifiedPhoneWrite, "Alteração direta de phone_verified_at");
 
 // ---------------------------------------------------------------------------
-// 5. Associação legado em duas etapas: solicitação pelo salão e confirmação
+// 6. Associação legado em duas etapas: solicitação pelo salão e confirmação
 //    pela identidade cliente destinatária. Não há RPC de associação imediata.
 // ---------------------------------------------------------------------------
 const RPC_ENV = [
