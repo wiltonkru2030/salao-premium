@@ -108,7 +108,16 @@ async function runAction(action, button) {
       locationLabel = "Localização obtida (precisão aproximada: " + Math.round(position.accuracy) + " m)";
       renderApp();
       setNotice("Localização disponível neste aparelho. Ela ainda não foi enviada ao servidor.", "success");
-    } else if (action === "save-location") {\n      const form = root.querySelector("[data-location-form]");\n      const city = form && form.elements.city.value.trim();\n      const neighborhood = form && form.elements.neighborhood.value.trim();\n      if (!city || city.length < 2) throw new Error("Informe uma cidade válida.");\n      saveLocalSettings({defaultCity: city, defaultNeighborhood: neighborhood || null});\n      locationLabel = neighborhood ? city + " · " + neighborhood : city;\n      renderApp();\n      setNotice("Região padrão salva neste aparelho.", "success");\n    } else if (action === "theme") {
+    } else if (action === "save-location") {
+      const form = root.querySelector("[data-location-form]");
+      const city = form && form.elements.city.value.trim();
+      const neighborhood = form && form.elements.neighborhood.value.trim();
+      if (!city || city.length < 2) throw new Error("Informe uma cidade válida.");
+      saveLocalSettings({defaultCity: city, defaultNeighborhood: neighborhood || null});
+      locationLabel = neighborhood ? city + " · " + neighborhood : city;
+      renderApp();
+      setNotice("Região padrão salva neste aparelho.", "success");
+    } else if (action === "theme") {
       const current = getLocalSettings().theme;
       saveLocalSettings({theme: current === "system" ? "light" : current === "light" ? "dark" : "system"});
       renderApp();
@@ -128,7 +137,13 @@ async function runAction(action, button) {
     if (current) current.disabled = false;
   }
 }
-root.addEventListener("submit", function (event) {\n  const form = event.target.closest("[data-location-form]");\n  if (!form) return;\n  event.preventDefault();\n  runAction("save-location", form.querySelector("button[type=submit]"));\n});\nroot.addEventListener("click", function (event) {
+root.addEventListener("submit", function (event) {
+  const form = event.target.closest("[data-location-form]");
+  if (!form) return;
+  event.preventDefault();
+  runAction("save-location", form.querySelector("button[type=submit]"));
+});
+root.addEventListener("click", function (event) {
   const button = event.target.closest("[data-action]");
   if (button) runAction(button.dataset.action, button);
 });
