@@ -322,7 +322,13 @@ as $function$
       ))) <= least(200.0,greatest(0.1,coalesce(p_radius_km,30)))
     ))
   order by case when p_latitude is not null then 0 else 1 end,
-    distance_km asc nulls last,branch_profile.city,profile.display_name
+    case when p_latitude is null then null::double precision else
+      6371.0*acos(least(1.0,greatest(-1.0,
+        cos(radians(p_latitude))*cos(radians(branch_profile.latitude))
+        *cos(radians(branch_profile.longitude)-radians(p_longitude))
+        +sin(radians(p_latitude))*sin(radians(branch_profile.latitude))
+      ))) end asc nulls last,
+    branch_profile.city,profile.display_name
   limit least(100,greatest(1,coalesce(p_limit,30)));
 $function$;
 
