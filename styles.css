@@ -28,3 +28,6 @@
 
 /* Módulo 02 — shell e navegação adaptados por largura de tela. */
 @import url('./src/styles/design-shell-responsive.css');
+
+/* Módulo 03 — dashboard executivo. */
+@import url('./src/styles/design-dashboard.css');
