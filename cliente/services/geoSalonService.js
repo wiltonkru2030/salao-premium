@@ -5,7 +5,7 @@ import { searchPublicSalons } from "./salonDirectoryService.js";
  * Responsabilidade: obter localização com consentimento e calcular distâncias.
  * A localização é mantida em memória; não é enviada nem persistida automaticamente.
  */
-export function getCurrentPosition({ timeout = 12000, maximumAge = 60000 } = {}) {
+/** Obtém coordenadas somente após ação explícita da cliente e mantém o resultado em memória.\n * @param {object} options Limite de espera e idade máxima do cache do navegador.\n * @returns {Promise<{latitude:number,longitude:number,accuracy:number}>} Posição aproximada.\n * @throws {Error} Quando permissão, dispositivo ou tempo de resposta impedirem a leitura.\n */\nexport function getCurrentPosition({ timeout = 12000, maximumAge = 60000 } = {}) {
   return new Promise((resolve, reject) => {
     if (!globalThis.navigator?.geolocation) {
       reject(new Error("Este aparelho não disponibiliza localização pelo navegador."));
@@ -30,7 +30,7 @@ export function getCurrentPosition({ timeout = 12000, maximumAge = 60000 } = {})
   });
 }
 
-export function validateCoordinates(latitude, longitude) {
+/** Valida latitude/longitude antes de qualquer cálculo ou consulta geográfica.\n * @param {number|string} latitude Latitude em graus.\n * @param {number|string} longitude Longitude em graus.\n * @returns {{latitude:number,longitude:number}} Coordenadas numéricas normalizadas.\n * @throws {Error} Quando as coordenadas estiverem fora dos limites geográficos.\n */\nexport function validateCoordinates(latitude, longitude) {
   const lat = Number(latitude), lng = Number(longitude);
   if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) {
     throw new Error("A localização informada é inválida.");
@@ -38,7 +38,7 @@ export function validateCoordinates(latitude, longitude) {
   return { latitude: lat, longitude: lng };
 }
 
-export function distanceInKm(origin, destination) {
+/** Calcula distância geodésica aproximada entre dois pontos pelo método de Haversine.\n * @param {{latitude:number,longitude:number}} origin Ponto de origem.\n * @param {{latitude:number,longitude:number}} destination Ponto de destino.\n * @returns {number} Distância aproximada em quilômetros.\n * @throws {Error} Quando qualquer ponto não contiver coordenadas válidas.\n */\nexport function distanceInKm(origin, destination) {
   const a = validateCoordinates(origin?.latitude, origin?.longitude);
   const b = validateCoordinates(destination?.latitude, destination?.longitude);
   const radians = value => value * Math.PI / 180;
