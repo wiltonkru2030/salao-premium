@@ -179,7 +179,7 @@ Complemento do fluxo: o rascunho também define `get_my_pending_customer_link_re
 
 ## Migration versionada — 20/11/2026
 
-Foi adicionada a migration `supabase/migrations/20261120050000_customer_global_identity.sql` à branch de desenvolvimento.
+Foi adicionada a migration `supabase/migrations/20261120041015_customer_global_identity.sql` à branch de desenvolvimento.
 
 Ela reúne:
 - Perfil global por `auth.users.id`.
