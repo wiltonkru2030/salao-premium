@@ -21,17 +21,9 @@ const DEFAULTS = Object.freeze({
   defaultNeighborhood: null
 });
 
-export function getLocalSettings() {
-  try {
-    const raw = globalThis.localStorage?.getItem(storageKey());
-    const stored = raw ? JSON.parse(raw) : {};
-    return { ...DEFAULTS, ...(stored && typeof stored === "object" ? stored : {}) };
-  } catch {
-    return { ...DEFAULTS };
-  }
-}
-
-export function saveLocalSettings(patch = {}) {
+/** Filtra preferências locais e remotas, rejeitando chaves desconhecidas e tipos inválidos. */
+export function sanitizeSettings(patch={}) {
+  if(!patch||typeof patch!=="object"||Array.isArray(patch))return {};
   const allowed = {};
   if (["system", "light", "dark"].includes(patch.theme)) allowed.theme = patch.theme;
   for (const key of ["reminders", "appointmentChanges", "coupons", "promotions"]) {
@@ -43,6 +35,22 @@ export function saveLocalSettings(patch = {}) {
       allowed[key] = value || null;
     }
   }
+  return allowed;
+}
+
+/** Lê exclusivamente preferências válidas da conta ativa. */
+export function getLocalSettings() {
+  try {
+    const raw = globalThis.localStorage?.getItem(storageKey());
+    const stored = raw ? JSON.parse(raw) : {};
+    return { ...DEFAULTS, ...sanitizeSettings(stored) };
+  } catch {
+    return { ...DEFAULTS };
+  }
+}
+
+export function saveLocalSettings(patch = {}) {
+  const allowed = sanitizeSettings(patch);
   const next = { ...getLocalSettings(), ...allowed };
   try {
     if (!globalThis.localStorage) throw new Error("storage-unavailable");
@@ -77,7 +85,7 @@ export async function getRemoteSettings({client}={}) {
   if(error)throw new Error(["PGRST202","42883"].includes(error.code)
     ?"A sincronização das preferências ainda está sendo ativada."
     :"Não foi possível carregar suas preferências.");
-  return data&&typeof data==="object"&&!Array.isArray(data)?data:{};
+  return sanitizeSettings(data);
 }
 
 /**
@@ -87,9 +95,9 @@ export async function getRemoteSettings({client}={}) {
  */
 export async function saveRemoteSettings({client,patch={}}={}) {
   if(!client||typeof client.rpc!=="function")throw new TypeError("A conexão das preferências não está disponível.");
-  const {data,error}=await client.rpc("update_my_customer_preferences",{p_preferences:patch});
+  const {data,error}=await client.rpc("update_my_customer_preferences",{p_preferences:sanitizeSettings(patch)});
   if(error)throw new Error(["PGRST202","42883"].includes(error.code)
     ?"A sincronização das preferências ainda está sendo ativada."
     :"Não foi possível salvar suas preferências.");
-  return data&&typeof data==="object"&&!Array.isArray(data)?data:{};
+  return sanitizeSettings(data);
 }
