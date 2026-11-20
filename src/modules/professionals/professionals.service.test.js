@@ -44,7 +44,8 @@ async function run() {
   assert.equal(result.assignments.length,1);
   assert.equal(result.members.length,3);
   assert.equal(result.profiles.length,2);
-  assert.ok(client.calls.every(call=>call.filters.some(filter=>filter[1]==="org_id"&&filter[2]==="org-a")));
+  assert.ok(client.calls.filter(call=>call.table!=="profiles").every(call=>call.filters.some(filter=>filter[1]==="org_id"&&filter[2]==="org-a")));
+  assert.ok(client.calls.find(call=>call.table==="profiles").filters.some(filter=>filter[1]==="id"&&filter[0]==="in"));
   assert.ok(client.calls.find(call=>call.table==="org_memberships").filters.some(filter=>filter[1]==="role"&&filter[0]==="in"));
   await assert.rejects(()=>fetchProfessionalWorkspace({client,orgId:"",currentUserId:"owner-a"}),{name:"TypeError"});
   const failing=mockClient({}, {code:"42501",message:"SQL privado"});
