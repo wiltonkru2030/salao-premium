@@ -51,6 +51,9 @@ async function run(){
   }),{name:"TypeError"});
   const failing=mockClient({},null,{code:"42501",message:"SQL privado"});
   await assert.rejects(()=>listCatalogCategories({client:failing,orgId:"org-a"}),e=>!e.message.includes("SQL privado"));
+  const network=mockClient();
+  network.rpc=async()=>{throw new Error("network SQL secret");};
+  await assert.rejects(()=>saveCatalogCategory({client:network,orgId:"org-a",categoryType:"service",name:"Cabelo"}),e=>!e.message.includes("network SQL secret"));
   console.log("Testes do serviço de categorias: OK");
 }
 run().catch(error=>{process.stderr.write(error.message+"\n");process.exitCode=1;});
