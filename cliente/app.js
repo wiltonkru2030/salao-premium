@@ -11,6 +11,7 @@ import { getLocalSettings, saveLocalSettings, getRemoteSettings, saveRemoteSetti
 import { listFavorites, addFavorite, removeFavorite } from "./services/favoritesService.js";
 import { listNotifications, markNotificationRead, markAllNotificationsRead } from "./services/notificationService.js";
 import { validatePublicCoupon } from "./services/couponService.js";
+import {renderClientShell} from "./ui/clientShell.js";
 import { renderBottomNavigation } from "./ui/bottomNavigation.js";
 import { renderLoginView } from "./ui/loginView.js";
 import { renderHomeView } from "./ui/homeView.js";
@@ -112,13 +113,7 @@ function renderApp() {
   else if (activePage === "salon-detail") page = renderSalonDetailView({ ...salonDetailState, slots: slotsState, hold: holdState, isFavorite: favoriteOrgIds.has(salonDetailState.salon?.org_id), couponState });
   else page = renderHomeView({ locationLabel, salons: directoryState.items, loading: directoryState.loading, error: directoryState.error, query: directoryState.query });
 
-  root.innerHTML =
-    '<div class="client-app-shell">' +
-      '<header class="app-header"><div class="client-brand compact-brand"><span class="brand-mark">SP</span><div><strong>SALÃO PREMIUM</strong><small>ÁREA DA CLIENTE</small></div></div>' +
-      '<button class="icon-button" data-action="profile" aria-label="Abrir perfil">○</button></header>' +
-      '<div class="client-alert" data-notice role="status" hidden></div>' +
-      '<main>' + page + '</main><div data-bottom-nav></div>' +
-    '</div>';
+  root.innerHTML=renderClientShell(page);
 
   const navigation = renderBottomNavigation(activePage, async pageId => {
     if(busy||!currentUserId)return;
@@ -216,6 +211,7 @@ async function loadSalonCatalog(salon) {
 async function loadFavorites() {
   const epoch=sessionEpoch;
   favoritesState = { ...favoritesState, loading: true, error: "" };
+  if(activePage==="favorites")renderApp();
   try {
     const items = await listFavorites({client:supabase});
     if(!isCurrent(epoch))return;
@@ -237,6 +233,7 @@ async function loadFavorites() {
 async function loadNotifications() {
   const epoch=sessionEpoch;
   notificationsState = { ...notificationsState, loading: true, error: "" };
+  if(activePage==="notifications")renderApp();
   try {
     const items = await listNotifications({client:supabase,limit:50});
     if(!isCurrent(epoch))return;
@@ -394,6 +391,7 @@ async function runAction(action, button = null) {
       const serviceId=button?.dataset.serviceId;
       const card=serviceId?root.querySelector('[data-service-card="'+CSS.escape(serviceId)+'"]'):null;
       const code=card?.querySelector('input[name="couponCode"]')?.value.trim().toUpperCase()||"";
+      if(!serviceId||!salonDetailState.salon||!card)throw new Error("Selecione um serviço válido.");
       if(!code)throw new Error("Digite o código do cupom.");
       couponState={serviceId,code,preview:null,loading:true,error:""};
       renderApp();
@@ -416,6 +414,7 @@ async function runAction(action, button = null) {
       const card = serviceId ? root.querySelector('[data-service-card="' + CSS.escape(serviceId) + '"]') : null;
       const date = card?.querySelector('input[name="date"]')?.value || "";
       const professionalId = card?.querySelector('select[name="professionalId"]')?.value || null;
+      if(!serviceId||!salonDetailState.salon||!card)throw new Error("Selecione um serviço válido.");
       if (!date) throw new Error("Escolha a data para consultar os horários.");
       slotsState = { serviceId, items: [], loading: true, error: "", date,professionalId };
       renderApp();
