@@ -69,3 +69,50 @@ export async function setProfessionalActive({client,orgId,professionalId,active}
     if(!data?.id)throw Object.assign(new Error("Profissional não encontrado."),{code:"P0002"});
   } catch(error) { throw mapWorkspaceError(error); }
 }
+
+
+/**
+ * Libera ou revoga o App Profissional para membro elegível da organização.
+ * @param {object} options Cliente, organização, usuário, papel e estado desejado.
+ * @returns {Promise<object>} Confirmação de acesso retornada pelo RPC.
+ */
+export async function setTeamProfessionalAppAccess({
+  client,orgId,userId,role,enabled
+}={}) {
+  if(!client?.rpc)throw new TypeError("A conexão com os acessos não está disponível.");
+  if(typeof orgId!=="string"||!orgId.trim()||!userId||typeof enabled!=="boolean") {
+    throw new TypeError("Informe organização, usuário e situação válidos.");
+  }
+  if(!["owner","admin","receptionist"].includes(role)) {
+    throw new TypeError("Este perfil não pode receber acesso por esta operação.");
+  }
+  try {
+    const {data,error}=await client.rpc("set_professional_app_access",{
+      p_org_id:orgId,p_target_user_id:userId,p_enabled:enabled,
+      p_scope:role==="receptionist"?"calendar_all":"all"
+    });
+    if(error)throw error;
+    if(!data||typeof data!=="object"||data.enabled!==enabled) {
+      throw new Error("O servidor não confirmou a alteração de acesso.");
+    }
+    return data;
+  } catch(error) { throw mapWorkspaceError(error); }
+}
+
+/**
+ * Revoga o acesso do App Profissional vinculado ao cadastro de um profissional.
+ * @param {object} options Cliente Supabase, organização e ID do profissional.
+ * @returns {Promise<void>} Resolve após confirmação do RPC.
+ */
+export async function revokeProfessionalAppAccess({client,orgId,professionalId}={}) {
+  if(!client?.rpc)throw new TypeError("A conexão com os acessos não está disponível.");
+  if(typeof orgId!=="string"||!orgId.trim()||!professionalId) {
+    throw new TypeError("Selecione uma organização e um profissional válidos.");
+  }
+  try {
+    const {error}=await client.rpc("revoke_professional_app_access",{
+      p_org_id:orgId,p_professional_id:professionalId
+    });
+    if(error)throw error;
+  } catch(error) { throw mapWorkspaceError(error); }
+}
