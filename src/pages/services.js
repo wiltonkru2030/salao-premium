@@ -128,7 +128,8 @@ export async function loadServicesPage() {
       const dialog=document.querySelector("#service-create-modal");
       if(!dialog)return;
       if(event.target.closest('[data-action="open-service-modal"]')&&canManageServices()) {
-        if(servicePageState.current(document.querySelector("#services-manager"),state.organization?.id))openServiceModal();
+        const snapshot=servicePageState.current(document.querySelector("#services-manager"),state.organization?.id);
+        if(snapshot&&!snapshot.pending)openServiceModal();
       }
       else if(event.target.closest("[data-close-service-modal]")||event.target===dialog) {
         if(dialog.open)dialog.close();
@@ -141,6 +142,7 @@ export async function loadServicesPage() {
     if(edit) {
       if(!canManageServices())return toast("Somente proprietário ou administrador pode editar serviços.");
       const snapshot=servicePageState.current(host,state.organization?.id);
+      if(!snapshot||snapshot.pending)return;
       const row=snapshot?.rows.find(item=>item.id===edit.dataset.editService);
       if(!row)return toast("Registro não encontrado. Atualize a lista.");
       openServiceModal(row);
