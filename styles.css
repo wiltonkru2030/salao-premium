@@ -31,3 +31,6 @@
 
 /* Módulo 03 — dashboard executivo. */
 @import url('./src/styles/design-dashboard.css');
+
+/* Módulo 04 — Agenda premium e responsiva. */
+@import url('./src/styles/design-agenda-premium.css');
