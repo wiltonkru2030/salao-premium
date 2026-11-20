@@ -41,3 +41,11 @@ A integração usa `@supabase/supabase-js` e a API experimental de Passkey; vali
 - Não há ainda fluxo completo de seleção de salão/filial, catálogo, disponibilidade, agendamento, cancelamento, histórico ou pacotes.
 - O cadastro legado requer confirmação de identidade antes do vínculo.
 - Nenhuma alteração foi aplicada ao banco de produção.
+
+
+## Perfil global da cliente (primeira camada)
+
+- Utilitários puros em `customer-profile-utils.js` validam nome, e-mail, foto HTTPS e normalizam telefone para E.164.
+- Telefone normalizado continua **não verificado**; a normalização não autentica nem prova posse do número.
+- Testes locais em `customer-profile-utils.test.js`, incluídos em `npm run test:all`.
+- Ainda não existe gravação do perfil global no banco: aguardar modelo e políticas RLS em migration de staging.
