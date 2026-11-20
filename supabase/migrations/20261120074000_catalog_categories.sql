@@ -64,7 +64,7 @@ declare
   v_old_name text;
   v_id uuid;
 begin
-  if auth.uid() is null or not private.is_org_admin(p_org_id) then
+  if auth.uid() is null or not private.has_org_role(p_org_id,array['owner','admin']) then
     raise exception 'Sem permissão para alterar categorias.' using errcode='42501';
   end if;
   if p_category_type is null or p_category_type not in ('service','product') or length(v_name) not between 2 and 80 then
@@ -137,7 +137,7 @@ as $function$
 declare
   v_count integer;
 begin
-  if auth.uid() is null or not private.is_org_admin(p_org_id) then
+  if auth.uid() is null or not private.has_org_role(p_org_id,array['owner','admin']) then
     raise exception 'Sem permissão para alterar categorias.' using errcode='42501';
   end if;
   if p_category_id is null or p_active is null then
