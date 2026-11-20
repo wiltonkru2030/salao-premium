@@ -10,6 +10,7 @@ const PAGE_SIZE=250;
 function mapCustomerError(error) {
   if(error?.code==="23505")return new Error("Já existe um cadastro de cliente com esses dados.");
   if(error?.code==="42501")return new Error("Seu perfil não tem permissão para alterar este cadastro.");
+  if(error?.code==="P0002"||error?.code==="PGRST116")return new Error("O cliente não foi encontrado ou não está mais disponível.");
   if(["PGRST205","42P01"].includes(error?.code))return new Error("A carteira de clientes não está disponível no banco.");
   return new Error("Não foi possível concluir a operação de clientes.");
 }
@@ -74,9 +75,10 @@ export async function saveCustomer({client,orgId,customerId=null,...input}={}) {
   const payload=normalizeCustomer(input);
   try {
     const result=customerId
-      ? await client.from("customers").update(payload).eq("org_id",orgId).eq("id",customerId)
-      : await client.from("customers").insert({org_id:orgId,...payload});
+      ? await client.from("customers").update(payload).eq("org_id",orgId).eq("id",customerId).select("id").maybeSingle()
+      : await client.from("customers").insert({org_id:orgId,...payload}).select("id").single();
     if(result.error)throw result.error;
+    if(!result.data?.id)throw Object.assign(new Error("Cliente não encontrado."),{code:"P0002"});
   } catch(error) { throw mapCustomerError(error); }
 }
 
