@@ -42,6 +42,9 @@ async function run(){
   await assert.rejects(()=>saveService({client,orgId:"org-a",name:"Corte",durationMinutes:33,price:20}),{name:"TypeError"});
   const failing=mockClient({}, {code:"42501",message:"SQL privado"});
   await assert.rejects(()=>listServices({client:failing,orgId:"org-a"}),e=>!e.message.includes("SQL privado"));
+  const network=mockClient();
+  network.from=()=>{throw new Error("network SQL secret");};
+  await assert.rejects(()=>saveService({client:network,orgId:"org-a",name:"Corte",durationMinutes:30,price:50}),e=>!e.message.includes("network SQL secret"));
   console.log("Testes do catálogo de serviços: OK");
 }
 run().catch(error=>{process.stderr.write(error.message+"\n");process.exitCode=1;});
