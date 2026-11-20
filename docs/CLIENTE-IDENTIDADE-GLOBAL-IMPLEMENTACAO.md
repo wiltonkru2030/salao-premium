@@ -268,7 +268,7 @@ Essa verificação confirma grants e configuração do banco, mas não substitui
 Migrations aplicadas no Supabase conectado:
 - `20261120041443_customer_appointment_holds`
 - `20261120041450_customer_appointment_holds_rpc_security`
-- `20261120041502_customer_appointment_hold_cancellation`
+- `20261120041537_customer_appointment_hold_cancellation`
 
 ### Estrutura e comportamento
 
@@ -291,3 +291,10 @@ Migrations aplicadas no Supabase conectado:
 - Testes com duas sessões JWT reais, concorrência e isolamento entre organizações dependem de ambiente QA. Testes unitários locais não comprovam essas propriedades.
 
 **Status:** tabelas e RPCs de HOLD aplicadas e permissões verificadas. Jornada visual e regras de expediente continuam pendentes; produto não liberado para venda.
+
+
+### Endurecimento adicional das RPCs de reserva
+
+Migration `20261120041630_customer_appointment_holds_private_rpc` aplicada. A implementação privilegiada das operações de criar, confirmar e cancelar HOLD foi movida para o schema não exposto `private`. O schema `public` mantém apenas wrappers `SECURITY INVOKER`, com execução para `authenticated`; as funções internas usam `SECURITY DEFINER`, `search_path = ''` e checagem de `auth.uid()`.
+
+A consulta ao Security Advisor deixou de listar as três RPCs de HOLD entre as funções SECURITY DEFINER expostas no schema público. Os alertas restantes são anteriores a esta etapa e exigem auditoria individual. A proteção contra senhas vazadas também segue desativada e precisa ser habilitada nas configurações de Auth.
