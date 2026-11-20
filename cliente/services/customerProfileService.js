@@ -28,6 +28,27 @@ function ensureProfileSchema(error) {
   throw new Error("Não foi possível acessar seu perfil agora. Tente novamente.");
 }
 
+/**
+ * Garante a criação idempotente do perfil global após autenticação.
+ * Nome e e-mail de metadados são apenas dados de perfil; nunca autorizam acesso.
+ * O banco continua usando auth.uid() e RLS para limitar a linha ao usuário atual.
+ */
+export async function ensureMyProfile() {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (userError || !user) throw new Error("Entre na sua conta para preparar seu perfil.");
+  const metadata = user.user_metadata || {};
+  const fullName = String(metadata.full_name || metadata.name || "Cliente").trim().slice(0, 120) || "Cliente";
+  const { error } = await supabase.from("customer_profiles").upsert({
+    auth_user_id: user.id,
+    full_name: fullName,
+    email: user.email || null,
+    preferences: {}
+  }, { onConflict: "auth_user_id", ignoreDuplicates: true });
+  if (error) ensureProfileSchema(error);
+  return getMyProfile();
+}
+
 export async function getMyProfile() {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user) throw new Error("Entre na sua conta para consultar seu perfil.");
