@@ -51,7 +51,7 @@ function renderNavigation() {
     const [label, ...items] = group;
     const buttons = items.map(item => `
       <button title="${esc(item)}" aria-label="${esc(item)}"
-        class="nav-item ${state.page === item ? "active" : ""}" data-page="${esc(item)}">
+        class="nav-item ${state.page === item ? "active" : ""}" ${state.page === item ? 'aria-current="page"' : ""} data-page="${esc(item)}">
         <img src="./brand/identidade-visual/icones/${encodeURIComponent(glyph[item])}" alt="" loading="lazy">
         <span>${esc(item)}</span>
       </button>`).join("");
@@ -120,7 +120,7 @@ function renderBranchControl() {
 /** Monta o shell administrativo com navegação, tenant ativo e conteúdo da rota. */
 function renderApplicationShell(navigation, content) {
   $("#app").innerHTML = `
-    <div class="mobile-scrim ${state.mobileMenu ? "visible" : ""}" data-action="close-menu"></div>
+    <div class="mobile-scrim ${state.mobileMenu ? "visible" : ""}" data-action="close-menu" aria-hidden="true"></div>
     <aside class="sidebar ${state.mobileMenu ? "open" : ""} ${state.sidebarCollapsed ? "collapsed" : ""}" id="sidebar">
       <div class="brand">
         <img src="./brand/identidade-visual/logo/SAL%C3%83O%20PREMIUN_20261111_231325_0003.png" alt="SALÃO PREMIUM" class="brand-logo">
@@ -128,7 +128,7 @@ function renderApplicationShell(navigation, content) {
         <button class="icon-btn sidebar-collapse" data-action="collapse-menu" aria-label="Recolher ou expandir menu" title="Recolher ou expandir menu">${state.sidebarCollapsed ? "›" : "‹"}</button>
         <button class="icon-btn sidebar-close" data-action="close-menu" aria-label="Fechar menu">×</button>
       </div>
-      <nav class="main-nav">${navigation}</nav>
+      <nav class="main-nav" aria-label="Navegação principal">${navigation}</nav>
       <div class="sidebar-footer">
         <span class="avatar small">SP</span>
         <span><b>${esc(state.user?.email || "Salão Premium")}</b><small>Conta conectada</small></span>
@@ -137,7 +137,7 @@ function renderApplicationShell(navigation, content) {
     <main class="main-area ${state.sidebarCollapsed ? "sidebar-collapsed" : ""}">
       <header class="topbar">
         <div class="topbar-left">
-          <button class="icon-btn menu-toggle" data-action="toggle-menu" aria-label="Abrir menu">☰</button>
+          <button class="icon-btn menu-toggle" data-action="toggle-menu" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="${state.mobileMenu ? "true" : "false"}">☰</button>
           <span class="breadcrumb">Painel <i>/</i> <b>${esc(state.page)}</b></span>
         </div>
         <div class="topbar-right">
