@@ -89,4 +89,129 @@ create policy products_select_admin_or_full_app on public.products
     )
   );
 
+
+-- Agenda: calendários completos de profissionais ficam restritos à unidade vinculada.
+drop policy if exists appointments_select_scoped on public.appointments;
+create policy appointments_select_scoped on public.appointments
+  for select to authenticated
+  using (
+    private.has_org_role(org_id,array['owner','admin','manager','receptionist'])
+    or (
+      private.professional_app_scope(org_id) in ('calendar_all','all')
+      and exists (
+        select 1 from public.professionals p
+        where p.org_id=appointments.org_id
+          and p.id=private.current_professional_id(appointments.org_id)
+          and (appointments.branch_id is null or appointments.branch_id=p.branch_id)
+      )
+    )
+    or (
+      (professional_id=private.current_professional_id(org_id)
+       or professional_id=private.professional_app_profile_id(org_id))
+      and exists (
+        select 1 from public.professionals p
+        where p.org_id=appointments.org_id and p.id=appointments.professional_id
+          and (appointments.branch_id is null or appointments.branch_id=p.branch_id)
+      )
+    )
+  );
+
+drop policy if exists appointments_insert_staff on public.appointments;
+create policy appointments_insert_staff on public.appointments
+  for insert to authenticated
+  with check (
+    private.has_org_role(org_id,array['owner','admin','manager','receptionist'])
+    or (
+      private.has_org_role(org_id,array['professional'])
+      and professional_id=private.current_professional_id(org_id)
+      and booking_source='professional'
+      and created_by=(select auth.uid())
+      and exists (
+        select 1 from public.professionals p
+        where p.org_id=appointments.org_id and p.id=appointments.professional_id
+          and appointments.branch_id is not distinct from p.branch_id
+      )
+    )
+  );
+
+drop policy if exists appointment_blocks_select_scoped on public.appointment_blocks;
+create policy appointment_blocks_select_scoped on public.appointment_blocks
+  for select to authenticated
+  using (
+    private.has_org_role(org_id,array['owner','admin','manager','receptionist'])
+    or (
+      private.professional_app_scope(org_id) in ('calendar_all','all')
+      and exists (
+        select 1 from public.professionals p
+        where p.org_id=appointment_blocks.org_id
+          and p.id=private.current_professional_id(appointment_blocks.org_id)
+          and (appointment_blocks.branch_id is null or appointment_blocks.branch_id=p.branch_id)
+      )
+    )
+    or (
+      (professional_id=private.current_professional_id(org_id)
+       or professional_id=private.professional_app_profile_id(org_id))
+      and exists (
+        select 1 from public.professionals p
+        where p.org_id=appointment_blocks.org_id and p.id=appointment_blocks.professional_id
+          and (appointment_blocks.branch_id is null or appointment_blocks.branch_id=p.branch_id)
+      )
+    )
+  );
+
+drop policy if exists appointment_blocks_insert_staff on public.appointment_blocks;
+create policy appointment_blocks_insert_staff on public.appointment_blocks
+  for insert to authenticated
+  with check (
+    private.has_org_role(org_id,array['owner','admin','manager','receptionist'])
+    or (
+      private.has_org_role(org_id,array['professional'])
+      and professional_id=private.current_professional_id(org_id)
+      and created_by=(select auth.uid())
+      and exists (
+        select 1 from public.professionals p
+        where p.org_id=appointment_blocks.org_id and p.id=appointment_blocks.professional_id
+          and appointment_blocks.branch_id is not distinct from p.branch_id
+      )
+    )
+  );
+
+-- Acesso amplo de Agenda no App Profissional não revela profissionais de outras unidades.
+drop policy if exists professionals_select_scoped_app on public.professionals;
+create policy professionals_select_scoped_app on public.professionals
+  for select to authenticated
+  using (
+    private.has_org_role(org_id,array['owner','admin','manager','receptionist'])
+    or (
+      private.professional_app_scope(org_id) in ('calendar_all','all')
+      and exists (
+        select 1 from public.professionals own
+        where own.org_id=professionals.org_id
+          and own.id=private.current_professional_id(professionals.org_id)
+          and professionals.branch_id is not distinct from own.branch_id
+      )
+    )
+    or profile_id=(select auth.uid())
+  );
+
+-- Os vínculos do profissional respeitam serviços da própria unidade ou globais.
+drop policy if exists professional_services_select_scoped on public.professional_services;
+create policy professional_services_select_scoped on public.professional_services
+  for select to authenticated
+  using (
+    private.has_org_role(org_id,array['owner','admin','manager','receptionist'])
+    or professional_id=private.current_professional_id(org_id)
+    or (
+      private.professional_app_scope(org_id) in ('calendar_all','all')
+      and exists (
+        select 1 from public.professionals p
+        join public.services s on s.org_id=professional_services.org_id
+          and s.id=professional_services.service_id
+        where p.org_id=professional_services.org_id
+          and p.id=private.current_professional_id(professional_services.org_id)
+          and (s.branch_id is null or s.branch_id=p.branch_id)
+      )
+    )
+  );
+
 commit;
