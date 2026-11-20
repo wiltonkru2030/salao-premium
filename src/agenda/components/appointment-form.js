@@ -9,6 +9,11 @@ import { reportError } from '../../utils/errors.js';
 let cleanups=[];
 function clearAppointmentAutocomplete(){cleanups.forEach(fn=>fn());cleanups=[];}
 
+/**
+ * Renderiza o formulário de criação ou edição de agendamento.
+ * @param {object} options Agendamento existente ou valores iniciais de data, hora e profissional.
+ * @returns {string} HTML do formulário com campos e estados iniciais.
+ */
 export function renderAppointmentForm({appointment=null,date='',time='',pro=null}={}) {
   const a=appointment||{};
   const selectedDate=a.date||date;
@@ -56,6 +61,10 @@ export function renderAppointmentForm({appointment=null,date='',time='',pro=null
     '<p class="demo-note">A comanda não é aberta no agendamento. Ela será criada quando o cliente chegar e o atendimento for iniciado.</p></form>';
 }
 
+/**
+ * Instala máscaras, autocomplete e eventos do formulário de agendamento.
+ * @returns {void} Não retorna valor; registra os comportamentos no DOM atual.
+ */
 export function mountAppointmentForm(){
   clearAppointmentAutocomplete();
   const form=document.querySelector('[data-agenda-form]');
@@ -134,4 +143,8 @@ export function mountAppointmentForm(){
     onSelect:item=>{professionalId.value=item?.id||'';}
   }));
 }
+/**
+ * Remove recursos de autocomplete ao fechar o formulário.
+ * @returns {void} Libera listeners e referências temporárias.
+ */
 export function unmountAppointmentForm(){clearAppointmentAutocomplete();}
