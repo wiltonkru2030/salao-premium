@@ -1,0 +1,41 @@
+/* SALÃO PREMIUM — App Profissional, módulo 09.
+ * Contrato de leitura e interação mobile; preserva as permissões e serviços.
+ */
+#professional-app{font-family:var(--sp-font-ui,'Poppins',sans-serif);font-size:14px;line-height:1.55}
+#professional-app .brand{font-size:12px}
+#professional-app .brand small{font-size:10px}
+#professional-app .top h1{font-family:var(--sp-font-heading,'Poppins',sans-serif);font-size:24px;line-height:1.2}
+#professional-app .muted,#professional-app .login p{font-size:13px;line-height:1.65}
+#professional-app .field{font-size:12px;line-height:1.55}
+#professional-app .field input{min-height:46px;font-size:14px}
+#professional-app :is(.primary,.secondary,.icon-button,.calendar-head button,.nav button){min-height:44px}
+#professional-app .primary{font-size:13px}
+#professional-app .secondary{font-size:12px}
+#professional-app .icon-button{width:44px;height:44px}
+#professional-app :is(button,input,select,textarea):focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+#professional-app .nav button{font-size:11px;padding:8px 4px;border-radius:8px}
+#professional-app .nav span{font-size:20px}
+#professional-app .section-title{gap:10px;flex-wrap:wrap}
+#professional-app .section-title h2{font-size:18px}
+#professional-app .calendar-head strong{font-size:14px}
+#professional-app .calendar-head button{font-size:12px}
+#professional-app .weekday{font-size:11px}
+#professional-app .day{font-size:13px;min-height:58px}
+#professional-app .appointment,#professional-app .order,#professional-app .service,#professional-app .commission{padding:17px;border-radius:10px;min-width:0}
+#professional-app .appointment strong,#professional-app .order strong,#professional-app .service strong,#professional-app .commission strong{font-size:14px;line-height:1.45}
+#professional-app .appointment .meta,#professional-app .order .meta,#professional-app .service .meta,#professional-app .commission .meta{font-size:12px;line-height:1.65;overflow-wrap:anywhere}
+#professional-app .tag{font-size:11px}
+#professional-app .detail{padding:17px;border-radius:10px}
+#professional-app .detail-row{font-size:13px;line-height:1.55;flex-wrap:wrap}
+#professional-app .detail-row b{overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+#professional-app .empty{font-size:13px}
+#professional-app .suggestions button{min-height:44px;font-size:13px}
+@media(max-width:600px){
+ #professional-app .content{padding:21px 17px calc(112px + env(safe-area-inset-bottom))}
+ #professional-app .top{padding:16px 17px}
+ #professional-app .login{padding:26px 20px}
+ #professional-app .day{min-height:52px}
+ #professional-app .appointment,#professional-app .order,#professional-app .service,#professional-app .commission{padding:15px}
+ #professional-app .nav{padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+}
+@media(prefers-reduced-motion:reduce){#professional-app *,#professional-app *::before,#professional-app *::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
