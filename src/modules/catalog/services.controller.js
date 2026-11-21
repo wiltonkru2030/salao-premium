@@ -56,6 +56,21 @@ function openServiceModal(service=null) {
  * @returns {void} Instala eventos apenas uma vez por host.
  */
 export function bindServiceEvents({host,client,servicePageState,getOrgId,canManageServices,toast,reportError,saveService,setServiceActive,loadServicesPage}) {
+  // O botão "Novo serviço" fica no cabeçalho, fora de #services-manager.
+  // O listener global é instalado uma vez, mas consulta sempre o host ATUAL.
+  host._openServiceModal=()=>{
+    if(!canManageServices())return toast("Sem permissão para cadastrar serviços.");
+    const snapshot=servicePageState.current(host,getOrgId());
+    if(snapshot&&!snapshot.pending)openServiceModal();
+  };
+  if(!document._spServiceOpenBound){
+    document._spServiceOpenBound=true;
+    document.addEventListener("click",event=>{
+      if(event.target.closest('[data-action="open-service-modal"]')){
+        document.querySelector("#services-manager")?._openServiceModal?.();
+      }
+    });
+  }
   if(host.dataset.bound==="true")return;
   host.dataset.bound="true";
   // Abrir e fechar usam delegação local para não conservar referências de páginas antigas.
