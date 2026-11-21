@@ -16,15 +16,21 @@ export async function resolveBranchContext({
   if(!client?.from||typeof orgId!=="string"||!orgId.trim()) {
     throw new TypeError("A organização ativa não foi identificada.");
   }
+  // Nunca consulte perfis profissionais sem o identificador autenticado:
+  // um filtro indefinido pode resultar em seleção incorreta de unidade.
+  if(role==="professional"&&(typeof userId!=="string"||!userId.trim())) {
+    throw new TypeError("O profissional autenticado não foi identificado.");
+  }
   try {
     const branches=(await listBranches({client,orgId})).filter(branch=>branch.active);
     if(role==="professional") {
       const {data,error}=await client.from("professionals").select("branch_id")
         .eq("org_id",orgId).eq("profile_id",userId).maybeSingle();
       if(error)throw error;
+      // Filial inexistente ou inativa não pode ser substituída silenciosamente.
       return {branches,branch:branches.find(item=>item.id===data?.branch_id)||null};
     }
-    if(previousBranchId==="__all__") {
+    if(previousBranchId==="__all__"&&branches.length>0) {
       return {branches,branch:{id:null,name:"Todas as unidades",isAll:true}};
     }
     const previous=branches.find(item=>item.id===previousBranchId);
