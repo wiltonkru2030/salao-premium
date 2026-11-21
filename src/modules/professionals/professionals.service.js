@@ -33,7 +33,9 @@ export async function fetchProfessionalWorkspace({client,orgId,currentUserId,bra
     let professionalQuery=client.from("professionals")
       .select("id,name,phone,email,active,access_enabled,commission_rate,tax_regime,cnpj,legal_name,trade_name,specialty,branch_id")
       .eq("org_id",orgId);
-    if(branchId)professionalQuery=professionalQuery.eq("branch_id",branchId);
+    // Cadastros legados sem filial pertencem à organização e devem continuar visíveis.
+    // Mantém o filtro por org_id; nunca inclui profissionais de outro salão.
+    if(branchId)professionalQuery=professionalQuery.or("branch_id.eq."+branchId+",branch_id.is.null");
     let serviceQuery=client.from("services").select("id,name,category,active,branch_id")
       .eq("org_id",orgId).eq("active",true);
     if(branchId)serviceQuery=serviceQuery.or("branch_id.eq."+branchId+",branch_id.is.null");
