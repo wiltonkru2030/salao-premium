@@ -5,7 +5,7 @@
  * pedidos destinados à identidade autenticada na sessão atual.
  * A RPC do banco é a autoridade final e aplica auth.uid(), expiração e RLS.
  */
-import { supabase } from "../../src/supabase/client.js";
+import { supabase } from "../supabase.client.js";
 import {
   normalizePendingIdentityLinkRequest,
   validateIdentityLinkRequestId
