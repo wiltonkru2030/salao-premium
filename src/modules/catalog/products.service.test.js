@@ -43,6 +43,14 @@ async function run(){
   assert.ok(!("stock_quantity" in client.calls[3].payload),"Edição não pode alterar saldo fora de movimentação de estoque.");
   await setProductActive({client,orgId:"org-a",productId:"p1",active:false});
   assert.deepEqual(client.calls[4].payload,{active:false});
+  const branchId="11111111-1111-4111-8111-111111111111";
+  const scoped=mockClient({products:[]});
+  await saveProduct({client:scoped,orgId:"org-a",branchId,name:"Condicionador",costPrice:10,salePrice:20});
+  assert.equal(scoped.calls[0].payload.branch_id,branchId,"novo produto deve pertencer à filial ativa");
+  await saveProduct({client:scoped,orgId:"org-a",branchId,productId:"p1",name:"Condicionador",costPrice:10,salePrice:20});
+  assert.equal(scoped.calls[1].or,"branch_id.eq."+branchId+",branch_id.is.null");
+  await setProductActive({client:scoped,orgId:"org-a",branchId,productId:"p1",active:false});
+  assert.equal(scoped.calls[2].or,"branch_id.eq."+branchId+",branch_id.is.null");
   await assert.rejects(()=>saveProduct({client,orgId:"org-a",name:"Shampoo",costPrice:-1,salePrice:25}),{name:"TypeError"});
   await assert.rejects(()=>saveProduct({client,orgId:"org-a",name:"Shampoo",costPrice:1,salePrice:25,sku:"x".repeat(65)}),{name:"TypeError"});
   const failing=mockClient({}, {code:"42501",message:"SQL privado"});
