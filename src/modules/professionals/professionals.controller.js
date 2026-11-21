@@ -10,6 +10,9 @@ import {onlyDigits,validCpf,validCnpj} from "./professionals.validation.js";
  * @returns {void}
  */
 export function bindProfessionalEvents({host,client,state,initialPasswords,canManageProfessionals,toast,reportError,setProfessionalActive,setTeamProfessionalAppAccess,revokeProfessionalAppAccess,createProfessionalWithServices,updateProfessionalProfile,workspace,loadProfessionalsPage}) {
+ // Atualiza os dados a cada recarga: eventos delegados permanecem instalados no host.
+ // Sem isso, Editar cadastro reutilizava uma lista antiga após salvar ou trocar de filial.
+ host._professionalWorkspace=workspace;
  if(host.dataset.bound==="true")return;
  host.dataset.bound="true";
  host.addEventListener("click",async event=>{
@@ -17,7 +20,7 @@ export function bindProfessionalEvents({host,client,state,initialPasswords,canMa
   const edit=event.target.closest("[data-edit-professional]");
   if(edit){
    if(!canManageProfessionals())return toast("Você não tem permissão para editar profissionais.");
-   const p=workspace.professionals.find(item=>item.id===edit.dataset.editProfessional);
+   const p=host._professionalWorkspace?.professionals?.find(item=>item.id===edit.dataset.editProfessional);
    const dialog=host.querySelector("#professional-create-modal"),form=dialog?.querySelector("#professional-create-form");
    if(!p||!form)return toast("Profissional não encontrado. Atualize os dados.");
    form.reset();
@@ -26,6 +29,7 @@ export function bindProfessionalEvents({host,client,state,initialPasswords,canMa
    }
    const mei=p.tax_regime==="mei",meiFields=form.querySelector("#professional-mei-fields");
    if(meiFields){meiFields.hidden=!mei;meiFields.querySelector("[name=cnpj]").required=mei;meiFields.querySelector("[name=legal_name]").required=mei;}
+   // CPF é credencial de acesso; a edição cadastral não o altera.
    form.elements.cpf.required=false;form.elements.cpf.closest("label").hidden=true;
    form.elements.enable_app.closest("label").hidden=true;
    form.querySelector("#professional-edit-services-notice").hidden=false;
