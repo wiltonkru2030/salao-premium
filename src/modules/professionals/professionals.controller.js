@@ -23,7 +23,7 @@ export function bindProfessionalEvents({host,client,state,initialPasswords,canMa
    if(!window.confirm(nextActive?"Reativar este profissional?":"Inativar este profissional? O histórico será preservado."))return;
    activeToggle.disabled=true;
    try {
-    await setProfessionalActive({client,orgId:state.organization.id,professionalId:activeToggle.dataset.toggleProfessionalActive,active:nextActive});
+    await setProfessionalActive({client,orgId:state.organization.id,branchId:state.branch?.id||null,professionalId:activeToggle.dataset.toggleProfessionalActive,active:nextActive});
     toast(nextActive?"Profissional reativado.":"Profissional inativado.");
     await loadProfessionalsPage();
    } catch(error) {
