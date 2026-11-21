@@ -26,6 +26,7 @@ export function userErrorMessage(error, fallback = "Não foi possível concluir 
   if (code === "429") return "Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.";
   if (["401", "403", "42501", "PGRST301"].includes(code)) return "Sua sessão pode ter expirado ou você não tem permissão para realizar esta operação.";
   if (code === "PGRST116") return "O registro não foi encontrado ou não está disponível.";
+  if (["PGRST202", "PGRST205", "42P01", "42703"].includes(code)) return "O banco de dados não está com a estrutura esperada. Entre em contato com o suporte do sistema.";
   if (/^5\d{2}$/.test(code)) return "O serviço está temporariamente indisponível. Tente novamente em alguns instantes.";
 
   const raw = String(error?.message || error || "").trim();
