@@ -3,7 +3,7 @@
  * Responsabilidade: injetar o cliente Supabase e preservar os contratos da interface.
  * Segurança: o backend usa auth.uid() e revalida expediente/conflitos antes de gravar.
  */
-import { supabase } from "../../src/supabase/client.js";
+import { supabase } from "../supabase.client.js";
 import { validateHoldInput, validateHoldId } from "../utils/appointmentHoldUtils.js";
 import {
   getAvailableSlots as fetchSlots,
