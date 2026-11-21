@@ -171,3 +171,32 @@ export async function createProfessionalWithServices({
     return data;
   } catch(error) { throw mapWorkspaceError(error); }
 }
+
+/**
+ * Atualiza dados cadastrais do profissional sem alterar serviços ou credenciais.
+ * Responsabilidade: persistir somente campos permitidos, respeitando organização e filial.
+ * @param {object} options Cliente, contexto, ID e dados validados do formulário.
+ * @returns {Promise<void>} Confirma atualização ou lança erro seguro em português.
+ */
+export async function updateProfessionalProfile({client,orgId,branchId=null,professionalId,name,phone,email,specialty,commissionRate,taxRegime,cnpj,legalName,tradeName}={}) {
+  requireContext(client,orgId);
+  if(!professionalId||typeof professionalId!=="string")throw new TypeError("Selecione um profissional válido.");
+  if(branchId&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(branchId))throw new TypeError("A unidade selecionada não é válida.");
+  const cleanName=String(name??"").trim(),rate=Number(commissionRate);
+  if(cleanName.length<2||cleanName.length>120)throw new TypeError("Informe um nome válido de até 120 caracteres.");
+  if(!Number.isFinite(rate)||rate<0||rate>100)throw new TypeError("A comissão deve estar entre 0 e 100 por cento.");
+  if(!["individual","mei"].includes(taxRegime))throw new TypeError("Regime fiscal inválido.");
+  const cleanCnpj=String(cnpj??"").replace(/\D/g,"");
+  if(taxRegime==="mei"&&(cleanCnpj.length!==14||String(legalName??"").trim().length<2))throw new TypeError("Informe CNPJ e razão social válidos para MEI.");
+  const payload={name:cleanName,phone:String(phone??"").trim()||null,email:String(email??"").trim()||null,
+    specialty:String(specialty??"").trim()||null,commission_rate:rate,tax_regime:taxRegime,
+    cnpj:taxRegime==="mei"?cleanCnpj:null,legal_name:taxRegime==="mei"?String(legalName).trim():null,
+    trade_name:taxRegime==="mei"?String(tradeName??"").trim()||null:null};
+  try {
+    let query=client.from("professionals").update(payload).eq("org_id",orgId).eq("id",professionalId);
+    if(branchId)query=query.eq("branch_id",branchId);
+    const {data,error}=await query.select("id").maybeSingle();
+    if(error)throw error;
+    if(!data?.id)throw Object.assign(new Error("Profissional não encontrado."),{code:"P0002"});
+  } catch(error) { throw mapWorkspaceError(error); }
+}
