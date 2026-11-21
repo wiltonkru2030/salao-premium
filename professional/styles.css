@@ -61,3 +61,6 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 .detail-row:last-child{border:0}
 @media(min-width:700px){.nav{position:sticky;top:0;bottom:auto;max-width:900px;margin:auto;border:0;border-bottom:1px solid var(--line);border-radius:0}.app-shell{padding-bottom:24px}.content{padding:28px 32px}.day{min-height:76px;font-size:13px}}
 @media(max-width:600px){.top{padding:15px 17px;min-height:68px}.content{padding:20px 15px}.login{margin:7vh 15px;padding:27px 20px}.section-title h2{font-size:16px}.day{min-height:48px}.appointment,.order,.service,.commission{padding:13px}.app-shell{padding-bottom:82px}}
+
+/* Módulo 09 — experiência mobile e acessibilidade. */
+@import url('./design-mobile-premium.css');
