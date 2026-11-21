@@ -52,3 +52,6 @@
 
 /* Estados vazios com orientacao e acao de cadastro. */
 @import url('./src/styles/design-empty-workspaces.css');
+
+/* Camada final de padronização visual: prevalece sobre estilos antigos. */
+@import url('./src/styles/design-global-unification.css');
