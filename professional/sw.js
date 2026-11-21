@@ -1,6 +1,7 @@
 /** Service worker do App Profissional: instala, atualiza e remove o cache do shell PWA. */
-const CACHE = "salao-profissional-shell-v2";
-const SHELL = ["./", "./index.html", "./styles.css?v=professional-pwa-20261112", "./app.js?v=professional-pwa-20261112", "./manifest.webmanifest", "./icon.svg"];
+// Versão nova invalida o app.js antigo, que compartilhava a sessão do painel.
+const CACHE = "salao-profissional-shell-v3-auth-isolation";
+const SHELL = ["./", "./index.html", "./styles.css?v=professional-pwa-20261112", "./app.js?v=professional-auth-isolation-20261121", "./manifest.webmanifest", "./icon.svg"];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL))));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))));
 self.addEventListener("fetch", event => {
