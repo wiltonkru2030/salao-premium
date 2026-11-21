@@ -141,7 +141,8 @@ export function bindProfessionalEvents({host,client,state,initialPasswords,canMa
    if(!host.isConnected||state.organization?.id!==orgId||state.user?.id!==userId||!canManageProfessionals())return;
    const enableApp=v.get("enable_app")==="on";
   let appNotice="";
-  if(enableApp){
+  // Na edição, credenciais e acesso ao App não são modificados.
+  if(enableApp&&!editingId){
    const {data:access,error:accessError}=await requestProfessionalAccess({client,action:"create",orgId,professionalId,cpf});
    if(!host.isConnected||state.organization?.id!==orgId||state.user?.id!==userId||!canManageProfessionals())return;
    if(accessError||!access?.success){
