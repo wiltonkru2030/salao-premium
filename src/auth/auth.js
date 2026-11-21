@@ -99,7 +99,10 @@ export function startAuth(onAuthenticated) {
     }
   };
 
-  showAuth("login");
+  // Enquanto o Supabase restaura a sessão, não exibir o formulário de login.
+  // Isso evita a tela de autenticação piscando a cada atualização do navegador.
+  const app=document.querySelector("#app");
+  if(app)app.innerHTML='<main class="auth-shell"><section class="auth-panel" role="status" aria-live="polite"><div class="auth-heading"><span class="auth-eyebrow">SALÃO PREMIUM</span><h1>Preparando seu salão…</h1><p>Verificando sua sessão com segurança.</p></div></section></main>';
   supabase.auth.onAuthStateChange((event, session) => {
     if (event === "PASSWORD_RECOVERY" && session?.user) {
       passwordRecoveryInProgress = true;
