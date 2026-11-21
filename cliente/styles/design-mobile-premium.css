@@ -1,0 +1,37 @@
+/* SALÃO PREMIUM — App Cliente, módulo 09.
+ * Ajusta tipografia, alvos de toque e navegação sem alterar autenticação ou reservas.
+ * Todas as cores usam os tokens do tema, inclusive modo escuro.
+ */
+.client-app-shell,.client-panel{font-size:14px;line-height:1.5}
+.client-app-shell :is(button,input,select,textarea){font-family:var(--sp-font-ui,'Poppins',sans-serif)}
+.client-app-shell :is(button,input,select,textarea):focus-visible,.client-panel :is(button,input,select,textarea):focus-visible{outline:2px solid var(--color-gold);outline-offset:2px}
+.client-app-shell :is(input,select,textarea),.client-panel :is(input,select,textarea){max-width:100%;font-size:14px;min-height:44px}
+.client-app-shell :is(.client-button,.settings-row,.icon-button,.nav-item),.client-panel .client-button{min-height:44px}
+.client-app-shell .client-button.compact{min-height:44px;font-size:12px}
+.client-app-shell .muted,.client-app-shell .appointment-meta,.client-app-shell .profile-card span,.client-app-shell .settings-row small{font-size:12px;line-height:1.55}
+.client-app-shell .appointment-card-heading strong,.client-app-shell .location-card strong{font-size:14px;line-height:1.5}
+.client-app-shell .appointment-card{padding:18px;min-width:0}
+.client-app-shell .appointment-salon{font-size:13px}
+.client-app-shell .appointment-price{font-size:14px;font-variant-numeric:tabular-nums}
+.client-app-shell .salon-result-card,.client-app-shell .service-result-card{min-width:0}
+.client-app-shell .salon-result-main{min-width:0}
+.client-app-shell .salon-result-main>div{overflow-wrap:anywhere}
+.client-app-shell .client-bottom-nav{height:auto;min-height:76px;padding-bottom:calc(9px + env(safe-area-inset-bottom));box-shadow:0 -8px 24px #17130b08}
+.client-app-shell .nav-item{padding:8px 4px;border-radius:8px}
+.client-app-shell .nav-item small{font-size:11px;line-height:1.4}
+.client-app-shell .nav-item.active{color:var(--color-gold)}
+.client-app-shell .page-heading{margin-bottom:24px}
+.client-app-shell .page-heading p{font-size:14px}
+.client-app-shell .empty-state p{font-size:13px}
+.client-app-shell .profile-form .field-label,.client-app-shell .salon-search-form label{font-size:12px}
+.client-app-shell .profile-form input{font-size:14px;min-height:46px}
+@media(max-width:480px){
+ .client-shell{padding:12px}
+ .client-panel{padding:22px 18px}
+ .client-app-shell .page-content{padding:23px 17px calc(112px + env(safe-area-inset-bottom))}
+ .client-app-shell .app-header{padding-inline:17px}
+ .client-app-shell .appointment-card{padding:15px}
+ .client-app-shell .salon-result-card{flex-wrap:wrap}
+ .client-app-shell .salon-result-card>.client-button{flex:1 1 100%}
+}
+@media(prefers-reduced-motion:reduce){.client-app-shell *, .client-panel *{scroll-behavior:auto}}
