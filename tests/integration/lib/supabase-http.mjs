@@ -17,6 +17,11 @@ export function assertEnvironment() {
   const missing = [["SUPABASE_URL", URL_BASE], ["SUPABASE_PUBLISHABLE_KEY", ANON], ["SUPABASE_SERVICE_ROLE_KEY", SERVICE]]
     .filter(([, value]) => !value).map(([name]) => name);
   if (missing.length) throw new Error("Variáveis ausentes para o teste de integração: " + missing.join(", "));
+  // Exige ambiente de QA explícito antes de criar ou excluir dados.
+  if (process.env.SUPABASE_TEST_ENV !== "isolated") throw new Error("Teste bloqueado: configure SUPABASE_TEST_ENV=isolated em um banco descartável.");
+  const qaUrl = process.env.SUPABASE_QA_PROJECT_URL;
+  if (!qaUrl || new URL(qaUrl).origin !== new URL(URL_BASE).origin) throw new Error("Teste bloqueado: SUPABASE_QA_PROJECT_URL deve coincidir com SUPABASE_URL.");
+  if (new URL(URL_BASE).hostname === "vlifbvzlyzoncefvfgol.supabase.co") throw new Error("Teste bloqueado: projeto de produção não pode receber testes destrutivos.");
 }
 
 async function request(path, { method = "GET", token, apiKey = ANON, body, prefer } = {}) {
