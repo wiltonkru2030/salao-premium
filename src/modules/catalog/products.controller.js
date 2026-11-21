@@ -3,6 +3,7 @@
  * Recebe serviços por injeção; não contém consultas ao banco nem marcação HTML.
  */
 import { parseBRL, applyInputMask } from "../../utils/input-masks.js";
+import { state } from "../../state.js";
 /**
  * Abre o modal de cadastro/edição e preenche dados do produto.
  * @param {object|null} product Produto existente ou null para novo.
@@ -92,7 +93,7 @@ export function bindProductEvents({host,client,productPageState,getOrgId,canMana
     toggle.disabled=true;
     snapshot.pending=true;
     try {
-      await setProductActive({client,orgId:snapshot.orgId,productId:row.id,active:nextActive});
+      await setProductActive({client,orgId:snapshot.orgId,branchId:state.branch?.id||null,productId:row.id,active:nextActive});
       if(!productPageState.isCurrent(host,snapshot,getOrgId()))return;
       toast(nextActive?"Produto reativado.":"Produto inativado.");
       await loadProductsPage();
@@ -130,7 +131,7 @@ export function bindProductEvents({host,client,productPageState,getOrgId,canMana
     try {
       await saveProduct({
         client,orgId:snapshot.orgId,
-        productId,
+        productId,branchId:state.branch?.id||null,
         name,sku:values.get("sku"),category:values.get("category"),
         costPrice:cost,salePrice:price,stockQuantity:stock,minStock
       });
