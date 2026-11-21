@@ -62,7 +62,8 @@ export function reportError(error, { context = "Aplicação", notify = true, fal
   console.error("[SALAO PREMIUM][" + id + "]", {
     context,
     name: String(error?.name || "Error"),
-    code: errorCode(error) || null,
+    code: errorCode(error) || errorCode(error?.cause) || null,
+    causeName: error?.cause ? String(error.cause.name || "Error").slice(0,60) : null,
     message
   });
   if (notify && typeof document !== "undefined" && document.body) {
