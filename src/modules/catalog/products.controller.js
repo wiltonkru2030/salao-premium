@@ -45,30 +45,36 @@ function openProductModal(product=null) {
 }
 
 
-let modalListenerInstalled=false;
 /**
- * Conecta eventos da página uma vez por montagem.
- * @param {object} options Contexto, estado, serviços e notificações.
- * @returns {void} Registra os eventos de gerenciamento.
+ * Instala eventos no catálogo sem conservar dependências de montagens antigas.
+ * @param {object} options Serviços injetados e contexto de autorização.
+ * @returns {void} Configura eventos locais e abertura pelo cabeçalho.
  */
 export function bindProductEvents({host,client,productPageState,getOrgId,canManageProducts,toast,reportError,saveProduct,setProductActive,loadProductsPage}) {
-  if(host.dataset.bound==="true")return;
-  host.dataset.bound="true";
-
-  if(!modalListenerInstalled) {
-    modalListenerInstalled=true;
+  // O botão Novo produto pertence ao cabeçalho, fora do host. A referência atual
+  // é substituída a cada montagem; o listener do documento nunca retém estado antigo.
+  host._openProductModal=()=>{
+    if(!canManageProducts())return toast("Sem permissão para cadastrar produtos.");
+    const snapshot=productPageState.current(host,getOrgId());
+    if(snapshot&&!snapshot.pending)openProductModal();
+  };
+  if(!document._spProductOpenBound){
+    document._spProductOpenBound=true;
     document.addEventListener("click",event=>{
-      const dialog=document.querySelector("#product-create-modal");
-      if(!dialog)return;
-      if(event.target.closest('[data-action="open-product-modal"]')&&canManageProducts()) {
-        const snapshot=productPageState.current(document.querySelector("#products-manager"),getOrgId());
-        if(snapshot&&!snapshot.pending)openProductModal();
-      }
-      else if(event.target.closest("[data-close-product-modal]")||event.target===dialog) {
-        if(dialog.open)dialog.close();
+      if(event.target.closest('[data-action="open-product-modal"]')){
+        document.querySelector("#products-manager")?._openProductModal?.();
       }
     });
   }
+  if(host.dataset.bound==="true")return;
+  host.dataset.bound="true";
+  // Fechamento delegado localmente: o modal é recriado após recarregar a lista.
+  host.addEventListener("click",event=>{
+    const dialog=host.querySelector("#product-create-modal");
+    if(dialog&&(event.target.closest("[data-close-product-modal]")||event.target===dialog)){
+      if(dialog.open)dialog.close();
+    }
+  });
 
   host.addEventListener("click",async event=>{
     const edit=event.target.closest("[data-edit-product]");
