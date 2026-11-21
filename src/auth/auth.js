@@ -208,7 +208,7 @@ export function startAuth(onAuthenticated) {
         const { error } = await supabase.auth.updateUser({ password });
         if (error) throw error;
         passwordRecoveryInProgress = false;
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "local" });
         showAuth("login", "Senha alterada com sucesso. Entre com sua nova senha.", "success");
       } else if (form.dataset.authForm === "signup") {
         const fullName = String(values.get("full_name") || "").trim();
@@ -246,7 +246,8 @@ export function startAuth(onAuthenticated) {
  * @returns {Promise<void>} Resolve após encerrar a sessão.
  * @throws {Error} Quando o Supabase não consegue encerrar a sessão.
  */
+// Ao trocar de conta no painel, não encerrar outras sessões independentes.
 export async function signOut() {
-  const { error } = await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut({ scope: "local" });
   if (error) throw error;
 }
