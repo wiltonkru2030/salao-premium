@@ -95,3 +95,24 @@
  #app #services-manager .record-trailing :is(.btn,.text-button){flex:1 1 120px}
  #app #service-create-modal .sp-modal-body :is(input,select,textarea){font-size:16px}
 }
+
+/* Catálogo de produtos: cartões comerciais e formulário responsivo.
+ * Centraliza o acabamento visual sem inserir regras de negócio em CSS.
+ */
+#app #products-manager .record-card{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px}
+#app #products-manager .record-main{min-width:0;flex:1}
+#app #products-manager .record-main b{font-size:15px;line-height:1.4}
+#app #products-manager .record-main small{display:block;font-size:12px;line-height:1.6}
+#app #products-manager .record-trailing{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:10px}
+#app #products-manager .record-trailing>b{font-size:17px;white-space:nowrap}
+#app #products-manager .record-trailing :is(.btn,.text-button){min-height:42px;padding:10px 14px;border-radius:9px;font-size:13px}
+#app #product-create-modal .sp-modal-body label{display:flex;flex-direction:column;gap:8px;font-size:13px}
+#app #product-create-modal .sp-modal-body :is(input,select,textarea){min-height:46px;padding:11px 13px;font-size:14px;border:1px solid #dcd8d1;border-radius:9px}
+#app #product-create-modal .sp-modal-body :is(input,select,textarea):focus-visible{outline:2px solid #b29a6d;outline-offset:1px}
+#app #product-create-modal .sp-modal-body input[readonly]{background:#f6f5f3;color:#706b64;cursor:not-allowed}
+@media(max-width:700px){
+ #app #products-manager .record-card{flex-direction:column;align-items:stretch;padding:17px;gap:14px}
+ #app #products-manager .record-trailing{justify-content:flex-start}
+ #app #products-manager .record-trailing :is(.btn,.text-button){flex:1 1 120px}
+ #app #product-create-modal .sp-modal-body :is(input,select,textarea){font-size:16px}
+}
