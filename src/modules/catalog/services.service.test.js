@@ -43,6 +43,15 @@ async function run(){
   assert.deepEqual(client.calls[3].filters,[["org_id","org-a"],["id","s1"]]);
   await setServiceActive({client,orgId:"org-a",serviceId:"s1",active:false});
   assert.deepEqual(client.calls[4].payload,{active:false});
+  // Regressão: a filial ativa deve limitar edição e inativação.
+  const branchId="11111111-1111-4111-8111-111111111111";
+  const scoped=mockClient({services:[]});
+  await saveService({client:scoped,orgId:"org-a",branchId,name:"Corte",durationMinutes:30,price:80});
+  assert.equal(scoped.calls[0].payload.branch_id,branchId);
+  await saveService({client:scoped,orgId:"org-a",branchId,serviceId:"s1",name:"Corte",durationMinutes:30,price:80});
+  assert.equal(scoped.calls[1].or,"branch_id.eq."+branchId+",branch_id.is.null");
+  await setServiceActive({client:scoped,orgId:"org-a",branchId,serviceId:"s1",active:false});
+  assert.equal(scoped.calls[2].or,"branch_id.eq."+branchId+",branch_id.is.null");
   await assert.rejects(()=>saveService({client,orgId:"org-a",name:"Corte",durationMinutes:33,price:20}),{name:"TypeError"});
   const failing=mockClient({}, {code:"42501",message:"SQL privado"});
   await assert.rejects(()=>listServices({client:failing,orgId:"org-a"}),e=>!e.message.includes("SQL privado"));
