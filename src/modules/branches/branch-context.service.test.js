@@ -37,6 +37,17 @@ async function run(){
   assert.equal(allUnits.branch.id,null);
   const professional=await resolveBranchContext({client,orgId:"org-a",role:"professional",userId:"user-pro"});
   assert.equal(professional.branch.id,"branch-a");
+  // Regressão: nunca executar busca profissional sem usuário autenticado.
+  const before=client.calls.length;
+  await assert.rejects(
+    ()=>resolveBranchContext({client,orgId:"org-a",role:"professional"}),
+    {name:"TypeError"}
+  );
+  assert.equal(client.calls.length,before,"sem usuário, nenhuma consulta deve ser executada");
+  const empty=await resolveBranchContext({
+    client:mockClient({branches:[]}),orgId:"org-a",role:"owner",previousBranchId:"__all__"
+  });
+  assert.equal(empty.branch,null,"sem filiais ativas não deve existir seleção global artificial");
   await assert.rejects(()=>resolveBranchContext({client,orgId:""}),{name:"TypeError"});
   console.log("Testes do contexto de filial: OK");
 }
