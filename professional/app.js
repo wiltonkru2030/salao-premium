@@ -1,6 +1,6 @@
 /** App Profissional (PWA): autenticação, sessão individual, Agenda, Comandas, Comissões e configurações do próprio perfil. */
 import {authenticateProfessional} from "./auth.service.js";
-import { supabase } from "../src/supabase/client.js";
+import { supabase } from "./supabase.client.js";
 import {bindOrderService} from "./order-service.controller.js";
 import { installGlobalErrorHandlers, reportError } from "../src/utils/errors.js";
 import { installGlobalMasks } from "../src/utils/input-masks.js";
