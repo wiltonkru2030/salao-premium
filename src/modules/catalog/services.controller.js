@@ -2,6 +2,7 @@
  * Eventos e modais do catálogo de serviços; recebe serviços por injeção.
  */
 import { parseBRL, applyInputMask } from "../../utils/input-masks.js";
+import { state } from "../../state.js";
 /**
  * Abre o modal de cadastro ou edição e preenche os campos do serviço.
  * @param {object|null} service Serviço existente ou null para novo cadastro.
@@ -96,7 +97,7 @@ export function bindServiceEvents({host,client,servicePageState,getOrgId,canMana
     toggle.disabled=true;
     snapshot.pending=true;
     try {
-      await setServiceActive({client,orgId:snapshot.orgId,serviceId:row.id,active:nextActive});
+      await setServiceActive({client,orgId:snapshot.orgId,branchId:state.branch?.id||null,serviceId:row.id,active:nextActive});
       if(!servicePageState.isCurrent(host,snapshot,getOrgId()))return;
       toast(nextActive?"Serviço reativado.":"Serviço inativado.");
       await loadServicesPage();
@@ -132,7 +133,7 @@ export function bindServiceEvents({host,client,servicePageState,getOrgId,canMana
     try {
       await saveService({
         client,orgId:snapshot.orgId,
-        serviceId,branchId:serviceId?null:(values.get("branch_id")||null),
+        serviceId,branchId:serviceId?(state.branch?.id||null):(values.get("branch_id")||null),
         name,category:values.get("category"),durationMinutes:duration,
         price,description:values.get("description")
       });
