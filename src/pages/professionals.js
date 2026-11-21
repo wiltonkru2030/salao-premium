@@ -5,7 +5,7 @@ import { head, toast } from "../utils.js";
 import { bindProfessionalEvents } from "../modules/professionals/professionals.controller.js";
 import { renderProfessionalsView } from "../modules/professionals/professionals.view.js";
 import { reportError } from "../utils/errors.js";
-import { fetchProfessionalWorkspace, setProfessionalActive, setTeamProfessionalAppAccess, revokeProfessionalAppAccess, createProfessionalWithServices } from "../modules/professionals/professionals.service.js";
+import { fetchProfessionalWorkspace, setProfessionalActive, setTeamProfessionalAppAccess, revokeProfessionalAppAccess, createProfessionalWithServices, updateProfessionalProfile } from "../modules/professionals/professionals.service.js";
 
 /** Módulo Profissionais: cadastro fiscal, vínculo de serviços e controle de acesso ao App Profissional. */
 
@@ -26,14 +26,15 @@ export async function loadProfessionalsPage(){
  if(!host||!state.organization?.id)return;
  const orgId=state.organization.id,userId=state.user?.id;
  const version=++loadVersion;
- const key=JSON.stringify([orgId,userId,state.membership?.role]);
+ const branchId=state.branch?.id||null;
+ const key=JSON.stringify([orgId,userId,state.membership?.role,branchId]);
  if(key!==credentialContext){initialPasswords.clear();credentialContext=key;}
- const isCurrent=()=>host.isConnected&&version===loadVersion&&state.organization?.id===orgId&&state.user?.id===userId&&JSON.stringify([orgId,userId,state.membership?.role])===key;
+ const isCurrent=()=>host.isConnected&&version===loadVersion&&state.organization?.id===orgId&&state.user?.id===userId&&JSON.stringify([orgId,userId,state.membership?.role,state.branch?.id||null])===key;
  host.textContent="Carregando profissionais…";
  let workspace;
  try {
   workspace=await fetchProfessionalWorkspace({
-   client:supabase,orgId,currentUserId:userId
+   client:supabase,orgId,currentUserId:userId,branchId
   });
   if(!isCurrent())return;
   host.innerHTML=renderProfessionalsView(workspace,{currentUserId:userId,canManage:canManageProfessionals(),initialPasswords});
@@ -43,5 +44,5 @@ export async function loadProfessionalsPage(){
   host.innerHTML='<div class="empty-state">Não foi possível carregar os dados da equipe. Atualize a página e tente novamente.</div>';
   return;
  }
- bindProfessionalEvents({host,client:supabase,state,initialPasswords,canManageProfessionals,toast,reportError,setProfessionalActive,setTeamProfessionalAppAccess,revokeProfessionalAppAccess,createProfessionalWithServices,loadProfessionalsPage});
+ bindProfessionalEvents({host,client:supabase,state,initialPasswords,canManageProfessionals,toast,reportError,setProfessionalActive,setTeamProfessionalAppAccess,revokeProfessionalAppAccess,createProfessionalWithServices,updateProfessionalProfile,workspace,loadProfessionalsPage});
 }
