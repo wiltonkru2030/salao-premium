@@ -47,8 +47,9 @@ export async function getCurrentUser() {
   return data.user;
 }
 
+// Encerrar somente a Área da Cliente, mantendo painel e aplicativo profissional.
 export async function signOut() {
-  const { error } = await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut({ scope: "local" });
   if (error) throw new Error(customerAuthError(error));
 }
 
