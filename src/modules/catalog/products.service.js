@@ -76,8 +76,11 @@ export async function saveProduct({
   };
   // Estoque existente só muda por movimentação; cadastro novo recebe o saldo inicial.
   try {
+    // Impede alterações em produto de outra filial; registros compartilhados permanecem editáveis.
+    let query=productId ? client.from("products").update(payload).eq("org_id",orgId).eq("id",productId) : null;
+    if(query&&branchId)query=query.or("branch_id.eq."+branchId+",branch_id.is.null");
     const result=productId
-      ? await client.from("products").update(payload).eq("org_id",orgId).eq("id",productId)
+      ? await query
       : await client.from("products").insert({org_id:orgId,branch_id:branchId||null,...payload,stock_quantity:stock,active:true});
     if(result.error)throw result.error;
   } catch(error) { throw mapProductError(error); }
@@ -88,11 +91,14 @@ export async function saveProduct({
  * @param {object} options Cliente, organização, produto e estado desejado.
  * @returns {Promise<void>} Resolve após atualizar o estado.
  */
-export async function setProductActive({client,orgId,productId,active}={}) {
+export async function setProductActive({client,orgId,branchId=null,productId,active}={}) {
   requireContext(client,orgId);
+  requireBranchId(branchId);
   if(!productId||typeof active!=="boolean")throw new TypeError("Selecione um produto e um estado válidos.");
   try {
-    const {error}=await client.from("products").update({active}).eq("org_id",orgId).eq("id",productId);
+    let query=client.from("products").update({active}).eq("org_id",orgId).eq("id",productId);
+    if(branchId)query=query.or("branch_id.eq."+branchId+",branch_id.is.null");
+    const {error}=await query;
     if(error)throw error;
   } catch(error) { throw mapProductError(error); }
 }
