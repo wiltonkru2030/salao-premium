@@ -69,12 +69,16 @@ export async function fetchProfessionalWorkspace({client,orgId,currentUserId,bra
  * @param {object} options Cliente Supabase, organização, profissional e estado desejado.
  * @returns {Promise<void>} Resolve quando o servidor confirma a alteração.
  */
-export async function setProfessionalActive({client,orgId,professionalId,active}={}) {
+export async function setProfessionalActive({client,orgId,branchId=null,professionalId,active}={}) {
   requireContext(client,orgId);
+  if(branchId&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(branchId))throw new TypeError("A unidade selecionada não é válida.");
   if(!professionalId||typeof active!=="boolean")throw new TypeError("Selecione um profissional e uma situação válidos.");
   try {
-    const {data,error}=await client.from("professionals").update({active})
-      .eq("org_id",orgId).eq("id",professionalId).select("id").maybeSingle();
+    // Profissionais pertencem a uma unidade; não alterar registros de outra filial.
+    let query=client.from("professionals").update({active})
+      .eq("org_id",orgId).eq("id",professionalId);
+    if(branchId)query=query.eq("branch_id",branchId);
+    const {data,error}=await query.select("id").maybeSingle();
     if(error)throw error;
     if(!data?.id)throw Object.assign(new Error("Profissional não encontrado."),{code:"P0002"});
   } catch(error) { throw mapWorkspaceError(error); }
