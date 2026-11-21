@@ -49,30 +49,29 @@ function openServiceModal(service=null) {
 }
 
 
-let modalListenerInstalled=false;
 /**
- * Conecta eventos uma vez por montagem.
- * @param {object} options Estado, contexto, serviços e notificações.
- * @returns {void} Registra eventos do catálogo.
+ * Registra eventos delegados no host atual do catálogo.
+ * O host é recriado nas trocas de página: listeners globais capturavam contexto antigo.
+ * @param {object} options Dependências de navegação, dados e persistência.
+ * @returns {void} Instala eventos apenas uma vez por host.
  */
 export function bindServiceEvents({host,client,servicePageState,getOrgId,canManageServices,toast,reportError,saveService,setServiceActive,loadServicesPage}) {
   if(host.dataset.bound==="true")return;
   host.dataset.bound="true";
-
-  if(!modalListenerInstalled) {
-    modalListenerInstalled=true;
-    document.addEventListener("click",event=>{
-      const dialog=document.querySelector("#service-create-modal");
-      if(!dialog)return;
-      if(event.target.closest('[data-action="open-service-modal"]')&&canManageServices()) {
-        const snapshot=servicePageState.current(document.querySelector("#services-manager"),getOrgId());
-        if(snapshot&&!snapshot.pending)openServiceModal();
-      }
-      else if(event.target.closest("[data-close-service-modal]")||event.target===dialog) {
-        if(dialog.open)dialog.close();
-      }
-    });
-  }
+  // Abrir e fechar usam delegação local para não conservar referências de páginas antigas.
+  host.addEventListener("click",event=>{
+    const dialog=host.querySelector("#service-create-modal");
+    if(!dialog)return;
+    if(event.target.closest('[data-action="open-service-modal"]')){
+      if(!canManageServices())return toast("Sem permissão para cadastrar serviços.");
+      const snapshot=servicePageState.current(host,getOrgId());
+      if(snapshot&&!snapshot.pending)openServiceModal();
+      return;
+    }
+    if(event.target.closest("[data-close-service-modal]")||event.target===dialog){
+      if(dialog.open)dialog.close();
+    }
+  });
 
   host.addEventListener("click",async event=>{
     const edit=event.target.closest("[data-edit-service]");
