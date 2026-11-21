@@ -93,6 +93,7 @@ export function startAuth(onAuthenticated) {
       // Preservar a sessão permite tentar novamente sem invalidar o token autenticado.
       activeUserId = null;
       showAuth("login", `${diagnostic.message} (Código ${diagnostic.id})`, "error");
+      document.querySelector(".auth-notice")?.insertAdjacentHTML("beforeend", '<p><button type="button" data-auth-retry-context>Tentar carregar meu salão novamente</button></p>');
     } finally {
       resolvingUserId = null;
     }
@@ -150,6 +151,25 @@ export function startAuth(onAuthenticated) {
       button.disabled = false;
       button.textContent = "Entrar nesta organização";
     }
+  });
+
+  // Reusa a sessão autenticada quando a consulta ao tenant falha; não pede senha novamente.
+  document.addEventListener("click", async event => {
+    const button = event.target.closest("[data-auth-retry-context]");
+    if (!button || button.disabled) return;
+    button.disabled = true;
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      if (!data.session?.user) {
+        showAuth("login", "Sua sessão expirou. Entre novamente.", "error");
+        return;
+      }
+      await activateUser(data.session.user);
+    } catch (error) {
+      const diagnostic = reportError(error, { context: "Painel > recuperar sessão", notify: false });
+      showAuth("login", diagnostic.message + " (Código " + diagnostic.id + ")", "error");
+    } finally { if (button.isConnected) button.disabled = false; }
   });
 
   document.addEventListener("click", event => {
