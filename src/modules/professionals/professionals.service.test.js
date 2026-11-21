@@ -55,7 +55,8 @@ async function run() {
     professionals:[{id:"pro-b",org_id:"org-a",branch_id:"11111111-1111-4111-8111-111111111111"}]
   });
   await fetchProfessionalWorkspace({client:branchClient,orgId:"org-a",currentUserId:"owner-a",branchId:"11111111-1111-4111-8111-111111111111"});
-  assert.ok(branchClient.calls.find(call=>call.table==="professionals").filters.some(filter=>filter[1]==="branch_id"&&filter[2]==="11111111-1111-4111-8111-111111111111"));
+  // Profissionais sem filial permanecem visíveis, sem consultar outra organização.
+  assert.equal(branchClient.calls.find(call=>call.table==="professionals").or,"branch_id.eq.11111111-1111-4111-8111-111111111111,branch_id.is.null");
   assert.equal(branchClient.calls.find(call=>call.table==="services").or,"branch_id.eq.11111111-1111-4111-8111-111111111111,branch_id.is.null");
 
   await assert.rejects(()=>fetchProfessionalWorkspace({client,orgId:"",currentUserId:"owner-a"}),{name:"TypeError"});
