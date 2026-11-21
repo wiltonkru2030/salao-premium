@@ -1,0 +1,52 @@
+/* SALÃO PREMIUM — contrato global de botões e cadastros.
+ * Responsabilidade: padronizar aparência em todo o painel, incluindo módulos legados.
+ * Não contém lógica, validação ou acesso a dados. Mantém branco/preto e dourado discreto.
+ * A ordem de importação deve ser a última do styles.css para prevalecer sobre CSS antigo.
+ */
+#app :is(.btn,button.primary,button.secondary,.professional-add-button,.auth-submit){
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-height:44px;padding:11px 18px;border-radius:10px;
+  font-family:var(--sp-font-ui,'Poppins',sans-serif);font-size:13px;
+  font-weight:500;line-height:1.35;letter-spacing:0;
+  transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+#app :is(.btn.primary,button.primary,.professional-add-button,.auth-submit){
+  background:#1c1c1c;color:#fff;border:1px solid #1c1c1c;
+}
+#app :is(.btn.primary,button.primary,.professional-add-button,.auth-submit):hover:not(:disabled){
+  background:#35302a;border-color:#35302a;box-shadow:0 4px 14px #18161216;
+}
+#app :is(.btn.secondary,button.secondary){
+  background:#fff;color:#282622;border:1px solid #d9d6d0;
+}
+#app :is(.btn.secondary,button.secondary):hover:not(:disabled){
+  background:#f8f6f2;border-color:#b4a27e;
+}
+#app :is(.btn,button.primary,button.secondary):focus-visible{
+  outline:2px solid #b29a6d;outline-offset:3px;
+}
+#app :is(.btn,button.primary,button.secondary):disabled{opacity:.52;cursor:not-allowed;box-shadow:none}
+#app :is(.professional-person-card,.record-card,.surface,.settings-card){
+  border-radius:14px;border-color:#e6e2db;
+}
+#app :is(.professional-person-card,.record-card) :is(button,.btn){font-size:12px}
+#app :is(.professional-form-grid,.form-grid,.form-row,.sp-modal-body,.settings-form) label{
+  font-size:13px;line-height:1.5;color:#55504a;
+}
+#app :is(.professional-form-grid,.form-grid,.form-row,.sp-modal-body,.settings-form) :is(input:not([type=checkbox]),select,textarea){
+  min-height:46px;font-size:14px;border-radius:9px;border-color:#dcd8d1;
+}
+#app :is(.professional-form-grid,.form-grid,.form-row,.sp-modal-body,.settings-form) :is(input,select,textarea):focus-visible{
+  outline:2px solid #b29a6d;outline-offset:1px;
+}
+#app .professional-person-top{flex-wrap:wrap;gap:12px}
+#app .professional-person-footer{flex-wrap:wrap;gap:12px}
+#app .professional-modal-body h3{font-size:15px;line-height:1.4}
+#app .professional-person-card h3{font-size:17px;line-height:1.4}
+@media(max-width:700px){
+  #app :is(.btn,button.primary,button.secondary,.professional-add-button){min-height:46px;padding:12px 15px;font-size:14px}
+  #app :is(.professional-form-grid,.form-grid,.form-row,.sp-modal-body,.settings-form) :is(input:not([type=checkbox]),select,textarea){font-size:16px}
+  #app .professional-person-top>.btn{width:100%}
+  #app .professional-person-footer{align-items:stretch}
+}
+@media(prefers-reduced-motion:reduce){#app :is(.btn,button.primary,button.secondary){transition:none}}
