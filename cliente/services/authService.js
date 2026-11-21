@@ -4,7 +4,7 @@
  * Google e Passkey comprovam a identidade. PIN de quatro dígitos não é login
  * autônomo nem recuperação de conta; depende de armazenamento seguro nativo.
  */
-import { supabase } from "../../src/supabase/client.js";
+import { supabase } from "../supabase.client.js";
 import { customerAuthError, safeClientRedirect } from "../auth-utils.js";
 
 function unwrap(result, fallback) {
