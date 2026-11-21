@@ -72,8 +72,11 @@ export async function saveService({
     description:String(description??"").trim()||null
   };
   try {
+    // Edições só atingem a filial ativa ou serviços compartilhados entre unidades.
+    let query=serviceId ? client.from("services").update(payload).eq("org_id",orgId).eq("id",serviceId) : null;
+    if(query&&branchId)query=query.or("branch_id.eq."+branchId+",branch_id.is.null");
     const result=serviceId
-      ? await client.from("services").update(payload).eq("org_id",orgId).eq("id",serviceId)
+      ? await query
       : await client.from("services").insert({org_id:orgId,branch_id:branchId||null,...payload,active:true});
     if(result.error)throw result.error;
   } catch(error) { throw mapServiceError(error); }
@@ -84,11 +87,14 @@ export async function saveService({
  * @param {object} options Cliente, organização, serviço e estado desejado.
  * @returns {Promise<void>} Resolve após atualizar o estado.
  */
-export async function setServiceActive({client,orgId,serviceId,active}={}) {
+export async function setServiceActive({client,orgId,branchId=null,serviceId,active}={}) {
   requireContext(client,orgId);
+  requireBranchId(branchId);
   if(!serviceId||typeof active!=="boolean")throw new TypeError("Selecione um serviço e um estado válidos.");
   try {
-    const {error}=await client.from("services").update({active}).eq("org_id",orgId).eq("id",serviceId);
+    let query=client.from("services").update({active}).eq("org_id",orgId).eq("id",serviceId);
+    if(branchId)query=query.or("branch_id.eq."+branchId+",branch_id.is.null");
+    const {error}=await query;
     if(error)throw error;
   } catch(error) { throw mapServiceError(error); }
 }
