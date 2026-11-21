@@ -35,6 +35,13 @@ assert.match(customerClient, /detectSessionInUrl:\s*true/);
 assert.match(customerClient, /flowType:\s*["']pkce["']/);
 assert.match(customerClient, /passkey:\s*true/);
 
+// Sair de um aplicativo não deve revogar sessões dos outros no mesmo projeto.
+for (const authSource of [read("../src/auth/auth.js"), read("./services/authService.js"),
+  read("../professional/app.js")]) {
+  assert.match(authSource, /supabase\.auth\.signOut\(\{\s*scope:\s*["']local["']/,
+    "Cada aplicativo deve encerrar apenas a própria sessão.");
+}
+
 for(const path of listModules(root)) {
   const source = readFileSync(path, "utf8");
   assert.doesNotMatch(source, /from\s*["'](?:\.\.\/)+src\/supabase\/client\.js["']/, 
