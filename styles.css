@@ -49,3 +49,6 @@
 
 /* Correção de layout em telefones e viewports virtuais de navegador. */
 @import url('./src/styles/design-mobile-shell-fix.css');
+
+/* Estados vazios com orientacao e acao de cadastro. */
+@import url('./src/styles/design-empty-workspaces.css');
