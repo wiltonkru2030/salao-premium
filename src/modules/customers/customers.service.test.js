@@ -47,6 +47,11 @@ async function run(){
   await saveCustomer({client,orgId:"org-a",customerId:"c1",name:"Maria Atualizada",birthDate:""});
   assert.deepEqual(client.calls[4].filters,[["org_id","org-a"],["id","c1"]]);
   assert.equal(client.calls[4].payload.birth_date,null);
+  const scoped=mockClient({customers:[{id:"c1",org_id:"org-a",branch_id:"11111111-1111-4111-8111-111111111111"}]});
+  await saveCustomer({client:scoped,orgId:"org-a",branchId:"11111111-1111-4111-8111-111111111111",customerId:"c1",name:"Maria"});
+  assert.equal(scoped.calls[0].or,"branch_id.eq.11111111-1111-4111-8111-111111111111,branch_id.is.null");
+  await setCustomerActive({client:scoped,orgId:"org-a",branchId:"11111111-1111-4111-8111-111111111111",customerId:"c1",active:false});
+  assert.equal(scoped.calls[1].or,"branch_id.eq.11111111-1111-4111-8111-111111111111,branch_id.is.null");
   await setCustomerActive({client,orgId:"org-a",customerId:"c1",active:false});
   assert.deepEqual(client.calls[5].payload,{active:false});
   await assert.rejects(()=>saveCustomer({client,orgId:"org-a",name:"M",email:"email-invalido"}),{name:"TypeError"});
