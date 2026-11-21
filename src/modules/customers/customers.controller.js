@@ -75,7 +75,7 @@ export function bindCustomerEvents({host,client,customerPageState,customerContex
     if(!customerPageState.isCurrent(host,snapshot,customerContextKey()))return;
     toggle.disabled=true;
     try {
-      await setCustomerActive({client,orgId:context.orgId,customerId:customer.id,active:nextActive});
+      await setCustomerActive({client,orgId:context.orgId,branchId:context.branchId,customerId:customer.id,active:nextActive});
       if(!customerPageState.isCurrent(host,snapshot,customerContextKey()))return;
       toast(nextActive?"Cliente reativado.":"Cliente inativado.");
       await loadCustomersPage();
