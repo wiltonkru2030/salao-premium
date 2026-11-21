@@ -1,8 +1,8 @@
 /** Inicialização do cliente Supabase. Contém apenas URL e chave publicável; nunca adicionar service_role aqui. */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.119.0';
 
-export const SUPABASE_URL = 'https://vlifbvzlyzoncefvfgol.supabase.co';
-export const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_XBXtJ5YbB1rwda7AoAIrwQ_1FR1TfIJ';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
+export { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
