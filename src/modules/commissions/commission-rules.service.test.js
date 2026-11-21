@@ -77,6 +77,17 @@ async function run() {
   await assert.rejects(()=>saveProductCommissionSetting({
     client,orgId:"org-a",enabled:true,rate:0
   }),{name:"TypeError"});
+  await assert.rejects(()=>payProfessionalCommissions({
+    client,orgId:"org-a",professionalId:"professional-a",commissionIds:["commission-a"],paymentMethod:"   "
+  }),{name:"TypeError"});
+  await assert.rejects(()=>payProfessionalCommissions({
+    client,orgId:"org-a",professionalId:"professional-a",commissionIds:["commission-a"],notes:"x".repeat(501)
+  }),{name:"TypeError"});
+  await assert.rejects(()=>payProfessionalCommissions({
+    client,orgId:"org-a",professionalId:"professional-a",commissionIds:Array.from({length:501},(_,i)=>"c"+i)
+  }),{name:"TypeError"});
+  assert.equal(client.calls.filter(call=>call.rpc==="pay_professional_commissions").length,1,"Repasses inválidos não devem chamar o RPC.");
+
 
   const failing=mockClient({error:{code:"42501",message:"SQL privado"}});
   await assert.rejects(()=>createServiceCommissionRule({
