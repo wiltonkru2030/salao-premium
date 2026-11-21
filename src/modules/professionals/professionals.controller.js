@@ -31,15 +31,19 @@ export function bindProfessionalEvents({host,client,state,initialPasswords,canMa
    if(meiFields){meiFields.hidden=!mei;meiFields.querySelector("[name=cnpj]").required=mei;meiFields.querySelector("[name=legal_name]").required=mei;}
    // CPF é credencial de acesso; a edição cadastral não o altera.
    form.elements.cpf.required=false;form.elements.cpf.closest("label").hidden=true;
+   form.elements.enable_app.checked=false;
    form.elements.enable_app.closest("label").hidden=true;
+   // Edição cadastral não altera vínculos até existir RPC transacional.
    form.querySelector("#professional-edit-services-notice").hidden=false;
+   form.querySelector("#professional-new-services-help").hidden=true;
    form.querySelector("#professional-service-filter").hidden=true;
    form.querySelector("#professional-service-choices").hidden=true;
+   form.querySelector("#professional-app-access-heading").hidden=true;
    form.querySelector("#professional-modal-title").textContent="Editar profissional";
    form.querySelector("[type=submit]").textContent="Salvar alterações";
    dialog.showModal();return;
   }
-  if(event.target.closest("[data-open-professional-modal]") && canManageProfessionals()){const modal=host.querySelector("#professional-create-modal");if(modal&&!modal.open){const form=modal.querySelector("#professional-create-form");form.reset();form.elements.cpf.required=true;form.elements.cpf.closest("label").hidden=false;form.elements.enable_app.closest("label").hidden=false;form.querySelector("#professional-edit-services-notice").hidden=true;form.querySelector("#professional-service-filter").hidden=false;form.querySelector("#professional-service-choices").hidden=false;form.querySelector("#professional-modal-title").textContent="Novo profissional";form.querySelector("[type=submit]").textContent="Salvar profissional";modal.showModal();modal.querySelector('[name="name"]')?.focus();}return;}
+  if(event.target.closest("[data-open-professional-modal]") && canManageProfessionals()){const modal=host.querySelector("#professional-create-modal");if(modal&&!modal.open){const form=modal.querySelector("#professional-create-form");form.reset();form.elements.cpf.required=true;form.elements.cpf.closest("label").hidden=false;form.elements.enable_app.closest("label").hidden=false;form.querySelector("#professional-edit-services-notice").hidden=true;form.querySelector("#professional-new-services-help").hidden=false;form.querySelector("#professional-service-filter").hidden=false;form.querySelector("#professional-service-choices").hidden=false;form.querySelector("#professional-app-access-heading").hidden=false;form.querySelector("#professional-modal-title").textContent="Novo profissional";form.querySelector("[type=submit]").textContent="Salvar profissional";modal.showModal();modal.querySelector('[name="name"]')?.focus();}return;}
   if(event.target===host.querySelector("#professional-create-modal")||event.target.closest("[data-close-professional-modal]")){host.querySelector("#professional-create-modal")?.close();return;}
   const activeToggle=event.target.closest("[data-toggle-professional-active]");
   if(activeToggle) {
