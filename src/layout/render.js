@@ -191,6 +191,18 @@ export function render() {
   });
   loadCurrentPageData();
 
+  // Ações de navegação internas (ex.: "Ver agenda" e estado vazio da Agenda).
+  // O conteúdo assíncrono é substituído após o render, portanto usamos delegação.
+  const contentHost = document.querySelector('.page-content');
+  contentHost?.addEventListener('click', event => {
+    const target = event.target.closest('[data-page]');
+    if (!target || !contentHost.contains(target)) return;
+    const destination = target.dataset.page;
+    if (!groups.some(group => group.slice(1).includes(destination))) return;
+    event.preventDefault();
+    changePage(destination);
+  });
+
   document.querySelectorAll("#sidebar .nav-item[data-page]").forEach(item => {
     item.addEventListener("click", event => {
       event.preventDefault();
