@@ -49,7 +49,7 @@ function buildContent() {
   if(!host||state.page!=='Agenda')return;
   const professionals=state.agendaProfessionals||[];
   if(!professionals.length){
-    host.innerHTML='<div class="empty-state"><b>Nenhum profissional ativo</b><small>Cadastre um profissional para começar a organizar a agenda.</small></div>';
+    host.innerHTML='<div class="sp-empty-workspace" role="status"><div class="sp-empty-symbol" aria-hidden="true">▦</div><span class="sp-empty-kicker">PREPARE SUA AGENDA</span><h2>Seu calendário começa com a equipe.</h2><p>Cadastre o primeiro profissional para disponibilizar horários, organizar serviços e receber agendamentos.</p><button type="button" class="btn primary" data-page="Profissionais">Cadastrar profissional</button></div>';
     return;
   }
   if(state.pro<0||state.pro>=professionals.length)state.pro=0;
