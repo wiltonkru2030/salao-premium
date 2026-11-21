@@ -9,11 +9,33 @@ import {onlyDigits,validCpf,validCnpj} from "./professionals.validation.js";
  * @param {object} options Contexto e dependências da equipe.
  * @returns {void}
  */
-export function bindProfessionalEvents({host,client,state,initialPasswords,canManageProfessionals,toast,reportError,setProfessionalActive,setTeamProfessionalAppAccess,revokeProfessionalAppAccess,createProfessionalWithServices,loadProfessionalsPage}) {
+export function bindProfessionalEvents({host,client,state,initialPasswords,canManageProfessionals,toast,reportError,setProfessionalActive,setTeamProfessionalAppAccess,revokeProfessionalAppAccess,createProfessionalWithServices,updateProfessionalProfile,workspace,loadProfessionalsPage}) {
  if(host.dataset.bound==="true")return;
  host.dataset.bound="true";
  host.addEventListener("click",async event=>{
-  if(event.target.closest("[data-open-professional-modal]") && canManageProfessionals()){const modal=host.querySelector("#professional-create-modal");if(modal&&!modal.open){modal.showModal();modal.querySelector('[name="name"]')?.focus();}return;}
+  // Reutiliza o modal para edição sem alterar CPF de acesso nem vínculos históricos.
+  const edit=event.target.closest("[data-edit-professional]");
+  if(edit){
+   if(!canManageProfessionals())return toast("Você não tem permissão para editar profissionais.");
+   const p=workspace.professionals.find(item=>item.id===edit.dataset.editProfessional);
+   const dialog=host.querySelector("#professional-create-modal"),form=dialog?.querySelector("#professional-create-form");
+   if(!p||!form)return toast("Profissional não encontrado. Atualize os dados.");
+   form.reset();
+   for(const [field,value] of Object.entries({professional_id:p.id,name:p.name,phone:p.phone,email:p.email,specialty:p.specialty,commission_rate:p.commission_rate,tax_regime:p.tax_regime,cnpj:p.cnpj,legal_name:p.legal_name,trade_name:p.trade_name})){
+    if(form.elements[field])form.elements[field].value=value??"";
+   }
+   const mei=p.tax_regime==="mei",meiFields=form.querySelector("#professional-mei-fields");
+   if(meiFields){meiFields.hidden=!mei;meiFields.querySelector("[name=cnpj]").required=mei;meiFields.querySelector("[name=legal_name]").required=mei;}
+   form.elements.cpf.required=false;form.elements.cpf.closest("label").hidden=true;
+   form.elements.enable_app.closest("label").hidden=true;
+   form.querySelector("#professional-edit-services-notice").hidden=false;
+   form.querySelector("#professional-service-filter").hidden=true;
+   form.querySelector("#professional-service-choices").hidden=true;
+   form.querySelector("#professional-modal-title").textContent="Editar profissional";
+   form.querySelector("[type=submit]").textContent="Salvar alterações";
+   dialog.showModal();return;
+  }
+  if(event.target.closest("[data-open-professional-modal]") && canManageProfessionals()){const modal=host.querySelector("#professional-create-modal");if(modal&&!modal.open){const form=modal.querySelector("#professional-create-form");form.reset();form.elements.cpf.required=true;form.elements.cpf.closest("label").hidden=false;form.elements.enable_app.closest("label").hidden=false;form.querySelector("#professional-edit-services-notice").hidden=true;form.querySelector("#professional-service-filter").hidden=false;form.querySelector("#professional-service-choices").hidden=false;form.querySelector("#professional-modal-title").textContent="Novo profissional";form.querySelector("[type=submit]").textContent="Salvar profissional";modal.showModal();modal.querySelector('[name="name"]')?.focus();}return;}
   if(event.target===host.querySelector("#professional-create-modal")||event.target.closest("[data-close-professional-modal]")){host.querySelector("#professional-create-modal")?.close();return;}
   const activeToggle=event.target.closest("[data-toggle-professional-active]");
   if(activeToggle) {
@@ -105,11 +127,12 @@ export function bindProfessionalEvents({host,client,state,initialPasswords,canMa
   const form=event.target;button=form.querySelector('[type="submit"]');if(!button||button.disabled)return;const v=new FormData(form);
   const name=String(v.get("name")||"").trim(),cpf=onlyDigits(v.get("cpf")),phone=String(v.get("phone")||"").trim(),email=String(v.get("email")||"").trim(),rate=Number(v.get("commission_rate")||0),taxRegime=String(v.get("tax_regime")||"individual"),cnpj=onlyDigits(v.get("cnpj"));
   const serviceIds=[...form.querySelectorAll('input[name="service_ids"]:checked')].map(input=>input.value);
-  if(!name||!validCpf(cpf)||!Number.isFinite(rate)||rate<0||rate>100){toast("Confira nome, CPF e comissão.");return;}
+  const editingId=String(v.get("professional_id")||"").trim();
+  if(!name||(!editingId&&!validCpf(cpf))||!Number.isFinite(rate)||rate<0||rate>100){toast("Confira nome, CPF e comissão.");return;}
   if(taxRegime==="mei"&&(!validCnpj(cnpj)||!String(v.get("legal_name")||"").trim())){toast("Para MEI, informe CNPJ válido e razão social.");return;}
-  if(!serviceIds.length){toast("Selecione ao menos um serviço que o profissional atende.");return;}
+  if(!editingId&&!serviceIds.length){toast("Selecione ao menos um serviço que o profissional atende.");return;}
   button.disabled=true;button.textContent="Salvando…";
-   const professionalId=await createProfessionalWithServices({
+   const professionalId=editingId ? (await updateProfessionalProfile({client,orgId,branchId:state.branch?.id||null,professionalId:editingId,name,phone,email,commissionRate:rate,taxRegime,cnpj,legalName:v.get("legal_name"),tradeName:v.get("trade_name"),specialty:v.get("specialty")}),editingId) : await createProfessionalWithServices({
     client,orgId,branchId:state.branch?.id||null,name,phone,email,
     commissionRate:rate,taxRegime,cnpj,
     legalName:v.get("legal_name"),tradeName:v.get("trade_name"),
@@ -133,7 +156,7 @@ export function bindProfessionalEvents({host,client,state,initialPasswords,canMa
   const meiFields=host.querySelector("#professional-mei-fields");if(meiFields){meiFields.hidden=true;meiFields.querySelector('[name="cnpj"]').required=false;meiFields.querySelector('[name="legal_name"]').required=false;}
   host.querySelector("#professional-service-filter").value="";
   host.querySelector("#professional-create-modal")?.close();button.disabled=false;button.textContent="Salvar profissional";
-  toast(appNotice||"Profissional cadastrado e serviços vinculados.");await loadProfessionalsPage();
+  toast(appNotice||(editingId?"Profissional atualizado. Serviços vinculados preservados.":"Profissional cadastrado e serviços vinculados."));await loadProfessionalsPage();
   }catch(error){reportError(error,{context:"Profissionais > salvar cadastro"});}finally{if(button?.isConnected){button.disabled=false;button.textContent="Salvar profissional";}}
  });
  /** Provisiona acesso e descarta respostas de contexto antigo. */
