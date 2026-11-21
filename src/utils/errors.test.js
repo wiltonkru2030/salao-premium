@@ -10,6 +10,8 @@ const cases = [
   [{ code: "23503" }, "Não foi possível concluir porque este registro está vinculado a outros dados."],
   [{ code: "42501" }, "Sua sessão pode ter expirado ou você não tem permissão para realizar esta operação."],
   [{ code: "PGRST116" }, "O registro não foi encontrado ou não está disponível."],
+  [{ code: "PGRST205" }, "O banco de dados não está com a estrutura esperada. Entre em contato com o suporte do sistema."],
+  [{ code: "42P01" }, "O banco de dados não está com a estrutura esperada. Entre em contato com o suporte do sistema."],
   [{ code: "23514" }, "Os dados informados não atendem às regras deste cadastro."],
   [{ message: "Invalid login credentials" }, "E-mail ou senha incorretos."],
   [{ message: "Email not confirmed" }, "Confirme seu e-mail antes de entrar."],
