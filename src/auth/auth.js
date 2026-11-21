@@ -89,7 +89,9 @@ export function startAuth(onAuthenticated) {
     } catch (error) {
       pendingUser = null;
       const diagnostic = reportError(error, { context: "Painel > carregar organização após login", notify: false });
-      await supabase.auth.signOut();
+      // Uma falha ao consultar a organização não significa que a senha esteja errada.
+      // Preservar a sessão permite tentar novamente sem invalidar o token autenticado.
+      activeUserId = null;
       showAuth("login", `${diagnostic.message} (Código ${diagnostic.id})`, "error");
     } finally {
       resolvingUserId = null;
