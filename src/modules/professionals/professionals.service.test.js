@@ -63,6 +63,12 @@ async function run() {
   const activationCall=client.calls.at(-1);
   assert.deepEqual(activationCall.payload,{active:false});
   assert.deepEqual(activationCall.filters,[["eq","org_id","org-a"],["eq","id","pro-a"]]);
+  const scopedProfessional=mockClient({professionals:[{id:"pro-a",org_id:"org-a",branch_id:"11111111-1111-4111-8111-111111111111"}]});
+  await setProfessionalActive({client:scopedProfessional,orgId:"org-a",branchId:"11111111-1111-4111-8111-111111111111",professionalId:"pro-a",active:false});
+  assert.deepEqual(scopedProfessional.calls[0].filters,[
+    ["eq","org_id","org-a"],["eq","id","pro-a"],["eq","branch_id","11111111-1111-4111-8111-111111111111"]
+  ]);
+  await assert.rejects(()=>setProfessionalActive({client,orgId:"org-a",branchId:"unidade-invalida",professionalId:"pro-a",active:false}),{name:"TypeError"});
   const failing=mockClient({}, {code:"42501",message:"SQL privado"});
   await assert.rejects(()=>fetchProfessionalWorkspace({client:failing,orgId:"org-a"}),e=>!e.message.includes("SQL privado"));
   const access=await setTeamProfessionalAppAccess({client,orgId:"org-a",userId:"reception-a",role:"receptionist",enabled:true});
