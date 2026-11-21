@@ -87,8 +87,11 @@ export async function saveCustomer({client,orgId,branchId=null,customerId=null,.
   const payload=normalizeCustomer(input);
   try {
     // A filial é atribuída na criação; editar dados pessoais não transfere o cadastro de unidade.
+    // A filial ativa limita alterações, mantendo cadastros compartilhados (branch_id nulo).
+    let updateQuery=customerId ? client.from("customers").update(payload).eq("org_id",orgId).eq("id",customerId) : null;
+    if(updateQuery&&branchId)updateQuery=updateQuery.or("branch_id.eq."+branchId+",branch_id.is.null");
     const result=customerId
-      ? await client.from("customers").update(payload).eq("org_id",orgId).eq("id",customerId).select("id").maybeSingle()
+      ? await updateQuery.select("id").maybeSingle()
       : await client.from("customers").insert({org_id:orgId,...(branchId?{branch_id:branchId}:{}),...payload}).select("id").single();
     if(result.error)throw result.error;
     if(!result.data?.id)throw Object.assign(new Error("Cliente não encontrado."),{code:"P0002"});
@@ -100,12 +103,14 @@ export async function saveCustomer({client,orgId,branchId=null,customerId=null,.
  * @param {object} options Cliente, organização, cadastro e estado desejado.
  * @returns {Promise<void>} Resolve após atualizar o estado.
  */
-export async function setCustomerActive({client,orgId,customerId,active}={}) {
+export async function setCustomerActive({client,orgId,branchId=null,customerId,active}={}) {
   requireContext(client,orgId);
+  requireBranchId(branchId);
   if(!customerId||typeof active!=="boolean")throw new TypeError("Selecione um cliente e uma situação válida.");
   try {
-    const {data,error}=await client.from("customers").update({active})
-      .eq("org_id",orgId).eq("id",customerId).select("id").maybeSingle();
+    let query=client.from("customers").update({active}).eq("org_id",orgId).eq("id",customerId);
+    if(branchId)query=query.or("branch_id.eq."+branchId+",branch_id.is.null");
+    const {data,error}=await query.select("id").maybeSingle();
     if(error)throw error;
     if(!data?.id)throw Object.assign(new Error("Cliente não encontrado."),{code:"P0002"});
   } catch(error) { throw mapCustomerError(error); }
