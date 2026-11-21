@@ -104,11 +104,18 @@ export async function payProfessionalCommissions({
      commissionIds.some(id=>typeof id!=="string"||!id.trim())) {
     throw new TypeError("Selecione o profissional e ao menos uma comissão para pagar.");
   }
+  // Valida o lote antes do RPC; a movimentação de Caixa permanece transacional no banco.
+  const method=String(paymentMethod??"").trim().toLowerCase();
+  const memo=String(notes??"").trim();
+  if(!method||method.length>40)throw new TypeError("Selecione uma forma de pagamento válida.");
+  if(memo.length>500)throw new TypeError("A observação do pagamento deve ter até 500 caracteres.");
+  const ids=[...new Set(commissionIds.map(id=>id.trim()))];
+  if(ids.length>500)throw new TypeError("Selecione no máximo 500 comissões por repasse.");
   const {data,error}=await client.rpc("pay_professional_commissions",{
     p_org_id:orgId,p_professional_id:professionalId,
-    p_commission_ids:[...new Set(commissionIds)],
-    p_payment_method:String(paymentMethod||"").trim(),
-    p_notes:String(notes||"").trim()||null
+    p_commission_ids:ids,
+    p_payment_method:method,
+    p_notes:memo||null
   });
   if(error)throw mapCommissionWriteError(error,"Não foi possível registrar o pagamento das comissões.");
   if(!data||typeof data!=="object"||!Number.isFinite(Number(data.amount))||Number(data.amount)<=0) {
