@@ -3,7 +3,7 @@
  * Responsabilidade: validar escopo por organização, filtros de membros e perfis relacionados.
  */
 import assert from "node:assert/strict";
-import {fetchProfessionalWorkspace,setProfessionalActive,setTeamProfessionalAppAccess,revokeProfessionalAppAccess,createProfessionalWithServices} from "./professionals.service.js";
+import {fetchProfessionalWorkspace,setProfessionalActive,setTeamProfessionalAppAccess,revokeProfessionalAppAccess,createProfessionalWithServices,updateProfessionalProfile} from "./professionals.service.js";
 
 function mockClient(tables={},error=null) {
   const calls=[];
@@ -90,6 +90,23 @@ async function run() {
   await assert.rejects(()=>createProfessionalWithServices({
     client,orgId:"org-a",name:"Ana",commissionRate:150,serviceIds:["svc-a"]
   }),{name:"TypeError"});
+  // A edição deve preservar vínculos e credenciais e respeitar a filial ativa.
+  const editBranch="11111111-1111-4111-8111-111111111111";
+  const editable=mockClient({professionals:[{id:"pro-a",org_id:"org-a",branch_id:editBranch}]});
+  await updateProfessionalProfile({client:editable,orgId:"org-a",branchId:editBranch,
+    professionalId:"pro-a",name:"Ana Maria",phone:"11999999999",email:"ana@example.com",
+    specialty:"Cabeleireira",commissionRate:45,taxRegime:"individual"});
+  const editCall=editable.calls.find(call=>call.table==="professionals");
+  assert.equal(editCall.action,"update");
+  assert.equal(editCall.payload.name,"Ana Maria");
+  assert.equal(editCall.payload.commission_rate,45);
+  assert.equal(editCall.payload.access_enabled,undefined);
+  assert.equal(editCall.payload.service_ids,undefined);
+  assert.ok(editCall.filters.some(filter=>filter[1]==="branch_id"&&filter[2]===editBranch));
+  await assert.rejects(()=>updateProfessionalProfile({client:editable,orgId:"org-a",
+    professionalId:"pro-a",name:"Ana",commissionRate:101,taxRegime:"individual"}),{name:"TypeError"});
+  await assert.rejects(()=>updateProfessionalProfile({client:editable,orgId:"org-a",
+    professionalId:"pro-a",name:"Ana",commissionRate:40,taxRegime:"mei",cnpj:"1",legalName:"Empresa"}),{name:"TypeError"});
   console.log("Testes do serviço de dados dos profissionais: OK");
 }
 run().catch(error=>{process.stderr.write(error.message+"\n");process.exitCode=1;});
