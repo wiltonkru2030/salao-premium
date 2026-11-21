@@ -1,6 +1,8 @@
 /* Estilos do App Profissional/PWA: compartilha os tokens do design system e define a composição mobile do profissional. */
 @import url('../src/styles/design-system.css');
 @import url('../src/styles/shared-controls.css');
+/* Módulo 09 — experiência mobile e acessibilidade. */
+@import url('./design-mobile-premium.css');
 :root{font-family:var(--sp-font-ui);color:var(--sp-ink);background:var(--sp-paper);font-synthesis:none;--ink:var(--sp-ink);--muted:var(--sp-muted);--line:var(--sp-line);--gold:var(--sp-gold);--soft:var(--sp-soft);--gold-soft:var(--sp-gold-soft)}
 *{box-sizing:border-box}
 html{background:#fff}
@@ -61,6 +63,3 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 .detail-row:last-child{border:0}
 @media(min-width:700px){.nav{position:sticky;top:0;bottom:auto;max-width:900px;margin:auto;border:0;border-bottom:1px solid var(--line);border-radius:0}.app-shell{padding-bottom:24px}.content{padding:28px 32px}.day{min-height:76px;font-size:13px}}
 @media(max-width:600px){.top{padding:15px 17px;min-height:68px}.content{padding:20px 15px}.login{margin:7vh 15px;padding:27px 20px}.section-title h2{font-size:16px}.day{min-height:48px}.appointment,.order,.service,.commission{padding:13px}.app-shell{padding-bottom:82px}}
-
-/* Módulo 09 — experiência mobile e acessibilidade. */
-@import url('./design-mobile-premium.css');
