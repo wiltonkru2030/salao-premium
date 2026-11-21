@@ -35,7 +35,7 @@ export function renderProfessionalsView(workspace,{currentUserId,canManage=false
    <div class="professional-avatar">${esc((p.name||"P").trim().split(/\s+/).slice(0,2).map(part=>part[0]).join("").toUpperCase())}</div>
    <div class="professional-person-identity"><h3>${esc(p.name)}</h3><p>${esc(p.specialty||"Profissional")} <span>·</span> ${p.tax_regime==="mei"?"MEI":"Pessoa física"}</p></div>
    <span class="professional-status ${p.active?"is-active":"is-inactive"}"><i></i>${p.active?"Ativo":"Inativo"}</span>
-   ${canManage?'<button type="button" class="btn secondary" data-toggle-professional-active="'+esc(p.id)+'" data-active="'+(p.active?"true":"false")+'" '+(p.access_enabled?'disabled title="Revogue o acesso ao App antes de inativar."':"")+'>'+(p.active?"Inativar":"Reativar")+'</button>':""}
+   ${canManage?'<button type="button" class="btn secondary" data-edit-professional="'+esc(p.id)+'">Editar cadastro</button><button type="button" class="btn secondary" data-toggle-professional-active="'+esc(p.id)+'" data-active="'+(p.active?"true":"false")+'" '+(p.access_enabled?'disabled title="Revogue o acesso ao App antes de inativar."':"")+'>'+(p.active?"Inativar":"Reativar")+'</button>':""}
   </div>
   <div class="professional-person-meta"><span>${esc(p.phone||p.email||"Contato não informado")}</span><span>Comissão <b>${Number(p.commission_rate||0)}%</b></span>${p.tax_regime==="mei"?'<span>CNPJ '+esc(p.cnpj||"—")+'</span>':''}</div>
   <div class="professional-assigned-services"><small>SERVIÇOS HABILITADOS</small><div>${(assignedNames.get(p.id)||[]).length?(assignedNames.get(p.id)||[]).map(name=>'<span>'+esc(name)+'</span>').join(""):'<em>Nenhum serviço vinculado</em>'}</div></div>
@@ -52,7 +52,7 @@ export function renderProfessionalsView(workspace,{currentUserId,canManage=false
  </article>`).join("")||'<div class="professional-empty"><span>—</span><b>Sua equipe começa aqui</b><p>Cadastre o primeiro profissional e vincule os serviços que ele realiza.</p><button class="btn primary" type="button" data-open-professional-modal>Novo profissional</button></div>'}</div>
  <p class="professional-security-note">Os dados de acesso são protegidos. A senha temporária é apresentada somente no momento da criação ou redefinição.</p>
  <dialog class="professional-modal sp-modal" id="professional-create-modal" aria-labelledby="professional-modal-title">
-  <form id="professional-create-form" class="professional-modal-form sp-modal-shell">
+  <form id="professional-create-form" class="professional-modal-form sp-modal-shell"><input type="hidden" name="professional_id" value="">
    <header class="professional-modal-head sp-modal-head"><div><h2 id="professional-modal-title">Novo profissional</h2><p>Preencha os dados e selecione os serviços que ele atende.</p></div><button type="button" class="professional-modal-close" data-close-professional-modal aria-label="Fechar">×</button></header>
    <div class="professional-modal-body sp-modal-body">
     <h3>Dados pessoais</h3>
@@ -72,6 +72,7 @@ export function renderProfessionalsView(workspace,{currentUserId,canManage=false
      <label>Nome fantasia (opcional)<input class="field" name="trade_name" maxlength="160" placeholder="Nome fantasia"></label>
     </div>
     <h3>Serviços que atende</h3>
+    <p id="professional-edit-services-notice" class="demo-note" hidden>Os serviços vinculados serão preservados nesta edição. A edição de vínculos exige uma transação específica.</p>
     <p class="demo-note">Marque todos os serviços compatíveis com este profissional. Ex.: unhas para manicure; cabelo para cabeleireiro.</p>
     <input class="field" id="professional-service-filter" type="search" placeholder="Buscar serviço..." autocomplete="off">
     <div id="professional-service-choices">${serviceChoices||'<p class="empty-state">Cadastre serviços antes de vincular um profissional.</p>'}</div>
