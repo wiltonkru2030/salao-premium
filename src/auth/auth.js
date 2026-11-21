@@ -24,7 +24,7 @@ export async function getUserContext(user, selectedOrgId = null) {
     .eq("user_id", user.id)
     .eq("status", "active");
 
-  if (membershipError) throw membershipError;
+  if (membershipError) throw new Error("Não foi possível consultar seu vínculo com o salão. Verifique sua conexão e tente novamente.", { cause: membershipError });
   if (!memberships?.length) throw new Error("Sua conta ainda não está vinculada a um salão ativo.");
 
   const orgIds = [...new Set(memberships.map(item => item.org_id))];
@@ -33,8 +33,8 @@ export async function getUserContext(user, selectedOrgId = null) {
     supabase.from("organizations").select("id,name,timezone,currency").in("id", orgIds)
   ]);
 
-  if (profileResult.error) throw profileResult.error;
-  if (organizationsResult.error) throw organizationsResult.error;
+  if (profileResult.error) throw new Error("Não foi possível carregar seu perfil. Tente novamente.", { cause: profileResult.error });
+  if (organizationsResult.error) throw new Error("Não foi possível carregar os dados do salão. Tente novamente.", { cause: organizationsResult.error });
 
   const tenant = resolveTenantMemberships(memberships, organizationsResult.data || [], selectedOrgId);
   if (tenant.requiresOrganizationSelection) {
@@ -130,7 +130,7 @@ export function startAuth(onAuthenticated) {
     }
     if (data.session?.user && !passwordRecoveryInProgress) await activateUser(data.session.user);
     else if (passwordRecoveryInProgress) showAuth("recovery-update", "Defina uma nova senha para sua conta.", "info");
-    else showAuth("login");
+    else if (!activeUserId && !resolvingUserId && !pendingUser) showAuth("login");
   });
 
   document.addEventListener("submit", async event => {
