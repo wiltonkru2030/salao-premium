@@ -4,7 +4,7 @@
  * Pré-requisito: migration customer_profiles aplicada com RLS validada.
  * Nunca aceita auth_user_id do navegador; o banco deve usar auth.uid().
  */
-import { supabase } from "../../src/supabase/client.js";
+import { supabase } from "../supabase.client.js";
 import { validateGlobalCustomerProfile } from "../customer-profile-utils.js";
 
 function mapProfile(row) {
