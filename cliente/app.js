@@ -6,7 +6,7 @@
 import {validateBookingSelection,isHoldExpired,prepareAppointmentChange,selectRescheduleStart} from "./utils/booking-rules.js";
 import {startClientSession} from "./services/client-session.js";
 import { getCurrentUser, subscribeToAuthChanges, signInWithGoogle, signInWithPasskey, registerPasskey, signOut } from "./services/authService.js";
-import { supabase } from "../src/supabase/client.js";
+import { supabase } from "./supabase.client.js";
 import { getCurrentPosition } from "./services/geoSalonService.js";
 import { getLocalSettings, saveLocalSettings, getRemoteSettings, saveRemoteSettings, setSettingsAccount } from "./services/settingsService.js";
 import { listFavorites, addFavorite, removeFavorite } from "./services/favoritesService.js";
