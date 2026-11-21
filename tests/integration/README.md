@@ -7,6 +7,8 @@ O teste `tests/integration/backend-flows.test.mjs` cria dois salões isolados e 
 Use exclusivamente um projeto Supabase de teste, nunca o projeto de produção:
 
 ```bash
+SUPABASE_TEST_ENV="isolated" \
+SUPABASE_QA_PROJECT_URL="https://<projeto-de-teste>.supabase.co" \
 SUPABASE_URL="https://<projeto-de-teste>.supabase.co" \
 SUPABASE_PUBLISHABLE_KEY="<chave-publica>" \
 SUPABASE_SERVICE_ROLE_KEY="<service-role-do-projeto-de-teste>" \
@@ -28,3 +30,5 @@ Use `--keep` somente quando precisar inspecionar os registros criados. Nesse mod
 ## Limites
 
 Este teste exerce o backend real via Auth, PostgREST e RPC. Ele não substitui inspeção visual de navegador, teste mobile nem validação manual com contas de proprietário e profissional. Não execute sem revisar as variáveis de ambiente e confirmar que apontam para um banco descartável/de testes.
+
+O teste exige `SUPABASE_TEST_ENV=isolated` e `SUPABASE_QA_PROJECT_URL` igual a `SUPABASE_URL`. A URL do projeto de produção conhecido é bloqueada.
