@@ -50,3 +50,28 @@
   #app .professional-person-footer{align-items:stretch}
 }
 @media(prefers-reduced-motion:reduce){#app :is(.btn,button.primary,button.secondary){transition:none}}
+
+/* Equipe: ações agrupadas e modal legível em telas pequenas.
+ * O seletor [hidden] precisa prevalecer sobre regras de display dos módulos antigos.
+ * Sem alterar a estrutura dos formulários ou os controles de segurança.
+ */
+#app :is(.professional-modal,.professional-modal-form) [hidden]{display:none!important}
+#app .professional-person-top>[data-edit-professional]{margin-left:auto}
+#app .professional-modal{width:min(720px,calc(100vw - 24px));max-height:min(92dvh,900px)}
+#app .professional-modal-form{max-height:inherit;overflow:auto}
+#app .professional-modal-head{position:sticky;top:0;z-index:2;background:#fff;border-bottom:1px solid #eae6df}
+#app .professional-modal-foot{position:sticky;bottom:0;z-index:2;background:#fff;border-top:1px solid #eae6df}
+#app .professional-modal-head h2{font-size:clamp(20px,3vw,26px);line-height:1.25}
+#app .professional-modal-body h3{margin-block:18px 10px;color:#24211e}
+#app .professional-person-card{padding:clamp(16px,2.5vw,24px)}
+#app .professional-person-meta{flex-wrap:wrap;gap:10px}
+#app .professional-assigned-services{overflow-wrap:anywhere}
+@media(max-width:700px){
+ #app .professional-modal{width:calc(100vw - 16px);max-height:94dvh;margin:auto}
+ #app .professional-modal-body{padding:18px 16px}
+ #app .professional-modal-head,#app .professional-modal-foot{padding:16px}
+ #app .professional-form-grid{grid-template-columns:minmax(0,1fr)}
+ #app .professional-person-top>[data-edit-professional]{margin-left:0}
+ #app .professional-person-top>[data-edit-professional],
+ #app .professional-person-top>[data-toggle-professional-active]{flex:1 1 130px}
+}
