@@ -2,6 +2,7 @@
 import { groups, glyph } from '../data/index.js';
 
 import { state } from '../state.js';
+import { describeAccessRole } from './access-role.js';
 
 import { $, esc } from '../utils.js';
 
@@ -119,6 +120,8 @@ function renderBranchControl() {
 
 /** Monta o shell administrativo com navegação, tenant ativo e conteúdo da rota. */
 function renderApplicationShell(navigation, content) {
+  // Rótulo derivado do papel da associação ativa, nunca dos metadados do usuário.
+  const access = describeAccessRole(state.membership?.role);
   $("#app").innerHTML = `
     <div class="mobile-scrim ${state.mobileMenu ? "visible" : ""}" data-action="close-menu" aria-hidden="true"></div>
     <aside class="sidebar ${state.mobileMenu ? "open" : ""} ${state.sidebarCollapsed ? "collapsed" : ""}" id="sidebar">
@@ -131,7 +134,11 @@ function renderApplicationShell(navigation, content) {
       <nav class="main-nav" aria-label="Navegação principal">${navigation}</nav>
       <div class="sidebar-footer">
         <span class="avatar small">SP</span>
-        <span><b>${esc(state.user?.email || "Salão Premium")}</b><small>Conta conectada</small></span>
+        <span class="sidebar-account">
+          <b title="${esc(state.user?.email || "Salão Premium")}">${esc(state.user?.email || "Salão Premium")}</b>
+          <small class="sidebar-role-label">${esc(access.label)}</small>
+          ${access.limited ? '<button type="button" class="sidebar-switch-account" data-action="sign-out" title="Sair do acesso profissional e entrar com outra conta">Trocar de conta</button>' : ""}
+        </span>
       </div>
     </aside>
     <main class="main-area ${state.sidebarCollapsed ? "sidebar-collapsed" : ""}">
