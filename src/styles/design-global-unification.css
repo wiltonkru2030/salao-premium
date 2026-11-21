@@ -75,3 +75,23 @@
  #app .professional-person-top>[data-edit-professional],
  #app .professional-person-top>[data-toggle-professional-active]{flex:1 1 130px}
 }
+
+/* Catálogo de serviços: lista de cartões sem tabela e ações com toque confortável.
+ * Mantém o mesmo contrato de botões do restante do painel, inclusive nos modais.
+ */
+#app #services-manager .record-card{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px}
+#app #services-manager .record-main{min-width:0;flex:1}
+#app #services-manager .record-main b{font-size:15px;line-height:1.4}
+#app #services-manager .record-main small{font-size:12px;line-height:1.6}
+#app #services-manager .record-trailing{display:flex;align-items:center;flex-wrap:wrap;gap:10px;justify-content:flex-end}
+#app #services-manager .record-trailing>b{font-size:17px;white-space:nowrap}
+#app #services-manager .record-trailing :is(.btn,.text-button){min-height:42px;padding:10px 14px;border-radius:9px;font-size:13px}
+#app #service-create-modal .sp-modal-body label{display:flex;flex-direction:column;gap:8px;font-size:13px}
+#app #service-create-modal .sp-modal-body :is(input,select,textarea){min-height:46px;padding:11px 13px;font-size:14px;border:1px solid #dcd8d1;border-radius:9px}
+#app #service-create-modal .sp-modal-body :is(input,select,textarea):focus-visible{outline:2px solid #b29a6d;outline-offset:1px}
+@media(max-width:700px){
+ #app #services-manager .record-card{align-items:stretch;flex-direction:column;padding:17px;gap:14px}
+ #app #services-manager .record-trailing{justify-content:flex-start}
+ #app #services-manager .record-trailing :is(.btn,.text-button){flex:1 1 120px}
+ #app #service-create-modal .sp-modal-body :is(input,select,textarea){font-size:16px}
+}
