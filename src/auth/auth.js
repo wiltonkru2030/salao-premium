@@ -8,6 +8,7 @@ import { authScreen, organizationSelectionScreen } from "./auth-screen.js";
 import { userErrorMessage, reportError } from "../utils/errors.js";
 import { state } from "../state.js";
 import { resolveTenantMemberships } from "./tenant-context.js";
+import { createSessionRevision } from "./session-revision.js";
 
 let authMode = "login";
 let authNotice = "";
@@ -71,70 +72,112 @@ export function startAuth(onAuthenticated) {
   let pendingUser = null;
   let resolvingUserId = null;
   let activeUserId = null;
+  const sessionRevision = createSessionRevision();
 
+  /** Limpa os dados do painel quando outra identidade entra ou a sessão termina. */
+  const clearAccountState = () => {
+    state.user = null;
+    state.profile = null;
+    state.organization = null;
+    state.membership = null;
+    state.availableOrganizations = [];
+    state.availableBranches = [];
+    state.branch = null;
+    state.drawer = null;
+    state.page = "Dashboard";
+    state.mobileMenu = false;
+    state.agendaAppointments = [];
+    state.agendaProfessionals = [];
+    state.dbBlockedTimes = [];
+  };
+
+  /** Evita mostrar o formulário de login antes da restauração segura da sessão. */
+  const showLoading = () => {
+    const app = document.querySelector("#app");
+    if (app) app.innerHTML = '<main class="auth-shell"><section class="auth-panel" role="status" aria-live="polite"><div class="auth-heading"><span class="auth-eyebrow">SALÃO PREMIUM</span><h1>Preparando seu salão…</h1><p>Verificando sua sessão com segurança.</p></div></section></main>';
+  };
+
+  /** Descarta respostas atrasadas que pertencem a uma sessão substituída. */
   const activateUser = async (user, selectedOrgId = null) => {
     if (!user || activeUserId === user.id || resolvingUserId === user.id) return;
     if (!selectedOrgId && pendingUser?.id === user.id) return;
+    const ticket = sessionRevision.capture(user);
+    const isCurrent = () => sessionRevision.isCurrent(ticket);
+    if (!isCurrent()) return;
     resolvingUserId = user.id;
     try {
       const context = await getUserContext(user, selectedOrgId);
+      if (!isCurrent()) return;
       if (context.requiresOrganizationSelection) {
         pendingUser = user;
         showOrganizationSelection(context.organizations);
         return;
       }
       pendingUser = null;
-      activeUserId = user.id;
-      onAuthenticated(context);
+      // O carregamento de filiais também é assíncrono: aguardar a montagem segura.
+      await onAuthenticated(context, isCurrent);
+      if (isCurrent()) activeUserId = user.id;
     } catch (error) {
+      if (!isCurrent()) return;
       pendingUser = null;
       const diagnostic = reportError(error, { context: "Painel > carregar organização após login", notify: false });
-      // Uma falha ao consultar a organização não significa que a senha esteja errada.
-      // Preservar a sessão permite tentar novamente sem invalidar o token autenticado.
+      // A falha do tenant não invalida a senha nem a sessão: oferecer nova tentativa.
       activeUserId = null;
       showAuth("login", `${diagnostic.message} (Código ${diagnostic.id})`, "error");
       document.querySelector(".auth-notice")?.insertAdjacentHTML("beforeend", '<p><button type="button" data-auth-retry-context>Tentar carregar meu salão novamente</button></p>');
     } finally {
-      resolvingUserId = null;
+      if (resolvingUserId === user.id) resolvingUserId = null;
     }
   };
 
-  // Enquanto o Supabase restaura a sessão, não exibir o formulário de login.
-  // Isso evita a tela de autenticação piscando a cada atualização do navegador.
-  const app=document.querySelector("#app");
-  if(app)app.innerHTML='<main class="auth-shell"><section class="auth-panel" role="status" aria-live="polite"><div class="auth-heading"><span class="auth-eyebrow">SALÃO PREMIUM</span><h1>Preparando seu salão…</h1><p>Verificando sua sessão com segurança.</p></div></section></main>';
+  showLoading();
+  // INITIAL_SESSION substitui uma segunda leitura getSession() que podia disputar
+  // com SIGNED_IN/SIGNED_OUT e restaurar uma identidade antiga depois da troca.
   supabase.auth.onAuthStateChange((event, session) => {
-    if (event === "PASSWORD_RECOVERY" && session?.user) {
-      passwordRecoveryInProgress = true;
-      queueMicrotask(() => showAuth("recovery-update", "Defina uma nova senha para sua conta.", "info"));
-    } else if (session?.user && ["SIGNED_IN", "TOKEN_REFRESHED", "USER_UPDATED"].includes(event)) {
-      queueMicrotask(() => activateUser(session.user));
-    } else if (event === "SIGNED_OUT") {
+    if (event === "SIGNED_OUT") {
+      sessionRevision.invalidate();
       pendingUser = null;
       activeUserId = null;
       resolvingUserId = null;
-      state.user = null;
-      state.profile = null;
-      state.organization = null;
-      state.membership = null;
-      state.availableOrganizations = [];
-      state.branch = null;
-      state.drawer = null;
-      state.agendaAppointments = [];
-      state.agendaProfessionals = [];
-      state.dbBlockedTimes = [];
+      passwordRecoveryInProgress = false;
+      clearAccountState();
       showAuth("login");
+      return;
     }
-  });
 
-  supabase.auth.getSession().then(async ({ data, error }) => {
-    if (error) {
-      const diagnostic = reportError(error, { context: "Painel > restaurar sessão", notify: false });
-      return showAuth("login", `${diagnostic.message} (Código ${diagnostic.id})`, "error");
+    if (event === "PASSWORD_RECOVERY" && session?.user) {
+      sessionRevision.observe(session.user);
+      pendingUser = null;
+      activeUserId = null;
+      resolvingUserId = null;
+      clearAccountState();
+      passwordRecoveryInProgress = true;
+      queueMicrotask(() => showAuth("recovery-update", "Defina uma nova senha para sua conta.", "info"));
+      return;
     }
-    if (data.session?.user && !passwordRecoveryInProgress) await activateUser(data.session.user);
-    else if (passwordRecoveryInProgress) showAuth("recovery-update", "Defina uma nova senha para sua conta.", "info");
-    else if (!activeUserId && !resolvingUserId && !pendingUser) showAuth("login");
+
+    if (!["INITIAL_SESSION", "SIGNED_IN", "TOKEN_REFRESHED", "USER_UPDATED"].includes(event)) return;
+    const user = session?.user;
+    if (!user) {
+      if (event === "INITIAL_SESSION") {
+        sessionRevision.invalidate();
+        clearAccountState();
+        showAuth("login");
+      }
+      return;
+    }
+
+    if (sessionRevision.observe(user)) {
+      // Ao alternar entre proprietário e profissional, nunca reaproveitar a
+      // navegação, os dados nem a seleção de filial da identidade anterior.
+      pendingUser = null;
+      activeUserId = null;
+      resolvingUserId = null;
+      clearAccountState();
+      showLoading();
+    }
+    if (passwordRecoveryInProgress) return;
+    queueMicrotask(() => activateUser(user));
   });
 
   document.addEventListener("submit", async event => {
