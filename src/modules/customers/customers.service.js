@@ -66,7 +66,9 @@ export async function listCustomers({client,orgId,branchId=null}={}) {
         .select("id,name,phone,email,birth_date,active,branch_id")
         .eq("org_id",orgId);
       if(branchId)query=query.or("branch_id.eq."+branchId+",branch_id.is.null");
-      const {data,error}=await query.order("name").range(offset,offset+PAGE_SIZE-1);
+      // Ordem secundária por ID estabiliza a paginação quando há nomes repetidos.
+      // Sem esse critério, clientes podem aparecer duas vezes ou sumir entre páginas.
+      const {data,error}=await query.order("name").order("id").range(offset,offset+PAGE_SIZE-1);
       if(error)throw error;
       const page=Array.isArray(data)?data:[];
       rows.push(...page);
