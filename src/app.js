@@ -65,6 +65,8 @@ document.addEventListener("change",async event=>{
     state.availableOrganizations=context.availableOrganizations||[];
     state.branch=null;
     await refreshBranchContext();
+    // A saída da conta durante a consulta não pode reabrir o painel antigo.
+    if(state.user?.id!==previousUserId||state.organization?.id!==organizationId)return;
     state.page="Dashboard";
     state.drawer=null;
     state.query="";
