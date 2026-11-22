@@ -16,9 +16,9 @@ import { createCustomerPageState } from "../modules/customers/customer-page-stat
 
 const customerPageState=createCustomerPageState();
 
-/** Retorna a chave da organização e unidade ativas para invalidar respostas antigas. */
+/** Identifica a sessão, organização, unidade e papel antes de aceitar dados assíncronos. */
 function customerContextKey(){
-  return JSON.stringify([state.organization?.id||null,state.branch?.id||null]);
+  return JSON.stringify([state.user?.id||null,state.organization?.id||null,state.branch?.id||null,state.membership?.role||null]);
 }
 
 /** Papéis autorizados pelas políticas de leitura, inclusão e atualização da tabela customers. */
