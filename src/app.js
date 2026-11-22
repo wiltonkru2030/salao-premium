@@ -16,15 +16,20 @@ installAgendaController();
 
 // Carrega unidades ativas da organização e escolhe a matriz como contexto inicial.
 async function refreshBranchContext() {
+  // A consulta à filial pode terminar depois do logout ou troca de organização.
+  const orgId=state.organization?.id,userId=state.user?.id;
+  const isCurrent=()=>state.organization?.id===orgId&&state.user?.id===userId;
   try {
     const context=await resolveBranchContext({
-      client:supabase,orgId:state.organization?.id,
-      role:state.membership?.role,userId:state.user?.id,
+      client:supabase,orgId,
+      role:state.membership?.role,userId,
       previousBranchId:state.branch?.id||null
     });
+    if(!isCurrent())return;
     state.availableBranches=context.branches;
     state.branch=context.branch;
   } catch(error) {
+    if(!isCurrent())return;
     state.availableBranches=[];
     state.branch=null;
     reportError(error,{context:"SaaS > carregar unidades"});
@@ -49,8 +54,10 @@ document.addEventListener("change",async event=>{
   const select=event.target,organizationId=String(select.value||"");
   if(!organizationId||organizationId===state.organization?.id)return;
   select.disabled=true;
+  const previousUserId=state.user?.id;
   try{
     const context=await getCurrentUserContext(organizationId);
+    if(!previousUserId||state.user?.id!==previousUserId||context.user?.id!==previousUserId)return;
     state.user=context.user;
     state.profile=context.profile;
     state.organization=context.organization;
@@ -76,7 +83,8 @@ document.addEventListener("change",async event=>{
   }
 });
 
-startAuth(async context=>{
+startAuth(async (context,isCurrent)=>{
+  if(!isCurrent())return;
   state.user=context.user;
   state.profile=context.profile;
   state.organization=context.organization;
@@ -84,6 +92,8 @@ startAuth(async context=>{
   state.availableOrganizations=context.availableOrganizations||[];
   state.branch=null;
   await refreshBranchContext();
+  // Jamais renderizar uma sessão que foi substituída enquanto a filial carregava.
+  if(!isCurrent())return;
   renderApp();
   // A tela inicial foi montada; erros posteriores pertencem ao tratamento global da aplicação.
   window.__SALAO_PREMIUM_BOOTED__=true;
