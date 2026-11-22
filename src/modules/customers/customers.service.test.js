@@ -8,7 +8,7 @@ import {listCustomers,saveCustomer,setCustomerActive} from "./customers.service.
 function mockClient(tables={},error=null) {
   const calls=[];
   return {calls,from(table) {
-    const call={table,filters:[],range:null,payload:null};calls.push(call);
+    const call={table,filters:[],range:null,payload:null,orders:[]};calls.push(call);
     const query={
       select(columns){call.columns=columns;return query;},
       maybeSingle(){return query;},
@@ -17,7 +17,7 @@ function mockClient(tables={},error=null) {
       update(payload){call.action="update";call.payload=payload;return query;},
       eq(key,value){call.filters.push([key,value]);return query;},
       or(expression){call.or=expression;return query;},
-      order(key){call.order=key;return query;},
+      order(key){call.orders.push(key);return query;},
       range(start,end){call.range=[start,end];return query;},
       then(resolve,reject){
         if(error)return Promise.resolve({data:null,error}).then(resolve,reject);
@@ -39,6 +39,8 @@ async function run(){
   await listCustomers({client:branchClient,orgId:"org-a",branchId:"11111111-1111-4111-8111-111111111111"});
   assert.equal(branchClient.calls[0].or,"branch_id.eq.11111111-1111-4111-8111-111111111111,branch_id.is.null");
   assert.deepEqual(client.calls.filter(call=>call.table==="customers").map(call=>call.range),[[0,249],[250,499],[500,749]]);
+  // Ordem determinística evita sobreposição entre páginas quando nomes se repetem.
+  assert.ok(client.calls.slice(0,3).every(call=>JSON.stringify(call.orders)===JSON.stringify(["name","id"])));
   await saveCustomer({client,orgId:"org-a",branchId:"11111111-1111-4111-8111-111111111111",name:" Maria ",phone:"(11) 99999-0000",email:"MARIA@EMAIL.COM",birthDate:"1990-01-02"});
   assert.equal(client.calls[3].payload.org_id,"org-a");
   assert.equal(client.calls[3].payload.branch_id,"11111111-1111-4111-8111-111111111111");
