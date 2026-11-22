@@ -3,10 +3,19 @@
 export function startClientSession({subscribeToAuthChanges,getCurrentUser,signOut,getUserId,setSession,resetAccountState,getEpoch,isCurrent,requireCurrent,renderLogin,renderLoading,loadProfile,loadPublicSalons,loadFavorites,renderApp}){
 /** Eventos Auth são síncronos. Consultas são agendadas fora do lock do Supabase. */
 
-  renderLogin();
+  // Não piscar o formulário de login enquanto a sessão salva é restaurada.
+  renderLoading();
+  let initialEventSeen = false;
   subscribeToAuthChanges((session)=>{
     const id=session?.user?.id||null;
-    if(id===getUserId()){setSession(session);return;}
+    if(id===getUserId()){
+      setSession(session);
+      // INITIAL_SESSION sem conta precisa sair do spinner para mostrar o login.
+      if(!initialEventSeen&&!id)renderLogin();
+      initialEventSeen=true;
+      return;
+    }
+    initialEventSeen=true;
     resetAccountState(id);setSession(session);
     if(!id){renderLogin();return;}
     const epoch=getEpoch();
