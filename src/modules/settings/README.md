@@ -25,3 +25,5 @@ Separar apresentação, CSS, eventos, serviços, regras e consultas. Documentar 
 Scripts da raiz (via npm run): test:tenant test:availability test:sql-customer-applied-migrations. Executar build e auditoria de estrutura/CSS. Testar em QA com perfis autorizados e negados, dois tenants, filiais distintas, dados controlados e interface desktop/mobile. Não executar escritas de teste em produção. Não marcar concluído sem evidências.
 
 A Vitrine pública oferece preenchimento opcional pelo CEP da unidade. A consulta envia apenas os oito dígitos ao ViaCEP e sugere logradouro, bairro, cidade e UF. Os campos continuam editáveis, e a publicação só muda ao salvar o formulário. Consultas antigas são descartadas ao trocar o CEP ou o contexto da unidade.
+
+Os formulários cadastrais de organização e unidade verificam os dígitos do CPF ou CNPJ antes de enviar a atualização. O documento é opcional e aceita CNPJ alfanumérico. A validação da interface não substitui a política e as restrições do banco.

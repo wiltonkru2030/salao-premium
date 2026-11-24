@@ -1,6 +1,7 @@
 /** Controlador administrativo: eventos, validações e operações de configuração. */
 import {bindPublicAddressLookup} from "./public-address.controller.js";
 import {timezones} from "./settings.view.js";
+import {validSettingsDocument} from "./settings-document.validation.js";
 /** Vincula os formulários ao contexto atual, sem produzir HTML. */
 export function bindSettingsEvents({host,state,supabase,toast,reportError,canManageSettings,reload}){
     if (host.dataset.bound !== "true") {
@@ -108,8 +109,10 @@ export function bindSettingsEvents({host,state,supabase,toast,reportError,canMan
         const values = new FormData(form);
         const name = String(values.get("name") || "").trim();
         const email = String(values.get("email") || "").trim();
+        const document = String(values.get("document") || "").trim();
         if (!name) return toast("Informe o nome.");
         if (email && !form.elements.email.validity.valid) return toast("Informe um e-mail válido.");
+        if (!validSettingsDocument(document)) return toast("Informe um CPF ou CNPJ válido.");
 
         const submit = form.querySelector('[type="submit"]');
         if(!submit||submit.disabled)return;
@@ -118,7 +121,7 @@ export function bindSettingsEvents({host,state,supabase,toast,reportError,canMan
           name,
           phone: String(values.get("phone") || "").trim() || null,
           email: email || null,
-          document: String(values.get("document") || "").trim() || null
+          document: document || null
         };
         try {
           if (form.id === "settings-organization-form") {
