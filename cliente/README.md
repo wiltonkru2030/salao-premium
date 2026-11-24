@@ -1,5 +1,7 @@
 # Área da Cliente — SALÃO PREMIUM
 
+> Revisão documental: 24/11/2026. Evidências do código e inventário de 20/11; não houve nova consulta ao banco ou execução de testes nesta revisão. Consulte o README mestre.
+
 Aplicativo independente servido em /cliente/, separado da autenticação administrativa e profissional.
 
 ## Estrutura modular
@@ -22,8 +24,8 @@ Aplicativo independente servido em /cliente/, separado da autenticação adminis
 - Histórico de agendamentos com paginação e estados de carregamento/vazio/erro.
 - Formulário administrativo de vitrine pública em Configurações, condicionado à existência das tabelas/RPCs de publicação.
 - Favoritos por identidade global, com tela própria e remoção; a lista mostra somente unidades publicadas.
-- Central de notificações internas com leitura individual e em lote; o backend proposto gera eventos quando agendamentos são criados, confirmados, cancelados, concluídos ou remarcados.
-- Sincronização remota de preferências (tema, lembretes, promoções e região), mantendo fallback local até a RPC ser implantada.
+- Central de notificações internas com leitura individual e em lote; o contrato de backend prevê eventos quando agendamentos são criados, confirmados, cancelados, concluídos ou remarcados.
+- Sincronização remota de preferências (tema, lembretes, promoções e região), mantendo fallback local quando a RPC estiver indisponível.
 - Validação de cupons por salão/filial/serviço, prévia de desconto e reserva do uso na mesma transação do HOLD; o backend recalcula o desconto antes de confirmar o preço final.
 
 ## Banco e segurança
@@ -37,12 +39,22 @@ Aplicativo independente servido em /cliente/, separado da autenticação adminis
 - Não expor service_role no código público.
 - PIN de quatro dígitos não é autenticação autônoma nem substitui Google/Passkey.
 
-## Pendências que bloqueiam liberação comercial
-- As migrations revisáveis docs/sql/customer-public-directory.draft.sql, docs/sql/customer-availability-slots.draft.sql, docs/sql/customer-appointment-history.draft.sql e docs/sql/customer-engagement.draft.sql e docs/sql/customer-coupons.draft.sql ainda não foram aplicadas ao Supabase.
-- Até aplicar e testar esses rascunhos, a busca pública, consulta de horários e leitura do histórico exibem estado de ativação/erro seguro; não há dados fictícios.
-- A interface permite um serviço por reserva; seleção de vários serviços em um único agendamento ainda precisa ser implementada.
-- O fluxo de cupom do app da cliente e a tela administrativa de criação/edição no painel estão implementados no código e no SQL draft, mas não funcionam até a migration ser aplicada e testada. Favoritos, notificações internas e preferências remotas também dependem do SQL draft.
-- Configuração e teste ponta a ponta de Google/Passkey precisam ser concluídos no ambiente de autenticação.
-- Fluxo completo de publicação pelo painel e de reserva pelo app precisa de teste E2E com salão, filial, serviços e profissionais reais.
+## Evolução do banco e recursos adicionais
 
-Nenhuma funcionalidade pendente deve exibir dados fictícios ou afirmar sucesso sem confirmação do backend.
+O [inventário de 20/11/2026](../docs/migrations/remote-history-2026-11-20.json) registra 97 versões, incluindo identidade global, HOLD e disponibilidade (20261120041015–20261120041928), diretório público (20261120064407), cupons transacionais (20261120065524 e 20261120163441), histórico (20261120163051), favoritos/preferências (20261120163536), notificações privadas (20261120164053) e fidelidade (20261120213452). Os antigos drafts em docs/sql são referências, não instruções para reaplicação.
+
+- `services/appointmentChangesService.js`: consulta permissões, horários e cancelamento/remarcação, com verificação do início original para detectar concorrência. Verificar RPCs no ambiente.
+- `services/loyaltyService.js` e `ui/loyaltyView.js`: indicadores de atendimentos concluídos, comandas pagas e total pago por salão. Não confundir com programa de pontos ou resgates.
+- PIN local de quatro dígitos permanece requisito de desbloqueio após Google/Passkey; não enviar ao servidor nem utilizar como login independente. Sem OTP pago por SMS/WhatsApp.
+- Sessão isolada do painel e profissional, descarte de respostas antigas, GPS apenas por ação explícita, nenhuma fusão automática por telefone.
+
+## Homologação obrigatória
+
+- Configurar OAuth, redirects, domínio HTTPS e Passkey; testar login, recuperação e troca de conta em dispositivos reais.
+- Validar publicação e link por filial, pesquisa/GPS, catálogo, HOLD concorrente, cupom, histórico, cancelamento/remarcação, favoritos, notificações e fidelidade.
+- Seleção de múltiplos serviços em uma única reserva e PIN local ainda exigem implementação/validação.
+- Validar interface acessível, CSS global, máscaras, loading discreto e mensagens pt-BR.
+- Executar test:customer-auth, test:customer-account, test:customer-profile, test:customer-services, test:customer-appointment-changes, test:customer-loyalty e test:sql-customer-applied-migrations via npm run. Executar test:customer-rls somente em QA autorizado com duas identidades e dois tenants.
+- Não simular sucesso nem usar dados fictícios. A existência das migrations e testes não comprova a operação real.
+
+Ver [README mestre](../README.md) e [identidade global](../docs/CLIENTE-IDENTIDADE-MARCA.md).
