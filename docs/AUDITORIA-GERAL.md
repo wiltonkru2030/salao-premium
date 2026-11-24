@@ -37,3 +37,22 @@ Este relatório registra a primeira rodada da auditoria da `main` em 24/11/2026,
 - O JS administrativo gerado mede aproximadamente 360 kB e 94 kB em gzip. Esse tamanho é uma linha de base de build. Tempo de login, latência das telas, volume de requisições, falhas e consultas lentas ainda precisam de medição.
 
 Consulte [prioridades e critérios](PLANO-DE-EXECUCAO.md), [pendências](PENDENCIAS.md) e [evidências de teste](HOMOLOGACAO.md).
+
+## Rastreabilidade dos requisitos do Transfer Dock
+
+A tabela agrupa os requisitos por entrega e distingue inspeção de código de verificações em execução. O aceite de cada fluxo depende dos cenários indicados.
+
+| Requisito | Evidência e estado | Aceite pendente |
+| --- | --- | --- |
+| Auditoria, documentação, GitHub e progresso | Inventário, dois workflows e quatro registros de acompanhamento versionados. Builds, suítes e auditorias executados conforme a [homologação](HOMOLOGACAO.md). | Concluir leitura individual dos arquivos, inspeção das configurações e cobertura por cenário. |
+| Design system, logo, temas e acessibilidade | Tokens e estilos compartilhados em `src/styles`; tema local/remoto na cliente. App Profissional ainda monta a marca como texto em telas do fluxo principal. | Conferir tokens, logo oficial, temas e contraste nas três entradas e nos estados de erro e carregamento. |
+| Organização, comentários e qualidade | Módulos e auditoria estrutural existentes. A linha de base registrou 75 apontamentos. | Conferir responsabilidades, documentação dos contratos e impacto das refatorações. |
+| pt-BR, máscaras, validação e erros | Utilitários e testes em `src/utils`; existem integrações por formulário. | Mapear cobertura dos campos, CEP, CNPJ, colagem, edição, dados persistidos, falhas de rede e mensagens por módulo. |
+| Pesquisa inteligente | Chamadas ao componente compartilhado em Agenda, detalhes da Comanda, Comissões e itens do Profissional. Defeito de invalidação e erro descrito acima. | Conferir os seletores por módulo, corrigir estados obsoletos, validar dados no servidor e testar teclado e toque. |
+| Supabase, segurança e isolamento | Replay em QA; catálogo comparado e cenários de leitura executados. Gerente e recepção têm escopo organizacional para clientes, divergente do contrato por unidade. | Fechar diferenças de esquema e configuração; definir dados de atribuição por unidade, rever políticas e RPCs e testar leitura/escrita por papel. |
+| Administração, Agenda, cadastro e recuperação | Pontos de entrada e serviços encontrados em `src/pages`, `src/agenda` e `src/modules`. | Verificar ações e formulários individualmente, incluindo inativação, recuperação e filtragem por unidade. |
+| Orçamentos, operação e finanças | Serviços e validações estáticas de SQL encontrados. Links públicos passaram a seguir o ambiente configurado. | Testar aceite e agendamento, arredondamento, pagamentos, reembolso, comissão, estoque, concorrência e integridade entre módulos. |
+| App Profissional | PWA, entrada por CPF, serviços de Agenda/Comanda/Comissões. QA confirmou rejeição de entrada inválida e visibilidade de uma unidade para a fixture profissional. | Login válido, provisionamento, revogação real, origem e restrições de atendimentos, perfil e responsividade. |
+| Área da Cliente | Entradas de Google e chave de acesso; PIN local ausente do fluxo principal. RPC pública de pesquisa respondeu em QA. | Google/Passkey com provedores, identidade global, GPS, disponibilidades, reserva, remarcação, cancelamento, notificações, fidelidade e acessibilidade. |
+| Desempenho | Build administrativo medido e advisors consultados. | Medir navegação, sessão, consultas, CPU e latência antes de alterar índices ou infraestrutura. |
+| Homologação final | QA isolado ativo e critérios documentados. | Executar os cenários faltantes, registrar evidências e corrigir bloqueadores conforme a sequência do plano. |

@@ -47,3 +47,21 @@ O projeto `salao-premium-qa` (`eaiutjqvyesboldcznyr`) foi criado em `us-east-2`.
 - Um teste SQL com dois proprietários e claims diferentes confirmou leitura apenas dos clientes do próprio salão. As fixtures foram revertidas na mesma transação. A RPC do diretório público respondeu HTTP 200 com lista vazia em QA, e a tabela de perfis públicos recusou leitura direta anônima.
 - Os builds padrão e de QA passaram. A verificação do módulo compartilhado gerado confirmou o endpoint efetivo de cada build. Os links de resposta a orçamentos usam a mesma configuração dos três aplicativos.
 - A suíte HTTP autenticada completa, as contas de teste dos demais papéis, OAuth, chaves de acesso, provisionamento profissional, concorrência e ensaios de navegador continuam pendentes. O replay hospedado complementa a tentativa local, que permanece bloqueada pela capacidade de disco.
+
+
+### Matriz de leitura por papel e unidade
+
+Executado em `salao-premium-qa` com [fixtures SQL transacionais](../tests/integration/rls-role-inventory.sql). O salão A tem matriz e filial. O salão B tem uma matriz. Cada linha foi consultada com o papel PostgreSQL `authenticated` e o identificador da conta correspondente.
+
+| Conta | Organizações visíveis | Unidades visíveis | Clientes das fixtures |
+| --- | ---: | ---: | --- |
+| Proprietário A | 1 | 2 | Matriz e filial A |
+| Administrador A | 1 | 2 | Matriz e filial A |
+| Gerente A | 1 | 2 | Matriz e filial A |
+| Recepção A | 1 | 2 | Matriz e filial A |
+| Financeiro A | 1 | 2 | Nenhum |
+| Profissional A vinculado à matriz | 1 | 1 | Nenhum sem atendimento vinculado |
+| Proprietário B | 1 | 1 | Matriz B |
+| Conta autenticada sem vínculo | 0 | 0 | Nenhum |
+
+O escopo entre salões foi respeitado nos cenários executados. Gerente e recepção têm acesso às duas unidades pela associação à organização. O [contrato multiunidades](ARQUITETURA-MULTIUNIDADES.md) exige limitar esses papéis às unidades atribuídas. Testes de escrita, permissões financeiras, cliente com identidade global, sessão HTTP real e atendimento vinculado ao profissional continuam pendentes.

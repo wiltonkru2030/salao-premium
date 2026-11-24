@@ -92,3 +92,10 @@ Essas migrations foram recuperadas do commit Lovable `1f2db25dc2c61cda5668857520
 ## Revisão documental de 24/11/2026
 
 O arquivo de inventário de 20/11 agora contém 97 versões, incluindo índices de Agenda/Caixa, pagamento em centavos, pacotes, fila de espera, disponibilidade e fidelidade. O total de arquivos locais e a divergência atual não foram medidos em checkout completo. O comando npm run audit:migrations compara nomes de versões, bloqueia divergências e não conecta ao banco. Antes de qualquer deploy, atualizar inventário por leitura autorizada, reconciliar conteúdos originais e validar replay em QA; não executar db push ou repair às cegas. Preservar os registros históricos acima.
+
+
+### Diferenças de funções após o replay em QA
+
+- Em produção, `public.rls_auto_enable()` está ligada ao event trigger ativo `ensure_rls` em `ddl_command_end`. Em QA, esse event trigger está ausente. A diferença afeta a avaliação de proteções no provisionamento de tabelas futuras.
+- Em QA, `private.get_professional_cpf_login_pepper()` vem da migration histórica `20261112163107`. A migration `20261112170218` alterou a implementação pública para consultar o Vault diretamente. A função privada permanece no replay e está ausente em produção. A implementação pública atual coincide nos dois catálogos e o login de QA respondeu ao teste de entrada inválida.
+- A evidência confirma a origem da função privada no replay e o vínculo do event trigger em produção. A origem da configuração do event trigger e da remoção da função privada em produção continua aberta.

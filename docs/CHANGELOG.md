@@ -14,3 +14,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Conferida por hash a cadeia candidata de 97 migrations e registrado o bloqueio de infraestrutura do replay local.
 
 - Provisionado Supabase de QA e aplicado o histórico de 97 migrations. Adicionada configuração de ambiente compartilhada pelas aplicações e pelos links públicos de Orçamentos.
+
+- Registradas a matriz de leitura em QA, a divergência de escopo de gerente e recepção e as diferenças de configuração e funções observadas no replay.
