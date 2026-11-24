@@ -1,5 +1,7 @@
 # Regras de Comissões
 
+> Revisão documental: 24/11/2026. Evidências do código e inventário de 20/11; não houve nova consulta ao banco ou execução de testes nesta revisão. Consulte o README mestre.
+
 ## Configuração
 
 - Cada profissional pode ter uma comissão padrão.
@@ -44,13 +46,15 @@ Exemplo: serviço de R$ 200,00 com comissão de 50%. Se o cliente pagar R$ 100,0
 - `pay_professional_commissions`: paga lançamentos pendentes e cria saída no Caixa.
 - `cancel_service_order`: cancela a Comanda e estorna os recebimentos parciais.
 
-## Estado verificado no Supabase conectado
+## Histórico de implementação e limites atuais
 
 - As migrations de regras de comissão por produto, recebimentos parciais e unicidade de regras específicas constam no histórico do banco.
-- A migration `20261119170000_snapshot_commission_rate_on_first_payment.sql` está no repositório, mas **não consta no histórico do banco conectado**. Até sua aplicação em ambiente de teste e posterior autorização, alterar uma regra entre pagamentos parciais pode produzir lançamentos com percentuais diferentes para o mesmo item.
-- O rascunho `docs/sql/commission-refund-reversals.draft.sql` ainda não foi aplicado; o estorno de comissões já pagas e a compensação em repasses futuros não estão ativos.
+- O SQL de snapshot 20261119170000 foi arquivado em docs/sql/legacy-unapplied/ conforme o guia de migrations; não consta no inventário de 20/11 e não deve ser reaplicado automaticamente. Até sua aplicação em ambiente de teste e posterior autorização, alterar uma regra entre pagamentos parciais pode produzir lançamentos com percentuais diferentes para o mesmo item.
+- Os rascunhos de reversão não comprovam estorno de comissão paga ou compensação em repasse futuro; verificar o contrato efetivamente implantado e homologar antes de liberar.
 - Faixas progressivas por período/meta não estão implementadas. Regras por profissional e serviço, como Corte 50% e Progressiva 40%, são suportadas.
 
 ## Testes pendentes
 
 Executar em ambiente de teste, com dados descartáveis: múltiplos pagamentos, alteração de regra entre parcelas, inclusão de item após primeiro pagamento, comissão de produto ativada/desativada, repasse parcial, estorno de comanda com comissão pendente e já paga, e concorrência entre repasse e devolução.
+
+A migration 20261120211409 valida pagamento em centavos e contém lógica de comissão; não prova snapshot completo ou compensação de estornos. Conferir regra por serviço/produto, parcelas e mudanças de taxa em QA. Usar test:admin-commissions, test:admin-commission-rules, test:commission-payout-summary e test:sql-payment-centavos via npm run. Ver [guia de migrations](MIGRATIONS.md).
