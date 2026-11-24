@@ -1,10 +1,12 @@
 # Arquitetura e integrações do SALÃO PREMIUM
 
+> Revisão documental: 24/11/2026. Evidências do código e inventário de 20/11; não houve nova consulta ao banco ou execução de testes nesta revisão. Consulte o README mestre.
+
 ## Modelo de aplicação
 O SALÃO PREMIUM é um SaaS multitenant. Uma conta pode ter associação a uma ou mais organizações; cada organização tem seus próprios clientes, profissionais, serviços, produtos, agendamentos, comandas, caixa, comissões e orçamentos.
 
 ## Camadas
-- **Interface:** páginas e componentes JavaScript, design system CSS e App Profissional.
+- **Interface:** páginas e componentes JavaScript, design system CSS, App Profissional e Área da Cliente. Vite gera três entradas independentes: /, /professional/ e /cliente/.
 - **Orquestração:** `src/app.js` é apenas bootstrap e ciclo do tenant; `src/layout/` roteia; `src/agenda/controllers/` concentra eventos e casos de uso da Agenda.
 - **Domínio:** serviços/repositórios por módulo.
 - **Persistência:** Supabase Auth, Postgres, RLS, triggers e RPCs transacionais.
@@ -24,7 +26,7 @@ O SALÃO PREMIUM é um SaaS multitenant. Uma conta pode ter associação a uma o
 Não mover um módulo inteiro em uma única alteração se isso puder quebrar rotas ou integrações. Migrar um fluxo por vez, mantendo adaptadores.
 
 ## Isolamento multitenant
-- Toda tabela de domínio pertence a uma organização por `org_id`; `branch_id` delimita a unidade quando aplicável.
+- Toda tabela de domínio operacional pertence a uma organização por `org_id`; `branch_id` delimita a unidade quando aplicável.
 - Consultas do front-end devem filtrar por organização ativa e filial selecionada.
 - RLS é a autoridade de isolamento e valida associação/papel no banco; filtros JS não são segurança.
 - RPCs devem derivar e validar a organização a partir do registro e da sessão, não confiar em um `org_id` arbitrário enviado pelo cliente.
@@ -53,10 +55,14 @@ Não mover um módulo inteiro em uma única alteração se isso puder quebrar ro
 | Comissões | `src/pages/commissions.js` | regras, ledger e RPC de pagamento |
 
 ## Segurança e limites conhecidos
-- O histórico remoto contém 58 migrations e o repositório contém 31 arquivos SQL; 33 versões históricas ainda precisam ser reconciliadas. Não resetar nem reaplicar migrations antigas. Consulte `docs/MIGRATIONS.md`.
+- O inventário histórico de 20/11 contém 97 versões; a divergência anterior de 13/11 não representa a situação atual. Executar audit:migrations em checkout completo e comparar inventário remoto atualizado. Não resetar nem reaplicar migrations antigas. Consulte `docs/MIGRATIONS.md`.
 - RLS está habilitada nas tabelas centrais auditadas de Agenda, Comanda, Caixa, Comissões e Orçamentos.
-- O advisor ainda aponta funções `SECURITY DEFINER` expostas a usuários autenticados. Cada uma deve ser revisada individualmente; não revogar em lote porque operações críticas dependem delas e devem validar usuário, tenant e papel internamente.
-- A proteção de senha comprometida do Supabase Auth permanece desativada e precisa ser habilitada no painel do projeto.
-- O Caixa administrativo atual opera o caixa padrão da organização; seleção completa por filial ainda precisa de fluxo próprio.
+- Em auditoria anterior, o advisor apontou funções `SECURITY DEFINER` expostas a usuários autenticados. Cada uma deve ser revisada individualmente; não revogar em lote porque operações críticas dependem delas e devem validar usuário, tenant e papel internamente.
+- Verificar configuração atual de proteção contra senhas comprometidas no Supabase Auth e disponibilidade no plano; o estado antigo não foi revalidado.
+- Caixa por filial tem serviço e migration 20261120073222 versionados; homologar fechamento, resumo e vínculo da unidade.
 - Estorno cobre comandas abertas/parcialmente pagas. Devolução de venda já quitada requer fluxo separado para financeiro e estoque.
 - Build/testes automatizados não substituem teste real de isolamento entre dois tenants nem inspeção visual desktop/mobile.
+
+## Identidade global e fluxos recentes
+
+A Área da Cliente usa identidade global, memberships por tenant e associação confirmada a cadastros legados. Diretório público, HOLDs, cupons, histórico, preferências, notificações e fidelidade possuem contratos/migrations no inventário de 20/11. Fila de espera e pacotes integram a Agenda, com conversão atômica em reserva. Consulte [Área da Cliente](../cliente/README.md) e [README mestre](../README.md). Testes de integração em QA são obrigatórios.
