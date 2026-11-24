@@ -310,6 +310,7 @@ Não executar integração que cria/altera registros em produção. Leia os scri
 - [Inventário de migrations de 20/11](docs/migrations/remote-history-2026-11-20.json)
 - [Identidade global da cliente](docs/CLIENTE-IDENTIDADE-MARCA.md)
 - [Aplicativo da cliente](cliente/README.md)
+- [Aplicativo profissional](professional/README.md)
 - [Contratos SQL da cliente](docs/sql/customer-applied-migrations.test.mjs)
 - [Contratos de pacotes, espera e fidelidade](docs/sql/appointment-offers-applied.test.mjs)
 
