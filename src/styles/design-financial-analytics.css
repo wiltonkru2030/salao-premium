@@ -85,3 +85,18 @@
   .commission-group>.section-title,.commission-rule-form,.commission-rule-row) {
   border-color: var(--sp-line);
 }
+
+/* Comissões. Os grupos e formulários têm superfície própria no painel. */
+#commissions-manager :is(.settings-card,.commission-rule-row,.commission-rule-form) {
+  background: var(--sp-paper);
+  color: var(--sp-ink);
+  border-color: var(--sp-line);
+}
+
+#commissions-manager :is(.setting-row small,.commission-summary .eyebrow) {
+  color: var(--sp-muted);
+}
+
+#commissions-manager :is(.section-title h3,.setting-row b) {
+  color: var(--sp-ink);
+}

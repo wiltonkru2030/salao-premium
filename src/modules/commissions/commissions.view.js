@@ -53,7 +53,7 @@ export function renderCommissionsView({visible,professionalMap,commissionOrderMa
 
 '</small></span></div>').join("")+
 
-    (canPay&&eligible.length?'<div class="commission-payout-controls"><select class="field" data-payment-method="'+professionalId+
+    (canPay&&eligible.length?'<div class="commission-payout-controls"><select class="field" aria-label="Forma de pagamento" data-payment-method="'+professionalId+
 
 '"><option value="pix">PIX</option><option value="cash">Dinheiro</option><option value="transfer">Transferência</option><option value="credit_card">Cartão de crédito</option><option value="debit_card">Cartão de débito</option><option value="other">Outro</option></select><button class="btn primary" type="button" data-pay-commissions="'+professionalId+
 
@@ -85,6 +85,6 @@ export function renderCommissionsView({visible,professionalMap,commissionOrderMa
   return `
    ${serviceRulesCard}
    ${productSettingsCard}
-   <section class="settings-card commission-summary"><div><small class="eyebrow">A PAGAR</small><h2>${money(pending)}</h2></div><div><small class="eyebrow">PAGO</small><h2>${money(paid)}</h2></div><div><small class="eyebrow">LANÇAMENTOS</small><h2>${visible.length}</h2></div></section><div class="list-toolbar"><label class="search-box"><span>⌕</span><input id="commission-professional-search" placeholder="Filtrar por profissional" autocomplete="off"></label><button class="btn secondary" data-clear-commission-filter>Todos</button></div><div id="commission-groups">${sections||'<div class="empty-state">Nenhuma comissão foi gerada. Os lançamentos são criados proporcionalmente conforme os pagamentos da Comanda são recebidos.</div>'}</div><div class="section-title section-title--spaced"><h2>Histórico de pagamentos</h2><span class="result-count">${payouts.length} pagamento(s)</span></div><div class="record-list">${payoutHistory||'<div class="empty-state">Nenhum pagamento de comissão registrado.</div>'}</div>`;
+   <section class="settings-card commission-summary"><div><small class="eyebrow">A PAGAR</small><h2>${money(pending)}</h2></div><div><small class="eyebrow">PAGO</small><h2>${money(paid)}</h2></div><div><small class="eyebrow">LANÇAMENTOS</small><h2>${visible.length}</h2></div></section><div class="list-toolbar"><label class="search-box"><span>⌕</span><input id="commission-professional-search" aria-label="Filtrar por profissional" placeholder="Filtrar por profissional" autocomplete="off"></label><button class="btn secondary" data-clear-commission-filter>Todos</button></div><div id="commission-groups">${sections||'<div class="empty-state">Nenhuma comissão foi gerada. Os lançamentos são criados proporcionalmente conforme os pagamentos da Comanda são recebidos.</div>'}</div><div class="section-title section-title--spaced"><h2>Histórico de pagamentos</h2><span class="result-count">${payouts.length} pagamento(s)</span></div><div class="record-list">${payoutHistory||'<div class="empty-state">Nenhum pagamento de comissão registrado.</div>'}</div>`;
 
 }

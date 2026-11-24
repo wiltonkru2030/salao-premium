@@ -168,3 +168,7 @@ Em Chromium, o renderizador do modal de Produtos e uma amostra da estrutura de f
 ### Contraste de Financeiro e Relatórios
 
 Os renderizadores de Financeiro e Relatórios foram verificados com dados sintéticos e CSS do build em Chromium, em 390 e 1280 px. A amostra de indicadores, totais, valores das listas, filtro de período e avisos atingiu contraste mínimo de 5,81:1 no tema escuro e 5,37:1 no claro. Nessas telas, os indicadores são exibidos em cartões e listas. A paleta também foi aplicada a elementos do painel de Comissões, cuja conferência visual segue pendente.
+
+### Contraste e controles de Comissões
+
+O painel de Comissões foi renderizado com dados sintéticos e o CSS do build em Chromium. Em 390 e 1280 px, a amostra de totais, linhas selecionáveis, regras e controles de repasse atingiu contraste mínimo de 8,06:1 no tema escuro e 5,81:1 no claro. Foi possível selecionar um lançamento, trocar a forma de pagamento e editar o campo de pesquisa, localizado pelo nome acessível. A verificação visual não realizou repasses.
