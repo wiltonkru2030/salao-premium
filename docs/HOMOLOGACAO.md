@@ -156,3 +156,7 @@ O build de QA aplicou o tema automático escuro na entrada, persistiu a seleçã
 ### Contraste dos calendários da Agenda
 
 Os renderizadores diário, semanal e mensal foram exercitados em Chromium com o CSS do build, em 390 e 1280 px. A amostra de horários, dias, cartões confirmados, cartões em atendimento e bloqueios atingiu contraste mínimo de 6,00:1 nos dois tamanhos. Os estados confirmado e em atendimento mantiveram fundos distintos e seus rótulos. A verificação usou dados sintéticos e cobre as superfícies amostradas no tema escuro.
+
+### Contraste da Comanda e do Caixa
+
+Os componentes reais foram renderizados com dados sintéticos e o CSS do build em Chromium. A amostra de pagamento parcial, total, estado, campo de pagamento, resumo do dia e campo de conferência atingiu contraste mínimo de 8,06:1 em 390 e 1280 px no tema escuro. Os testes locais da Comanda, do Caixa e da auditoria CSS passaram. A medição cobre as superfícies amostradas desses componentes.

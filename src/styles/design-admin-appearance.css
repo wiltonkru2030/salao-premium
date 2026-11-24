@@ -110,3 +110,44 @@
   .week-blocked button,.month-day .month-blocked) {
   color: var(--sp-gold-text);
 }
+
+/* Comanda e Caixa. Usa as mesmas cores para valores, formulários e estados. */
+:root[data-theme="dark"] :is(#comanda-manager,#cash-manager) :is(.settings-card,
+  .setting-row,.section-title,.commission-summary,.search-box) {
+  background: var(--sp-paper);
+  color: var(--sp-ink);
+  border-color: var(--sp-line);
+}
+
+:root[data-theme="dark"] :is(#comanda-manager,#cash-manager) :is(.settings-card>h3,
+  .setting-row>span:first-child,.setting-row b,.commission-summary h2) {
+  color: var(--sp-ink);
+  border-color: var(--sp-line);
+}
+
+:root[data-theme="dark"] :is(#comanda-manager,#cash-manager) :is(label,.eyebrow,
+  .result-count,.setting-row small,.record-trailing small) {
+  color: var(--sp-muted);
+}
+
+:root[data-theme="dark"] :is(#comanda-manager,#cash-manager) :is(.demo-note,
+  .notice) {
+  background: var(--sp-gold-soft);
+  color: var(--sp-gold-text);
+  border-color: var(--sp-line);
+}
+
+:root[data-theme="dark"] :is(#comanda-manager,#cash-manager) :is(.status,.subtle-tag) {
+  background: var(--sp-soft);
+  color: var(--sp-ink);
+}
+
+:root[data-theme="dark"] :is(#comanda-manager,#cash-manager) .status.warning {
+  background: var(--sp-gold-soft);
+  color: var(--sp-gold-text);
+}
+
+:root[data-theme="dark"] :is(#comanda-manager,#cash-manager) .status.success {
+  background: var(--sp-green-soft);
+  color: var(--sp-green);
+}

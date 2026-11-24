@@ -48,3 +48,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Disponibilizada aparência administrativa na entrada e em Configurações, com paleta aplicada ao layout compartilhado.
 
 - Ajustadas as cores dos calendários, estados de atendimento e bloqueios da Agenda no tema escuro.
+
+- Padronizados cards, estados e formulários da Comanda e do Caixa para o tema escuro.
