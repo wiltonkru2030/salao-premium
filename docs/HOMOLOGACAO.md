@@ -123,7 +123,7 @@ Em QA, a mesma chamada para receber R$ 40,01 foi recusada enquanto o gerente só
 
 ### Agenda, espera e início de atendimento
 
-A migration `20261124122045` verifica a atribuição nas RPCs de lista de espera, encaixes e início de atendimento simples ou agrupado. Em QA, uma conta de recepção vinculada à filial conseguiu cadastrar e consultar uma solicitação e iniciar um atendimento naquela unidade. A mesma conta foi recusada ao listar a espera e iniciar atendimento na matriz. A matriz de permissões de Clientes e Caixa foi reexecutada. O cenário de reserva pela lista de espera, e o atendimento agrupado ainda exigem cobertura própria.
+A migration `20261124122045` verifica a atribuição nas RPCs de lista de espera, encaixes e início de atendimento simples ou agrupado. Em QA, uma conta de recepção vinculada à filial conseguiu cadastrar e consultar uma solicitação e iniciar um atendimento naquela unidade. A mesma conta foi recusada ao listar a espera e iniciar atendimento na matriz. A matriz de permissões de Clientes e Caixa foi reexecutada. O cenário de reserva pela lista de espera e o atendimento agrupado ainda exigem cobertura própria.
 
 
 ### Pacotes por unidade
@@ -138,3 +138,12 @@ O build de QA carregou o símbolo oficial nas telas de entrada do painel, do App
 ### Autocomplete compartilhado
 
 Em Chromium com emulação de toque, foram verificados o descarte de resposta após limpar o campo, os estados de busca, vazio e falha, Escape, navegação por seta, seleção por Enter e toque e remoção dos listeners. O componente identifica a seleção pelo ID. A Agenda também reinicia a busca de profissionais quando mudam unidade ou serviço. A revisão de cobertura de todos os módulos continua na matriz.
+
+
+### Verificação autenticada em Chromium
+
+Em um build conectado ao Supabase de QA, a proprietária entrou no painel, atribuiu a filial ao gerente em **Equipe e permissões**, recarregou a página, conferiu a atribuição persistida e revogou o vínculo. As chamadas de criação e revogação foram confirmadas pelo PostgREST.
+
+No App Profissional, a conta de QA com escopo completo selecionou tema escuro em **Configurações** e navegou até a **Agenda**. O tema permaneceu aplicado no conteúdo autenticado. As contas e a organização descartáveis foram removidas de QA.
+
+A configuração pública de Auth do projeto QA informa Google OAuth desabilitado. A jornada com conta Google exige ativar esse provedor no ambiente de homologação. A configuração de Passkey segue pendente de verificação.

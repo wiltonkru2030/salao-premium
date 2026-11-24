@@ -57,7 +57,8 @@ export async function loadTeamPage() {
     const action=member.role==="receptionist"
       ? '<small>'+accessLabel+'</small><button class="btn '+(access&&full?"secondary":"primary")+'" type="button" data-reception-access="'+esc(member.user_id)+'" data-enabled="'+(access&&full?"true":"false")+'">'+actionLabel+'</button>'
       : member.role==="owner"||member.role==="admin"
-        ? '<small>Acesso completo automático</small>'
+        ? '<small>' + (access && member.professional_app_scope === "all"
+          ? "App Profissional · Acesso completo" : accessLabel) + '</small>'
         : member.role==="professional"
           ? '<small>Acesso vinculado ao cadastro profissional</small>'
           : '<small>Sem permissão para o App Profissional</small>';

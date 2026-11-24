@@ -22,4 +22,4 @@ As cores semânticas de superfície, texto, bordas, destaque e erro da Área da 
 
 ### Aparência do App Profissional
 
-A tela de entrada e as Configurações oferecem aparência automática, clara e escura. A preferência é local a este aparelho e a este aplicativo. As superfícies, os controles, o calendário e os cartões do Profissional usam a paleta semântica compartilhada. O teste em Chromium confirmou a troca instantânea, a escolha após recarregar e as cores do campo de login no modo escuro. Os fluxos autenticados ainda integram a conferência visual de homologação.
+A tela de entrada e as Configurações oferecem aparência automática, clara e escura. A preferência é local a este aparelho e a este aplicativo. As superfícies, os controles, o calendário e os cartões do Profissional usam a paleta semântica compartilhada. O teste em Chromium confirmou a troca instantânea, a escolha após recarregar e as cores do campo de login no modo escuro. Em QA, uma conta autenticada também aplicou o tema em Configurações e confirmou sua permanência ao navegar para a Agenda.
