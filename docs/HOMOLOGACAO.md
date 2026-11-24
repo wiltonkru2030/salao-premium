@@ -93,4 +93,10 @@ A [verificação transacional](../tests/integration/payment-refund-audit.sql) ex
 
 A devolução integral marcou a venda como devolvida, cancelou a Comanda e repôs o estoque. O Caixa registrou entradas e saídas de R$ 100,03, e o saldo físico retornou a R$ 10,25. A segunda devolução foi recusada.
 
-Em uma segunda fixture, duas sessões tentaram quitar a mesma Comanda. A primeira concluiu dentro da transação e reteve o bloqueio. A segunda atingiu o limite de espera configurado e abortou. As duas transações foram revertidas. A limpeza confirmou zero contas e organizações das fixtures. Este cenário confirma o bloqueio durante a disputa. O teste ponta a ponta com a primeira sessão confirmando a transação e a segunda aguardando e reavaliando o saldo ainda está pendente.
+Em uma segunda fixture, duas sessões tentaram quitar a mesma Comanda. A primeira concluiu dentro da transação e reteve o bloqueio. A segunda atingiu o limite de espera configurado e abortou. As duas transações foram revertidas. A limpeza confirmou zero contas e organizações das fixtures. Este cenário confirma o bloqueio durante a disputa. O teste após confirmação foi executado em uma fixture separada, descrita abaixo.
+
+#### Quitação concorrente com confirmação
+
+Em QA, duas sessões autenticadas chamaram `register_service_order_payment` para quitar a mesma Comanda de R$ 100,03. A primeira manteve a transação aberta por cinco segundos após a RPC e então confirmou a quitação. A segunda iniciou durante essa janela, esperou pelo menos um segundo dentro da chamada e recebeu a mensagem “Esta comanda não aceita pagamentos.” após a confirmação da primeira.
+
+A consulta após as duas chamadas encontrou a Comanda fechada, um pagamento confirmado de R$ 100,03, uma entrada no Caixa, uma venda paga e estoque reduzido de duas unidades para uma. Os registros das fixtures de concorrência foram removidos de QA. Este cenário cobre duas tentativas simultâneas de quitação integral da mesma Comanda.

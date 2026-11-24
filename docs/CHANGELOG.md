@@ -22,3 +22,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Verificados o saldo em dinheiro, a diferença de fechamento, o bloqueio de fechamento repetido e as permissões das RPCs de Caixa por unidade em QA.
 
 - Verificados recebimentos em centavos, devolução integral, estoque e bloqueio de pagamentos concorrentes em QA.
+
+- Confirmada em QA a recusa da segunda quitação concorrente após a primeira transação confirmar o pagamento.
