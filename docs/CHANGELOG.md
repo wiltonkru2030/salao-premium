@@ -62,3 +62,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Ajustadas as máscaras na edição de dados salvos e no fim da composição, com preservação do cursor e dos campos somente leitura.
 
 - Implementado CNPJ alfanumérico para MEI na interface, nos serviços e no Supabase de QA, com compatibilidade numérica.
+
+- Adicionada consulta de CEP à vitrine pública com proteção contra respostas obsoletas e preservação do preenchimento manual.

@@ -1,10 +1,14 @@
 /** Controlador administrativo: eventos, validações e operações de configuração. */
+import {bindPublicAddressLookup} from "./public-address.controller.js";
 import {timezones} from "./settings.view.js";
 /** Vincula os formulários ao contexto atual, sem produzir HTML. */
 export function bindSettingsEvents({host,state,supabase,toast,reportError,canManageSettings,reload}){
     if (host.dataset.bound !== "true") {
       host.dataset.bound = "true";
       const active=()=>host.isConnected&&host._settingsContext?.context===JSON.stringify([state.organization?.id,state.user?.id,state.membership?.role]);
+
+      bindPublicAddressLookup(host, form => active() && canManageSettings() &&
+        state.branch?.id === form.dataset.branchId);
 
       host.addEventListener("click", event => {
         const opener = event.target.closest("[data-open-settings]");

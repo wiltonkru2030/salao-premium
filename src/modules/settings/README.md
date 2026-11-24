@@ -23,3 +23,5 @@ Separar apresentação, CSS, eventos, serviços, regras e consultas. Documentar 
 ## Testes e aceite
 
 Scripts da raiz (via npm run): test:tenant test:availability test:sql-customer-applied-migrations. Executar build e auditoria de estrutura/CSS. Testar em QA com perfis autorizados e negados, dois tenants, filiais distintas, dados controlados e interface desktop/mobile. Não executar escritas de teste em produção. Não marcar concluído sem evidências.
+
+A Vitrine pública oferece preenchimento opcional pelo CEP da unidade. A consulta envia apenas os oito dígitos ao ViaCEP e sugere logradouro, bairro, cidade e UF. Os campos continuam editáveis, e a publicação só muda ao salvar o formulário. Consultas antigas são descartadas ao trocar o CEP ou o contexto da unidade.

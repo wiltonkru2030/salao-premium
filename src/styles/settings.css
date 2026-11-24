@@ -66,3 +66,6 @@ color:#aaa}
 .public-profile-panel .public-check input{width:18px;height:18px;accent-color:var(--gold,#b59b62)}
 .public-profile-panel h3{margin:10px 0 0;font-size:13px}
 @media(max-width:680px){.public-profile-panel .sp-modal-body{grid-template-columns:1fr}}
+
+/* Consulta opcional de CEP na vitrine pública. */
+.postal-lookup{display:grid;align-content:start;justify-items:start;gap:6px;min-width:0}

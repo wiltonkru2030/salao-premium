@@ -42,7 +42,8 @@ function renderPublicProfileSettings({organization, branch, profile, branchProfi
         '<label>Bairro<input name="neighborhood" maxlength="100" value="' + esc(branchProfile?.neighborhood || "") + '"></label>' +
         '<label>Cidade<input name="city" required maxlength="100" value="' + esc(branchProfile?.city || "") + '"></label>' +
         '<label>UF<input name="state" required maxlength="2" pattern="[A-Za-z]{2}" value="' + esc(branchProfile?.state || "") + '" placeholder="MS"></label>' +
-        '<label>CEP<input name="postal_code" data-mask="cep" inputmode="numeric" maxlength="9" value="' + esc(branchProfile?.postal_code || "") + '"></label>' +
+        '<label>CEP<input name="postal_code" data-mask="cep" inputmode="numeric" maxlength="9" autocomplete="postal-code" value="' + esc(branchProfile?.postal_code || "") + '"></label>' +
+        '<div class="postal-lookup"><button class="btn secondary" type="button" data-postal-lookup>Consultar CEP</button><small class="muted" data-postal-status role="status"></small></div>' +
         '<label>Telefone da unidade<input name="branch_public_phone" data-mask="phone" type="tel" value="' + esc(branchProfile?.public_phone || branch.phone || "") + '"></label>' +
         '<label>Latitude (opcional)<input name="latitude" type="number" min="-90" max="90" step="any" value="' + esc(branchProfile?.latitude ?? "") + '"></label>' +
         '<label>Longitude (opcional)<input name="longitude" type="number" min="-180" max="180" step="any" value="' + esc(branchProfile?.longitude ?? "") + '"></label>' +

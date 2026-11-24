@@ -187,3 +187,7 @@ Em Chromium, foram testados entrada de telefone internacional, remoção do DDI 
 O exemplo oficial `12.ABC.345/01DE-35` passou na máscara, na validação fiscal, na normalização dos serviços e na RPC de cadastro em QA. A escrita persistiu `12ABC34501DE35` e criou o vínculo de serviço na mesma transação. Foram rejeitados dígitos incorretos, letras nos dígitos finais e tentativas de cadastro por gerente. A edição com CNPJ numérico continuou funcionando. A fixture foi revertida. [Referência da Receita Federal](https://www.gov.br/receitafederal/pt-br/centrais-de-conteudo/publicacoes/documentos-tecnicos/cnpj)
 
 A migration foi aplicada somente em QA. A consulta de produção encontrou dois registros MEI, ambos válidos na regra numérica, e confirmou a ausência da RPC de cadastro transacional. O SQL novo inclui a definição da RPC para instalar o contrato onde estiver ausente. A implantação em produção exige aplicar a migration antes de usar o novo formato.
+
+### Consulta de CEP da vitrine pública
+
+O teste em Chromium simulou resposta atrasada, troca de CEP, edição manual durante a consulta, CEP não encontrado e falha de rede. Foram preservados os campos preenchidos manualmente, e somente a resposta associada ao CEP vigente foi aplicada. A chamada real de leitura ao ViaCEP confirmou São Paulo/SP para o CEP público da Praça da Sé. A consulta é feita no rascunho da unidade e a publicação continua condicionada ao botão de salvar.
