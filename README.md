@@ -298,6 +298,7 @@ Não executar integração que cria/altera registros em produção. Leia os scri
 
 ## Documentação técnica
 
+- [Mapa de todos os módulos administrativos](docs/MODULOS.md)
 - [Guia técnico e mapa do código](docs/GUIA-DO-CODIGO.md)
 - [Arquitetura e integrações](docs/ARCHITECTURE.md)
 - [SaaS multitenant](docs/SAAS-MULTITENANT.md)
