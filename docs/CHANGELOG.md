@@ -16,3 +16,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Provisionado Supabase de QA e aplicado o histórico de 97 migrations. Adicionada configuração de ambiente compartilhada pelas aplicações e pelos links públicos de Orçamentos.
 
 - Registradas a matriz de leitura em QA, a divergência de escopo de gerente e recepção e as diferenças de configuração e funções observadas no replay.
+
+- Ampliada a matriz SQL de QA para escritas de clientes, leitura de despesas e abertura de Caixa por papel e unidade.

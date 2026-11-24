@@ -65,3 +65,18 @@ Executado em `salao-premium-qa` com [fixtures SQL transacionais](../tests/integr
 | Conta autenticada sem vínculo | 0 | 0 | Nenhum |
 
 O escopo entre salões foi respeitado nos cenários executados. Gerente e recepção têm acesso às duas unidades pela associação à organização. O [contrato multiunidades](ARQUITETURA-MULTIUNIDADES.md) exige limitar esses papéis às unidades atribuídas. Testes de escrita, permissões financeiras, cliente com identidade global, sessão HTTP real e atendimento vinculado ao profissional continuam pendentes.
+
+### Escrita de clientes e operações de Caixa
+
+A mesma matriz executou 18 combinações de papel e unidade em QA. Em cada cenário, verificou a atualização de cliente, a leitura da despesa de teste e a abertura de Caixa com R$ 10,25 pela RPC usada pelo aplicativo.
+
+| Conta | Atualizou cliente na matriz e na filial A | Leu despesa nas duas unidades A | Abriu Caixa nas duas unidades A |
+| --- | --- | --- | --- |
+| Proprietário A | Sim | Sim | Sim |
+| Gerente A | Sim | Sim | Sim |
+| Recepção A | Sim | Não | Sim |
+| Financeiro A | Não | Sim | Sim |
+| Profissional A | Não | Não | Não |
+| Conta sem vínculo | Não | Não | Não |
+
+Nenhuma das contas testadas atualizou clientes, leu despesas ou abriu Caixa no salão B. Em A, a atualização de clientes e a abertura de Caixa por gerente e recepção abrangeram as duas unidades, o que confirma o escopo organizacional registrado em SEG-02. A abertura foi revertida a cada cenário e os demais dados foram revertidos ao fim da sessão. Fechamento, pagamentos, estornos, concorrência e permissões dos demais papéis ainda precisam de testes próprios.
