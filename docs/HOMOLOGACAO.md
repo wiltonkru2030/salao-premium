@@ -160,3 +160,7 @@ Os renderizadores diário, semanal e mensal foram exercitados em Chromium com o 
 ### Contraste da Comanda e do Caixa
 
 Os componentes reais foram renderizados com dados sintéticos e o CSS do build em Chromium. A amostra de pagamento parcial, total, estado, campo de pagamento, resumo do dia e campo de conferência atingiu contraste mínimo de 8,06:1 em 390 e 1280 px no tema escuro. Os testes locais da Comanda, do Caixa e da auditoria CSS passaram. A medição cobre as superfícies amostradas desses componentes.
+
+### Contraste dos modais compartilhados
+
+Em Chromium, o renderizador do modal de Produtos e uma amostra da estrutura de formulário da Agenda usaram o CSS do build em 390 e 1280 px. Nas superfícies estabilizadas, o menor contraste foi 7,09:1 no tema escuro e 5,37:1 no tema claro. Foram amostrados títulos, descrições, rótulos, ação principal, controle de fechamento e campo somente leitura. Escape fechou o diálogo nativo. A amostra foi visual e não realizou gravações.

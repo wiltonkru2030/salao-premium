@@ -50,3 +50,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Ajustadas as cores dos calendários, estados de atendimento e bloqueios da Agenda no tema escuro.
 
 - Padronizados cards, estados e formulários da Comanda e do Caixa para o tema escuro.
+
+- Mapeados para a paleta compartilhada os modais, formulários, gavetas e detalhes de recuperação.

@@ -6,20 +6,20 @@ dialog.sp-modal{
 }
 dialog.sp-modal::backdrop{background:rgba(25,23,19,.48);backdrop-filter:blur(2px)}
 .sp-modal-shell{display:flex;flex-direction:column;max-height:min(88dvh,860px);min-height:0}
-.sp-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:20px 22px;border-bottom:1px solid var(--sp-line);background:#fff}
+.sp-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:20px 22px;border-bottom:1px solid var(--sp-line);background:var(--sp-paper)}
 .sp-modal-head h2{margin:0;color:var(--sp-ink);font-size:18px;font-weight:600;letter-spacing:-.25px}
 .sp-modal-head p{margin:5px 0 0;color:var(--sp-muted);font-size:10px;line-height:1.6}
 .sp-modal-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px;padding:20px 22px;overflow:auto}
-.sp-modal-body>label{display:grid;align-content:start;gap:7px;min-width:0;color:#66635d;font-size:10px;font-weight:500}
+.sp-modal-body>label{display:grid;align-content:start;gap:7px;min-width:0;color:var(--sp-muted);font-size:10px;font-weight:500}
 .sp-modal-body>label input,.sp-modal-body>label select,.sp-modal-body>label textarea{
  width:100%;min-width:0;min-height:var(--sp-control-height);padding:10px 12px;
- border:1px solid var(--sp-line-strong);border-radius:7px;background:#fff;color:var(--sp-ink);
+ border:1px solid var(--sp-line-strong);border-radius:7px;background:var(--sp-paper);color:var(--sp-ink);
  font:inherit;font-size:11px;outline:0
 }
 .sp-modal-body>label input:focus,.sp-modal-body>label select:focus,.sp-modal-body>label textarea:focus{border-color:var(--sp-gold);box-shadow:var(--sp-focus)}
 .sp-modal-body>label.sp-span{grid-column:1/-1}
-.sp-modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 22px;border-top:1px solid var(--sp-line);background:#fff}
-.sp-modal-close{width:34px;height:34px;border:1px solid var(--sp-line);border-radius:7px;background:#fff;color:#555;font-size:20px;cursor:pointer}
+.sp-modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 22px;border-top:1px solid var(--sp-line);background:var(--sp-paper)}
+.sp-modal-close{width:34px;height:34px;border:1px solid var(--sp-line);border-radius:7px;background:var(--sp-paper);color:var(--sp-ink);font-size:20px;cursor:pointer}
 @media(max-width:600px){
  dialog.sp-modal{width:calc(100vw - 16px);max-height:92dvh}
  .sp-modal-head{padding:16px}
@@ -120,9 +120,9 @@ dialog.sp-modal.recycle-dialog{width:min(760px,calc(100vw - 28px));padding:0;ove
 .record-list{display:grid;gap:8px;min-width:0}
 .record-card{
   min-width:0;border:1px solid var(--sp-line);border-radius:8px;
-  background:#fff;color:var(--sp-ink);box-shadow:none
+  background:var(--sp-paper);color:var(--sp-ink);box-shadow:none
 }
-.record-card:hover{border-color:var(--sp-line-strong);background:#fdfcf9}
+.record-card:hover{border-color:var(--sp-line-strong);background:var(--sp-soft)}
 .record-main,.record-trailing{min-width:0}
 .record-main b,.record-trailing b{font-size:11px;font-weight:600}
 .record-main small,.record-trailing small{font-size:9px;color:var(--sp-muted)}
@@ -134,7 +134,7 @@ dialog.sp-modal.recycle-dialog{width:min(760px,calc(100vw - 28px));padding:0;ove
 .search-box input,.field{
   min-width:0;min-height:var(--sp-control-height);
   border:1px solid var(--sp-line-strong);border-radius:7px;
-  background:#fff;color:var(--sp-ink);font-family:'Poppins',sans-serif;font-size:11px
+  background:var(--sp-paper);color:var(--sp-ink);font-family:'Poppins',sans-serif;font-size:11px
 }
 .search-box input:focus,.field:focus{
   outline:0;border-color:var(--sp-gold);box-shadow:var(--sp-focus)
@@ -145,7 +145,7 @@ dialog.sp-modal.recycle-dialog{width:min(760px,calc(100vw - 28px));padding:0;ove
 }
 .form-grid>label,.form-row>label,.settings-card form>label{
   display:grid;align-content:start;gap:7px;min-width:0;
-  color:#66635d;font-size:10px;font-weight:500;line-height:1.45
+  color:var(--sp-muted);font-size:10px;font-weight:500;line-height:1.45
 }
 .form-grid>.btn,.form-row>.btn{justify-self:start}
 .settings-card form .field{width:100%}
