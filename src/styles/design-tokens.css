@@ -32,11 +32,22 @@
 :root {
  color-scheme: light;
  --sp-canvas:var(--sp-paper);
+ --sp-action:#242320;
+ --sp-on-action:#fff;
+ --sp-action-hover:#39362f;
+ --sp-green-soft:#fbfdfb;
  --sp-theme-card-shadow:0 8px 28px #17130b08;
 }
 :root[data-theme="dark"] {
  color-scheme: dark;
  --sp-canvas:#171715;
+ --sp-action:#ead9ba;
+ --sp-on-action:#242320;
+ --sp-action-hover:#f5e7cd;
+ --sp-green:#9bc8a5;
+ --sp-green-soft:#26352a;
+ --sp-soft:#2c2c28;
+ --sp-line-strong:#676159;
  --sp-paper:#22221f;
  --sp-ink:#f5f3ef;
  --sp-muted:#bcb8af;

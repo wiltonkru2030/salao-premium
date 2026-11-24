@@ -71,3 +71,19 @@ cursor:pointer}
 .autocomplete-empty{padding:12px;
 color:var(--sp-muted);
 font-size:12px}
+
+/* Preferência de aparência compartilhada nos formulários de configuração. */
+.sp-appearance-control {
+  display: grid;
+  gap: 6px;
+  margin-block: 14px;
+  color: var(--sp-muted);
+}
+.sp-appearance-control select {
+  min-height: var(--sp-control-height);
+  padding: 8px;
+  border: 1px solid var(--sp-line-strong);
+  border-radius: var(--sp-control-radius);
+  background: var(--sp-paper);
+  color: var(--sp-ink);
+}

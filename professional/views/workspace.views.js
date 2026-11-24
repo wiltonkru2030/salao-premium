@@ -1,4 +1,5 @@
 /** Views do aplicativo profissional: comandas, comissões e configurações. Recebem estado e retornam HTML sem efeitos colaterais. */
+import { renderPlatformAppearance } from "../../src/components/platform-appearance.js";
 import {escapeHtml as esc,formatMoney as money,formatStatus as statusLabel,formatDateTime as dateTimeLabel} from "../utils/formatters.js";
 import {canRegisterProfessionalService,summarizeProfessionalCommissions} from "../access.rules.js";
 // Apresenta comandas autorizadas e seus detalhes.
@@ -26,11 +27,12 @@ export function commissionsView(state){
  (state.commissionPayouts.length?state.commissionPayouts.map(p=>'<article class="commission"><strong>'+money(p.amount)+'</strong><div class="meta">'+esc(p.payment_method)+' · '+dateTimeLabel(p.paid_at)+(p.notes?' · '+esc(p.notes):'')+'</div><span class="tag success">Pago</span></article>').join(""):'<div class="empty">Nenhum pagamento de comissão registrado.</div>');
 }
 // Apresenta dados de perfil e segurança da conta.
-export function settingsView(state){
+export function settingsView(state, appearance){
  const name=state.profile?.full_name||state.professional?.name||"";
  return '<div class="section-title"><h2>Configurações</h2><span class="muted">Perfil, senha e preferências</span></div>'+
  '<section class="detail"><div class="detail-row"><span>Salão</span><b>'+esc(state.organization?.name||"Conta vinculada")+'</b></div><div class="detail-row"><span>Permissão</span><b>'+esc(state.scope==="all"?"Acesso completo":state.scope==="calendar_all"?"Agenda completa":"Somente seus dados")+'</b></div>'+
  '<label class="field">Nome<input id="profile-name" value="'+esc(name)+'" maxlength="120"></label><label class="field">Telefone<input id="profile-phone" data-mask="phone" value="'+esc(state.profile?.phone||"")+'" inputmode="tel"></label><button class="primary" data-action="save-profile">Salvar perfil</button></section>'+
  '<section class="detail"><h3>Senha</h3><label class="field">Nova senha<input id="settings-password" type="password" minlength="10" autocomplete="new-password" placeholder="Mínimo de 10 caracteres"></label><button class="secondary" data-action="change-password">Atualizar senha</button><p class="muted">A redefinição de senha também pode ser feita pelo administrador.</p></section>'+
+ '<section class="detail">' + renderPlatformAppearance(appearance) + '</section>' +
  '<button class="secondary" data-action="logout">Sair da conta</button>';
 }

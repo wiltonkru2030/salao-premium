@@ -42,3 +42,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Centralizados os tokens de tema e verificada a troca automática de aparência da Área da Cliente em Chromium.
 
 - Corrigidas respostas obsoletas no autocomplete e padronizados os estados, o teclado e o toque nos aplicativos que usam o componente.
+
+- Aplicada no App Profissional a paleta compartilhada com controle de aparência automática, clara e escura.

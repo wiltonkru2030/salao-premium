@@ -1,4 +1,5 @@
 /** App Profissional (PWA): autenticação, sessão individual, Agenda, Comandas, Comissões e configurações do próprio perfil. */
+import { createPlatformAppearance } from "../src/components/platform-appearance.js";
 import { renderPlatformMark } from "../src/components/platform-mark.js";
 import {authenticateProfessional} from "./auth.service.js";
 import { supabase } from "./supabase.client.js";
@@ -31,6 +32,7 @@ import { resolveProfessionalContexts, allowedProfessionalPages, canRegisterProfe
 installGlobalErrorHandlers();
 installGlobalMasks();
 
+const appearance = createPlatformAppearance("salao-premium:professional-appearance");
 const root=document.querySelector("#professional-app");
 const state={
  user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,organization:null,
@@ -51,7 +53,7 @@ function clearAutocomplete(){disposeAutocomplete?.();disposeAutocomplete=null;}
 // Views de autenticação ficam isoladas do controlador principal do PWA.
 function loginView(){
  clearAutocomplete();
- root.innerHTML=renderProfessionalLoginView(state.notice);
+ root.innerHTML=renderProfessionalLoginView(state.notice, appearance.preference);
 }
 function changePasswordView(){
  root.innerHTML=renderProfessionalPasswordChangeView(state.notice);
@@ -96,7 +98,7 @@ function render(){
  if(!state.user||!state.orgId)return;
  if(!allowedProfessionalPages(state).includes(state.page))state.page="Agenda";
  clearAutocomplete();
- const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state):state.page==="Comissões"?commissionsView(state):settingsView(state);
+ const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state):state.page==="Comissões"?commissionsView(state):settingsView(state, appearance.preference);
  shell(content);
  if(state.page==="Comandas"&&state.selectedOrder&&state.role==="professional"&&state.professional)bindAutocomplete();
 }
@@ -185,6 +187,9 @@ function bindAutocomplete(){
  disposeAutocomplete?.();
  disposeAutocomplete=bindOrderService({root,state,client:supabase,getEpoch:()=>sessionEpoch,lock:serviceLock,loadOrders,chooseOrder,showNotice,reportError});
 }
+root.addEventListener("change", event => {
+ if (event.target.matches("[data-platform-appearance]")) appearance.set(event.target.value);
+});
 root.addEventListener("click",async event=>{
  try{
   const action=event.target.closest("[data-action]")?.dataset.action;

@@ -3,18 +3,20 @@
  * Responsabilidade: produzir exclusivamente o markup das telas de login e troca de senha.
  * Integração: chamadas pelo controlador professional/app.js; não acessa DOM, rede ou sessão.
  */
+import { renderPlatformAppearance } from "../../src/components/platform-appearance.js";
 import { renderPlatformMark } from "../../src/components/platform-mark.js";
 import { escapeHtml } from "../utils/formatters.js";
 
 /**
  * Monta a tela de login do profissional.
  * @param {string} notice Mensagem opcional de validação ou falha.
+ * @param {string} appearance Preferência de aparência deste aparelho.
  * @returns {string} Markup da tela de autenticação.
  */
-export function renderProfessionalLoginView(notice = "") {
+export function renderProfessionalLoginView(notice = "", appearance) {
   return '<main class="login"><div class="brand sp-professional-brand">' + renderPlatformMark() + '<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Bem-vindo(a)</h1><p>Profissionais entram com CPF e senha. Proprietários e usuários autorizados podem usar o e-mail.</p>' +
     (notice ? '<div class="notice">' + escapeHtml(notice) + '</div>' : '') +
-    '<form id="professional-login"><label class="field">CPF ou e-mail<input name="login" autocomplete="username" placeholder="000.000.000-00 ou e-mail" required></label><label class="field">Senha<input name="password" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Entrar</button></form><p class="muted">A recuperação de senha é feita somente pelo administrador do salão.</p></main>';
+    '<form id="professional-login"><label class="field">CPF ou e-mail<input name="login" autocomplete="username" placeholder="000.000.000-00 ou e-mail" required></label><label class="field">Senha<input name="password" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Entrar</button></form><p class="muted">A recuperação de senha é feita somente pelo administrador do salão.</p>' + renderPlatformAppearance(appearance) + '</main>';
 }
 
 /**
