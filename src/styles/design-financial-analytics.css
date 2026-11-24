@@ -55,3 +55,33 @@
  #commissions-manager .commission-row{flex-wrap:wrap}
  #commissions-manager .commission-payout-controls select,#commissions-manager .commission-payout-controls button{flex:1 1 100%;max-width:none}
 }
+
+/* Indicadores e filtros usam a mesma paleta dos cartões nos dois temas. */
+:is(#finance-manager,#commissions-manager,#reports-manager) :is(.metric-top,
+  .metric-card small span,.section-heading p,.result-count,.demo-note) {
+  color: var(--sp-muted);
+}
+
+:is(#finance-manager,#commissions-manager,#reports-manager) :is(.section-heading h2,
+  .section-title h2,.commission-summary h2,.commission-group .section-title h3,
+  .commission-row>label b,.record-trailing b) {
+  color: var(--sp-ink);
+}
+
+:is(#finance-manager,#commissions-manager,#reports-manager) :is(.demo-note,
+  .commission-payout-controls) {
+  background: var(--sp-soft);
+  border-color: var(--sp-line);
+}
+
+:is(#finance-manager,#commissions-manager,#reports-manager) :is(.search-box,
+  .commission-row) {
+  background: var(--sp-paper);
+  color: var(--sp-ink);
+  border-color: var(--sp-line);
+}
+
+:is(#finance-manager,#commissions-manager,#reports-manager) :is(.commission-summary>div,
+  .commission-group>.section-title,.commission-rule-form,.commission-rule-row) {
+  border-color: var(--sp-line);
+}

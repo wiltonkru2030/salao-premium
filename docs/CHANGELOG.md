@@ -52,3 +52,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Padronizados cards, estados e formulários da Comanda e do Caixa para o tema escuro.
 
 - Mapeados para a paleta compartilhada os modais, formulários, gavetas e detalhes de recuperação.
+
+- Ajustado o contraste de indicadores, totais, filtros e avisos de Financeiro e Relatórios e compartilhada a paleta com Comissões.

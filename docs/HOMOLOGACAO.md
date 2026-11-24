@@ -164,3 +164,7 @@ Os componentes reais foram renderizados com dados sintéticos e o CSS do build e
 ### Contraste dos modais compartilhados
 
 Em Chromium, o renderizador do modal de Produtos e uma amostra da estrutura de formulário da Agenda usaram o CSS do build em 390 e 1280 px. Nas superfícies estabilizadas, o menor contraste foi 7,09:1 no tema escuro e 5,37:1 no tema claro. Foram amostrados títulos, descrições, rótulos, ação principal, controle de fechamento e campo somente leitura. Escape fechou o diálogo nativo. A amostra foi visual e não realizou gravações.
+
+### Contraste de Financeiro e Relatórios
+
+Os renderizadores de Financeiro e Relatórios foram verificados com dados sintéticos e CSS do build em Chromium, em 390 e 1280 px. A amostra de indicadores, totais, valores das listas, filtro de período e avisos atingiu contraste mínimo de 5,81:1 no tema escuro e 5,37:1 no claro. Nessas telas, os indicadores são exibidos em cartões e listas. A paleta também foi aplicada a elementos do painel de Comissões, cuja conferência visual segue pendente.
