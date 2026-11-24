@@ -4,6 +4,8 @@ Registre alterações verificadas e publicadas no repositório.
 
 ## 24/11/2026
 
+- Restringido o cancelamento de despesas pelo gerente à unidade atribuída. A função foi corrigida e testada no Supabase de QA com rollback; implantação em produção aguarda reconciliação de migrations e homologação final.
+
 - Registrada a linha de base técnica da `main`, incluindo execução local e comparação com o histórico do Supabase ativo.
 - Adicionados plano de execução, registro de pendências, progresso e critérios de homologação.
 

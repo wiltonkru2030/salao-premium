@@ -32,3 +32,5 @@ Use `--keep` somente quando precisar inspecionar os registros criados. Nesse mod
 Este teste exerce o backend real via Auth, PostgREST e RPC. Ele não substitui inspeção visual de navegador, teste mobile nem validação manual com contas de proprietário e profissional. Não execute sem revisar as variáveis de ambiente e confirmar que apontam para um banco descartável/de testes.
 
 O teste exige `SUPABASE_TEST_ENV=isolated` e `SUPABASE_QA_PROJECT_URL` igual a `SUPABASE_URL`. A URL do projeto de produção conhecido é bloqueada.
+
+`expense-cancellation-scope.sql` verifica, em transação revertida, que o gerente só cancela despesas da unidade atribuída, a recepção não cancela despesas e o proprietário mantém acesso às unidades do seu salão. Execute apenas no projeto de QA depois da migration de escopo correspondente.
