@@ -4,6 +4,8 @@
 
 ## Conferência de 24/11/2026
 
+A auditoria reproduzível `npm run audit:migration-files` compara bytes dos arquivos SQL ativos e recuperados com as 97 versões do inventário de produção. No checkout após a correção de despesas: 81 arquivos ativos e 80 no snapshot; 12 versões idênticas, 35 diferentes, 33 somente no snapshot e 17 somente na pasta ativa. Quatro dos arquivos ativos sem versão no inventário são duplicatas byte a byte de arquivos do snapshot sob outro número. O resultado orienta a revisão manual; hashes diferentes não demonstram diferença semântica. O projeto de QA registrava 104 aplicações, com versões geradas pelo servidor de homologação distintas dos nomes dos arquivos locais. Não copiar ou reparar o histórico automaticamente.
+
 No commit `a5e3dc71`, a pasta ativa continha 74 arquivos e o Supabase registrava 97 versões, com 64 em comum. Os hashes das instruções registradas em `supabase_migrations.schema_migrations` coincidem com os 80 arquivos de `supabase/snapshot-remoto/migrations`. Das 17 versões seguintes, 11 coincidem diretamente com a pasta ativa. Para as seis restantes foi usado o conteúdo registrado no banco para montar uma cadeia local candidata de 97 arquivos, conferida por hash antes do replay.
 
 Entre as diferenças de texto, `20261120160728` registra as duas funções de início de atendimento em ordem diferente da cópia ativa. Em `20261120163051`, a cópia ativa inclui um bloco explícito de transação ausente nas instruções registradas. Quatro versões exclusivas da pasta ativa têm o mesmo conteúdo que outro arquivo do snapshot. A comparação fundamenta a reconstrução da cadeia e mantém pendentes a execução em banco vazio e a comparação dos objetos resultantes.

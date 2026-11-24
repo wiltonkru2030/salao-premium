@@ -70,6 +70,7 @@
     "test:quote-rules": "node src/modules/quotes/quote.rules.test.js",
     "test:design-system": "node src/styles/design-system.test.mjs",
     "audit:migrations": "node scripts/check-migration-history.mjs",
+    "audit:migration-files": "node scripts/reconcile-migration-files.mjs",
     "test:agenda-offers": "node src/agenda/services/agenda-offers.service.test.js && node src/agenda/components/agenda-offers.view.test.js",
     "test:customer-loyalty": "node cliente/services/loyaltyService.test.js && node cliente/ui/loyaltyView.test.js",
     "test:sql-appointment-offers": "node docs/sql/appointment-offers-applied.test.mjs",
