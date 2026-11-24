@@ -2,6 +2,13 @@
 
 Este relatório registra a primeira rodada da auditoria da `main` em 24/11/2026, na base `970ee6cb7f23023fe398d98c56d675b00b159ffa`. A verificação cruzou README mestre, índice dos módulos, código, workflows, suíte automatizada e metadados do Supabase ativo. O repositório tinha 693 arquivos versionados e 2.236 commits alcançáveis a partir da base. A revisão individual de todos os arquivos, controles do GitHub e todos os objetos do banco ainda está em andamento.
 
+## Segunda rodada no commit `a5e3dc71`
+
+- Inventário automatizado de 699 arquivos, incluindo 30 READMEs, 193 arquivos SQL, 53 CSS e 12 arquivos binários. O histórico alcançável tem 2.238 commits. Os dois workflows do GitHub passaram neste commit. A API da branch retornou `protected=false` e nenhuma regra ativa para `main`.
+- Código e banco ainda exigem conferência por requisito. A Área da Cliente tem uma view de PIN, mas o fluxo de entrada em `cliente/app.js` conecta Google e chave de acesso. O autocomplete compartilhado invalida a resposta apenas quando a próxima busca começa, deixando a resposta anterior elegível após apagar ou durante o debounce. Uma falha de consulta usa o mesmo estado da lista vazia.
+- Consultas de catálogo em produção confirmaram 128 políticas, 60 funções em `public`, 143 eventos de trigger no catálogo e nenhum bucket. As três Edge Functions estão ativas. A consulta de branches do Supabase não retornou ambiente de QA.
+- A comparação pelo conteúdo das instruções registradas no banco confirmou os 80 arquivos do snapshot. Das 17 versões posteriores ao snapshot, 11 coincidiram byte a byte com arquivos da pasta ativa. Uma coincidiu ao remover a primeira linha de comentário. As outras cinco requerem comparação do SQL e dos objetos resultantes. Quatro arquivos exclusivos da pasta ativa coincidem byte a byte com versões de outros nomes no snapshot. Nenhum SQL histórico foi reaplicado em produção.
+
 ## Cobertura por fluxo
 
 | Área | Evidência de implementação | Pendências de implementação ou homologação |

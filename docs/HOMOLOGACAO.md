@@ -18,3 +18,18 @@ O aceite requer pelo menos dois tenants, matriz e filial, usuários dos papéis 
 ## Reteste da Agenda
 
 Após o ajuste da fixture para horários civis, `TZ=UTC npm run test:all` e `TZ=America/Sao_Paulo npm run test:all` passaram, incluindo a suíte da Agenda. A alteração afeta somente o teste.
+
+
+## Verificação independente do commit `a5e3dc71`
+
+| Verificação | Resultado |
+| --- | --- |
+| `npm run build` | Código 0. Três entradas, JS administrativo de 359,67 kB e 93,82 kB em gzip. |
+| `TZ=UTC npm run test:all` | Código 0. |
+| `TZ=America/Sao_Paulo npm run test:all` | Código 0. |
+| `npm run audit:structure` | Código 0 e 75 apontamentos. |
+| `npm run audit:css` | Código 0. Três entradas e 53 arquivos. |
+| `npm run audit:migrations` | Código 1. São 33 versões somente no remoto e 10 somente na pasta ativa. |
+| GitHub Actions | App validation e Agenda tests aprovados no commit de referência. |
+
+Os testes de integração criam e removem registros. A suíte existente exige credenciais e URL de QA, com bloqueio explícito para a URL de produção. A homologação combina uma reprodução local descartável do esquema e um Supabase hospedado isolado para OAuth, chaves de acesso e funções implantadas.
