@@ -50,3 +50,63 @@
 :root[data-theme="dark"] #app .btn.primary:hover {
   background: var(--sp-action-hover);
 }
+
+/* Agenda. A legenda e o texto do cartão continuam indicando cada estado. */
+:root[data-theme="dark"] #agenda-db-content :is(.professional-chip,.agenda-toolbar,
+  .calendar,.week-calendar,.month-calendar,.month-day,.availability-cell button) {
+  background: var(--sp-paper);
+  color: var(--sp-ink);
+  border-color: var(--sp-line);
+}
+
+:root[data-theme="dark"] #agenda-db-content :is(.agenda-summary,.calendar-header,
+  .calendar-body .time-cell,.week-time-rail,.week-day-head,.month-empty) {
+  background: var(--sp-soft);
+  color: var(--sp-muted);
+}
+
+:root[data-theme="dark"] #agenda-db-content :is(.calendar-header small,.summary-count,
+  .time-cell,.week-time-cell,.week-day-head small,.month-weekdays span,.month-day small,
+  .empty-slot,.week-empty,.availability-cell,.agenda-help) {
+  color: var(--sp-muted);
+}
+
+:root[data-theme="dark"] #agenda-db-content :is(.calendar-header,.calendar-body .time-cell,
+  .time-column,.availability-heading,.availability-column,.schedule-slot,.availability-cell,
+  .week-time-cell,.week-day,.week-day-head,.week-slot) {
+  border-color: var(--sp-line);
+}
+
+:root[data-theme="dark"] #agenda-db-content :is(.professional-chip.selected,
+  .month-day:hover,.drop-target,.empty-slot:hover,.week-empty:hover) {
+  background: var(--sp-gold-soft);
+  color: var(--sp-ink);
+  border-color: var(--sp-gold);
+  box-shadow: none;
+}
+
+:root[data-theme="dark"] #agenda-db-content :is(.appointment-block,.week-appointment) {
+  background: var(--sp-gold-soft);
+  color: var(--sp-ink);
+  border-left-color: var(--sp-gold);
+}
+
+:root[data-theme="dark"] #agenda-db-content :is(.appointment-block,.week-appointment).in-progress {
+  background: var(--sp-green-soft);
+  border-left-color: var(--sp-green);
+}
+
+:root[data-theme="dark"] #agenda-db-content :is(.appointment-time,.appointment-status,
+  .appointment-block small,.week-appointment small) {
+  color: var(--sp-muted);
+}
+
+:root[data-theme="dark"] #agenda-db-content :is(.blocked-slot,.week-blocked) {
+  background: repeating-linear-gradient(135deg,
+    var(--sp-soft) 0 6px, var(--sp-gold-soft) 6px 12px);
+}
+
+:root[data-theme="dark"] #agenda-db-content :is(.blocked-slot,.week-blocked,.remove-block,
+  .week-blocked button,.month-day .month-blocked) {
+  color: var(--sp-gold-text);
+}

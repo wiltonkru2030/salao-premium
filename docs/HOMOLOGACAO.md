@@ -152,3 +152,7 @@ A configuração pública de Auth do projeto QA informa Google OAuth desabilitad
 ### Aparência administrativa em Chromium
 
 O build de QA aplicou o tema automático escuro na entrada, persistiu a seleção clara ao recarregar e aplicou a escolha escura em Configurações após login real. Conferidos as superfícies do menu, do conteúdo e dos cartões do Dashboard, além da inclusão da folha de autenticação no build. A organização e a conta descartáveis foram removidas. Falta a conferência de contraste por módulo e por largura de tela.
+
+### Contraste dos calendários da Agenda
+
+Os renderizadores diário, semanal e mensal foram exercitados em Chromium com o CSS do build, em 390 e 1280 px. A amostra de horários, dias, cartões confirmados, cartões em atendimento e bloqueios atingiu contraste mínimo de 6,00:1 nos dois tamanhos. Os estados confirmado e em atendimento mantiveram fundos distintos e seus rótulos. A verificação usou dados sintéticos e cobre as superfícies amostradas no tema escuro.

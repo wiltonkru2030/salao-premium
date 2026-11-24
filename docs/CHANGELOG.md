@@ -46,3 +46,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Aplicada no App Profissional a paleta compartilhada com controle de aparência automática, clara e escura.
 
 - Disponibilizada aparência administrativa na entrada e em Configurações, com paleta aplicada ao layout compartilhado.
+
+- Ajustadas as cores dos calendários, estados de atendimento e bloqueios da Agenda no tema escuro.
