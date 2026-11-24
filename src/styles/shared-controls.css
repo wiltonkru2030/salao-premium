@@ -40,3 +40,34 @@ dialog.sp-modal .sp-modal-foot{flex-wrap:wrap}
   align-items: center;
   gap: 8px;
 }
+
+/* Sugestões do autocomplete compartilhado. */
+.autocomplete-wrap{position:relative}
+.autocomplete-menu{position:absolute;
+z-index:30;
+top:calc(100% + 5px);
+left:0;
+right:0;
+max-height:240px;
+overflow:auto;
+background:var(--sp-paper);
+border:1px solid var(--sp-line);
+border-radius:12px;
+box-shadow:0 12px 30px #00000012;
+padding:4px}
+.autocomplete-menu[hidden]{display:none}
+.autocomplete-option{display:block;
+width:100%;
+border:0;
+border-radius:8px;
+background:var(--sp-paper);
+text-align:left;
+padding:10px 12px;
+color:var(--sp-ink);
+font:inherit;
+font-size:12px;
+cursor:pointer}
+.autocomplete-option:hover,.autocomplete-option.active{background:var(--sp-gold-soft)}
+.autocomplete-empty{padding:12px;
+color:var(--sp-muted);
+font-size:12px}

@@ -40,3 +40,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Compartilhado o símbolo oficial nas três entradas e corrigido o retorno da estrutura autenticada da Área da Cliente.
 
 - Centralizados os tokens de tema e verificada a troca automática de aparência da Área da Cliente em Chromium.
+
+- Corrigidas respostas obsoletas no autocomplete e padronizados os estados, o teclado e o toque nos aplicativos que usam o componente.

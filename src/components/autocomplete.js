@@ -1,77 +1,165 @@
-/** Componente compartilhado de autocomplete. Responsabilidade: buscar, exibir, selecionar e limpar sugestões de campos. */
-export function mountAutocomplete(input, { search, onSelect, getLabel = item => item?.name || "", minChars = 2, placeholder = "Nenhum resultado encontrado" } = {}) {
-  if (!input || typeof search !== "function" || typeof onSelect !== "function") return () => {};
-  const parent = input.parentElement;
-  parent.classList.add("autocomplete-wrap");
+/**
+ * Autocomplete compartilhado pela Agenda, Comanda, Comissões e App Profissional.
+ * O componente controla sugestões e navegação. Cada tela fornece busca e seleção.
+ */
+let nextListId = 0;
+
+/**
+ * Monta uma caixa de pesquisa com espera de digitação e opções navegáveis.
+ * @param {HTMLInputElement} input Campo usado para pesquisar e mostrar a seleção.
+ * @param {object} options Busca, callback de seleção, rótulo e limite mínimo de busca.
+ * @returns {Function} Remove listeners, sugestões e respostas pendentes.
+ */
+export function mountAutocomplete(input, {
+  search, onSelect, getLabel = item => item?.name || "", minChars = 2,
+  placeholder = "Nenhum resultado encontrado"
+} = {}) {
+  const parent = input?.parentElement;
+  if (!parent || typeof search !== "function" || typeof onSelect !== "function") return () => {};
+
+  const document = input.ownerDocument;
+  const initialAttributes = new Map(
+    ["role", "aria-controls", "aria-autocomplete", "aria-expanded", "aria-activedescendant"]
+      .map(name => [name, input.getAttribute(name)])
+  );
   const menu = document.createElement("div");
+  const list = document.createElement("div");
+  const status = document.createElement("div");
+
+  parent.classList.add("autocomplete-wrap");
   menu.className = "autocomplete-menu";
   menu.hidden = true;
+  list.id = "autocomplete-list-" + (++nextListId);
+  list.setAttribute("role", "listbox");
+  status.className = "autocomplete-empty";
+  status.setAttribute("role", "status");
+  status.hidden = true;
+  menu.append(list, status);
   parent.append(menu);
-  let timer = null, request = 0, active = -1, results = [];
+  input.setAttribute("role", "combobox");
+  input.setAttribute("aria-controls", list.id);
+  input.setAttribute("aria-autocomplete", "list");
+  input.setAttribute("aria-expanded", "false");
 
-  const close = () => { menu.hidden = true; menu.replaceChildren(); active = -1; };
+  let timer;
+  let request = 0;
+  let active = -1;
+  let results = [];
+
+  const close = () => {
+    clearTimeout(timer);
+    request++;
+    active = -1;
+    results = [];
+    menu.hidden = true;
+    list.replaceChildren();
+    status.hidden = true;
+    input.setAttribute("aria-expanded", "false");
+    input.removeAttribute("aria-activedescendant");
+  };
+
+  const showStatus = message => {
+    status.textContent = message;
+    status.hidden = false;
+    menu.hidden = false;
+  };
+
   const choose = item => {
     input.value = getLabel(item);
     input.dataset.selectedId = item.id;
     close();
     onSelect(item);
   };
-  const render = items => {
-    results = Array.isArray(items) ? items : [];
-    menu.replaceChildren();
-    if (!results.length) {
-      const empty = document.createElement("div");
-      empty.className = "autocomplete-empty";
-      empty.textContent = placeholder;
-      menu.append(empty);
-    } else {
+
+  const run = async (value, current) => {
+    const isCurrent = () => current === request && input.isConnected &&
+      !input.disabled && input.value.trim() === value;
+    if (!isCurrent()) return;
+    showStatus("Buscando…");
+    try {
+      const items = await search(value);
+      if (!isCurrent()) return;
+      if (!Array.isArray(items)) throw new TypeError("Resposta de busca inválida.");
+      results = items.filter(item => item?.id != null);
+      if (!results.length) {
+        showStatus(placeholder);
+        return;
+      }
+
+      status.hidden = true;
       results.forEach((item, index) => {
         const option = document.createElement("button");
         option.type = "button";
+        option.tabIndex = -1;
+        option.id = list.id + "-" + index;
         option.className = "autocomplete-option";
         option.textContent = getLabel(item);
         option.setAttribute("role", "option");
+        option.setAttribute("aria-selected", "false");
         option.addEventListener("mousedown", event => event.preventDefault());
         option.addEventListener("click", () => choose(item));
-        menu.append(option);
+        list.append(option);
       });
-    }
-    menu.hidden = false;
-  };
-  const run = async value => {
-    const current = ++request;
-    try {
-      const items = await search(value);
-      if (current === request) render(items);
+      input.setAttribute("aria-expanded", "true");
     } catch {
-      if (current === request) render([]);
+      if (!isCurrent()) return;
+      close();
+      showStatus("Não foi possível buscar. Tente novamente.");
     }
   };
-  const onInput = () => {
+
+  const onInput = event => {
+    close();
     delete input.dataset.selectedId;
     onSelect(null);
-    clearTimeout(timer);
     const value = input.value.trim();
-    if (value.length < minChars) { close(); return; }
-    timer = setTimeout(() => run(value), 220);
+    if (event.isComposing || input.disabled || value.length < minChars) return;
+    const current = request;
+    timer = setTimeout(() => run(value, current), 220);
   };
+
   const onKeydown = event => {
+    if (event.isComposing) return;
+    if (event.key === "Escape") {
+      if (!menu.hidden) event.preventDefault();
+      close();
+      return;
+    }
     if (menu.hidden || !results.length) return;
-    if (event.key === "ArrowDown") { event.preventDefault(); active = (active + 1) % results.length; }
-    else if (event.key === "ArrowUp") { event.preventDefault(); active = (active - 1 + results.length) % results.length; }
-    else if (event.key === "Enter" && active >= 0) { event.preventDefault(); choose(results[active]); return; }
-    else if (event.key === "Escape") { close(); return; }
-    [...menu.children].forEach((node, index) => node.classList.toggle("active", index === active));
+    if (event.key === "Enter" && active >= 0) {
+      event.preventDefault();
+      choose(results[active]);
+      return;
+    }
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    event.preventDefault();
+    const increment = event.key === "ArrowDown" ? 1 : -1;
+    active = active === -1 && increment === -1
+      ? results.length - 1
+      : (active + increment + results.length) % results.length;
+    Array.from(list.children).forEach((node, index) => {
+      node.classList.toggle("active", index === active);
+      node.setAttribute("aria-selected", String(index === active));
+    });
+    const option = list.children[active];
+    input.setAttribute("aria-activedescendant", option.id);
+    option.scrollIntoView({block: "nearest"});
   };
-  const onBlur = () => setTimeout(close, 120);
+
   input.addEventListener("input", onInput);
+  input.addEventListener("compositionend", onInput);
   input.addEventListener("keydown", onKeydown);
-  input.addEventListener("blur", onBlur);
+  input.addEventListener("blur", close);
   return () => {
-    clearTimeout(timer);
+    close();
     input.removeEventListener("input", onInput);
+    input.removeEventListener("compositionend", onInput);
     input.removeEventListener("keydown", onKeydown);
-    input.removeEventListener("blur", onBlur);
+    input.removeEventListener("blur", close);
+    for (const [name, value] of initialAttributes) {
+      if (value === null) input.removeAttribute(name);
+      else input.setAttribute(name, value);
+    }
     menu.remove();
   };
 }

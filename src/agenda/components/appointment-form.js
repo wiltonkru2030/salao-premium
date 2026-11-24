@@ -99,7 +99,7 @@ export function mountAppointmentForm(){
   branchSelect.addEventListener('change',()=>{
     state.branch=branchOptions.find(b=>b.id===branchSelect.value)||null;
     professionalInput.disabled=!branchSelect.value;
-    professionalId.value='';professionalInput.value='';
+    professionalId.value='';professionalInput.value='';professionalInput.dispatchEvent(new Event('input'));
   });
 
   cleanups.push(mountAutocomplete(customerInput,{
@@ -122,7 +122,7 @@ export function mountAppointmentForm(){
     getLabel:item=>item.name+
 ' · '+Number(item.duration_minutes)+
 ' min · '+Number(item.price).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),
-    onSelect:item=>{selectedServiceId=item?.id||null;serviceId.value=selectedServiceId||'';professionalId.value='';professionalInput.value='';if(item){duration.value=String(item.duration_minutes);price.value=Number(item.price||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}}
+    onSelect:item=>{selectedServiceId=item?.id||null;serviceId.value=selectedServiceId||'';professionalId.value='';professionalInput.value='';professionalInput.dispatchEvent(new Event('input'));if(item){duration.value=String(item.duration_minutes);price.value=Number(item.price||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}}
   }));
   cleanups.push(mountAutocomplete(professionalInput,{
     search:async term=>{

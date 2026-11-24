@@ -133,3 +133,8 @@ Após a migration `20261124122253`, o proprietário criou um pacote central e o 
 ### Marca compartilhada e Área da Cliente
 
 O build de QA carregou o símbolo oficial nas telas de entrada do painel, do App Profissional e da Área da Cliente em Chromium, com larguras de 390 e 1280 pixels. O teste de renderização confirma que a estrutura da sessão da cliente contém cabeçalho, conteúdo e navegação. A autenticação com Google e chave de acesso permanece na matriz de homologação.
+
+
+### Autocomplete compartilhado
+
+Em Chromium com emulação de toque, foram verificados o descarte de resposta após limpar o campo, os estados de busca, vazio e falha, Escape, navegação por seta, seleção por Enter e toque e remoção dos listeners. O componente identifica a seleção pelo ID. A Agenda também reinicia a busca de profissionais quando mudam unidade ou serviço. A revisão de cobertura de todos os módulos continua na matriz.
