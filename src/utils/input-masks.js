@@ -34,10 +34,11 @@ export function formatCpf(value){
  const d=digits(value).slice(0,11);
  return d.replace(/^(\d{3})(\d)/,"$1.$2").replace(/^(\d{3})\.(\d{3})(\d)/,"$1.$2.$3").replace(/\.(\d{3})(\d)/,".$1-$2");
 }
-/** Formata CNPJ em grupos 00.000.000/0000-00, sem validar os dígitos verificadores. */
+/** Formata a base alfanumérica e os dígitos do CNPJ no padrão 00.000.000/0000-00. */
 export function formatCnpj(value){
- const d=digits(value).slice(0,14);
- return d.replace(/^(\d{2})(\d)/,"$1.$2").replace(/^(\d{2})\.(\d{3})(\d)/,"$1.$2.$3").replace(/\.(\d{3})(\d)/,".$1/$2").replace(/(\d{4})(\d)/,"$1-$2");
+ const raw=String(value??"").replace(/[^0-9a-z]/gi,"").toUpperCase().slice(0,14);
+ return raw.replace(/^(.{2})(?=.)/,"$1.").replace(/^(.{2}\..{3})(?=.)/,"$1.")
+   .replace(/^(.{2}\..{3}\..{3})(?=.)/,"$1/").replace(/\/(.{4})(?=.)/,"/$1-");
 }
 /** Formata CEP brasileiro como 00000-000. */
 export function formatCep(value){
@@ -100,9 +101,10 @@ export function installGlobalMasks(){
   if(input.value!==before&&start!==null&&document.activeElement===input){
    // Preserva a posição lógica do cursor pela quantidade de dígitos à esquerda.
    const hasRemovedDdi=mask==="phone"&&before.trimStart().startsWith("+")&&!input.value.startsWith("+");
-   const count=Math.max(0,digits(before.slice(0,start)).length-(hasRemovedDdi?2:0));
+   const significant=mask==="cnpj"?/[0-9a-z]/i:/\d/;
+   const count=Math.max(0,Array.from(before.slice(0,start)).filter(char=>significant.test(char)).length-(hasRemovedDdi?2:0));
    let pos=0,found=0;
-   while(pos<input.value.length&&found<count){if(/\d/.test(input.value[pos]))found++;pos++;}
+   while(pos<input.value.length&&found<count){if(significant.test(input.value[pos]))found++;pos++;}
    if(start===before.length)pos=input.value.length;
    try{input.setSelectionRange(pos,pos);}catch{}
   }

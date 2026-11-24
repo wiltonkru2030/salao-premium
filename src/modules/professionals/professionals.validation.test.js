@@ -11,4 +11,8 @@ assert.equal(validCpf("111.111.111-11"),false);
 assert.equal(validCnpj("04.252.011/0001-10"),true);
 assert.equal(validCnpj("04.252.011/0001-11"),false);
 assert.equal(validCnpj("00.000.000/0000-00"),false);
+assert.equal(validCnpj("12.abc.345/01de-35"),true);
+assert.equal(validCnpj("12.ABC.345/01DE-36"),false);
+assert.equal(validCnpj("12.ABC.345/01DE-B5"),false);
+assert.equal(validCnpj("12#ABC34501DE35"),false);
 console.log("Testes de validação fiscal: OK.");

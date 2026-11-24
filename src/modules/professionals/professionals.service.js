@@ -3,6 +3,8 @@
  * Responsabilidade: consultar profissionais, catálogo ativo, vínculos e perfis de acesso.
  * Segurança: cada consulta é limitada à organização; RLS decide os registros visíveis.
  */
+import {normalizeCnpj,validCnpj} from "../../utils/cnpj.js";
+
 function requireContext(client,orgId) {
   if(!client?.from)throw new TypeError("A conexão com a equipe não está disponível.");
   if(typeof orgId!=="string"||!orgId.trim())throw new TypeError("A organização ativa não foi identificada.");
@@ -155,7 +157,7 @@ export async function createProfessionalWithServices({
   }
   if(!Number.isFinite(rate)||rate<0||rate>100)throw new TypeError("A comissão deve estar entre 0 e 100 por cento.");
   if(!["individual","mei"].includes(taxRegime))throw new TypeError("Regime fiscal inválido.");
-  if(taxRegime==="mei"&&(String(cnpj??"").replace(/\D/g,"").length!==14||String(legalName??"").trim().length<2)) {
+  if(taxRegime==="mei"&&(!validCnpj(cnpj)||String(legalName??"").trim().length<2)) {
     throw new TypeError("Para MEI, informe CNPJ e razão social válidos.");
   }
   if(!ids.length||new Set(ids).size!==ids.length)throw new TypeError("Selecione serviços válidos sem duplicidade.");
@@ -163,7 +165,7 @@ export async function createProfessionalWithServices({
     const {data,error}=await client.rpc("create_professional_with_services",{
       p_org_id:orgId,p_branch_id:branchId||null,p_name:cleanName,p_phone:phone,p_email:email,
       p_commission_rate:rate,p_tax_regime:taxRegime,
-      p_cnpj:taxRegime==="mei"?String(cnpj).replace(/\D/g,""):null,
+      p_cnpj:taxRegime==="mei"?normalizeCnpj(cnpj):null,
       p_legal_name:taxRegime==="mei"?String(legalName).trim():null,
       p_trade_name:taxRegime==="mei"?String(tradeName??"").trim()||null:null,
       p_specialty:String(specialty??"").trim()||null,p_service_ids:ids
@@ -188,8 +190,8 @@ export async function updateProfessionalProfile({client,orgId,branchId=null,prof
   if(cleanName.length<2||cleanName.length>120)throw new TypeError("Informe um nome válido de até 120 caracteres.");
   if(!Number.isFinite(rate)||rate<0||rate>100)throw new TypeError("A comissão deve estar entre 0 e 100 por cento.");
   if(!["individual","mei"].includes(taxRegime))throw new TypeError("Regime fiscal inválido.");
-  const cleanCnpj=String(cnpj??"").replace(/\D/g,"");
-  if(taxRegime==="mei"&&(cleanCnpj.length!==14||String(legalName??"").trim().length<2))throw new TypeError("Informe CNPJ e razão social válidos para MEI.");
+  const cleanCnpj=normalizeCnpj(cnpj);
+  if(taxRegime==="mei"&&(!validCnpj(cleanCnpj)||String(legalName??"").trim().length<2))throw new TypeError("Informe CNPJ e razão social válidos para MEI.");
   const payload={name:cleanName,phone:String(phone??"").trim()||null,email:String(email??"").trim()||null,
     specialty:String(specialty??"").trim()||null,commission_rate:rate,tax_regime:taxRegime,
     cnpj:taxRegime==="mei"?cleanCnpj:null,legal_name:taxRegime==="mei"?String(legalName).trim():null,

@@ -11,3 +11,5 @@ Este registro acompanha os critérios do [plano](PLANO-DE-EXECUCAO.md). A primei
 SEG-02 em implementação, com gestão de atribuições na equipe e guardas de unidade testadas em QA para Clientes, Agenda, Caixa e recebimentos de Comanda.
 
 Aparência disponível nas três entradas. Painel testado em entrada, Configurações e Dashboard, com verificação visual por módulo ainda pendente.
+
+CNPJ numérico e alfanumérico validados na interface e no Supabase de QA para cadastro e edição de profissional MEI.

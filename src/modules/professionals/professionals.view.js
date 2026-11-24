@@ -67,7 +67,7 @@ export function renderProfessionalsView(workspace,{currentUserId,canManage=false
     <h3>Dados fiscais</h3>
     <label>Tipo de cadastro<select class="field" name="tax_regime"><option value="individual">Pessoa física</option><option value="mei">MEI</option></select></label>
     <div id="professional-mei-fields" class="professional-form-grid" hidden>
-     <label>CNPJ<input class="field" name="cnpj" data-mask="cnpj" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00"></label>
+     <label>CNPJ<input class="field" name="cnpj" data-mask="cnpj" autocapitalize="characters" spellcheck="false" maxlength="18" placeholder="00.000.000/0000-00"></label>
      <label>Razão social<input class="field" name="legal_name" maxlength="160" placeholder="Razão social do MEI"></label>
      <label>Nome fantasia (opcional)<input class="field" name="trade_name" maxlength="160" placeholder="Nome fantasia"></label>
     </div>

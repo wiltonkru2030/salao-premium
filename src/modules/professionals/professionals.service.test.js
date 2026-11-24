@@ -108,6 +108,13 @@ async function run() {
     professionalId:"pro-a",name:"Ana",commissionRate:101,taxRegime:"individual"}),{name:"TypeError"});
   await assert.rejects(()=>updateProfessionalProfile({client:editable,orgId:"org-a",
     professionalId:"pro-a",name:"Ana",commissionRate:40,taxRegime:"mei",cnpj:"1",legalName:"Empresa"}),{name:"TypeError"});
+  const mei = {client:editable,orgId:"org-a",name:"Ana",commissionRate:40,taxRegime:"mei",
+    cnpj:"12.abc.345/01de-35",legalName:"Empresa QA"};
+  await createProfessionalWithServices({...mei,serviceIds:["svc-a"]});
+  assert.equal(editable.calls.at(-1).args.p_cnpj,"12ABC34501DE35");
+  await updateProfessionalProfile({...mei,professionalId:"pro-a"});
+  assert.equal(editable.calls.at(-1).payload.cnpj,"12ABC34501DE35");
+  await assert.rejects(()=>createProfessionalWithServices({...mei,cnpj:"12ABC34501DE36",serviceIds:["svc-a"]}),{name:"TypeError"});
   console.log("Testes do serviço de dados dos profissionais: OK");
 }
 run().catch(error=>{process.stderr.write(error.message+"\n");process.exitCode=1;});

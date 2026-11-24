@@ -179,4 +179,11 @@ Produtos, Serviços e Categorias foram renderizados com dados sintéticos e CSS 
 
 ### Máscaras de documentos e telefone
 
-Em Chromium, foram testados entrada de telefone internacional, remoção do DDI brasileiro com cursor no meio, CPF após fim da composição, CNPJ numérico, campo somente leitura e e-mail no login misto. Os formulários de edição passaram a apresentar telefones nacionais salvos em dígitos no formato com DDD. A formatação inicial preserva valores legados fora desse padrão. A edição de profissional formata o CNPJ salvo em 14 dígitos. CNPJ alfanumérico ainda exige validação coordenada na interface, nos serviços, na RPC de cadastro e na constraint do banco.
+Em Chromium, foram testados entrada de telefone internacional, remoção do DDI brasileiro com cursor no meio, CPF após fim da composição, CNPJ numérico, campo somente leitura e e-mail no login misto. Os formulários de edição passaram a apresentar telefones nacionais salvos em dígitos no formato com DDD. A formatação inicial preserva valores legados fora desse padrão. A edição de profissional formata o CNPJ salvo em 14 dígitos. A seção seguinte registra a ampliação para CNPJ alfanumérico.
+
+
+### CNPJ alfanumérico no cadastro de MEI
+
+O exemplo oficial `12.ABC.345/01DE-35` passou na máscara, na validação fiscal, na normalização dos serviços e na RPC de cadastro em QA. A escrita persistiu `12ABC34501DE35` e criou o vínculo de serviço na mesma transação. Foram rejeitados dígitos incorretos, letras nos dígitos finais e tentativas de cadastro por gerente. A edição com CNPJ numérico continuou funcionando. A fixture foi revertida. [Referência da Receita Federal](https://www.gov.br/receitafederal/pt-br/centrais-de-conteudo/publicacoes/documentos-tecnicos/cnpj)
+
+A migration foi aplicada somente em QA. A consulta de produção encontrou dois registros MEI, ambos válidos na regra numérica, e confirmou a ausência da RPC de cadastro transacional. O SQL novo inclui a definição da RPC para instalar o contrato onde estiver ausente. A implantação em produção exige aplicar a migration antes de usar o novo formato.

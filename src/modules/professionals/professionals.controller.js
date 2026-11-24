@@ -2,6 +2,7 @@
  * Controlador da equipe: eventos, cadastro e permissões.
  * Recebe contexto e serviços da página, sem gerar marcação.
  */
+import {normalizeCnpj} from "../../utils/cnpj.js";
 import {formatCnpj,formatSavedPhone} from "../../utils/input-masks.js";
 import {requestProfessionalAccess} from "./professional-access.service.js";
 import {onlyDigits,validCpf,validCnpj} from "./professionals.validation.js";
@@ -25,7 +26,7 @@ export function bindProfessionalEvents({host,client,state,initialPasswords,canMa
    const dialog=host.querySelector("#professional-create-modal"),form=dialog?.querySelector("#professional-create-form");
    if(!p||!form)return toast("Profissional não encontrado. Atualize os dados.");
    form.reset();
-   for(const [field,value] of Object.entries({professional_id:p.id,name:p.name,phone:formatSavedPhone(p.phone),email:p.email,specialty:p.specialty,commission_rate:p.commission_rate,tax_regime:p.tax_regime,cnpj:/^\d{14}$/.test(p.cnpj??"")?formatCnpj(p.cnpj):p.cnpj,legal_name:p.legal_name,trade_name:p.trade_name})){
+   for(const [field,value] of Object.entries({professional_id:p.id,name:p.name,phone:formatSavedPhone(p.phone),email:p.email,specialty:p.specialty,commission_rate:p.commission_rate,tax_regime:p.tax_regime,cnpj:/^[0-9A-Z]{12}[0-9]{2}$/i.test(p.cnpj??"")?formatCnpj(p.cnpj):p.cnpj,legal_name:p.legal_name,trade_name:p.trade_name})){
     if(form.elements[field])form.elements[field].value=value??"";
    }
    const mei=p.tax_regime==="mei",meiFields=form.querySelector("#professional-mei-fields");
@@ -134,7 +135,7 @@ export function bindProfessionalEvents({host,client,state,initialPasswords,canMa
   let button;
   try{
   const form=event.target;button=form.querySelector('[type="submit"]');if(!button||button.disabled)return;const v=new FormData(form);
-  const name=String(v.get("name")||"").trim(),cpf=onlyDigits(v.get("cpf")),phone=String(v.get("phone")||"").trim(),email=String(v.get("email")||"").trim(),rate=Number(v.get("commission_rate")||0),taxRegime=String(v.get("tax_regime")||"individual"),cnpj=onlyDigits(v.get("cnpj"));
+  const name=String(v.get("name")||"").trim(),cpf=onlyDigits(v.get("cpf")),phone=String(v.get("phone")||"").trim(),email=String(v.get("email")||"").trim(),rate=Number(v.get("commission_rate")||0),taxRegime=String(v.get("tax_regime")||"individual"),cnpj=normalizeCnpj(v.get("cnpj"));
   const serviceIds=[...form.querySelectorAll('input[name="service_ids"]:checked')].map(input=>input.value);
   const editingId=String(v.get("professional_id")||"").trim();
   if(!name||(!editingId&&!validCpf(cpf))||!Number.isFinite(rate)||rate<0||rate>100){toast("Confira nome, CPF e comissão.");return;}

@@ -60,3 +60,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Ajustados preços, ações e estados do catálogo para temas claro e escuro e exposta a seleção de categoria para tecnologias assistivas.
 
 - Ajustadas as máscaras na edição de dados salvos e no fim da composição, com preservação do cursor e dos campos somente leitura.
+
+- Implementado CNPJ alfanumérico para MEI na interface, nos serviços e no Supabase de QA, com compatibilidade numérica.

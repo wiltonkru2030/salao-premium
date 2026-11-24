@@ -13,6 +13,7 @@ assert.equal(detectInputMask(field("amount","","currency")),"currency");
 
 assert.equal(formatCpf("52998224725"),"529.982.247-25");
 assert.equal(formatCnpj("11222333000181"),"11.222.333/0001-81");
+assert.equal(formatCnpj("12abc34501de35"),"12.ABC.345/01DE-35");
 assert.equal(formatPhone("11987654321"),"(11) 98765-4321");
 assert.equal(formatSavedPhone("11987654321"),"(11) 98765-4321");
 assert.equal(formatSavedPhone("+5511987654321"),"+5511987654321");
