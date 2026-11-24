@@ -21,3 +21,12 @@ Dados: `cash_registers`, `cash_movements`, `service_order_payments`, `service_or
 - `npm run test:cash`: contratos de serviços e apresentação com Supabase simulado.
 - `npm run test:sql-cash-register`: contrato estático da migration.
 - Os testes estáticos não substituem E2E autenticado, teste de concorrência nem conciliação de caixa com dados QA.
+
+## Revisão 24/11/2026 — requisitos adicionais
+
+- Validar caixa aberto correto antes de receber, estornar, pagar comissão ou despesa. Não presumir fallback central quando não autorizado pela RPC.
+- Separar dinheiro contado de total por meio de pagamento e conferir diferenças no fechamento. Preservar vínculo com comanda, venda, comissão, despesa e unidade.
+- Entrada/saída manual, reembolso e ajuste de saldo precisam de autorização e histórico; jamais excluir movimento para corrigir valor.
+- Testes complementares via npm run: test:sql-payment-centavos, test:expenses-service, test:finance-service, test:commission-payout-summary. Homologar fechamento concorrente com recebimento e repasse.
+
+Ver [README mestre](../../../README.md). Aplicar CSS global, modais/listas padronizados, máscaras, comentários JSDoc e erros pt-BR. Os testes não foram executados nesta revisão documental.
