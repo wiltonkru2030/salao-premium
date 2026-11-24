@@ -33,3 +33,7 @@ Após o ajuste da fixture para horários civis, `TZ=UTC npm run test:all` e `TZ=
 | GitHub Actions | App validation e Agenda tests aprovados no commit de referência. |
 
 Os testes de integração criam e removem registros. A suíte existente exige credenciais e URL de QA, com bloqueio explícito para a URL de produção. A homologação combina uma reprodução local descartável do esquema e um Supabase hospedado isolado para OAuth, chaves de acesso e funções implantadas.
+
+### Banco local
+
+A cadeia candidata de 97 migrations foi conferida por hash. A inicialização da pilha local encontrou limite de requisições do registro de imagens e falta de espaço. Uma tentativa com apenas Postgres também registrou falta de espaço ao extrair a imagem. Nenhum replay ou teste autenticado foi concluído nesta rodada.

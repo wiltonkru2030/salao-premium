@@ -10,3 +10,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Corrigida a fixture da Agenda que falhava em fusos brasileiros. A suíte completa passou em UTC e em America/Sao_Paulo.
 
 - Reexecutadas as verificações no commit `a5e3dc71` e conferidos o histórico remoto por versão, o conteúdo do snapshot e os controles reportados para a branch principal.
+
+- Conferida por hash a cadeia candidata de 97 migrations e registrado o bloqueio de infraestrutura do replay local.

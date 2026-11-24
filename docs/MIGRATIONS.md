@@ -2,6 +2,21 @@
 
 > Revisão documental: 24/11/2026. Evidências do código e inventário de 20/11; não houve nova consulta ao banco ou execução de testes nesta revisão. Consulte o README mestre.
 
+## Conferência de 24/11/2026
+
+No commit `a5e3dc71`, a pasta ativa continha 74 arquivos e o Supabase registrava 97 versões, com 64 em comum. Os hashes das instruções registradas em `supabase_migrations.schema_migrations` coincidem com os 80 arquivos de `supabase/snapshot-remoto/migrations`. Das 17 versões seguintes, 11 coincidem diretamente com a pasta ativa. Para as seis restantes foi usado o conteúdo registrado no banco para montar uma cadeia local candidata de 97 arquivos, conferida por hash antes do replay.
+
+Entre as diferenças de texto, `20261120160728` registra as duas funções de início de atendimento em ordem diferente da cópia ativa. Em `20261120163051`, a cópia ativa inclui um bloco explícito de transação ausente nas instruções registradas. Quatro versões exclusivas da pasta ativa têm o mesmo conteúdo que outro arquivo do snapshot. A comparação fundamenta a reconstrução da cadeia e mantém pendentes a execução em banco vazio e a comparação dos objetos resultantes.
+
+O inventário é obtido com uma consulta somente leitura, sem exportar instruções:
+
+```sql
+select version, name, cardinality(statements) as statements,
+       md5(array_to_string(statements, E'\n')) as digest
+from supabase_migrations.schema_migrations
+order by version;
+```
+
 ## Estado verificado em 13/11/2026
 - Supabase remoto: **58 migrations registradas**.
 - Repositório `main`: **31 arquivos SQL** em `supabase/migrations/`.
