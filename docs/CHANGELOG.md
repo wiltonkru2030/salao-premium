@@ -24,3 +24,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Verificados recebimentos em centavos, devolução integral, estoque e bloqueio de pagamentos concorrentes em QA.
 
 - Confirmada em QA a recusa da segunda quitação concorrente após a primeira transação confirmar o pagamento.
+
+- Versionada a migration de preparação de atribuições por unidade e verificados os cenários de isolamento e revogação em QA.

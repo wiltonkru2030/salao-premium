@@ -39,6 +39,10 @@ Criar uma relação explícita de escopo por unidade (nome definitivo a decidir 
 - Não confiar em branch_id enviado pelo navegador sem validar membership no banco.
 - Acesso financeiro deve ser uma permissão distinta do simples acesso à agenda.
 
+**Implementação em QA.** A migration `20261124121304` adiciona `public.branch_memberships` e `private.has_staff_branch_scope`. O papel e o status continuam em `org_memberships`. Proprietários e administradores podem inserir e excluir atribuições, e gerente e recepção só consultam as próprias. A exclusão do vínculo revoga o escopo. As chaves compostas impedem atribuições entre organizações. A função exige uma unidade ativa e atribuída para gerente e recepção e preserva o escopo central de proprietário e administrador.
+
+Antes de ativar as restrições em Clientes, Agenda e Caixa, é necessário disponibilizar a gestão de atribuições, cadastrar o escopo dos usuários existentes e definir o tratamento dos registros centrais com `branch_id` nulo. A migration de preparação foi aplicada somente em QA.
+
 ### 2.3 Profissionais e escalas por unidade
 
 O profissional tem identidade única dentro da marca e pode trabalhar em várias unidades.

@@ -100,3 +100,8 @@ Em uma segunda fixture, duas sessões tentaram quitar a mesma Comanda. A primeir
 Em QA, duas sessões autenticadas chamaram `register_service_order_payment` para quitar a mesma Comanda de R$ 100,03. A primeira manteve a transação aberta por cinco segundos após a RPC e então confirmou a quitação. A segunda iniciou durante essa janela, esperou pelo menos um segundo dentro da chamada e recebeu a mensagem “Esta comanda não aceita pagamentos.” após a confirmação da primeira.
 
 A consulta após as duas chamadas encontrou a Comanda fechada, um pagamento confirmado de R$ 100,03, uma entrada no Caixa, uma venda paga e estoque reduzido de duas unidades para uma. Os registros das fixtures de concorrência foram removidos de QA. Este cenário cobre duas tentativas simultâneas de quitação integral da mesma Comanda.
+
+
+### Atribuições de unidade
+
+A migration de preparação da SEG-02 foi aplicada em QA. A matriz transacional confirmou atribuições distintas para gerência e recepção, ausência de escopo central nesses papéis, escopo central do proprietário, rejeição de autoatribuição e de filial de outro salão e revogação imediata. O papel anônimo ficou sem acesso de leitura à tabela e sem execução da função privada. A matriz anterior de Clientes e Caixa voltou a passar. A consulta posterior confirmou zero atribuições e organizações de teste.

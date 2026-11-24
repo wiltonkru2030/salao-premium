@@ -235,9 +235,74 @@ end
 $audit$;
 reset role;
 
+-- A atribuição de unidade é administrada pelo proprietário e isolada por RLS.
+set local role authenticated;
+do $audit$
+declare
+  matrix record;
+  satellite record;
+  other_org record;
+  manager_id constant uuid := 'a7d10000-0000-4000-8000-000000000003';
+  reception_id constant uuid := 'a7d10000-0000-4000-8000-000000000004';
+begin
+  select * into strict matrix from audit_targets where unit = 'A matriz';
+  select * into strict satellite from audit_targets where unit = 'A filial';
+  select * into strict other_org from audit_targets where unit = 'B';
+
+  perform set_config('request.jwt.claim.sub', 'a7d10000-0000-4000-8000-000000000001', true);
+  insert into public.branch_memberships (org_id, branch_id, user_id) values
+    (matrix.org_id, matrix.branch_id, manager_id),
+    (satellite.org_id, satellite.branch_id, reception_id);
+
+  if not private.has_staff_branch_scope(matrix.org_id, null)
+     or private.has_staff_branch_scope(other_org.org_id, other_org.branch_id) then
+    raise exception 'Escopo do proprietário divergente';
+  end if;
+
+  begin
+    insert into public.branch_memberships (org_id, branch_id, user_id)
+    values (matrix.org_id, other_org.branch_id, manager_id);
+    raise exception 'Atribuição com filial de outro salão aceita';
+  exception when foreign_key_violation then null;
+  end;
+
+  perform set_config('request.jwt.claim.sub', manager_id::text, true);
+  if not private.has_staff_branch_scope(matrix.org_id, matrix.branch_id)
+     or private.has_staff_branch_scope(satellite.org_id, satellite.branch_id)
+     or private.has_staff_branch_scope(matrix.org_id, null)
+     or (select count(*) from public.branch_memberships where org_id = matrix.org_id) <> 1 then
+    raise exception 'Escopo do gerente divergente';
+  end if;
+
+  begin
+    insert into public.branch_memberships (org_id, branch_id, user_id)
+    values (satellite.org_id, satellite.branch_id, manager_id);
+    raise exception 'Autoatribuição do gerente aceita';
+  exception when insufficient_privilege then null;
+  end;
+
+  perform set_config('request.jwt.claim.sub', reception_id::text, true);
+  if not private.has_staff_branch_scope(satellite.org_id, satellite.branch_id)
+     or private.has_staff_branch_scope(matrix.org_id, matrix.branch_id) then
+    raise exception 'Escopo da recepção divergente';
+  end if;
+
+  perform set_config('request.jwt.claim.sub', 'a7d10000-0000-4000-8000-000000000001', true);
+  delete from public.branch_memberships
+  where org_id = matrix.org_id and branch_id = matrix.branch_id and user_id = manager_id;
+
+  perform set_config('request.jwt.claim.sub', manager_id::text, true);
+  if private.has_staff_branch_scope(matrix.org_id, matrix.branch_id) then
+    raise exception 'Atribuição revogada permanece efetiva';
+  end if;
+end
+$audit$;
+reset role;
+
 select jsonb_build_object(
   'read', (select jsonb_agg(to_jsonb(r) order by actor) from audit_observations r),
   'write', (select jsonb_agg(to_jsonb(w) order by actor, unit) from audit_writes w),
+  'branch_assignment_checks', 'ok',
   'closure_cases', (select count(*) from audit_closures),
   'closure_allowed', (select count(*) from audit_closures where summary_allowed and close_allowed)
 ) as result;
