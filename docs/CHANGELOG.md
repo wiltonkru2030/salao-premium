@@ -12,3 +12,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Reexecutadas as verificações no commit `a5e3dc71` e conferidos o histórico remoto por versão, o conteúdo do snapshot e os controles reportados para a branch principal.
 
 - Conferida por hash a cadeia candidata de 97 migrations e registrado o bloqueio de infraestrutura do replay local.
+
+- Provisionado Supabase de QA e aplicado o histórico de 97 migrations. Adicionada configuração de ambiente compartilhada pelas aplicações e pelos links públicos de Orçamentos.

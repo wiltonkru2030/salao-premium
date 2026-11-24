@@ -37,3 +37,13 @@ Os testes de integração criam e removem registros. A suíte existente exige cr
 ### Banco local
 
 A cadeia candidata de 97 migrations foi conferida por hash. A inicialização da pilha local encontrou limite de requisições do registro de imagens e falta de espaço. Uma tentativa com apenas Postgres também registrou falta de espaço ao extrair a imagem. Nenhum replay ou teste autenticado foi concluído nesta rodada.
+
+
+### Supabase de homologação
+
+O projeto `salao-premium-qa` (`eaiutjqvyesboldcznyr`) foi criado em `us-east-2`. A cadeia de 97 migrations foi aplicada em um banco vazio. O Supabase gerou os identificadores de execução do QA. As três Edge Functions foram publicadas em QA e responderam a preflight com HTTP 200.
+
+- As assinaturas de catálogo de 613 colunas, 392 constraints, 211 índices, 130 políticas e 62 triggers de `public` e `private` coincidiram com produção. Entre as funções, produção tem `public.rls_auto_enable()` e QA tem `private.get_professional_cpf_login_pepper()`. As demais funções comparadas coincidiram em definição e grants.
+- Um teste SQL com dois proprietários e claims diferentes confirmou leitura apenas dos clientes do próprio salão. As fixtures foram revertidas na mesma transação. A RPC do diretório público respondeu HTTP 200 com lista vazia em QA, e a tabela de perfis públicos recusou leitura direta anônima.
+- Os builds padrão e de QA passaram. A verificação do módulo compartilhado gerado confirmou o endpoint efetivo de cada build. Os links de resposta a orçamentos usam a mesma configuração dos três aplicativos.
+- A suíte HTTP autenticada completa, as contas de teste dos demais papéis, OAuth, chaves de acesso, provisionamento profissional, concorrência e ensaios de navegador continuam pendentes. O replay hospedado complementa a tentativa local, que permanece bloqueada pela capacidade de disco.

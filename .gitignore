@@ -1,0 +1,4 @@
+# Arquivos locais do Vite e saída do build.
+.env.local
+.env.*.local
+dist/

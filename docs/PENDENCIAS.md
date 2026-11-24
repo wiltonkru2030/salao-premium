@@ -6,7 +6,7 @@ Use o identificador para vincular código, teste e evidência de conclusão. O s
 | --- | --- | --- | --- |
 | AUD-01 | `docs/`, workflows e Supabase | Alta, incompletude de evidência | Concluir inventário por arquivo e revisar objetos, logs, controles e configurações disponíveis. Registrar escopo e evidência para cada achado. |
 | QA-01 (resolvida) | `src/agenda/tests/services.test.js` | Alta, CI dependente do fuso | Fixture ajustada. A suíte completa passou em UTC e em America/Sao_Paulo, conforme a homologação. |
-| DB-01 | `supabase/migrations` e `snapshot-remoto` | Alta, risco de deploy e recuperação | Comparar SQL e efeitos das versões divergentes. Reproduzir o esquema em homologação antes de sincronizar. |
+| DB-01 | `supabase/migrations` e `snapshot-remoto` | Alta, risco de deploy e recuperação | Comparar SQL e efeitos das versões divergentes. Replay de 97 arquivos concluído em QA. Investigar as diferenças de funções, concluir a comparação de objetos e validar o replay local antes de sincronizar a pasta ativa. |
 | SEG-01 | Supabase Auth, RLS, funções e papéis | Alta, autorização e credenciais | Confirmar recursos de senha disponíveis, revisar metadados e testar isolamento por papel e unidade em QA. |
 | UI-01 | `src/styles`, `cliente/styles`, `professional` | Alta, cobertura visual | Consolidar tema, marca e controles compartilhados. Aprovar contraste, responsividade e estados nas três aplicações. |
 | UX-01 | `src/components/autocomplete.js` | Alta, seleção inconsistente | Validar descarte de buscas obsoletas, estados, acessibilidade e preenchimento do ID e campos relacionados. |

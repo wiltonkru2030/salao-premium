@@ -2,6 +2,7 @@
  * Fluxos de documento e agendamento do módulo Orçamentos.
  * Dependências são recebidas por parâmetro; esta camada não depende do estado da página.
  */
+import { SUPABASE_URL } from '../../../supabase/config.js';
 
 /**
  * Gera a versão imprimível do orçamento e prepara o link público de aceite/recusa.
@@ -53,7 +54,9 @@ export async function printQuoteDocument({ quote, orgId, supabase, state, esc, m
       .maybeSingle();
     if (error) throw error;
     if (!updatedQuote) throw new Error("O orçamento não está mais pendente para resposta.");
-    responseUrl = "https://vlifbvzlyzoncefvfgol.supabase.co/functions/v1/respond-to-quote?token=" + token;
+    const publicResponse = new URL("/functions/v1/respond-to-quote", SUPABASE_URL);
+    publicResponse.searchParams.set("token", token);
+    responseUrl = publicResponse.href;
   }
 
   if(!isCurrent()){printWindow.close();return;}
