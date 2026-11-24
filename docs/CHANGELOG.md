@@ -38,3 +38,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Protegida a gestão de pacotes por unidade, mantendo a leitura do catálogo compartilhado.
 
 - Compartilhado o símbolo oficial nas três entradas e corrigido o retorno da estrutura autenticada da Área da Cliente.
+
+- Centralizados os tokens de tema e verificada a troca automática de aparência da Área da Cliente em Chromium.

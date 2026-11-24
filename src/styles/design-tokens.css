@@ -27,3 +27,22 @@
  --sp-label-size:12px;
  --sp-caption-size:12px;
 }
+
+/* Paleta semântica das superfícies. O atributo ativa a escolha em cada entrada. */
+:root {
+ color-scheme: light;
+ --sp-canvas:var(--sp-paper);
+ --sp-theme-card-shadow:0 8px 28px #17130b08;
+}
+:root[data-theme="dark"] {
+ color-scheme: dark;
+ --sp-canvas:#171715;
+ --sp-paper:#22221f;
+ --sp-ink:#f5f3ef;
+ --sp-muted:#bcb8af;
+ --sp-line:#45423c;
+ --sp-gold-text:#c4a575;
+ --sp-gold-soft:#302b22;
+ --sp-red:#ffafa4;
+ --sp-theme-card-shadow:0 16px 42px #0005;
+}

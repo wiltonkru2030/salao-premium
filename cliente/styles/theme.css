@@ -1,4 +1,17 @@
-/* Tema da cliente: aliases dos tokens globais e aparência escura preservada. */
+/* Aliases da Área da Cliente para a paleta semântica compartilhada. */
 @import url("../../src/styles/design-tokens.css");
-:root{color-scheme:light;--color-bg:var(--sp-paper);--color-surface:var(--sp-paper);--color-text:var(--sp-ink);--color-muted:var(--sp-muted);--color-border:var(--sp-line);--color-gold:var(--sp-gold-text);--color-gold-soft:var(--sp-gold-soft);--color-ink:var(--sp-ink);--color-danger:var(--sp-red);--shadow-card:0 8px 28px #17130b08;font-family:var(--sp-font-ui);font-synthesis:none;text-rendering:optimizeLegibility}
-:root[data-theme="dark"]{color-scheme:dark;--color-bg:#171715;--color-surface:#22221f;--color-text:#f5f3ef;--color-muted:#bcb8af;--color-border:#45423c;--color-gold:#c4a575;--color-gold-soft:#302b22;--color-ink:#f5f3ef;--color-danger:#ffafa4;--shadow-card:0 16px 42px #0005}
+:root {
+ --color-bg:var(--sp-canvas);
+ --color-surface:var(--sp-paper);
+ --color-text:var(--sp-ink);
+ --color-muted:var(--sp-muted);
+ --color-border:var(--sp-line);
+ --color-gold:var(--sp-gold-text);
+ --color-gold-soft:var(--sp-gold-soft);
+ --color-ink:var(--sp-ink);
+ --color-danger:var(--sp-red);
+ --shadow-card:var(--sp-theme-card-shadow);
+ font-family:var(--sp-font-ui);
+ font-synthesis:none;
+ text-rendering:optimizeLegibility;
+}

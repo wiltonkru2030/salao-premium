@@ -35,6 +35,9 @@ import { renderIdentityLinkRequestsView } from "./ui/identityLinkRequestsView.js
 
 installGlobalMasks();
 const root = document.querySelector("#cliente-app");
+const darkScheme = matchMedia("(prefers-color-scheme: dark)");
+darkScheme.addEventListener("change", applyTheme);
+applyTheme();
 let currentSession = null;
 let activePage = "home";
 let busy = false;
@@ -65,6 +68,7 @@ let catalogRequest=0;
 function resetAccountState(userId){
   sessionEpoch++; directoryRequest++; catalogRequest++;
   currentUserId=userId; setSettingsAccount(userId);
+  applyTheme();
   activePage="home"; busy=false; profileState=null; identityLinkRequests=[];
   locationCoordinates=null;
   const settings=getLocalSettings();
@@ -103,7 +107,7 @@ function renderLogin(notice = "") {
 function applyTheme() {
   const theme = getLocalSettings().theme;
   document.documentElement.dataset.theme = theme === "system"
-    ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+    ? (darkScheme.matches ? "dark" : "light")
     : theme;
 }
 
@@ -551,6 +555,7 @@ async function runAction(action, button = null) {
       const current = getLocalSettings().theme;
       const next = current === "system" ? "light" : current === "light" ? "dark" : "system";
       saveLocalSettings({theme: next});
+      applyTheme();
       try { await saveRemoteSettings({client:supabase,patch:{theme:next}}); } catch { /* O tema local continua funcionando sem sincronização remota. */ }
       requireCurrent(epoch);
       renderApp();
