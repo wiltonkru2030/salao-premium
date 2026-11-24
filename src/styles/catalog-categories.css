@@ -1,7 +1,28 @@
 /**
- * Estilos da gestão de categorias do catálogo.
- * Responsabilidade: manter abas e estados consistentes com o design system global.
+ * Paleta de produtos, serviços e categorias do catálogo administrativo.
+ * Os rótulos do estado acompanham as cores para diferenciar ativo e inativo.
  */
 .category-tabs{display:flex;gap:8px;margin:16px 0}
-.category-tabs button{border:1px solid var(--sp-line);background:#fff;color:var(--sp-text);border-radius:10px;padding:9px 16px;font:inherit;cursor:pointer}
-.category-tabs button.active{border-color:var(--sp-gold);background:var(--sp-surface);font-weight:600}
+.category-tabs button{
+  border:1px solid var(--sp-line);background:var(--sp-paper);color:var(--sp-ink);
+  border-radius:10px;padding:9px 16px;font:inherit;cursor:pointer
+}
+.category-tabs button.active{
+  border-color:var(--sp-gold);background:var(--sp-gold-soft);
+  color:var(--sp-gold-text);font-weight:600
+}
+:is(#products-manager,#services-manager,#categories-manager) .record-trailing>b{
+  color:var(--sp-ink)
+}
+:is(#products-manager,#services-manager,#categories-manager) .record-card .status-pill{
+  padding:3px 8px;border-radius:99px;white-space:nowrap
+}
+:is(#products-manager,#services-manager,#categories-manager) .record-card .status-pill.active{
+  background:var(--sp-green-soft);color:var(--sp-green)
+}
+:is(#products-manager,#services-manager,#categories-manager) .record-card .status-pill.inactive{
+  background:var(--sp-soft);color:var(--sp-muted)
+}
+:is(#products-manager,#services-manager,#categories-manager) .record-card .text-button{
+  background:transparent;border:0;color:var(--sp-gold-text);cursor:pointer
+}

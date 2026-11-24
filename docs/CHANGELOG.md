@@ -56,3 +56,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Ajustado o contraste de indicadores, totais, filtros e avisos de Financeiro e Relatórios e compartilhada a paleta com Comissões.
 
 - Ajustado o contraste do painel de Comissões e adicionados nomes acessíveis à pesquisa e à forma de pagamento.
+
+- Ajustados preços, ações e estados do catálogo para temas claro e escuro e exposta a seleção de categoria para tecnologias assistivas.

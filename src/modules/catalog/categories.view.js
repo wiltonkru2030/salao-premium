@@ -32,8 +32,8 @@ export function renderCategoriesView(categories,selectedType,canManage=false) {
       '<footer class="sp-modal-foot"><button class="btn secondary" type="button" data-close-category-modal>Cancelar</button>'+
       '<button class="btn primary" type="submit">Cadastrar categoria</button></footer></form></div></dialog>'+
     '<div class="segmented-control category-tabs">'+
-      '<button type="button" data-category-type="service" class="'+(selectedType==="service"?"active":"")+'">Serviços</button>'+
-      '<button type="button" data-category-type="product" class="'+(selectedType==="product"?"active":"")+'">Produtos</button></div>'+
+      '<button type="button" data-category-type="service" aria-pressed="'+(selectedType==="service") +'" class="'+(selectedType==="service"?"active":"")+'">Serviços</button>'+
+      '<button type="button" data-category-type="product" aria-pressed="'+(selectedType==="product") +'" class="'+(selectedType==="product"?"active":"")+'">Produtos</button></div>'+
     '<div class="list-toolbar"><span class="result-count">'+visible.length+' categorias de '+typeLabel(selectedType).toLowerCase()+'</span></div>'+
     '<div class="record-list">'+(cards||'<div class="empty-state">Nenhuma categoria cadastrada.</div>')+'</div>');
 }

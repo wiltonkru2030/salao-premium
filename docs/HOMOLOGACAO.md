@@ -172,3 +172,7 @@ Os renderizadores de Financeiro e Relatórios foram verificados com dados sinté
 ### Contraste e controles de Comissões
 
 O painel de Comissões foi renderizado com dados sintéticos e o CSS do build em Chromium. Em 390 e 1280 px, a amostra de totais, linhas selecionáveis, regras e controles de repasse atingiu contraste mínimo de 8,06:1 no tema escuro e 5,81:1 no claro. Foi possível selecionar um lançamento, trocar a forma de pagamento e editar o campo de pesquisa, localizado pelo nome acessível. A verificação visual não realizou repasses.
+
+### Contraste e estados do catálogo
+
+Produtos, Serviços e Categorias foram renderizados com dados sintéticos e CSS do build em Chromium. A amostra de preço, estoque, duração, estado ativo ou inativo, seletor de categoria e ação de inativação atingiu contraste mínimo de 6,01:1 no tema escuro e 4,91:1 no claro, em 390 e 1280 px. O seletor de categorias informa a opção ativa por `aria-pressed`. A verificação visual não alterou registros.
