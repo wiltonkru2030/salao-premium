@@ -20,3 +20,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Ampliada a matriz SQL de QA para escritas de clientes, leitura de despesas e abertura de Caixa por papel e unidade.
 
 - Verificados o saldo em dinheiro, a diferença de fechamento, o bloqueio de fechamento repetido e as permissões das RPCs de Caixa por unidade em QA.
+
+- Verificados recebimentos em centavos, devolução integral, estoque e bloqueio de pagamentos concorrentes em QA.

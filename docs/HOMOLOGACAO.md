@@ -86,3 +86,11 @@ Nenhuma das contas testadas atualizou clientes, leu despesas ou abriu Caixa no s
 Foram executados 18 cenários adicionais em QA com a mesma matriz SQL. Em oito cenários autorizados, proprietário, gerente, recepção e financeiro consultaram e fecharam o Caixa da matriz e da filial do salão A. Os dez cenários referentes ao outro salão, ao profissional ou à conta sem vínculo foram recusados.
 
 A abertura de R$ 10,25, a entrada de R$ 42,37 em dinheiro e a saída de R$ 7,12 em dinheiro produziram saldo esperado de R$ 45,50. Os movimentos de R$ 60,00 em PIX e R$ 80,00 em cartão ficaram fora da conferência física. O fechamento contado de R$ 44,25 retornou diferença de −R$ 1,25. Cada tentativa de repetir o fechamento foi recusada. Os movimentos foram inseridos como fixtures para isolar a conferência de Caixa. A validação de pagamentos, estornos e concorrência depende de cenários próprios.
+
+### Pagamento e devolução da Comanda
+
+A [verificação transacional](../tests/integration/payment-refund-audit.sql) executou as RPCs públicas em QA com uma conta proprietária. Sem Caixa aberto, o recebimento foi recusado. A Comanda de R$ 100,03 aceitou R$ 40,01 em PIX e R$ 60,02 em dinheiro. Fração de centavo, um centavo acima do saldo e repetição após quitação foram recusados. A quitação gerou venda e baixou uma unidade de estoque.
+
+A devolução integral marcou a venda como devolvida, cancelou a Comanda e repôs o estoque. O Caixa registrou entradas e saídas de R$ 100,03, e o saldo físico retornou a R$ 10,25. A segunda devolução foi recusada.
+
+Em uma segunda fixture, duas sessões tentaram quitar a mesma Comanda. A primeira concluiu dentro da transação e reteve o bloqueio. A segunda atingiu o limite de espera configurado e abortou. As duas transações foram revertidas. A limpeza confirmou zero contas e organizações das fixtures. Este cenário confirma o bloqueio durante a disputa. O teste ponta a ponta com a primeira sessão confirmando a transação e a segunda aguardando e reavaliando o saldo ainda está pendente.
