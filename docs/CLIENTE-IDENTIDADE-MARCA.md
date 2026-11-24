@@ -1,5 +1,7 @@
 # Identidade global da cliente — SALÃO PREMIUM
 
+> Revisão documental: 24/11/2026. Evidências do código e inventário de 20/11; não houve nova consulta ao banco ou execução de testes nesta revisão. Consulte o README mestre.
+
 ## Decisão arquitetural
 
 A identidade de autenticação da cliente é **global na plataforma**, independente de salão ou filial. Uma pessoa terá um único usuário Supabase Auth e um único perfil global. O vínculo com cada salão será separado e não dará acesso cruzado aos dados operacionais de outros salões.
@@ -10,13 +12,13 @@ Não confundir:
 - **Cadastro operacional do salão:** registro local de cliente usado por agendamentos, comandas, pacotes e histórico.
 - **Filial:** unidade física dentro da organização; não cria nova identidade.
 
-## Modelo de dados-alvo (proposta, ainda não aplicada)
+## Modelo de dados global versionado
 
 1. `customer_profiles`: uma linha por `auth_user_id` global, com nome, telefone normalizado, e-mail opcional, foto e preferências globais. O telefone só será marcado como verificado após prova real de posse.
 2. `customer_tenant_memberships`: vínculo entre `auth_user_id` e `org_id`, com estado, origem e datas. Restrito ao próprio usuário e à equipe autorizada daquele tenant.
 3. `customer_account_customers`: associação entre identidade global, tenant e registros operacionais antigos em `customers`. Chaves estrangeiras compostas mantêm o isolamento por organização.
 4. Os registros `customers`, `appointments`, comandas, pagamentos, pacotes e créditos continuam pertencendo ao tenant e, quando aplicável, à filial.
-5. Histórico consolidado será entregue por RPCs/views com escopo explícito de tenant; nunca por uma consulta global irrestrita.
+5. Histórico consolidado deve ser entregue por RPCs/views com escopo explícito de tenant; nunca por uma consulta global irrestrita.
 
 A proposta anterior de `customer_accounts(org_id, auth_user_id)` criava uma conta por marca e **não atende** à decisão de identidade global. O SQL em `docs/sql/cliente-identidade-marca.sql` está obsoleto para esta arquitetura e não deve ser aplicado.
 
@@ -24,7 +26,7 @@ A proposta anterior de `customer_accounts(org_id, auth_user_id)` criava uma cont
 
 - Google OAuth: autenticação pelo provedor e sessão Supabase Auth.
 - Passkey: autenticação WebAuthn; a credencial é associada à conta global. A disponibilidade depende da configuração do Supabase e do domínio definitivo.
-- Telefone + PIN de quatro dígitos: não liberar como autenticação autônoma enquanto o telefone não tiver sido verificado. Um PIN de 4 dígitos possui apenas 10.000 combinações e não prova posse do número.
+- Telefone + PIN de quatro dígitos: não utilizar como autenticação autônoma, mesmo após verificar o telefone. Um PIN de 4 dígitos possui apenas 10.000 combinações e não prova posse do número.
 - PIN local: pode ser oferecido depois de Google/Passkey para desbloqueio local do app, armazenado usando mecanismo seguro do dispositivo. Não enviar PIN ao banco nem usá-lo para recuperar conta em aparelho novo.
 - Sem SMS/WhatsApp OTP: a cliente pode usar Google/Passkey. Para primeiro vínculo de um telefone sem OTP, exigir autenticação forte e/ou confirmação assistida pelo salão; não assumir que o número digitado é confiável.
 
@@ -44,24 +46,18 @@ A proposta anterior de `customer_accounts(org_id, auth_user_id)` criava uma cont
 - RPCs privilegiadas em schema não exposto, `search_path` fixo, validação de sessão/tenant/role e grants mínimos.
 - Mensagens de login neutras para evitar enumeração de contas.
 - Limites de tentativas e bloqueio progressivo para qualquer credencial baseada em PIN; logs sem PIN ou segredos.
-- Hash forte (Argon2id ou bcrypt com custo apropriado) é obrigatório se algum PIN for persistido no servidor, mas hash não corrige a fraqueza de um PIN de quatro dígitos.
+- Não persistir PIN local no servidor; limitar tentativas e proteger o armazenamento do dispositivo.
 - Não vincular cadastros antigos automaticamente por telefone, e-mail não verificado, nome ou nascimento.
 - Nunca conceder ao app cliente acesso geral a dados de outros tenants ou às tabelas financeiras.
 
 ## Situação do repositório e do banco
 
-- O banco atual possui `customers` por organização e `branch_id` opcional; agendamentos usam FK composta `(org_id, customer_id)`.
-- A inspeção anterior encontrou 17 clientes, 14 sem telefone e 15 agendamentos ligados a cliente. Nenhuma fusão automática deve ocorrer.
-- O modelo global descrito aqui é uma especificação de arquitetura, não uma migration pronta.
-- Nenhuma tabela ou política nova foi aplicada ao Supabase de produção.
-- A migration anterior por marca foi substituída conceitualmente e seu SQL está marcado como obsoleto. Não conectar esse serviço à interface.
-- Antes de implementar: gerar migration oficial com Supabase CLI em ambiente local, aplicar em staging, testar duas contas globais em dois tenants, testar RLS cruzada e revisar Security Advisors.
+A migration `20261120041015_customer_global_identity.sql` foi localizada no Git e cria customer_profiles, customer_tenant_memberships, customer_account_customers, customer_identity_link_requests, políticas RLS e RPCs de solicitação, consulta e confirmação de vínculo. O inventário de 20/11 também registra 20261120041034 (endurecimento de identidade), HOLDs, diretório, histórico, cupons e fidelidade.
 
-## Próximas entregas
+A proposta antiga por marca não deve ser aplicada. A existência de migrations não comprova o funcionamento atual do banco.
 
-1. Substituir o SQL antigo por migration global com perfil, memberships e vínculos operacionais.
-2. Criar testes RLS negativos: cliente A não lê tenant de B; usuário sem membership não lê dados; funcionário não cria vínculo em tenant alheio.
-3. Implementar cadastro/login Google e Passkey ligados ao perfil global.
-4. Implementar ativação de membership ao acessar um salão.
-5. Criar fluxo de confirmação assistida e auditada para cadastros legados.
-6. Só depois desenvolver seletor de filial, catálogo, disponibilidade, agendamento e histórico por tenant.
+## Homologação
+
+Testar Google/Passkey, PIN exclusivamente local, vínculo assistido, idempotência, duas contas em dois tenants, RLS negativa, tentativa de associação em tenant alheio, logout/troca de conta, histórico e reservas. Executar npm run test:customer-rls apenas em QA autorizado. Preservar cadastros e histórico existentes; jamais mesclar automaticamente.
+
+Ver [Área da Cliente](../cliente/README.md), [README mestre](../README.md) e [inventário](migrations/remote-history-2026-11-20.json).
