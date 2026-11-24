@@ -18,3 +18,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Registradas a matriz de leitura em QA, a divergência de escopo de gerente e recepção e as diferenças de configuração e funções observadas no replay.
 
 - Ampliada a matriz SQL de QA para escritas de clientes, leitura de despesas e abertura de Caixa por papel e unidade.
+
+- Verificados o saldo em dinheiro, a diferença de fechamento, o bloqueio de fechamento repetido e as permissões das RPCs de Caixa por unidade em QA.

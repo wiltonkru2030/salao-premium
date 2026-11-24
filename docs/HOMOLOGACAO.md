@@ -79,4 +79,10 @@ A mesma matriz executou 18 combinações de papel e unidade em QA. Em cada cená
 | Profissional A | Não | Não | Não |
 | Conta sem vínculo | Não | Não | Não |
 
-Nenhuma das contas testadas atualizou clientes, leu despesas ou abriu Caixa no salão B. Em A, a atualização de clientes e a abertura de Caixa por gerente e recepção abrangeram as duas unidades, o que confirma o escopo organizacional registrado em SEG-02. A abertura foi revertida a cada cenário e os demais dados foram revertidos ao fim da sessão. Fechamento, pagamentos, estornos, concorrência e permissões dos demais papéis ainda precisam de testes próprios.
+Nenhuma das contas testadas atualizou clientes, leu despesas ou abriu Caixa no salão B. Em A, a atualização de clientes e a abertura de Caixa por gerente e recepção abrangeram as duas unidades, o que confirma o escopo organizacional registrado em SEG-02. A abertura foi revertida a cada cenário e os demais dados foram revertidos ao fim da sessão. A seção seguinte cobre o fechamento. Pagamentos, estornos, concorrência e permissões dos demais papéis ainda precisam de testes próprios.
+
+### Resumo e fechamento de Caixa
+
+Foram executados 18 cenários adicionais em QA com a mesma matriz SQL. Em oito cenários autorizados, proprietário, gerente, recepção e financeiro consultaram e fecharam o Caixa da matriz e da filial do salão A. Os dez cenários referentes ao outro salão, ao profissional ou à conta sem vínculo foram recusados.
+
+A abertura de R$ 10,25, a entrada de R$ 42,37 em dinheiro e a saída de R$ 7,12 em dinheiro produziram saldo esperado de R$ 45,50. Os movimentos de R$ 60,00 em PIX e R$ 80,00 em cartão ficaram fora da conferência física. O fechamento contado de R$ 44,25 retornou diferença de −R$ 1,25. Cada tentativa de repetir o fechamento foi recusada. Os movimentos foram inseridos como fixtures para isolar a conferência de Caixa. A validação de pagamentos, estornos e concorrência depende de cenários próprios.

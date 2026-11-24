@@ -1,5 +1,5 @@
 -- Matriz de auditoria de leitura e escrita com fixtures descartáveis. Executar apenas em QA.
--- Verifica políticas de clientes, despesas e a RPC de abertura de Caixa para papéis do aplicativo em duas organizações.
+-- Verifica políticas de clientes, despesas e a RPCs de abertura, resumo e fechamento de Caixa para papéis do aplicativo em duas organizações.
 -- Usa o schema de QA e o identificador de sessão lido por auth.uid().
 -- Retorna as linhas observadas e reverte as fixtures na mesma sessão.
 begin;
@@ -142,8 +142,103 @@ end
 $audit$;
 reset role;
 
+-- Os registros e movimentos abaixo isolam o cálculo do fechamento dos fluxos de pagamento.
+insert into public.cash_registers (org_id, branch_id, opening_amount, status)
+select org_id, branch_id, 10.25, 'open' from audit_targets;
+
+insert into public.cash_movements
+  (org_id, branch_id, cash_register_id, movement_type, description, amount, payment_method)
+select r.org_id, r.branch_id, r.id, m.kind, 'Movimento RLS QA', m.amount, m.method
+from public.cash_registers r
+join audit_targets t on t.org_id = r.org_id and t.branch_id = r.branch_id
+cross join (values
+  ('income', 42.37, 'cash'), ('expense', 7.12, 'cash'),
+  ('income', 60.00, 'pix'), ('income', 80.00, 'credit_card')
+) as m(kind, amount, method);
+
+create temporary table audit_cash_targets on commit drop as
+select r.id, t.unit
+from public.cash_registers r
+join audit_targets t on t.org_id = r.org_id and t.branch_id = r.branch_id;
+grant select on audit_cash_targets to authenticated;
+
+create temporary table audit_closures (
+  actor text, unit text, summary_allowed boolean, close_allowed boolean
+) on commit drop;
+grant insert on audit_closures to authenticated;
+
+set local role authenticated;
+do $audit$
+declare
+  actor record;
+  target record;
+  allowed boolean;
+  summary_ok boolean;
+  close_ok boolean;
+  result jsonb;
+begin
+  for actor in select * from (values
+    (1, 'proprietário A', true), (3, 'gerente A', true),
+    (4, 'recepção A', true), (5, 'profissional A', false),
+    (7, 'financeiro A', true), (8, 'conta sem vínculo', false)
+  ) as actors(number, label, cash_access)
+  loop
+    perform set_config('request.jwt.claim.sub', 'a7d10000-0000-4000-8000-00000000000' || actor.number, true);
+    for target in select * from audit_cash_targets loop
+      allowed := actor.cash_access and target.unit <> 'B';
+      summary_ok := false;
+      close_ok := false;
+      begin
+        result := public.get_cash_register_summary(target.id);
+        if (result->>'expected_cash')::numeric is distinct from 45.50
+           or (result->>'cash_income')::numeric is distinct from 42.37
+           or (result->>'cash_expense')::numeric is distinct from 7.12 then
+          raise exception 'Resumo incorreto no cenário % / %', actor.label, target.unit;
+        end if;
+        summary_ok := true;
+      exception
+        when raise_exception then
+          if sqlerrm <> 'Sem permissão para consultar o resumo do Caixa.' then raise; end if;
+      end;
+
+      begin
+        result := public.close_cash_register(target.id, 44.25);
+        if result->>'status' is distinct from 'closed'
+           or (result->>'expected_amount')::numeric is distinct from 45.50
+           or (result->>'closing_amount')::numeric is distinct from 44.25
+           or (result->>'difference')::numeric is distinct from -1.25 then
+          raise exception 'Fechamento incorreto no cenário % / %', actor.label, target.unit;
+        end if;
+        begin
+          perform public.close_cash_register(target.id, 44.25);
+          raise exception 'Segundo fechamento aceito no cenário % / %', actor.label, target.unit;
+        exception
+          when raise_exception then
+            if sqlerrm <> 'Este caixa já foi fechado.' then raise; end if;
+        end;
+        close_ok := true;
+        -- Reabre a fixture por rollback antes de testar a próxima conta.
+        raise sqlstate 'QA001';
+      exception
+        when sqlstate 'QA001' then null;
+        when raise_exception then
+          if sqlerrm <> 'Sem permissão para fechar o Caixa.' then raise; end if;
+      end;
+
+      if summary_ok is distinct from allowed or close_ok is distinct from allowed then
+        raise exception 'Permissões de Caixa divergentes no cenário % / %', actor.label, target.unit;
+      end if;
+      insert into audit_closures values (actor.label, target.unit, summary_ok, close_ok);
+    end loop;
+  end loop;
+end
+$audit$;
+reset role;
+
 select jsonb_build_object(
   'read', (select jsonb_agg(to_jsonb(r) order by actor) from audit_observations r),
-  'write', (select jsonb_agg(to_jsonb(w) order by actor, unit) from audit_writes w)
+  'write', (select jsonb_agg(to_jsonb(w) order by actor, unit) from audit_writes w),
+  'closure_cases', (select count(*) from audit_closures),
+  'closure_allowed', (select count(*) from audit_closures where summary_allowed and close_allowed)
 ) as result;
 rollback;
