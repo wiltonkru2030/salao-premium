@@ -28,3 +28,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Versionada a migration de preparação de atribuições por unidade e verificados os cenários de isolamento e revogação em QA.
 
 - Adicionada gestão de atribuições por unidade para proprietários e administradores na página Equipe e permissões.
+
+- Aplicado em QA o escopo de unidade nas tabelas operacionais e nas RPCs de Caixa, com verificação de leitura, edição, abertura e fechamento.

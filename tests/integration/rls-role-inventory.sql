@@ -55,6 +55,17 @@ join public.branches b on b.org_id = o.id
 join public.customers c on c.org_id = o.id and c.branch_id = b.id
 where o.name in ('RLS matriz QA A', 'RLS matriz QA B');
 
+insert into public.branch_memberships (org_id, branch_id, user_id)
+select org_id, branch_id, case unit when 'A matriz' then
+  'a7d10000-0000-4000-8000-000000000003'::uuid
+  else 'a7d10000-0000-4000-8000-000000000004'::uuid end
+from audit_targets where unit in ('A matriz', 'A filial');
+
+insert into public.appointments (org_id, branch_id, customer_id, customer_name, service_name, starts_at, ends_at)
+select org_id, branch_id, customer_id, 'Cliente auditoria', 'Agenda RLS QA',
+       now() + interval '1 day', now() + interval '1 day 1 hour'
+from audit_targets;
+
 create temporary table audit_writes (
   actor text, unit text, customers_updated bigint, expenses_read bigint, cash_opened boolean
 ) on commit drop;
@@ -97,6 +108,9 @@ declare
   expenses bigint;
   opened boolean;
   cash_result jsonb;
+  appointments_seen bigint;
+  appointments_updated bigint;
+  scoped boolean;
 begin
   for actor in select * from (values
     (1, 'proprietário A'), (3, 'gerente A'), (4, 'recepção A'),
@@ -105,13 +119,28 @@ begin
   loop
     perform set_config('request.jwt.claim.sub', 'a7d10000-0000-4000-8000-00000000000' || actor.number, true);
     for target in select * from audit_targets loop
+      scoped := target.unit <> 'B' and (actor.number not in (3, 4)
+        or (actor.number = 3 and target.unit = 'A matriz')
+        or (actor.number = 4 and target.unit = 'A filial'));
+      select count(*) into appointments_seen from public.appointments
+      where org_id = target.org_id and branch_id = target.branch_id and service_name = 'Agenda RLS QA';
+      if (appointments_seen = 1) is distinct from (scoped and actor.number in (1,3,4)) then
+        raise exception 'Leitura inesperada da Agenda no cenário % / %', actor.label, target.unit;
+      end if;
+      update public.appointments set notes = 'Revisão de QA'
+      where org_id = target.org_id and branch_id = target.branch_id and service_name = 'Agenda RLS QA';
+      get diagnostics appointments_updated = row_count;
+      if (appointments_updated = 1) is distinct from (scoped and actor.number in (1,3,4)) then
+        raise exception 'Escrita inesperada da Agenda no cenário % / %', actor.label, target.unit;
+      end if;
       update public.customers set notes = 'Revisão de QA' where id = target.customer_id;
       get diagnostics updated = row_count;
       select count(*) into expenses from public.expenses
         where org_id = target.org_id and branch_id = target.branch_id and description = 'Despesa RLS QA';
 
-      if target.unit = 'B' and (updated <> 0 or expenses <> 0) then
-        raise exception 'Acesso fora da organização no cenário %', actor.label;
+      if (updated = 1) is distinct from (scoped and actor.number in (1,3,4))
+         or (expenses = 1) is distinct from (scoped and actor.number in (1,3,7)) then
+        raise exception 'Permissão inesperada para clientes ou despesas no cenário % / %', actor.label, target.unit;
       end if;
 
       opened := false;
@@ -132,7 +161,7 @@ begin
           end if;
       end;
 
-      if opened and (target.unit = 'B' or actor.number in (5, 8)) then
+      if opened is distinct from (scoped and actor.number in (1, 3, 4, 7)) then
         raise exception 'Abertura indevida no cenário % / %', actor.label, target.unit;
       end if;
       insert into audit_writes values (actor.label, target.unit, updated, expenses, opened);
@@ -185,7 +214,9 @@ begin
   loop
     perform set_config('request.jwt.claim.sub', 'a7d10000-0000-4000-8000-00000000000' || actor.number, true);
     for target in select * from audit_cash_targets loop
-      allowed := actor.cash_access and target.unit <> 'B';
+      allowed := actor.cash_access and target.unit <> 'B' and (actor.number not in (3,4)
+        or (actor.number = 3 and target.unit = 'A matriz')
+        or (actor.number = 4 and target.unit = 'A filial'));
       summary_ok := false;
       close_ok := false;
       begin
@@ -252,7 +283,7 @@ begin
   perform set_config('request.jwt.claim.sub', 'a7d10000-0000-4000-8000-000000000001', true);
   insert into public.branch_memberships (org_id, branch_id, user_id) values
     (matrix.org_id, matrix.branch_id, manager_id),
-    (satellite.org_id, satellite.branch_id, reception_id);
+    (satellite.org_id, satellite.branch_id, reception_id) on conflict do nothing;
 
   if not private.has_staff_branch_scope(matrix.org_id, null)
      or private.has_staff_branch_scope(other_org.org_id, other_org.branch_id) then

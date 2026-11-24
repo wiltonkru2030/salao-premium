@@ -105,3 +105,10 @@ A consulta após as duas chamadas encontrou a Comanda fechada, um pagamento conf
 ### Atribuições de unidade
 
 A migration de preparação da SEG-02 foi aplicada em QA. A matriz transacional confirmou atribuições distintas para gerência e recepção, ausência de escopo central nesses papéis, escopo central do proprietário, rejeição de autoatribuição e de filial de outro salão e revogação imediata. O papel anônimo ficou sem acesso de leitura à tabela e sem execução da função privada. A matriz anterior de Clientes e Caixa voltou a passar. A consulta posterior confirmou zero atribuições e organizações de teste.
+
+
+### Verificação de escopo nos módulos
+
+Após a migration `20261124121700` em QA, gerente (matriz) e recepção (filial) leram e editaram clientes e agendamentos apenas na unidade atribuída. As RPCs de abertura, resumo e fechamento de Caixa aplicaram o mesmo escopo. A matriz executou oito cenários de leitura, 18 combinações de escrita e abertura e 18 de resumo e fechamento. Seis combinações de resumo e fechamento permaneceram autorizadas. Proprietário e financeiro conservaram as operações de Caixa nas duas unidades do salão A, e os cenários do outro salão seguiram recusados. Os resultados anteriores documentam o comportamento antes da migration.
+
+A migração passa a exigir atribuições para gerente e recepção. A conferência de QA cobre operações diretas e as RPCs de Caixa exercitadas. As RPCs de espera, pacotes, início de atendimento, pagamentos e demais operações integradas ainda precisam de revisão de escopo.
