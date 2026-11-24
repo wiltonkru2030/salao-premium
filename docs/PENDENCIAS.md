@@ -1,0 +1,17 @@
+# Registro de pendências do Salão Premium
+
+Use o identificador para vincular código, teste e evidência de conclusão. Todas as linhas começam abertas, salvo atualização explícita no [progresso](PROGRESSO.md).
+
+| ID | Módulo e referência | Prioridade e gravidade | Solução, dependência e aceite |
+| --- | --- | --- | --- |
+| AUD-01 | `docs/`, workflows e Supabase | Alta, incompletude de evidência | Concluir inventário por arquivo e revisar objetos, logs, controles e configurações disponíveis. Registrar escopo e evidência para cada achado. |
+| QA-01 | `src/agenda/tests/services.test.js` | Alta, CI dependente do fuso | Usar horários civis consistentes no teste e executar em UTC e em fuso brasileiro. |
+| DB-01 | `supabase/migrations` e `snapshot-remoto` | Alta, risco de deploy e recuperação | Comparar SQL e efeitos das versões divergentes. Reproduzir o esquema em homologação antes de sincronizar. |
+| SEG-01 | Supabase Auth, RLS, funções e papéis | Alta, autorização e credenciais | Confirmar recursos de senha disponíveis, revisar metadados e testar isolamento por papel e unidade em QA. |
+| UI-01 | `src/styles`, `cliente/styles`, `professional` | Alta, cobertura visual | Consolidar tema, marca e controles compartilhados. Aprovar contraste, responsividade e estados nas três aplicações. |
+| UX-01 | `src/components/autocomplete.js` | Alta, seleção inconsistente | Validar descarte de buscas obsoletas, estados, acessibilidade e preenchimento do ID e campos relacionados. |
+| FORM-01 | `src/utils/input-masks.js` e formulários | Alta, dados inconsistentes | Auditar máscaras, validação, CEP, formatação pt-BR e casos de colagem e edição. |
+| CODE-01 | `scripts/audit-code-structure.mjs` | Média, manutenção | Separar arquivos extensos e documentar responsabilidades e contratos. Validar regressões. |
+| OPS-01 | Agenda, Orçamentos, Caixa, Estoque e Comissões | Alta, integridade operacional | Homologar pagamentos, compensações, concorrência e operações integradas no banco de QA. |
+| APPS-01 | `cliente` e `professional` | Alta, cobertura de aplicativos | Validar login, revogação, PIN local, papéis, autonomia e fluxos completos. |
+| PERF-01 | Build, consultas e advisors | Média, desempenho | Registrar baseline em navegador e banco. Rever índices com carga e planos reais. |

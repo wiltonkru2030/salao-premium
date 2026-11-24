@@ -22,6 +22,7 @@ Painel administrativo, App Profissional e Área da Cliente integrados ao mesmo d
 - [Testes e auditorias](#testes-e-auditorias)
 - [Situação e critérios de entrega](#situação-e-critérios-de-entrega)
 - [Documentação técnica](#documentação-técnica)
+- [Auditoria e plano de execução](docs/AUDITORIA-GERAL.md)
 
 ## Aplicações e tecnologias
 
