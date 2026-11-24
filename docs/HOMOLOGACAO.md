@@ -112,3 +112,10 @@ A migration de preparação da SEG-02 foi aplicada em QA. A matriz transacional 
 Após a migration `20261124121700` em QA, gerente (matriz) e recepção (filial) leram e editaram clientes e agendamentos apenas na unidade atribuída. As RPCs de abertura, resumo e fechamento de Caixa aplicaram o mesmo escopo. A matriz executou oito cenários de leitura, 18 combinações de escrita e abertura e 18 de resumo e fechamento. Seis combinações de resumo e fechamento permaneceram autorizadas. Proprietário e financeiro conservaram as operações de Caixa nas duas unidades do salão A, e os cenários do outro salão seguiram recusados. Os resultados anteriores documentam o comportamento antes da migration.
 
 A migração passa a exigir atribuições para gerente e recepção. A conferência de QA cobre operações diretas e as RPCs de Caixa exercitadas. As RPCs de espera, pacotes, início de atendimento, pagamentos e demais operações integradas ainda precisam de revisão de escopo.
+
+
+### Recebimento com escopo de unidade
+
+A migration `20261124121910` aplica as atribuições às RPCs de recebimento, cancelamento e devolução de Comanda e pagamento de despesa. Também limita consultas diretas a comandas, vendas, pagamentos, itens e movimentos de estoque. Para gerente e recepção, as RPCs alteradas usam Caixa da unidade, sem fallback para Caixa central.
+
+Em QA, a mesma chamada para receber R$ 40,01 foi recusada enquanto o gerente só tinha vínculo organizacional. Após a atribuição à unidade, o recebimento parcial foi aceito. O proprietário concluiu a quitação e devolução, com os mesmos resultados de Caixa e estoque do cenário anterior. Os cenários específicos de cancelamento e pagamento de despesa para gerente e recepção continuam pendentes.

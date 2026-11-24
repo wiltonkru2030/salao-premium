@@ -30,3 +30,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Adicionada gestão de atribuições por unidade para proprietários e administradores na página Equipe e permissões.
 
 - Aplicado em QA o escopo de unidade nas tabelas operacionais e nas RPCs de Caixa, com verificação de leitura, edição, abertura e fechamento.
+
+- Acrescentada verificação de unidade nas RPCs financeiras encadeadas e nas consultas às entidades vinculadas.

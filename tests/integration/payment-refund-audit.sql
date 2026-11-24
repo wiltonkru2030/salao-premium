@@ -5,7 +5,9 @@ begin;
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('a7d20000-0000-4000-8000-000000000001', 'payment-audit@salaopremium.test',
-   '{"organization_name":"QA pagamento transacional"}');
+   '{"organization_name":"QA pagamento transacional"}'),
+  ('a7d20000-0000-4000-8000-000000000002', 'payment-manager-audit@salaopremium.test',
+   '{"account_type":"staff"}');
 
 create temporary table payment_audit_fixture on commit drop as
 select o.id as org_id, b.id as branch_id, gen_random_uuid() as order_id,
@@ -14,6 +16,9 @@ from public.organizations o
 join public.branches b on b.org_id = o.id and b.is_main
 join public.org_memberships m on m.org_id = o.id
 where m.user_id = 'a7d20000-0000-4000-8000-000000000001';
+
+insert into public.org_memberships (org_id, user_id, role)
+select org_id, 'a7d20000-0000-4000-8000-000000000002', 'manager' from payment_audit_fixture;
 
 insert into public.products (id, org_id, branch_id, name, sale_price, stock_quantity)
 select product_id, org_id, branch_id, 'Produto QA pagamento', 100.03, 2
@@ -59,7 +64,21 @@ begin
   exception when invalid_parameter_value then null;
   end;
 
+  perform set_config('request.jwt.claim.sub', 'a7d20000-0000-4000-8000-000000000002', true);
+  begin
+    perform public.register_service_order_payment(fixture.order_id, 40.01, 'pix');
+    raise exception 'Gerente sem atribuição conseguiu receber pagamento';
+  exception when insufficient_privilege then
+    if sqlerrm <> 'Sem permissão para operar nesta unidade.' then raise; end if;
+  end;
+
+  perform set_config('request.jwt.claim.sub', 'a7d20000-0000-4000-8000-000000000001', true);
+  insert into public.branch_memberships (org_id, branch_id, user_id)
+  values (fixture.org_id, fixture.branch_id, 'a7d20000-0000-4000-8000-000000000002');
+
+  perform set_config('request.jwt.claim.sub', 'a7d20000-0000-4000-8000-000000000002', true);
   result := public.register_service_order_payment(fixture.order_id, 40.01, 'pix');
+  perform set_config('request.jwt.claim.sub', 'a7d20000-0000-4000-8000-000000000001', true);
   if (result->>'paid_total')::numeric is distinct from 40.01
      or (result->>'balance')::numeric is distinct from 60.02
      or (result->>'closed')::boolean is distinct from false then
