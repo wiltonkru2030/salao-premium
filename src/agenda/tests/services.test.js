@@ -13,6 +13,11 @@ import {
   previewMoveAppointment
 } from "../services/agenda.service.js";
 
+/** Converte a hora civil do cenário em timestamp no mesmo fuso usado pela Agenda. */
+function appointmentTimestamp(time) {
+  return new Date("2027-02-10T" + time + ":00").toISOString();
+}
+
 const orgId = "org-test";
 const professionalId = "professional-test";
 const existing = {
@@ -25,8 +30,8 @@ const existing = {
   customer_phone: null,
   service_name: "Corte",
   professional_name: "Ana",
-  starts_at: "2027-02-10T09:00:00.000Z",
-  ends_at: "2027-02-10T10:00:00.000Z",
+  starts_at: appointmentTimestamp("09:00"),
+  ends_at: appointmentTimestamp("10:00"),
   price: 100,
   notes: null,
   status: "scheduled",
@@ -105,21 +110,22 @@ export async function runAgendaServiceChecks() {
   const base={
     customer_id:"customer-2",professional_id:professionalId,service_id:"service-1",
     customer_name:"Cliente B",service_name:"Escova",professional_name:"Ana",
-    starts_at:"2027-02-10T10:00:00.000Z",ends_at:"2027-02-10T11:00:00.000Z",
+    starts_at:appointmentTimestamp("10:00"),ends_at:appointmentTimestamp("11:00"),
     price:120,status:"scheduled"
   };
   const created=await createAppointment(base,context);
+  assert.equal(created.ok, true, created.errors?.join(" "));
   checks.push(["cria agendamento no repositório Supabase",created.ok&&client.rows.length===2]);
-  const duplicate=await createAppointment({...base,starts_at:"2027-02-10T09:30:00.000Z",ends_at:"2027-02-10T10:30:00.000Z",customer_name:"Cliente C"},context);
+  const duplicate=await createAppointment({...base,starts_at:appointmentTimestamp("09:30"),ends_at:appointmentTimestamp("10:30"),customer_name:"Cliente C"},context);
   checks.push(["rejeita conflito do mesmo profissional",!duplicate.ok&&client.rows.length===2]);
 
   const moved=await updateAppointment(created.appointment.id,{
-    starts_at:"2027-02-10T11:00:00.000Z",ends_at:"2027-02-10T12:00:00.000Z"
+    starts_at:appointmentTimestamp("11:00"),ends_at:appointmentTimestamp("12:00")
   },context);
-  checks.push(["atualiza horário persistido sem conflito",moved.ok&&moved.appointment.starts_at==="2027-02-10T11:00:00.000Z"]);
+  checks.push(["atualiza horário persistido sem conflito",moved.ok&&moved.appointment.starts_at===appointmentTimestamp("11:00")]);
 
   const preview=await previewMoveAppointment(created.appointment.id,{
-    starts_at:"2027-02-10T09:30:00.000Z",ends_at:"2027-02-10T10:30:00.000Z"
+    starts_at:appointmentTimestamp("09:30"),ends_at:appointmentTimestamp("10:30")
   },context);
   checks.push(["prévia de reagendamento detecta conflito",!preview.ok]);
 
