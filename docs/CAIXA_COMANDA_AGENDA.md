@@ -1,5 +1,7 @@
 # Agenda, Comanda e Caixa — fluxo operacional
 
+> Revisão documental: 24/11/2026. Evidências do código e inventário de 20/11; não houve nova consulta ao banco ou execução de testes nesta revisão. Consulte o README mestre.
+
 ## Agenda
 
 A Agenda administrativa consulta os registros persistidos em `appointments` e os bloqueios em `appointment_blocks`. O calendário apresenta Dia/Semana/Mês, profissional, horário, cliente, serviço e estado.
@@ -37,7 +39,7 @@ A Comanda é o registro operacional do atendimento. A camada de operações fica
 - Entradas incluem cada pagamento da Comanda.
 - Saídas incluem pagamento de comissão e estornos.
 - Movimentos de Comanda e estornos possuem `service_order_id` para consulta e rastreabilidade.
-- O Caixa administrativo atual opera o caixa padrão da organização (`branch_id IS NULL`).
+- O serviço atual chama `open_cash_register_for_branch` para caixa central ou por filial; `get_cash_register_summary` agrega totais e separa dinheiro físico. A migration 20261120073222 versiona abertura, resumo e fechamento. Testar seleção de unidade, fallback central previsto pelo backend e isolamento financeiro antes do aceite.
 
 ## Cancelamento e estorno
 
@@ -74,9 +76,17 @@ A Comanda é o registro operacional do atendimento. A camada de operações fica
 - `20261113011915_scope_professional_app_access_to_explicit_tenant`
 - `20261113012733_enforce_professional_service_on_quote_scheduling`
 
+## Evoluções de 20/11
+
+- 20261120211409: validação de pagamento em centavos exatos; não arredondar entradas inválidas silenciosamente.
+- 20261120212042 / 20261120212306: pacotes e fila de espera com RLS e RPCs.
+- 20261120212554: conversão atômica de espera em reserva e liberação após cancelamento.
+- 20261120213713: proteção contra sugestões que atravessam a meia-noite.
+- Executar test:cash, test:comanda, test:agenda, test:agenda-offers e test:sql-appointment-offers via npm run; homologar concorrência e escopo por filial.
+
 ## Testes pendentes
 
-As migrations e funções foram aplicadas/verificadas no banco, e os workflows de build/regressão verificam sintaxe, imports e testes automatizados. Ainda precisam de teste operacional com dados controlados:
+Há migrations e testes versionados; o estado atual do banco não foi revalidado nesta revisão. Ainda precisam de teste operacional com dados controlados:
 - pagamento em 2 ou mais parcelas;
 - alteração de percentual entre parcelas;
 - pagamento de comissão e conferência da saída;
