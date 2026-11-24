@@ -32,3 +32,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Aplicado em QA o escopo de unidade nas tabelas operacionais e nas RPCs de Caixa, com verificação de leitura, edição, abertura e fechamento.
 
 - Acrescentada verificação de unidade nas RPCs financeiras encadeadas e nas consultas às entidades vinculadas.
+
+- Aplicado escopo de unidade às RPCs de espera, encaixes e início de atendimento, com cenários positivos e negativos em QA.

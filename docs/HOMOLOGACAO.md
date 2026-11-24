@@ -119,3 +119,8 @@ A migração passa a exigir atribuições para gerente e recepção. A conferên
 A migration `20261124121910` aplica as atribuições às RPCs de recebimento, cancelamento e devolução de Comanda e pagamento de despesa. Também limita consultas diretas a comandas, vendas, pagamentos, itens e movimentos de estoque. Para gerente e recepção, as RPCs alteradas usam Caixa da unidade, sem fallback para Caixa central.
 
 Em QA, a mesma chamada para receber R$ 40,01 foi recusada enquanto o gerente só tinha vínculo organizacional. Após a atribuição à unidade, o recebimento parcial foi aceito. O proprietário concluiu a quitação e devolução, com os mesmos resultados de Caixa e estoque do cenário anterior. Os cenários específicos de cancelamento e pagamento de despesa para gerente e recepção continuam pendentes.
+
+
+### Agenda, espera e início de atendimento
+
+A migration `20261124122045` verifica a atribuição nas RPCs de lista de espera, encaixes e início de atendimento simples ou agrupado. Em QA, uma conta de recepção vinculada à filial conseguiu cadastrar e consultar uma solicitação e iniciar um atendimento naquela unidade. A mesma conta foi recusada ao listar a espera e iniciar atendimento na matriz. A matriz de permissões de Clientes e Caixa foi reexecutada. O cenário de reserva pela lista de espera, o atendimento agrupado e as operações de pacotes ainda exigem cobertura própria.

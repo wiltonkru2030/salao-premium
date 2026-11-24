@@ -61,10 +61,19 @@ select org_id, branch_id, case unit when 'A matriz' then
   else 'a7d10000-0000-4000-8000-000000000004'::uuid end
 from audit_targets where unit in ('A matriz', 'A filial');
 
-insert into public.appointments (org_id, branch_id, customer_id, customer_name, service_name, starts_at, ends_at)
-select org_id, branch_id, customer_id, 'Cliente auditoria', 'Agenda RLS QA',
-       now() + interval '1 day', now() + interval '1 day 1 hour'
-from audit_targets;
+insert into public.services (org_id, name, duration_minutes, price)
+select distinct org_id, 'Agenda RLS QA', 60, 20.00 from audit_targets;
+insert into public.appointments
+  (org_id, branch_id, customer_id, service_id, customer_name, service_name, starts_at, ends_at, price)
+select t.org_id, t.branch_id, t.customer_id, s.id, 'Cliente auditoria', 'Agenda RLS QA',
+       now() + interval '1 day', now() + interval '1 day 1 hour', 20.00
+from audit_targets t join public.services s on s.org_id = t.org_id and s.name = 'Agenda RLS QA';
+
+create temporary table audit_agenda_targets on commit drop as
+select t.org_id, t.branch_id, t.unit, a.id as appointment_id, a.customer_id, a.service_id
+from audit_targets t join public.appointments a
+  on a.org_id = t.org_id and a.branch_id = t.branch_id and a.service_name = 'Agenda RLS QA';
+grant select on audit_agenda_targets to authenticated;
 
 create temporary table audit_writes (
   actor text, unit text, customers_updated bigint, expenses_read bigint, cash_opened boolean
@@ -330,10 +339,53 @@ end
 $audit$;
 reset role;
 
+-- A recepção pode iniciar atendimento e listar espera apenas na filial.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a7d10000-0000-4000-8000-000000000004', true);
+do $audit$
+declare
+  target record;
+  order_result jsonb;
+  saved_waitlist_id uuid;
+begin
+  -- A recepção conserva a atribuição da filial após o teste de revogação.
+  select * into strict target from audit_agenda_targets where unit = 'A filial';
+  saved_waitlist_id := public.add_appointment_waitlist(
+    target.org_id, target.branch_id, target.customer_id, target.service_id, null,
+    current_date + 2, current_date + 3, '09:00', '11:00', 'Auditoria de QA'
+  );
+  if saved_waitlist_id is null or (select count(*) from public.list_appointment_waitlist(
+    target.org_id, target.branch_id, 0, 10
+  ) as waiting where waiting.waitlist_id = saved_waitlist_id) <> 1 then
+    raise exception 'Solicitação da unidade atribuída não foi listada';
+  end if;
+  order_result := public.start_appointment_service_order(target.appointment_id, null, false);
+  if order_result->>'order_id' is null then
+    raise exception 'Atendimento da unidade atribuída não iniciou';
+  end if;
+
+  select * into strict target from audit_agenda_targets where unit = 'A matriz';
+  begin
+    perform public.list_appointment_waitlist(target.org_id, target.branch_id, 0, 10);
+    raise exception 'Lista de espera de unidade sem vínculo acessível';
+  exception when insufficient_privilege then
+    if sqlerrm <> 'Sem permissão para operar nesta unidade.' then raise; end if;
+  end;
+  begin
+    perform public.start_appointment_service_order(target.appointment_id, null, false);
+    raise exception 'Atendimento iniciou em unidade sem vínculo';
+  exception when insufficient_privilege then
+    if sqlerrm <> 'Sem permissão para operar nesta unidade.' then raise; end if;
+  end;
+end
+$audit$;
+reset role;
+
 select jsonb_build_object(
   'read', (select jsonb_agg(to_jsonb(r) order by actor) from audit_observations r),
   'write', (select jsonb_agg(to_jsonb(w) order by actor, unit) from audit_writes w),
   'branch_assignment_checks', 'ok',
+  'agenda_rpc_checks', 'ok',
   'closure_cases', (select count(*) from audit_closures),
   'closure_allowed', (select count(*) from audit_closures where summary_allowed and close_allowed)
 ) as result;
