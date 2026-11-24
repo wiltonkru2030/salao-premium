@@ -1,5 +1,7 @@
 # Histórico de migrations — reconciliação necessária
 
+> Revisão documental: 24/11/2026. Evidências do código e inventário de 20/11; não houve nova consulta ao banco ou execução de testes nesta revisão. Consulte o README mestre.
+
 ## Estado verificado em 13/11/2026
 - Supabase remoto: **58 migrations registradas**.
 - Repositório `main`: **31 arquivos SQL** em `supabase/migrations/`.
@@ -66,8 +68,12 @@ Essas migrations foram recuperadas do commit Lovable `1f2db25dc2c61cda5668857520
 
 ## Atualização de 20/11/2026 — conciliação parcial
 
-- Inventário de 90 versões remotas registrado em `docs/migrations/remote-history-2026-11-20.json`. O comando `npm run audit:migrations` compara os arquivos locais com este inventário (somente leitura); não verifica equivalência semântica do SQL e não foi executado em um checkout completo.
+- Na etapa inicial, inventário de 90 versões remotas registrado em `docs/migrations/remote-history-2026-11-20.json`. O comando `npm run audit:migrations` compara os arquivos locais com este inventário (somente leitura); não verifica equivalência semântica do SQL e não foi executado em um checkout completo.
 - Foram alinhadas as versões efetivamente registradas `20261120072329` (políticas da Agenda) e `20261120072618` (RPCs privadas), com SQL extraído do histórico remoto e comparação com os arquivos anteriores. As duas versões duplicadas foram retiradas; referência do teste de RPCs atualizada.
 - Cinco SQLs financeiros sem versão registrada foram preservados byte a byte em `docs/sql/legacy-unapplied/` e retirados de `supabase/migrations/`: 20261119150000 (pagamento), 20261119170000 (snapshot), 20261119180000 (caixa físico), 20261119190000 (resumo), 20261119200000 (caixa por filial). Não são migrations prontas para implantação. O teste de snapshot aponta para o arquivo arquivado. Os rascunhos financeiros mais recentes ainda precisam de validação transacional.
 - A comparação com main aponta divergência; os oito commits exclusivos da main contêm o snapshot remoto em `supabase/snapshot-remoto/`. Não mesclar automaticamente, não copiar o snapshot inteiro para a pasta ativa e não executar `db push` ou reparar o histórico até conciliar todas as versões e testar replay em banco isolado.
 - Outros arquivos locais sem versão correspondente e migrations remotas antigas ainda requerem auditoria completa. O inventário histórico de 13/11 acima é referência, não um retrato atual. Nenhuma operação de escrita ou reparo do banco feita nesta etapa; nenhum teste de integração executado.
+
+## Revisão documental de 24/11/2026
+
+O arquivo de inventário de 20/11 agora contém 97 versões, incluindo índices de Agenda/Caixa, pagamento em centavos, pacotes, fila de espera, disponibilidade e fidelidade. O total de arquivos locais e a divergência atual não foram medidos em checkout completo. O comando npm run audit:migrations compara nomes de versões, bloqueia divergências e não conecta ao banco. Antes de qualquer deploy, atualizar inventário por leitura autorizada, reconciliar conteúdos originais e validar replay em QA; não executar db push ou repair às cegas. Preservar os registros históricos acima.
