@@ -56,3 +56,44 @@ export async function setReceptionAppAccess({client,orgId,userId,enabled}={}) {
     return data;
   } catch(error) { throw mapTeamError(error); }
 }
+
+/**
+ * Carrega unidades ativas e atribuições visíveis no salão da equipe.
+ * @param {object} options Cliente Supabase e organização ativa.
+ * @returns {Promise<object>} Unidades e vínculos permitidos pelas políticas do banco.
+ */
+export async function fetchTeamBranches({client, orgId}={}) {
+  requireContext(client, orgId);
+  try {
+    const [branches, assignments] = await Promise.all([
+      client.from("branches").select("id,name").eq("org_id", orgId).eq("active", true).order("name"),
+      client.from("branch_memberships").select("branch_id,user_id").eq("org_id", orgId)
+    ]);
+    if (branches.error || assignments.error) throw branches.error || assignments.error;
+    return {branches: branches.data || [], assignments: assignments.data || []};
+  } catch (error) { throw mapTeamError(error); }
+}
+
+/**
+ * Adiciona ou revoga uma unidade de um membro. A RLS autoriza a escrita e as
+ * chaves compostas vinculam membro e unidade ao mesmo salão.
+ * @param {object} options Cliente, organização, unidade, usuário e estado desejado.
+ * @returns {Promise<void>} Resolve quando o banco confirma a operação.
+ */
+export async function setTeamBranchAssignment({client, orgId, branchId, userId, assigned}={}) {
+  requireContext(client, orgId);
+  if (!branchId || !userId || typeof assigned !== "boolean") {
+    throw new TypeError("Selecione uma unidade e um membro válidos.");
+  }
+  try {
+    const table = client.from("branch_memberships");
+    const result = await (assigned
+      ? table.upsert({org_id: orgId, branch_id: branchId, user_id: userId}, {
+          onConflict: "org_id,branch_id,user_id", ignoreDuplicates: true
+        })
+      : table.delete().eq("org_id", orgId).eq("branch_id", branchId).eq("user_id", userId)
+          .select("branch_id"));
+    if (result.error) throw result.error;
+    if (!assigned && !result.data?.length) throw {code: "42501"};
+  } catch (error) { throw mapTeamError(error); }
+}

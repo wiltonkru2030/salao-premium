@@ -3,13 +3,15 @@
  * Responsabilidade: validar escopo do tenant, perfis e RPC de acesso explícito.
  */
 import assert from "node:assert/strict";
-import {fetchTeamWorkspace,setReceptionAppAccess} from "./team.service.js";
+import {fetchTeamWorkspace,fetchTeamBranches,setTeamBranchAssignment,setReceptionAppAccess} from "./team.service.js";
 
 function mockClient(tables={},rpcResult={data:{enabled:true},error:null},error=null) {
   const calls=[];
   return {calls,from(table) {
     const call={table,filters:[]};calls.push(call);
     const query={
+      upsert(payload,options){call.payload=payload;call.options=options;return query;},
+      delete(){call.deleted=true;return query;},
       select(columns){call.columns=columns;return query;},
       eq(key,value){call.filters.push([key,value]);return query;},
       in(key,values){call.filters.push([key,values]);return query;},
@@ -48,6 +50,24 @@ async function run(){
   const network=mockClient();
   network.rpc=async()=>{throw new Error("network SQL secret");};
   await assert.rejects(()=>setReceptionAppAccess({client:network,orgId:"org-a",userId:"x",enabled:false}),e=>!e.message.includes("network SQL secret"));
+  const units = mockClient({
+    branches: [
+      {id:"matrix",org_id:"org-a",active:true},
+      {id:"inactive",org_id:"org-a",active:false},
+      {id:"other",org_id:"org-b",active:true}
+    ],
+    branch_memberships: [{org_id:"org-a",branch_id:"matrix",user_id:"manager"}]
+  });
+  const workspace = await fetchTeamBranches({client:units,orgId:"org-a"});
+  assert.deepEqual(workspace.branches.map(branch=>branch.id),["matrix"]);
+  assert.equal(workspace.assignments.length,1);
+  const assignment = {client:units,orgId:"org-a",branchId:"matrix",userId:"manager"};
+  await setTeamBranchAssignment({...assignment,assigned:true});
+  assert.deepEqual(units.calls.at(-1).payload,{org_id:"org-a",branch_id:"matrix",user_id:"manager"});
+  assert.equal(units.calls.at(-1).options.ignoreDuplicates,true);
+  await setTeamBranchAssignment({...assignment,assigned:false});
+  assert.deepEqual(units.calls.at(-1).filters,[["org_id","org-a"],["branch_id","matrix"],["user_id","manager"]]);
+  await assert.rejects(()=>setTeamBranchAssignment({...assignment,userId:"other",assigned:false}),/permissão/);
   console.log("Testes do serviço de equipe: OK");
 }
 run().catch(error=>{process.stderr.write(error.message+"\n");process.exitCode=1;});

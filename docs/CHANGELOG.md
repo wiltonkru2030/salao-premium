@@ -26,3 +26,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Confirmada em QA a recusa da segunda quitação concorrente após a primeira transação confirmar o pagamento.
 
 - Versionada a migration de preparação de atribuições por unidade e verificados os cenários de isolamento e revogação em QA.
+
+- Adicionada gestão de atribuições por unidade para proprietários e administradores na página Equipe e permissões.

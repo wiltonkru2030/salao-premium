@@ -321,3 +321,20 @@ grid-template-columns:none}
 .professional-modal-foot .btn{flex:1}
 .professional-access-fields{right:-4px}
 }
+
+/* Controles de atribuição de unidades na página Equipe e permissões. */
+.team-unit-options {
+  display: grid;
+  gap: 6px;
+  min-inline-size: 0;
+  margin: 8px 0 0;
+}
+.team-unit-options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.team-unit-options input[type="checkbox"] {
+  inline-size: auto;
+  margin: 0;
+}
