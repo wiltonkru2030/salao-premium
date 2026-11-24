@@ -9,3 +9,5 @@ Este registro acompanha os critérios do [plano](PLANO-DE-EXECUCAO.md). A primei
 - Percentual de etapas concluídas: 0/13. A contagem mede aceite integral de etapas, não funcionalidades já existentes.
 
 SEG-02 em implementação, com gestão de atribuições na equipe e guardas de unidade testadas em QA para Clientes, Agenda, Caixa e recebimentos de Comanda.
+
+Aparência disponível nas três entradas. Painel testado em entrada, Configurações e Dashboard, com verificação visual por módulo ainda pendente.

@@ -1,5 +1,6 @@
 /** Painel administrativo: inicializa sessão, tenant e recursos globais; delega os eventos da Agenda ao controlador de domínio. */
 // Usa o alias renderApp para evitar colisão com a importação existente na base main durante o merge.
+import { createPlatformAppearance } from './components/platform-appearance.js';
 import { state } from './state.js';
 import { installGlobalMasks } from './utils/input-masks.js';
 import { installGlobalErrorHandlers, reportError } from './utils/errors.js';
@@ -10,6 +11,7 @@ import { supabase } from './supabase/client.js';
 import { resolveBranchContext } from './modules/branches/branch-context.service.js';
 
 // Inicializa máscaras, mensagens de erro e eventos da Agenda antes do primeiro render.
+const appearance = createPlatformAppearance("salao-premium:admin-appearance");
 installGlobalMasks();
 installGlobalErrorHandlers();
 installAgendaController();
@@ -37,6 +39,10 @@ async function refreshBranchContext() {
 }
 
 document.addEventListener("change",async event=>{
+  if (event.target?.matches("[data-platform-appearance]")) {
+    appearance.set(event.target.value);
+    return;
+  }
   if(event.target?.id==="branch-switcher") {
     const selectedValue=String(event.target.value||"");
     const selected=selectedValue==="__all__"

@@ -1,0 +1,52 @@
+/* Aparência administrativa. Aplica a paleta ao shell e aos controles comuns. */
+.admin-appearance-settings {
+  padding: 0 16px;
+  margin-block-end: 16px;
+}
+
+:root[data-theme="dark"] #app :is(.main-area, .page-content) {
+  background: var(--sp-canvas);
+  color: var(--sp-ink);
+}
+
+:root[data-theme="dark"] #app :is(.sidebar,.topbar,.surface,.record-card,.metric-card,
+  .sp-overview-card,.sp-overview-intro,.empty-state,.sp-modal-shell,.drawer-panel) {
+  background: var(--sp-paper);
+  color: var(--sp-ink);
+  border-color: var(--sp-line);
+}
+
+:root[data-theme="dark"] #app :is(.nav-item,.breadcrumb,.breadcrumb b,.brand b,.page-head h1,
+  .sp-overview-card strong,.metric-card strong,.record-main b) {
+  color: var(--sp-ink);
+}
+
+:root[data-theme="dark"] #app :is(.nav-group-label,.sidebar-footer small,.brand small,
+  .page-head p,.sp-overview-card small,.sp-overview-card-top,.metric-card small) {
+  color: var(--sp-muted);
+}
+
+:root[data-theme="dark"] #app .nav-item img {
+  filter: brightness(0) invert(0.94);
+}
+
+:root[data-theme="dark"] #app .nav-item:is(:hover,.active) {
+  background: var(--sp-gold-soft);
+}
+
+:root[data-theme="dark"] #app :is(input:not([type=checkbox],[type=radio],[type=hidden]),
+  textarea,select,.icon-btn,.btn:not(.primary,.danger)) {
+  background: var(--sp-paper);
+  color: var(--sp-ink);
+  border-color: var(--sp-line-strong);
+}
+
+:root[data-theme="dark"] #app .btn.primary {
+  background: var(--sp-action);
+  color: var(--sp-on-action);
+  border-color: var(--sp-action);
+}
+
+:root[data-theme="dark"] #app .btn.primary:hover {
+  background: var(--sp-action-hover);
+}

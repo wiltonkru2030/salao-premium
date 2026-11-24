@@ -17,9 +17,14 @@ O componente `src/components/platform-mark.js` usa o símbolo WebP transparente 
 
 ### Paleta da Área da Cliente
 
-As cores semânticas de superfície, texto, bordas, destaque e erro da Área da Cliente vêm de `design-tokens.css`. A escolha automática reage à alteração de aparência do dispositivo, e alterações locais de preferência aplicam o tema antes da sincronização remota. A ativação no painel administrativo depende da substituição de cores fixas nas suas interfaces e da conferência de contraste.
+As cores semânticas de superfície, texto, bordas, destaque e erro da Área da Cliente vêm de `design-tokens.css`. A escolha automática reage à alteração de aparência do dispositivo, e alterações locais de preferência aplicam o tema antes da sincronização remota. A Área da Cliente mantém a preferência por conta e sincroniza a escolha quando a sessão permite.
 
 
 ### Aparência do App Profissional
 
 A tela de entrada e as Configurações oferecem aparência automática, clara e escura. A preferência é local a este aparelho e a este aplicativo. As superfícies, os controles, o calendário e os cartões do Profissional usam a paleta semântica compartilhada. O teste em Chromium confirmou a troca instantânea, a escolha após recarregar e as cores do campo de login no modo escuro. Em QA, uma conta autenticada também aplicou o tema em Configurações e confirmou sua permanência ao navegar para a Agenda.
+
+
+### Aparência do painel administrativo
+
+A entrada e as Configurações oferecem aparência automática, clara e escura, com preferência persistida neste aparelho. A paleta escurece o menu, cabeçalho, Dashboard e controles compartilhados. O tema administrativo ainda exige conferência de contraste e revisão de cores fixas em telas específicas dos módulos.

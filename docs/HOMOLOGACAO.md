@@ -147,3 +147,8 @@ Em um build conectado ao Supabase de QA, a proprietária entrou no painel, atrib
 No App Profissional, a conta de QA com escopo completo selecionou tema escuro em **Configurações** e navegou até a **Agenda**. O tema permaneceu aplicado no conteúdo autenticado. As contas e a organização descartáveis foram removidas de QA.
 
 A configuração pública de Auth do projeto QA informa Google OAuth desabilitado. A jornada com conta Google exige ativar esse provedor no ambiente de homologação. A configuração de Passkey segue pendente de verificação.
+
+
+### Aparência administrativa em Chromium
+
+O build de QA aplicou o tema automático escuro na entrada, persistiu a seleção clara ao recarregar e aplicou a escolha escura em Configurações após login real. Conferidos as superfícies do menu, do conteúdo e dos cartões do Dashboard, além da inclusão da folha de autenticação no build. A organização e a conta descartáveis foram removidas. Falta a conferência de contraste por módulo e por largura de tela.

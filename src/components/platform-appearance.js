@@ -20,6 +20,7 @@ export function createPlatformAppearance(storageKey) {
   }
 
   const apply = () => {
+    document.documentElement.dataset.themePreference = preference;
     document.documentElement.dataset.theme = preference === "system"
       ? (scheme.matches ? "dark" : "light")
       : preference;
@@ -43,7 +44,7 @@ export function createPlatformAppearance(storageKey) {
  * @param {string} preference Preferência vigente. Os valores vêm da lista local.
  * @returns {string} Campo identificado para delegação do evento change.
  */
-export function renderPlatformAppearance(preference = "system") {
+export function renderPlatformAppearance(preference = globalThis.document?.documentElement.dataset.themePreference ?? "system") {
   return '<label class="sp-appearance-control">Aparência<select data-platform-appearance>' +
     Object.entries(labels).map(([value, label]) =>
       '<option value="' + value + '"' + (value === preference ? ' selected' : '') + '>' + label + '</option>'

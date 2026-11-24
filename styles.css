@@ -10,7 +10,7 @@
 
 @import url('./src/agenda/styles/agenda.css');
 
-@import url('./src/auth/auth.css?v=supabase-auth-20261112');
+@import url('./src/auth/auth.css');
 @import url('./src/styles/components.css');
 @import url('./src/styles/quotes.css');
 @import url('./src/styles/coupons.css');
@@ -55,3 +55,6 @@
 
 /* Camada final de padronização visual: prevalece sobre estilos antigos. */
 @import url('./src/styles/design-global-unification.css');
+
+/* Paleta escura do painel, aplicada após os estilos dos módulos. */
+@import url("./src/styles/design-admin-appearance.css");

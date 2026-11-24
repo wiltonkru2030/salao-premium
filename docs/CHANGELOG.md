@@ -44,3 +44,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Corrigidas respostas obsoletas no autocomplete e padronizados os estados, o teclado e o toque nos aplicativos que usam o componente.
 
 - Aplicada no App Profissional a paleta compartilhada com controle de aparência automática, clara e escura.
+
+- Disponibilizada aparência administrativa na entrada e em Configurações, com paleta aplicada ao layout compartilhado.
