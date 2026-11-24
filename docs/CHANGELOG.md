@@ -34,3 +34,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Acrescentada verificação de unidade nas RPCs financeiras encadeadas e nas consultas às entidades vinculadas.
 
 - Aplicado escopo de unidade às RPCs de espera, encaixes e início de atendimento, com cenários positivos e negativos em QA.
+
+- Protegida a gestão de pacotes por unidade, mantendo a leitura do catálogo compartilhado.

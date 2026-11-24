@@ -282,6 +282,9 @@ declare
   matrix record;
   satellite record;
   other_org record;
+  service_items jsonb;
+  shared_package_id uuid;
+  unit_package_id uuid;
   manager_id constant uuid := 'a7d10000-0000-4000-8000-000000000003';
   reception_id constant uuid := 'a7d10000-0000-4000-8000-000000000004';
 begin
@@ -293,6 +296,12 @@ begin
   insert into public.branch_memberships (org_id, branch_id, user_id) values
     (matrix.org_id, matrix.branch_id, manager_id),
     (satellite.org_id, satellite.branch_id, reception_id) on conflict do nothing;
+
+  select jsonb_build_array(jsonb_build_object(
+    'service_id', service_id, 'quantity', 1, 'pause_after_minutes', 0
+  )) into service_items from audit_agenda_targets where unit = 'A matriz';
+  shared_package_id := public.save_service_package(matrix.org_id, null,
+    'Pacote central QA', '', 20, service_items, null);
 
   if not private.has_staff_branch_scope(matrix.org_id, null)
      or private.has_staff_branch_scope(other_org.org_id, other_org.branch_id) then
@@ -319,6 +328,28 @@ begin
     values (satellite.org_id, satellite.branch_id, manager_id);
     raise exception 'Autoatribuição do gerente aceita';
   exception when insufficient_privilege then null;
+  end;
+
+  unit_package_id := public.save_service_package(matrix.org_id, matrix.branch_id,
+    'Pacote matriz QA', '', 20, service_items, null);
+  if unit_package_id is null or (select count(*) from public.service_packages
+    where id in (shared_package_id, unit_package_id)) <> 2 then
+    raise exception 'Pacotes central e de unidade deveriam estar visíveis';
+  end if;
+  perform public.set_service_package_active(matrix.org_id, unit_package_id, false);
+
+  begin
+    perform public.set_service_package_active(matrix.org_id, shared_package_id, false);
+    raise exception 'Gerente alterou pacote central';
+  exception when invalid_parameter_value then
+    if sqlerrm <> 'Pacote não encontrado.' then raise; end if;
+  end;
+  begin
+    perform public.save_service_package(matrix.org_id, satellite.branch_id,
+      'Pacote filial QA', '', 20, service_items, null);
+    raise exception 'Gerente criou pacote fora da unidade atribuída';
+  exception when insufficient_privilege then
+    if sqlerrm <> 'Sem permissão para operar nesta unidade.' then raise; end if;
   end;
 
   perform set_config('request.jwt.claim.sub', reception_id::text, true);
@@ -386,6 +417,7 @@ select jsonb_build_object(
   'write', (select jsonb_agg(to_jsonb(w) order by actor, unit) from audit_writes w),
   'branch_assignment_checks', 'ok',
   'agenda_rpc_checks', 'ok',
+  'service_package_checks', 'ok',
   'closure_cases', (select count(*) from audit_closures),
   'closure_allowed', (select count(*) from audit_closures where summary_allowed and close_allowed)
 ) as result;

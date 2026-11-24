@@ -123,4 +123,9 @@ Em QA, a mesma chamada para receber R$ 40,01 foi recusada enquanto o gerente só
 
 ### Agenda, espera e início de atendimento
 
-A migration `20261124122045` verifica a atribuição nas RPCs de lista de espera, encaixes e início de atendimento simples ou agrupado. Em QA, uma conta de recepção vinculada à filial conseguiu cadastrar e consultar uma solicitação e iniciar um atendimento naquela unidade. A mesma conta foi recusada ao listar a espera e iniciar atendimento na matriz. A matriz de permissões de Clientes e Caixa foi reexecutada. O cenário de reserva pela lista de espera, o atendimento agrupado e as operações de pacotes ainda exigem cobertura própria.
+A migration `20261124122045` verifica a atribuição nas RPCs de lista de espera, encaixes e início de atendimento simples ou agrupado. Em QA, uma conta de recepção vinculada à filial conseguiu cadastrar e consultar uma solicitação e iniciar um atendimento naquela unidade. A mesma conta foi recusada ao listar a espera e iniciar atendimento na matriz. A matriz de permissões de Clientes e Caixa foi reexecutada. O cenário de reserva pela lista de espera, e o atendimento agrupado ainda exigem cobertura própria.
+
+
+### Pacotes por unidade
+
+Após a migration `20261124122253`, o proprietário criou um pacote central e o gerente atribuído à matriz criou e inativou um pacote daquela unidade. O gerente pôde consultar o catálogo central. O banco recusou a inativação do pacote central e a criação de um pacote na filial sem vínculo.
