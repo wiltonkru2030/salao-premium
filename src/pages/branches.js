@@ -5,6 +5,7 @@
  * Segurança: consultas/mutações passam pelo serviço do domínio e pelas políticas RLS.
  * Limite: a matriz é administrada pelo cadastro da organização e não pode ser inativada aqui.
  */
+import {formatSavedPhone} from "../utils/input-masks.js";
 import {supabase} from "../supabase/client.js";
 import {state} from "../state.js";
 import {head,esc,toast,btn} from "../utils.js";
@@ -29,7 +30,7 @@ function openBranchModal(branch=null) {
   form.reset();
   form.elements.branch_id.value=branch?.id||"";
   form.elements.name.value=branch?.name||"";
-  form.elements.phone.value=branch?.phone||"";
+  form.elements.phone.value=formatSavedPhone(branch?.phone);
   form.elements.email.value=branch?.email||"";
   form.elements.document.value=branch?.document||"";
   const title=dialog.querySelector("#branch-modal-title");

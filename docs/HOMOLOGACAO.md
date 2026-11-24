@@ -176,3 +176,7 @@ O painel de Comissões foi renderizado com dados sintéticos e o CSS do build em
 ### Contraste e estados do catálogo
 
 Produtos, Serviços e Categorias foram renderizados com dados sintéticos e CSS do build em Chromium. A amostra de preço, estoque, duração, estado ativo ou inativo, seletor de categoria e ação de inativação atingiu contraste mínimo de 6,01:1 no tema escuro e 4,91:1 no claro, em 390 e 1280 px. O seletor de categorias informa a opção ativa por `aria-pressed`. A verificação visual não alterou registros.
+
+### Máscaras de documentos e telefone
+
+Em Chromium, foram testados entrada de telefone internacional, remoção do DDI brasileiro com cursor no meio, CPF após fim da composição, CNPJ numérico, campo somente leitura e e-mail no login misto. Os formulários de edição passaram a apresentar telefones nacionais salvos em dígitos no formato com DDD. A formatação inicial preserva valores legados fora desse padrão. A edição de profissional formata o CNPJ salvo em 14 dígitos. CNPJ alfanumérico ainda exige validação coordenada na interface, nos serviços, na RPC de cadastro e na constraint do banco.

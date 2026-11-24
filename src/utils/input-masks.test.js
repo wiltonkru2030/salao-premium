@@ -1,6 +1,6 @@
 /** Testes de regressão das máscaras de CPF/CNPJ, telefone, CEP, moeda e login por e-mail. */
 import assert from "node:assert/strict";
-import { detectInputMask, formatCpf, formatCnpj, formatPhone, formatInternationalPhone, formatCep, parseBRL } from "./input-masks.js";
+import { applyInputMask, detectInputMask, formatCpf, formatCnpj, formatPhone, formatSavedPhone, formatInternationalPhone, formatCep, parseBRL } from "./input-masks.js";
 
 const field=(name,placeholder="",mask="")=>({name,id:"",placeholder,dataset:{mask}});
 
@@ -14,6 +14,9 @@ assert.equal(detectInputMask(field("amount","","currency")),"currency");
 assert.equal(formatCpf("52998224725"),"529.982.247-25");
 assert.equal(formatCnpj("11222333000181"),"11.222.333/0001-81");
 assert.equal(formatPhone("11987654321"),"(11) 98765-4321");
+assert.equal(formatSavedPhone("11987654321"),"(11) 98765-4321");
+assert.equal(formatSavedPhone("+5511987654321"),"+5511987654321");
+assert.equal(formatSavedPhone("123456789012"),"123456789012");
 assert.equal(formatCep("12345678"),"12345-678");
 assert.equal(parseBRL("R$ 1.234,56"),1234.56);
 assert.equal(parseBRL("79,90"),79.9);
@@ -27,4 +30,13 @@ assert.equal(detectInputMask(field("phone","","phone-international")),"phone-int
 assert.equal(formatPhone("+5511987654321"),"(11) 98765-4321");
 assert.equal(formatInternationalPhone("+1 (415) 555-2671"),"+14155552671");
 assert.equal(formatInternationalPhone("+5567999991234"),"+5567999991234");
+const readOnly = {...field("phone"),value:"11987654321",readOnly:true};
+const disabled = {...field("cpf"),value:"52998224725",disabled:true};
+const editable = {...field("phone"),value:"11987654321"};
+applyInputMask(readOnly);
+applyInputMask(disabled);
+applyInputMask(editable);
+assert.equal(readOnly.value,"11987654321");
+assert.equal(disabled.value,"52998224725");
+assert.equal(editable.value,"(11) 98765-4321");
 console.log("Testes de máscaras e conversão BRL concluídos.");

@@ -58,3 +58,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Ajustado o contraste do painel de Comissões e adicionados nomes acessíveis à pesquisa e à forma de pagamento.
 
 - Ajustados preços, ações e estados do catálogo para temas claro e escuro e exposta a seleção de categoria para tecnologias assistivas.
+
+- Ajustadas as máscaras na edição de dados salvos e no fim da composição, com preservação do cursor e dos campos somente leitura.

@@ -2,6 +2,7 @@
  * Controlador da equipe: eventos, cadastro e permissões.
  * Recebe contexto e serviços da página, sem gerar marcação.
  */
+import {formatCnpj,formatSavedPhone} from "../../utils/input-masks.js";
 import {requestProfessionalAccess} from "./professional-access.service.js";
 import {onlyDigits,validCpf,validCnpj} from "./professionals.validation.js";
 /**
@@ -24,7 +25,7 @@ export function bindProfessionalEvents({host,client,state,initialPasswords,canMa
    const dialog=host.querySelector("#professional-create-modal"),form=dialog?.querySelector("#professional-create-form");
    if(!p||!form)return toast("Profissional não encontrado. Atualize os dados.");
    form.reset();
-   for(const [field,value] of Object.entries({professional_id:p.id,name:p.name,phone:p.phone,email:p.email,specialty:p.specialty,commission_rate:p.commission_rate,tax_regime:p.tax_regime,cnpj:p.cnpj,legal_name:p.legal_name,trade_name:p.trade_name})){
+   for(const [field,value] of Object.entries({professional_id:p.id,name:p.name,phone:formatSavedPhone(p.phone),email:p.email,specialty:p.specialty,commission_rate:p.commission_rate,tax_regime:p.tax_regime,cnpj:/^\d{14}$/.test(p.cnpj??"")?formatCnpj(p.cnpj):p.cnpj,legal_name:p.legal_name,trade_name:p.trade_name})){
     if(form.elements[field])form.elements[field].value=value??"";
    }
    const mei=p.tax_regime==="mei",meiFields=form.querySelector("#professional-mei-fields");

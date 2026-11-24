@@ -3,6 +3,7 @@
  * Responsabilidade: conectar modal, ações e submissões ao serviço injetado.
  * Não contém marcação HTML ou consultas diretas ao banco.
  */
+import {formatSavedPhone} from "../../utils/input-masks.js";
 /**
  * Abre o modal de cadastro/edição e preenche os campos do cliente.
  * @param {object|null} customer Cliente existente ou null para novo cadastro.
@@ -15,7 +16,7 @@ function openCustomerModal(customer=null) {
   form.reset();
   form.elements.customer_id.value=customer?.id||"";
   form.elements.name.value=customer?.name||"";
-  form.elements.phone.value=customer?.phone||"";
+  form.elements.phone.value=formatSavedPhone(customer?.phone);
   form.elements.email.value=customer?.email||"";
   form.elements.birth_date.value=customer?.birth_date||"";
   const title=dialog.querySelector("#customer-modal-title");

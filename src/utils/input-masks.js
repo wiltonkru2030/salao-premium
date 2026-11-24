@@ -18,6 +18,11 @@ export function formatPhone(value){
  if(d.length<=10)return "("+d.slice(0,2)+") "+d.slice(2,6)+"-"+d.slice(6);
  return "("+d.slice(0,2)+") "+d.slice(2,7)+"-"+d.slice(7);
 }
+/** Formata telefone nacional salvo sem reinterpretar outros valores legados. */
+export function formatSavedPhone(value){
+ const raw=String(value??"");
+ return /^\d{10,11}$/.test(raw)?formatPhone(raw):raw;
+}
 /** Preserva DDI explícito na identidade global da cliente; não corta números internacionais. */
 export function formatInternationalPhone(value){
  const raw=String(value??"").trim();
@@ -70,6 +75,7 @@ export function detectInputMask(input){
 }
 /** Aplica no campo a máscara previamente identificada, sem alterar campos não reconhecidos. */
 export function applyInputMask(input){
+ if(input?.readOnly||input?.disabled)return;
  const mask=detectInputMask(input);
  if(!mask)return;
  if(mask==="cpf")input.value=formatCpf(input.value);
@@ -79,27 +85,30 @@ export function applyInputMask(input){
  else if(mask==="cep")input.value=formatCep(input.value);
  else if(mask==="currency")input.value=formatCurrency(input.value);
 }
-/** Instala listeners delegados para aplicar máscaras ao digitar e ao sair do campo, uma única vez. */
+/** Instala listeners para digitação, colagem, fim da composição e saída do campo. */
 export function installGlobalMasks(){
  if(document.documentElement.dataset.globalMasks==="true")return;
  document.documentElement.dataset.globalMasks="true";
- document.addEventListener("input",event=>{
+ const handleInput=event=>{
   const input=event.target;
-  if(!(input instanceof HTMLInputElement)||event.isComposing)return;
+  if(!(input instanceof HTMLInputElement)||event.isComposing||input.readOnly||input.disabled)return;
   const mask=detectInputMask(input);
   if(!mask)return;
   const start=input.selectionStart;
   const before=input.value;
   applyInputMask(input);
-  if(start!==null&&document.activeElement===input){
+  if(input.value!==before&&start!==null&&document.activeElement===input){
    // Preserva a posição lógica do cursor pela quantidade de dígitos à esquerda.
-   const count=digits(before.slice(0,start)).length;
+   const hasRemovedDdi=mask==="phone"&&before.trimStart().startsWith("+")&&!input.value.startsWith("+");
+   const count=Math.max(0,digits(before.slice(0,start)).length-(hasRemovedDdi?2:0));
    let pos=0,found=0;
    while(pos<input.value.length&&found<count){if(/\d/.test(input.value[pos]))found++;pos++;}
    if(start===before.length)pos=input.value.length;
    try{input.setSelectionRange(pos,pos);}catch{}
   }
- });
+ };
+ document.addEventListener("input",handleInput);
+ document.addEventListener("compositionend",handleInput);
  document.addEventListener("focusout",event=>{
   const input=event.target;
   if(input instanceof HTMLInputElement)applyInputMask(input);
