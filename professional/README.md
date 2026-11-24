@@ -1,0 +1,85 @@
+# App Profissional — SALÃO PREMIUM
+
+Aplicação web/PWA em `/professional/`, integrada ao painel administrativo e ao Supabase. Revisão documental: 24/11/2026. Consulte o [README mestre](../README.md).
+
+## Responsabilidade
+
+Permitir que profissionais acompanhem agenda, atendimentos, comandas autorizadas, comissões próprias e configurações de perfil sem expor dados administrativos de outros profissionais, organizações ou filiais.
+
+## Código e fronteiras
+
+| Arquivo | Responsabilidade |
+| --- | --- |
+| app.js | Composição, ciclo de sessão, navegação e estado |
+| auth.service.js | Autenticação CPF/e-mail e senha; confirma usuário no servidor |
+| supabase.client.js | Cliente com armazenamento de sessão próprio |
+| access.rules.js | Resolução de escopos, páginas, operações permitidas e resumo de comissão |
+| agenda.controller.js | Eventos e seleção da Agenda |
+| appointments.service.js | Consulta de agendamentos |
+| orders.service.js | Consulta de comandas e itens |
+| services.service.js | Catálogo de serviços permitido |
+| order-service.controller.js | Registro de serviços em comanda conforme escopo |
+| commissions.service.js | Lançamentos e pagamentos de comissão |
+| views/ | Apresentação de login, calendário e workspace |
+| utils/ | Formatação e regras puras |
+| styles.css | Estilos do app, compartilhando identidade visual |
+
+Manter arquivos pequenos, comentários/JSDoc, regras sem DOM, serviços sem HTML e erros em pt-BR. Consultas e cálculos críticos são validados no backend.
+
+## Login e sessão
+
+- CPF + senha é o fluxo principal solicitado. O código também aceita e-mail e senha.
+- CPF usa a Edge Function `professional-cpf-login`; provisionamento e redefinição pelo painel usam `manage-professional-access`.
+- Senha inicial controlada pela administração, alteração segura e revogação: homologar todos os fluxos. Não permitir recuperação por CPF isolado.
+- Nunca registrar CPF, senha ou tokens em logs. Nunca criar tenant por login profissional.
+- Usar sessão exclusiva; não importar o cliente pronto do painel. Limpar estado privado e descartar respostas antigas após logout/troca de conta.
+
+## Permissões
+
+`access.rules.js` implementa os escopos abaixo. UI não substitui RLS/RPC.
+
+| Escopo | Páginas/limites |
+| --- | --- |
+| none | Sem acesso |
+| self | Agenda própria, Comandas, Comissões próprias (com perfil vinculado) e Configurações |
+| calendar_all | Agenda ampliada e Configurações, sem módulos financeiros |
+| all | Agenda e Comandas; Comissões apenas se existir perfil profissional vinculado; Configurações |
+
+Profissional exige membership ativo, perfil ativo e acesso habilitado. Outros papéis exigem concessão explícita de escopo; não elevar permissões automaticamente. O registro de serviço na comanda pelo profissional é limitado a escopo self, papel professional, perfil vinculado e comanda open/in_progress; o banco deve repetir a validação.
+
+## Regras de negócio
+
+- Agenda mensal com seleção do dia, horários, cliente, serviço, status e origem do agendamento. Mostrar somente o necessário ao papel e à unidade.
+- Início/conclusão de atendimento e vínculo Agenda → Comanda devem respeitar conflitos e estados no servidor.
+- Comanda restrita: registrar serviços permitidos sem liberar pagamentos ou gestão de caixa indevida; impedir edição/exclusão que comprometa recebimentos.
+- Comissões: extrato de créditos, débitos, pendências e recebimentos, preservando centavos e históricos. O profissional não altera percentuais ou repasses por conta própria.
+- Configurações de perfil conforme autorização. Não confundir acesso do proprietário ao painel com acesso ao PWA.
+
+## Identidade visual
+
+Fundo branco, preto/grafite, cinza discreto, dourado sutil, Poppins Medium e títulos Body Grotesque Fit quando disponível/licenciada. Ícones originais, máscaras globais, estados de loading/erro/vazio e controles acessíveis. Navegação sem reload integral; impedir envio repetido.
+
+## Executar e testar
+
+Na raiz do repositório:
+
+```bash
+npm run dev
+npm run test:professional-utils
+npm run test:professional-views
+npm run test:professional-agenda-rules
+npm run test:professional-agenda-view
+npm run test:professional-agenda-controller
+npm run test:professional-appointments-service
+npm run test:professional-orders-service
+npm run test:professional-order-items-service
+npm run test:professional-commissions-service
+npm run test:professional-access
+npm run build
+```
+
+Abrir /professional/ no endereço Vite. Testar em QA com profissionais de dois tenants e duas filiais, recepção calendar_all, acesso revogado, senha inicial/redefinição, seleção de organização, tentativa de acesso cruzado, troca de sessão, atendimento e comissão. Validar interface em celular real. Não executar testes de escrita em produção.
+
+## Situação
+
+Arquivos e contratos localizados no Git, não homologados nesta revisão. Existência de código/testes não garante sucesso operacional. Atualizar este documento sempre que mudar regra, permissão ou integração.
