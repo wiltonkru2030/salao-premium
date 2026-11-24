@@ -36,3 +36,5 @@ Registre alterações verificadas e publicadas no repositório.
 - Aplicado escopo de unidade às RPCs de espera, encaixes e início de atendimento, com cenários positivos e negativos em QA.
 
 - Protegida a gestão de pacotes por unidade, mantendo a leitura do catálogo compartilhado.
+
+- Compartilhado o símbolo oficial nas três entradas e corrigido o retorno da estrutura autenticada da Área da Cliente.

@@ -1,4 +1,5 @@
 /** App Profissional (PWA): autenticação, sessão individual, Agenda, Comandas, Comissões e configurações do próprio perfil. */
+import { renderPlatformMark } from "../src/components/platform-mark.js";
 import {authenticateProfessional} from "./auth.service.js";
 import { supabase } from "./supabase.client.js";
 import {bindOrderService} from "./order-service.controller.js";
@@ -59,7 +60,7 @@ function changePasswordView(){
 function shell(content){
  const links=[["Agenda","▦"],["Comandas","▤"],["Comissões","％"],["Configurações","⚙"]].filter(([label])=>allowedProfessionalPages(state).includes(label));
  const greeting=state.professional?.name||state.profile?.full_name||"Equipe";
- root.innerHTML='<div class="app-shell"><header class="top"><div><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Olá, '+esc(greeting.split(" ")[0])+'</h1></div><button class="icon-button" data-action="logout" aria-label="Sair">↪</button></header>'+
+ root.innerHTML='<div class="app-shell"><header class="top"><div><div class="brand sp-professional-brand">' + renderPlatformMark() + '<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Olá, '+esc(greeting.split(" ")[0])+'</h1></div><button class="icon-button" data-action="logout" aria-label="Sair">↪</button></header>'+
  '<main class="content">'+(state.notice?'<div class="notice">'+esc(state.notice)+'</div>':'')+content+'</main>'+
  '<nav class="nav">'+links.map(([label,icon])=>'<button data-page="'+label+'" class="'+(state.page===label?"active":"")+'"><span>'+icon+'</span>'+label+'</button>').join("")+'</nav></div>';
 }
@@ -121,7 +122,7 @@ async function loadBase(selectedOrgId=null){
  if(!context){
   Object.assign(state,{orgId:null,role:null,scope:"none",professional:null,organization:null,profile:null,appointments:[],orders:[],services:[],commissions:[],commissionPayouts:[],selectedAppointment:null,selectedOrder:null,orderItems:[]});
   clearAutocomplete();
-  root.innerHTML='<main class="login"><div class="brand">SALÃO PREMIUM<small>APP PROFISSIONAL</small></div><h1>Escolha o salão</h1><p>Seus dados ficam separados por estabelecimento.</p>'+contexts.map(c=>'<button type="button" class="primary" data-context-org="'+esc(c.orgId)+'">'+esc(orgs.get(c.orgId)?.name||"Salão")+'</button>').join("")+'<button class="secondary" data-action="logout">Sair</button></main>';
+  root.innerHTML='<main class="login"><div class="brand sp-professional-brand">' + renderPlatformMark() + '<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Escolha o salão</h1><p>Seus dados ficam separados por estabelecimento.</p>'+contexts.map(c=>'<button type="button" class="primary" data-context-org="'+esc(c.orgId)+'">'+esc(orgs.get(c.orgId)?.name||"Salão")+'</button>').join("")+'<button class="secondary" data-action="logout">Sair</button></main>';
   return;
  }
  Object.assign(state,context,{organization:orgs.get(context.orgId),page:"Agenda",selectedAppointment:null,selectedOrder:null,orderItems:[],appointments:[],orders:[],services:[],commissions:[],commissionPayouts:[]});

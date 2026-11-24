@@ -1,4 +1,5 @@
 /** Compositor do painel. Responsabilidade: montar menu, cabeçalho, conteúdo da rota e disparar carregadores de cada módulo. */
+import { renderPlatformMark } from "../components/platform-mark.js";
 import { groups, glyph } from '../data/index.js';
 
 import { state } from '../state.js';
@@ -126,7 +127,7 @@ function renderApplicationShell(navigation, content) {
     <div class="mobile-scrim ${state.mobileMenu ? "visible" : ""}" data-action="close-menu" aria-hidden="true"></div>
     <aside class="sidebar ${state.mobileMenu ? "open" : ""} ${state.sidebarCollapsed ? "collapsed" : ""}" id="sidebar">
       <div class="brand">
-        <img src="./brand/identidade-visual/logo/SAL%C3%83O%20PREMIUN_20261111_231325_0003.png" alt="SALÃO PREMIUM" class="brand-logo">
+        ${renderPlatformMark()}
         <div class="brand-copy"><b>SALÃO PREMIUM</b><small>GESTÃO INTELIGENTE</small></div>
         <button class="icon-btn sidebar-collapse" data-action="collapse-menu" aria-label="Recolher ou expandir menu" title="Recolher ou expandir menu">${state.sidebarCollapsed ? "›" : "‹"}</button>
         <button class="icon-btn sidebar-close" data-action="close-menu" aria-label="Fechar menu">×</button>

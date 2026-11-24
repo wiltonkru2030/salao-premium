@@ -129,3 +129,7 @@ A migration `20261124122045` verifica a atribuição nas RPCs de lista de espera
 ### Pacotes por unidade
 
 Após a migration `20261124122253`, o proprietário criou um pacote central e o gerente atribuído à matriz criou e inativou um pacote daquela unidade. O gerente pôde consultar o catálogo central. O banco recusou a inativação do pacote central e a criação de um pacote na filial sem vínculo.
+
+### Marca compartilhada e Área da Cliente
+
+O build de QA carregou o símbolo oficial nas telas de entrada do painel, do App Profissional e da Área da Cliente em Chromium, com larguras de 390 e 1280 pixels. O teste de renderização confirma que a estrutura da sessão da cliente contém cabeçalho, conteúdo e navegação. A autenticação com Google e chave de acesso permanece na matriz de homologação.

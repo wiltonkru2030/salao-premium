@@ -10,3 +10,7 @@
 
 ## Verificação
 21/21 verificações estáticas efetuadas após releitura dos arquivos. Testes de regressão das máscaras, perfil global e contrato CSS incluídos na suíte. A execução Node/CI não foi confirmada. Não houve inspeção visual em navegador, revisão de todos os SVGs originais ou auditoria de todos os modais e formulários existentes. CSS legado ainda contém valores fixos; migração completa dos controles para tokens e validação de contraste e responsividade por tela permanecem pendentes. Nenhum deploy, merge ou alteração no Supabase nesta etapa.
+
+### Símbolo da plataforma
+
+O componente `src/components/platform-mark.js` usa o símbolo WebP transparente da identidade oficial. O build inclui o arquivo uma vez, com caminho resolvido nas três entradas. O nome visível identifica a marca junto à imagem decorativa. As logos dos salões continuam vinculadas aos seus perfis.

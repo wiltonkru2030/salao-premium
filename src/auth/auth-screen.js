@@ -1,4 +1,5 @@
 /** Tela de autenticação administrativa. Responsabilidade: renderizar login/cadastro e mensagens de validação. */
+import { renderPlatformMark } from "../components/platform-mark.js";
 import { esc } from '../utils.js';
 
 /** Renderiza a tela de login ou cadastro com avisos de validação escapados para HTML. */
@@ -14,7 +15,7 @@ export function authScreen(mode = 'login', notice = '', noticeType = 'info') {
   <main class="auth-shell">
     <section class="auth-panel">
       <div class="auth-brand">
-        <img src="./brand/identidade-visual/logo/SAL%C3%83O%20PREMIUN_20261111_231325_0003.png" alt="SALÃO PREMIUM">
+        ${renderPlatformMark()}
         <span><b>SALÃO PREMIUM</b><small>GESTÃO INTELIGENTE</small></span>
       </div>
       <div class="auth-heading">
@@ -46,7 +47,7 @@ export function organizationSelectionScreen(organizations, notice = "") {
   <main class="auth-shell">
     <section class="auth-panel">
       <div class="auth-brand">
-        <img src="./brand/identidade-visual/logo/SAL%C3%83O%20PREMIUN_20261111_231325_0003.png" alt="SALÃO PREMIUM">
+        ${renderPlatformMark()}
         <span><b>SALÃO PREMIUM</b><small>GESTÃO INTELIGENTE</small></span>
       </div>
       <div class="auth-heading">

@@ -1,5 +1,6 @@
 /** Contrato estático do design system. Não substitui testes visuais no navegador. */
 import assert from "node:assert/strict";
+import { renderClientShell } from "../../cliente/ui/clientShell.js";
 import {readFileSync,existsSync} from "node:fs";
 import {dirname,resolve} from "node:path";
 const read=path=>readFileSync(path,"utf8");
@@ -33,4 +34,9 @@ assert.match(controls,/\.sp-modal-body\{flex:1;min-height:0/);
 assert.match(read("cliente/styles/theme.css"),/data-theme="dark"/);
 assert.match(read("src/modules/quotes/components/quote-components.js"),/<dialog id="quote-quick-customer" class="sp-modal"/);
 for(const path of ["src/app.js","professional/app.js","cliente/app.js"])assert.match(read(path),/installGlobalMasks\(\)/);
+const clientShell = renderClientShell('<h1>Meus horários</h1>');
+assert.match(clientShell, /class="client-app-shell"/);
+assert.match(clientShell, /class="sp-platform-mark brand-logo"/);
+assert.match(clientShell, /<main><h1>Meus horários<\/h1><\/main>/);
+assert.match(clientShell, /data-bottom-nav/);
 console.log("Contrato visual compartilhado: OK");

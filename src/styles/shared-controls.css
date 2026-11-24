@@ -29,3 +29,14 @@ dialog.sp-modal .sp-modal-foot{flex-wrap:wrap}
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
+
+/* Símbolo e assinatura da plataforma nas três entradas. */
+.sp-platform-mark {
+  flex: none;
+  object-fit: contain;
+}
+#professional-app .sp-professional-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
