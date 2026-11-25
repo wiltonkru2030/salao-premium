@@ -59,6 +59,8 @@ npm run build
 
 A configuração do cliente Supabase está em `src/supabase/`, com clientes próprios nas aplicações. Use um ambiente de desenvolvimento/homologação e contas de teste autorizadas; confira a configuração antes de gravar dados. Nunca publicar senhas de teste reais, tokens, chaves privadas ou service_role. Para apontar as três aplicações para QA, defina `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` juntas em `.env.local` antes de iniciar o Vite ou gerar o build. Confirme que ambas pertencem ao mesmo projeto. A chave publicável não substitui RLS. Google OAuth e Passkey exigem configuração de domínio, redirects e provedor; HTTPS no ambiente publicado. Não há URL de produção homologada declarada aqui.
 
+A publicação manual das três entradas pelo GitHub Actions no Firebase Hosting está descrita em [docs/FIREBASE-HOSTING.md](docs/FIREBASE-HOSTING.md). Configure o projeto de destino e as credenciais no GitHub antes de executar o workflow.
+
 ## Arquitetura e organização do código
 
 ```text

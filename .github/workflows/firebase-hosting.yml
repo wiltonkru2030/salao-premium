@@ -1,0 +1,42 @@
+# Publica as três entradas Vite no Firebase Hosting após validação.
+# O disparo manual evita publicação antes de configurar e conferir o projeto de destino.
+name: Firebase Hosting
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Conferir configuração pública do build
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          test -n "$FIREBASE_PROJECT_ID" || { echo 'Configure FIREBASE_PROJECT_ID nas variables do repositório.'; exit 1; }
+          test -n "$VITE_SUPABASE_URL" || { echo 'Configure VITE_SUPABASE_URL nas variables do repositório.'; exit 1; }
+          test -n "$VITE_SUPABASE_PUBLISHABLE_KEY" || { echo 'Configure VITE_SUPABASE_PUBLISHABLE_KEY nas variables do repositório.'; exit 1; }
+          test -n "$FIREBASE_SERVICE_ACCOUNT" || { echo 'Configure FIREBASE_SERVICE_ACCOUNT nos secrets do repositório.'; exit 1; }
+      - name: Executar testes
+        run: npm run test:all
+      - name: Gerar as três aplicações
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: npm run build
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
+          channelId: live
