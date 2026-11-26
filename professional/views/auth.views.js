@@ -8,24 +8,51 @@ import { renderPlatformMark } from "../../src/components/platform-mark.js";
 import { escapeHtml } from "../utils/formatters.js";
 
 /**
- * Monta a tela de login do profissional.
- * @param {string} notice Mensagem opcional de validação ou falha.
- * @param {string} appearance Preferência de aparência deste aparelho.
- * @returns {string} Markup da tela de autenticação.
+ * Compõe as telas de acesso com as mesmas classes e a marca do painel.
+ * Recebe campos definidos pela própria view e escapa mensagens dinâmicas.
  */
-export function renderProfessionalLoginView(notice = "", appearance) {
-  return '<main class="login"><div class="brand sp-professional-brand">' + renderPlatformMark() + '<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Bem-vindo(a)</h1><p>Profissionais entram com CPF e senha. Proprietários e usuários autorizados podem usar o e-mail.</p>' +
-    (notice ? '<div class="notice">' + escapeHtml(notice) + '</div>' : '') +
-    '<form id="professional-login"><label class="field">CPF ou e-mail<input name="login" autocomplete="username" placeholder="000.000.000-00 ou e-mail" required></label><label class="field">Senha<input name="password" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Entrar</button></form><p class="muted">A recuperação de senha é feita somente pelo administrador do salão.</p>' + renderPlatformAppearance(appearance) + '</main>';
+function renderProfessionalAuth({title, description, notice, form, footer = ""}) {
+  return `<main class="auth-shell">
+    <section class="auth-panel">
+      <div class="auth-brand">${renderPlatformMark()}<span><b>SALÃO PREMIUM</b><small>APP PROFISSIONAL</small></span></div>
+      <div class="auth-heading"><h1>${escapeHtml(title)}</h1><p>${escapeHtml(description)}</p></div>
+      ${notice ? '<div class="auth-notice error" role="status">' + escapeHtml(notice) + '</div>' : ''}
+      ${form}
+      ${footer}
+    </section>
+    <aside class="auth-aside"><div><h2>Seu salão.<br>Em perfeita sintonia.</h2><p>Acompanhe sua agenda, seus atendimentos e suas comissões.</p></div></aside>
+  </main>`;
 }
 
 /**
- * Monta a tela de troca obrigatória de senha temporária.
- * @param {string} notice Mensagem opcional de validação ou falha.
- * @returns {string} Markup do formulário de nova senha.
+ * Renderiza login por CPF ou e-mail, preservando os campos do controlador.
+ * A preferência selecionada afeta somente a aparência neste aparelho.
  */
+export function renderProfessionalLoginView(notice = "", appearance) {
+  return renderProfessionalAuth({
+    title: "Bem-vindo de volta",
+    description: "Entre para acessar o App Profissional do seu salão.",
+    notice,
+    form: `<form id="professional-login" class="auth-form">
+      <label>CPF ou e-mail<input name="login" autocomplete="username" placeholder="000.000.000-00 ou e-mail" required></label>
+      <label>Senha<input name="password" type="password" autocomplete="current-password" placeholder="Sua senha" required></label>
+      <button class="auth-submit" type="submit">Entrar no sistema</button>
+    </form>`,
+    footer: '<p class="auth-legal">Profissionais usam CPF. A recuperação de senha é feita pelo administrador do salão.</p>' +
+      renderPlatformAppearance(appearance)
+  });
+}
+
+/** Renderiza o formulário obrigatório de troca da senha temporária. */
 export function renderProfessionalPasswordChangeView(notice = "") {
-  return '<main class="login"><div class="brand sp-professional-brand">' + renderPlatformMark() + '<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Crie sua nova senha</h1><p>Altere a senha temporária para proteger seu acesso.</p>' +
-    (notice ? '<div class="notice">' + escapeHtml(notice) + '</div>' : '') +
-    '<form id="professional-password-change"><label class="field">Nova senha<input name="password" type="password" minlength="10" autocomplete="new-password" required></label><label class="field">Confirmar senha<input name="confirm" type="password" minlength="10" autocomplete="new-password" required></label><button class="primary" type="submit">Salvar nova senha</button></form></main>';
+  return renderProfessionalAuth({
+    title: "Crie sua nova senha",
+    description: "Altere a senha temporária para proteger seu acesso.",
+    notice,
+    form: `<form id="professional-password-change" class="auth-form">
+      <label>Nova senha<input name="password" type="password" minlength="10" autocomplete="new-password" required></label>
+      <label>Confirmar senha<input name="confirm" type="password" minlength="10" autocomplete="new-password" required></label>
+      <button class="auth-submit" type="submit">Salvar nova senha</button>
+    </form>`
+  });
 }
