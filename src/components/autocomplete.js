@@ -96,7 +96,10 @@ export function mountAutocomplete(input, {
         option.textContent = getLabel(item);
         option.setAttribute("role", "option");
         option.setAttribute("aria-selected", "false");
-        option.addEventListener("mousedown", event => event.preventDefault());
+        // Mantém a sugestão na tela até o clique, inclusive quando o teclado móvel está aberto.
+        option.addEventListener("pointerdown", event => {
+          if (event.isPrimary && event.button === 0) event.preventDefault();
+        });
         option.addEventListener("click", () => choose(item));
         list.append(option);
       });

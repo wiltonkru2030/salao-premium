@@ -119,7 +119,6 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 .professional-booking-action{margin-block:14px}
 #professional-app [data-professional-list] [hidden]{display:none}
 .professional-list-tools{display:flex;align-items:end;gap:10px;flex-wrap:wrap}
-.professional-list-tools .field{flex:1 1 200px}
 @media(max-width:760px){
  dialog.professional-booking-sheet{position:fixed;inset:auto 0 0;width:100%;max-width:none;margin:0;border-radius:18px 18px 0 0}
  dialog.professional-booking-sheet .sp-modal-foot{padding-bottom:max(14px,env(safe-area-inset-bottom))}
@@ -134,3 +133,15 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 .professional-booking-sheet .autocomplete-menu{position:static;margin-top:4px;max-height:144px;box-shadow:none}
 .professional-booking-sheet [data-booking-error]{color:var(--sp-red);margin:0}
 .professional-booking-sheet [data-booking-error][hidden]{display:none}
+
+/* Espaçamento local para os controles globais e resumos do profissional. */
+.professional-list-tools .sp-labeled-field{flex:1 1 180px}
+.professional-workspace :is(.detail,.professional-booking-sheet) .sp-labeled-field{margin-block:10px}
+.professional-card-actions{display:flex;flex-wrap:wrap;gap:8px}
+.professional-service-record{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.professional-service-record .meta{margin:3px 0 0;color:var(--sp-muted)}
+.professional-service-price{font-variant-numeric:tabular-nums}
+.professional-profile-menu > .detail{min-inline-size:10rem;padding:8px;border:1px solid var(--sp-line)}
+.professional-profile-menu > .detail button{text-align:start}
+/* Os resultados são irmãos do campo, fora do rótulo, e ocupam a linha inteira. */
+.professional-booking-sheet .sp-modal-body>.sp-span{grid-column:1/-1}

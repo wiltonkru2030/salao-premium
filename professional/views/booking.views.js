@@ -15,8 +15,8 @@ export function renderProfessionalBooking() {
       </header>
       <form id="professional-new-appointment">
         <div class="sp-modal-body">
-          <label class="sp-span">Cliente<input type="search" data-booking-client placeholder="Buscar por nome ou telefone" autocomplete="off" required></label>
-          <label class="sp-span">Serviço<input type="search" data-booking-service placeholder="Buscar serviço" autocomplete="off" required></label>
+          <div class="sp-span sp-labeled-field"><label for="professional-booking-client">Cliente</label><div><input id="professional-booking-client" type="search" data-booking-client placeholder="Buscar por nome ou telefone" autocomplete="off" required></div></div>
+          <div class="sp-span sp-labeled-field"><label for="professional-booking-service">Serviço</label><div><input id="professional-booking-service" type="search" data-booking-service placeholder="Buscar serviço" autocomplete="off" required></div></div>
           <label class="sp-span">Hora<input name="start" type="time" required></label>
           <p class="sp-span" data-booking-error role="alert" hidden></p>
         </div>

@@ -374,7 +374,7 @@ async function applyNewAppointment(form) {
  const hour=new FormData(form).get("start");
  const feedback=form.querySelector("[data-booking-error]");
  if(!reference||!service||!/^\d{2}:\d{2}$/.test(hour||"")){
-  feedback.textContent="Escolha o cliente e o serviço nas sugestões e informe a hora.";
+  feedback.textContent=!reference?"Toque no nome da cliente na lista de sugestões.":!service?"Toque no serviço na lista de sugestões.":"Informe a hora do atendimento.";
   feedback.hidden=false;
   return;
  }
