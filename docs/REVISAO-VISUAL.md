@@ -14,3 +14,5 @@ Nesta revisão, os controles compartilhados receberam foco visível e estados ac
 A suíte local, a auditoria CSS e o build foram executados. A rodada em navegador nas cinco larguras e o aceite individual das telas autenticadas continuam abertos. O executável Chromium disponível no ambiente apontava para um binário ausente.
 
 A rodada de acabamento ajustou as superfícies de formulários, configurações e lista de espera para usar a paleta do tema. A Agenda ganhou uma faixa de profissionais, barra de ações e resumo mais compactos. Nos cadastros, as ações existentes de edição e inativação foram alinhadas ao botão secundário, com altura de toque e quebra de linha. Mantidas as condições de acesso e as ações de cada cadastro.
+
+O contrato visual de controles das três entradas foi consolidado em `src/styles/shared-controls.css`. Foco, desabilitado, pressionado, erro, medidas de toque e tipografia de registros devem ser mantidos nessa folha. Estilos de módulo definem a disposição específica de cada tela. O controlador compartilhado de aparência documenta separadamente a aplicação do tema, a leitura da preferência e sua persistência.

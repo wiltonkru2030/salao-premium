@@ -58,5 +58,3 @@
 
 /* Paleta escura do painel, aplicada após os estilos dos módulos. */
 @import url("./src/styles/design-admin-appearance.css");
-
-@import url("./src/styles/interface-controls.css");

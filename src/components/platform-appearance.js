@@ -19,6 +19,7 @@ export function createPlatformAppearance(storageKey) {
     // A aparência automática permanece disponível sem armazenamento local.
   }
 
+  /** Resolve o tema efetivo e atualiza os atributos usados pelo CSS. */
   const apply = () => {
     document.documentElement.dataset.themePreference = preference;
     document.documentElement.dataset.theme = preference === "system"
@@ -29,7 +30,9 @@ export function createPlatformAppearance(storageKey) {
   apply();
 
   return {
+    /** Retorna a escolha original, inclusive quando segue o dispositivo. */
     get preference() { return preference; },
+    /** Aplica uma preferência conhecida e tenta gravá-la neste aparelho. */
     set(next) {
       if (!Object.hasOwn(labels, next)) return;
       preference = next;
