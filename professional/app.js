@@ -1,4 +1,5 @@
 /** App Profissional (PWA): autenticação, sessão individual, Agenda, Comandas, Comissões e configurações do próprio perfil. */
+import {salonCalendarDate, salonTimezone} from "./utils/salon-time.js";
 import { createPlatformAppearance } from "../src/components/platform-appearance.js";
 import { renderPlatformMark } from "../src/components/platform-mark.js";
 import {authenticateProfessional} from "./auth.service.js";
@@ -77,8 +78,8 @@ function shell(content){
 }
 function appointmentCard(a){
  const duration=Math.max(0,Math.round((new Date(a.ends_at)-new Date(a.starts_at))/60000));
- return '<button type="button" class="appointment '+appointmentClass(a)+'" data-appointment="'+esc(a.id)+'"><strong>'+timeLabel(a.starts_at)+' · '+esc(a.customer_name)+'</strong>'+
- '<div class="meta">'+esc(a.service_name)+' · '+timeLabel(a.ends_at)+'<br>'+esc(a.customer_phone||"Telefone não informado")+' · '+money(a.price)+'<br>'+esc(a.professional_name||state.professional?.name||"Profissional")+' · '+duration+' min</div>'+
+ return '<button type="button" class="appointment '+appointmentClass(a)+'" data-appointment="'+esc(a.id)+'"><strong>'+timeLabel(a.starts_at,salonTimezone(state.organization?.timezone))+' · '+esc(a.customer_name)+'</strong>'+
+ '<div class="meta">'+esc(a.service_name)+' · '+timeLabel(a.ends_at,salonTimezone(state.organization?.timezone))+'<br>'+esc(a.customer_phone||"Telefone não informado")+' · '+money(a.price)+'<br>'+esc(a.professional_name||state.professional?.name||"Profissional")+' · '+duration+' min</div>'+
  '<span class="tag">'+esc(statusLabel(a.status))+' · Agendado por: '+esc(sourceLabel(a.booking_source))+'</span></button>';
 }
 /** Exibe ações de status somente para o agendamento individual elegível. */
@@ -104,8 +105,8 @@ function appointmentDetails(){
  '<div class="detail-row"><span>Telefone</span><b>'+esc(a.customer_phone||"—")+'</b></div>'+
  '<div class="detail-row"><span>Serviço</span><b>'+esc(a.service_name)+'</b></div>'+
  '<div class="detail-row"><span>Profissional</span><b>'+esc(a.professional_name||state.professional?.name||"—")+'</b></div>'+
- '<div class="detail-row"><span>Data</span><b>'+new Date(a.starts_at).toLocaleDateString("pt-BR")+'</b></div>'+
- '<div class="detail-row"><span>Horário</span><b>'+timeLabel(a.starts_at)+'–'+timeLabel(a.ends_at)+'</b></div>'+
+ '<div class="detail-row"><span>Data</span><b>'+new Date(a.starts_at).toLocaleDateString("pt-BR",{timeZone:salonTimezone(state.organization?.timezone)})+'</b></div>'+
+ '<div class="detail-row"><span>Horário</span><b>'+timeLabel(a.starts_at,salonTimezone(state.organization?.timezone))+'–'+timeLabel(a.ends_at,salonTimezone(state.organization?.timezone))+'</b></div>'+
  '<div class="detail-row"><span>Duração</span><b>'+duration+' minutos</b></div>'+
  '<div class="detail-row"><span>Valor previsto</span><b>'+money(a.price)+'</b></div>'+
  '<div class="detail-row"><span>Status</span><b>'+esc(statusLabel(a.status))+'</b></div>'+
@@ -155,6 +156,8 @@ async function loadBase(selectedOrgId=null){
   return;
  }
  Object.assign(state,context,{organization:orgs.get(context.orgId),page:"Agenda",selectedAppointment:null,selectedOrder:null,orderItems:[],appointments:[],orders:[],services:[],commissions:[],commissionPayouts:[]});
+ state.selectedDate=salonCalendarDate(new Date(),state.organization?.timezone);
+ state.month=new Date(state.selectedDate.getFullYear(),state.selectedDate.getMonth(),1);
  const profileResult=await supabase.from("profiles").select("full_name,phone").eq("id",userId).maybeSingle();
  if(epoch!==sessionEpoch)return;
  if(profileResult.error)throw new Error("Não foi possível carregar seu perfil.");
@@ -170,7 +173,7 @@ async function loadAppointments(){
  const appointments=await fetchProfessionalAppointments({
   client:supabase,
   organizationId:state.orgId,
-  month,professionalId:state.scope==='self'?state.professional?.id:null
+  month,timezone:salonTimezone(state.organization?.timezone),professionalId:state.scope==='self'?state.professional?.id:null
  });
  if(epoch===sessionEpoch&&month===state.month)state.appointments=appointments;
 }
@@ -289,7 +292,7 @@ async function applyAppointmentReschedule(form) {
  try {
   const saved=await rescheduleOwnAppointment({client:supabase,organizationId:state.orgId,appointment,localStart});
   if(epoch!==sessionEpoch)return;
-  const newDate=new Date(saved.starts_at);
+  const newDate=salonCalendarDate(saved.starts_at,state.organization?.timezone);
   if(state.page==="Agenda"&&state.selectedAppointment?.id===saved.id) {
    state.selectedDate=newDate;
    state.month=new Date(newDate.getFullYear(),newDate.getMonth(),1);
@@ -321,7 +324,7 @@ async function applyNewAppointment(form) {
    service:values.get("service"),localStart:values.get("start")});
   if(epoch!==sessionEpoch)return;
   if(state.page==="Agenda") {
-   const date=new Date(saved.starts_at);
+   const date=salonCalendarDate(saved.starts_at,state.organization?.timezone);
    state.selectedDate=date;
    state.month=new Date(date.getFullYear(),date.getMonth(),1);
    state.selectedAppointment=null;

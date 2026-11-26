@@ -20,3 +20,10 @@ assert.equal(leap.cells.filter(cell => cell.inMonth).length, 29);
 assert.throws(() => buildMonthlyCalendar({ month: "2026-11", selectedDate: new Date() }), /mês informado é inválido/);
 assert.throws(() => buildMonthlyCalendar({ month: new Date(), selectedDate: new Date(), appointments: {} }), /lista de agendamentos é inválida/);
 console.log("Testes das regras do calendário mensal: OK");
+
+// Em Manaus, um instante no início de dezembro UTC ainda pertence a novembro.
+const salonCalendar = buildMonthlyCalendar({
+  month:new Date(2026,10,1),selectedDate:new Date(2026,10,30),
+  timezone:"America/Manaus",appointments:[{id:"late",starts_at:"2026-12-01T02:00:00Z"}]
+});
+assert.deepEqual(salonCalendar.selectedAppointments.map(item=>item.id),["late"]);

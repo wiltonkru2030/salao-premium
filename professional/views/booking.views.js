@@ -1,4 +1,5 @@
 /** Formulário para marcar um novo horário com cliente já atendido pelo profissional. */
+import {salonTimezone} from "../utils/salon-time.js";
 import {escapeHtml, formatDateTime} from "../utils/formatters.js";
 
 /** Monta escolhas a partir dos agendamentos visíveis e dos serviços vinculados. */
@@ -14,7 +15,7 @@ export function renderProfessionalBooking({appointments, professionalId, service
 
   const clients = [...references.values()].map(appointment =>
     '<option value="' + escapeHtml(appointment.id) + '">' + escapeHtml(appointment.customer_name) +
-    ' · atendimento de ' + escapeHtml(formatDateTime(appointment.starts_at)) + '</option>').join("");
+    ' · atendimento de ' + escapeHtml(formatDateTime(appointment.starts_at,salonTimezone(timezone))) + '</option>').join("");
   const options = services.map(service => '<option value="' + escapeHtml(service.id) + '">' +
     escapeHtml(service.name) + ' · ' + escapeHtml(service.duration_minutes) + ' min</option>').join("");
 

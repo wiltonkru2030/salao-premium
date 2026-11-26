@@ -7,6 +7,8 @@
  * para o estado da aplicação; não acessa DOM, não renderiza telas e não decide permissões.
  */
 
+import {salonMonthStart} from "./utils/salon-time.js";
+
 /**
  * Busca os agendamentos de um mês para a organização autenticada.
  *
@@ -31,6 +33,7 @@ export async function fetchProfessionalAppointments({
   organizationId,
   month,
   professionalId = null,
+  timezone = null,
   limit = 1000
 }) {
   if (!client || typeof client.from !== "function") {
@@ -46,8 +49,8 @@ export async function fetchProfessionalAppointments({
     throw new TypeError("O limite de agendamentos solicitado é inválido.");
   }
 
-  const start = new Date(month.getFullYear(), month.getMonth(), 1);
-  const end = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+  const start = timezone ? salonMonthStart(month.getFullYear(), month.getMonth(), timezone) : new Date(month.getFullYear(), month.getMonth(), 1);
+  const end = timezone ? salonMonthStart(month.getFullYear(), month.getMonth() + 1, timezone) : new Date(month.getFullYear(), month.getMonth() + 1, 1);
 
   try {
     let query = client

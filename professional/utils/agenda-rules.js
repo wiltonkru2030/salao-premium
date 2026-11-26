@@ -4,6 +4,8 @@
  * Integração: consumido pela view da Agenda; não acessa DOM, rede ou estado global.
  */
 
+import {salonCalendarDate} from "./salon-time.js";
+
 /** Converte uma data válida em chave local AAAA-MM-DD. */
 function localDateKey(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
@@ -16,7 +18,7 @@ function localDateKey(date) {
  * @returns {{cells: Array, selectedAppointments: Array}} Modelo pronto para a view.
  * @throws {TypeError} Quando os parâmetros principais forem inválidos.
  */
-export function buildMonthlyCalendar({ month, selectedDate, appointments = [], today = new Date() } = {}) {
+export function buildMonthlyCalendar({ month, selectedDate, appointments = [], today = new Date(), timezone = null } = {}) {
   if (!(month instanceof Date) || Number.isNaN(month.getTime())) throw new TypeError("O mês informado é inválido.");
   if (!(selectedDate instanceof Date) || Number.isNaN(selectedDate.getTime())) throw new TypeError("A data selecionada é inválida.");
   if (!Array.isArray(appointments)) throw new TypeError("A lista de agendamentos é inválida.");
@@ -24,9 +26,10 @@ export function buildMonthlyCalendar({ month, selectedDate, appointments = [], t
 
   const year = month.getFullYear(), monthIndex = month.getMonth();
   const firstWeekday = new Date(year, monthIndex, 1).getDay();
+  const dayInCalendar = instant => timezone ? salonCalendarDate(instant,timezone) : new Date(instant);
   const appointmentDays = new Set(appointments.filter(item => item?.starts_at && !Number.isNaN(new Date(item.starts_at).getTime()))
-    .map(item => localDateKey(new Date(item.starts_at))));
-  const selectedKey = localDateKey(selectedDate), todayKey = localDateKey(today);
+    .map(item => localDateKey(dayInCalendar(item.starts_at))));
+  const selectedKey = localDateKey(selectedDate), todayKey = localDateKey(dayInCalendar(today));
   const cells = Array.from({ length: 42 }, (_, index) => {
     const date = new Date(year, monthIndex, index - firstWeekday + 1);
     const key = localDateKey(date);
@@ -34,7 +37,7 @@ export function buildMonthlyCalendar({ month, selectedDate, appointments = [], t
       selected: key === selectedKey, today: key === todayKey, hasAppointments: appointmentDays.has(key) };
   });
   const selectedAppointments = appointments.filter(item => item?.starts_at &&
-    localDateKey(new Date(item.starts_at)) === selectedKey).slice()
+    !Number.isNaN(new Date(item.starts_at).getTime()) && localDateKey(dayInCalendar(item.starts_at)) === selectedKey).slice()
     .sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at));
   return { cells, selectedAppointments };
 }

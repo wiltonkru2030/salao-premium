@@ -84,3 +84,13 @@ run().catch(error => {
   process.stderr.write("Falha nos testes do serviço de agendamentos: " + error.message + "\n");
   process.exitCode = 1;
 });
+
+// O intervalo da consulta parte da meia-noite do salão, mesmo em outro fuso.
+const salonMonth = createClient({data:[],error:null});
+await fetchProfessionalAppointments({
+  client:salonMonth.client,organizationId:"org-1",month:new Date(2026,10,1),timezone:"America/Manaus"
+});
+assert.deepEqual(salonMonth.calls.filters.filter(([operation])=>["gte","lt"].includes(operation)),[
+  ["gte","starts_at","2026-11-01T04:00:00.000Z"],
+  ["lt","starts_at","2026-12-01T04:00:00.000Z"]
+]);

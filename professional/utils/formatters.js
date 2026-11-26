@@ -72,10 +72,10 @@ export function formatDateLabel(date) {
  * @param {string|number|Date} value Instante reconhecido pelo construtor Date.
  * @returns {string} Horário ou traço quando inválido.
  */
-export function formatTime(value) {
+export function formatTime(value, timeZone) {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone });
 }
 
 /**
@@ -83,10 +83,10 @@ export function formatTime(value) {
  * @param {string|number|Date} value Instante reconhecido pelo construtor Date.
  * @returns {string} Data e horário ou traço quando inválido.
  */
-export function formatDateTime(value) {
+export function formatDateTime(value, timeZone) {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+  return date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone });
 }
 
 /**

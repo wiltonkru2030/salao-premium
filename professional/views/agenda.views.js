@@ -14,7 +14,7 @@ import { buildMonthlyCalendar } from "../utils/agenda-rules.js";
 export function renderAgendaView(context) {
   const { state, monthLabel, dateLabel, appointmentCard, appointmentDetails } = context;
   const { cells, selectedAppointments } = buildMonthlyCalendar({
-    month: state.month, selectedDate: state.selectedDate, appointments: state.appointments
+    month: state.month, selectedDate: state.selectedDate, appointments: state.appointments, timezone:state.organization?.timezone || (state.organization ? "America/Sao_Paulo" : null)
   });
   const calendarCells = cells.map(cell => {
     const classes = [cell.inMonth ? "" : "outside", cell.selected ? "selected" : "", cell.today ? "today" : ""].filter(Boolean).join(" ");
