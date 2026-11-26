@@ -1,6 +1,7 @@
 /** App Profissional (PWA): autenticação, sessão individual, Agenda, Comandas, Comissões e configurações do próprio perfil. */
 import {salonCalendarDate, salonTimezone} from "./utils/salon-time.js";
 import { createPlatformAppearance } from "../src/components/platform-appearance.js";
+import {renderProfessionalShell, setProfessionalMenuOpen} from "./views/shell.views.js";
 import { renderPlatformMark } from "../src/components/platform-mark.js";
 import {authenticateProfessional} from "./auth.service.js";
 import { supabase } from "./supabase.client.js";
@@ -68,14 +69,11 @@ function loginView(){
 function changePasswordView(){
  root.innerHTML=renderProfessionalPasswordChangeView(state.notice);
 }
-// Monta cabeçalho, conteúdo e navegação principal do PWA.
-function shell(content){
- const links=[["Agenda","▦"],["Comandas","▤"],["Comissões","％"],["Serviços","✦"]].filter(([label])=>allowedProfessionalPages(state).includes(label));
- const greeting=state.professional?.name||state.profile?.full_name||"Equipe";
- root.innerHTML='<div class="app-shell"><header class="top"><div><div class="brand sp-professional-brand">' + renderPlatformMark() + '<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Olá, '+esc(greeting.split(" ")[0])+'</h1></div><details class="professional-profile-menu"><summary class="secondary">Perfil</summary><div class="detail">'+(allowedProfessionalPages(state).includes("Clientes")?'<button type="button" class="secondary" data-page="Clientes">Clientes</button>':'')+'<button type="button" class="secondary" data-page="Configurações">Configurações</button><button type="button" class="secondary" data-action="logout">Sair</button></div></details></header>'+
- '<main class="content">'+(state.notice?'<div class="notice">'+esc(state.notice)+'</div>':'')+content+'</main>'+
- '<nav class="nav">'+links.map(([label,icon])=>'<button data-page="'+label+'" class="'+(state.page===label?"active":"")+'"><span>'+icon+'</span>'+label+'</button>').join("")+'</nav></div>';
+/** Atualiza a moldura do app com as páginas autorizadas para esta sessão. */
+function shell(content) {
+ root.innerHTML=renderProfessionalShell({state,content,pages:allowedProfessionalPages(state)});
 }
+
 function appointmentCard(a){
  const duration=Math.max(0,Math.round((new Date(a.ends_at)-new Date(a.starts_at))/60000));
  return '<button type="button" class="appointment '+appointmentClass(a)+'" data-appointment="'+esc(a.id)+'"><strong>'+timeLabel(a.starts_at,salonTimezone(state.organization?.timezone))+' · '+esc(a.customer_name)+'</strong>'+
@@ -217,6 +215,14 @@ function bindAutocomplete(){
  disposeAutocomplete?.();
  disposeAutocomplete=bindOrderService({root,state,client:supabase,getEpoch:()=>sessionEpoch,lock:serviceLock,loadOrders,chooseOrder,showNotice,reportError});
 }
+// Libera o conteúdo caso o aparelho passe para o layout de menu fixo.
+matchMedia("(max-width:760px)").addEventListener("change", event=>{
+ if(!event.matches&&root.querySelector(".app-shell.is-menu-open"))setProfessionalMenuOpen(root,false);
+});
+// Escape devolve o foco ao botão de menu quando a navegação móvel está aberta.
+root.addEventListener("keydown", event => {
+ if(event.key==="Escape"&&root.querySelector(".app-shell.is-menu-open"))setProfessionalMenuOpen(root,false);
+});
 root.addEventListener("change", event => {
  if (event.target.matches("[data-platform-appearance]")) appearance.set(event.target.value);
 });
@@ -246,6 +252,10 @@ async function applyAppointmentStatus(control) {
 root.addEventListener("click",async event=>{
  try{
   const action=event.target.closest("[data-action]")?.dataset.action;
+  if(action==="open-professional-menu"||action==="close-professional-menu"){
+   setProfessionalMenuOpen(root,action==="open-professional-menu");
+   return;
+  }
   if(action==="logout"){await endSession();return;}
   const orgControl=event.target.closest("[data-context-org]");
   if(orgControl&&state.user){orgControl.disabled=true;try{await loadBase(orgControl.dataset.contextOrg);}catch(error){await endSession("Não foi possível acessar este salão.");}return;}
@@ -257,7 +267,7 @@ root.addEventListener("click",async event=>{
   if(await handleAgendaClick({event,state,loadAppointments,render}))return;
   if(epoch!==sessionEpoch)return;
   const page=event.target.closest("[data-page]");
- if(page){if(!allowedProfessionalPages(state).includes(page.dataset.page))return;state.page=page.dataset.page;state.selectedOrder=null;state.selectedAppointment=null;state.notice="";render();return;}
+ if(page){if(!allowedProfessionalPages(state).includes(page.dataset.page))return;const menuWasOpen=root.querySelector(".app-shell.is-menu-open");state.page=page.dataset.page;state.selectedOrder=null;state.selectedAppointment=null;state.notice="";render();if(menuWasOpen)root.querySelector("[data-action=open-professional-menu]")?.focus();return;}
  const order=event.target.closest("[data-order]");
  if(order&&allowedProfessionalPages(state).includes("Comandas")){await chooseOrder(order.dataset.order);return;}
  if(action==="back-orders"){state.selectedOrder=null;state.orderItems=[];render();}
