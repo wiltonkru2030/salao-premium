@@ -11,7 +11,7 @@ border:1px solid var(--line);
 border-radius:8px;
 flex:1;
 max-width:430px;
-color:#999}
+color:var(--sp-muted)}
 .search-box input{border:0;
 outline:0;
 flex:1;
@@ -19,7 +19,7 @@ min-width:0;
 font-size:10px;
 background:transparent}
 .result-count{font-size:9px;
-color:#999;
+color:var(--sp-muted);
 margin-left:auto}
 .record-list{display:grid;
 gap:8px}
@@ -31,12 +31,12 @@ gap:13px;
 padding:12px 15px;
 border:1px solid var(--line);
 border-radius:10px;
-background:#fff;
+background:var(--sp-paper);
 text-align:left;
 cursor:pointer;
 transition:border-color .15s,background .15s}
 .record-card:hover{border-color:#c9b58e;
-background:#fdfcf9}
+background:var(--sp-soft)}
 .record-main{display:flex;
 flex-direction:column;
 gap:4px;
@@ -45,7 +45,7 @@ flex:1}
 .record-main b{font-size:11px;
 font-weight:600}
 .record-main small{font-size:9px;
-color:#999;
+color:var(--sp-muted);
 white-space:nowrap;
 overflow:hidden;
 text-overflow:ellipsis}
@@ -56,17 +56,17 @@ gap:6px}
 .record-trailing>b{font-size:10px;
 font-weight:500}
 .record-chevron{font-size:20px;
-color:#bbb;
+color:var(--sp-muted);
 margin-left:7px}
 .empty-state{display:flex;
 flex-direction:column;
 align-items:center;
 gap:7px;
 padding:55px 15px;
-color:#999;
+color:var(--sp-muted);
 border:1px dashed var(--line);
 border-radius:10px}
 .empty-state span{font-size:24px}
 .empty-state b{font-size:11px;
-color:#555}
+color:var(--sp-ink)}
 .empty-state small{font-size:9px}

@@ -13,8 +13,8 @@
 :is(#branches-manager,#team-manager,#settings-manager) .record-trailing{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;min-width:0}
 :is(#branches-manager,#team-manager,#settings-manager) .record-trailing .btn{font-size:12px;min-height:44px}
 #branches-manager .status-pill{font-size:11px;padding:6px 11px;border-radius:99px;white-space:nowrap}
-#branches-manager .status-pill.active{background:#edf5ee;color:#376349}
-#branches-manager .status-pill.inactive{background:#f5f2ee;color:#766c5e}
+#branches-manager .status-pill.active{background:var(--sp-green-soft);color:var(--sp-green)}
+#branches-manager .status-pill.inactive{background:var(--sp-soft);color:var(--sp-muted)}
 #branches-manager .text-button{border:0;background:none;color:var(--sp-gold-text);min-height:44px;padding:8px 10px;cursor:pointer;font-size:12px}
 #team-manager .record-trailing{max-width:360px}
 #team-manager .record-trailing small{font-size:12px;line-height:1.5;color:var(--sp-muted)}
