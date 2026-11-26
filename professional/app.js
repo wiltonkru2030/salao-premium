@@ -20,6 +20,7 @@ import {
 } from "./utils/formatters.js";
 import { renderProfessionalPasswordChangeView, renderProfessionalLoginView } from "./views/auth.views.js";
 import {ordersView,commissionsView,settingsView} from "./views/workspace.views.js";
+import { renderProfessionalServices } from "./views/services.views.js";
 import { renderAgendaView } from "./views/agenda.views.js";
 import { handleAgendaClick } from "./agenda.controller.js";
 import { fetchProfessionalAppointments } from "./appointments.service.js";
@@ -60,9 +61,9 @@ function changePasswordView(){
 }
 // Monta cabeçalho, conteúdo e navegação principal do PWA.
 function shell(content){
- const links=[["Agenda","▦"],["Comandas","▤"],["Comissões","％"],["Configurações","⚙"]].filter(([label])=>allowedProfessionalPages(state).includes(label));
+ const links=[["Agenda","▦"],["Comandas","▤"],["Comissões","％"],["Serviços","✦"]].filter(([label])=>allowedProfessionalPages(state).includes(label));
  const greeting=state.professional?.name||state.profile?.full_name||"Equipe";
- root.innerHTML='<div class="app-shell"><header class="top"><div><div class="brand sp-professional-brand">' + renderPlatformMark() + '<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Olá, '+esc(greeting.split(" ")[0])+'</h1></div><button class="icon-button" data-action="logout" aria-label="Sair">↪</button></header>'+
+ root.innerHTML='<div class="app-shell"><header class="top"><div><div class="brand sp-professional-brand">' + renderPlatformMark() + '<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Olá, '+esc(greeting.split(" ")[0])+'</h1></div><details class="professional-profile-menu"><summary class="secondary">Perfil</summary><div class="detail"><button type="button" class="secondary" data-page="Configurações">Configurações</button><button type="button" class="secondary" data-action="logout">Sair</button></div></details></header>'+
  '<main class="content">'+(state.notice?'<div class="notice">'+esc(state.notice)+'</div>':'')+content+'</main>'+
  '<nav class="nav">'+links.map(([label,icon])=>'<button data-page="'+label+'" class="'+(state.page===label?"active":"")+'"><span>'+icon+'</span>'+label+'</button>').join("")+'</nav></div>';
 }
@@ -98,7 +99,7 @@ function render(){
  if(!state.user||!state.orgId)return;
  if(!allowedProfessionalPages(state).includes(state.page))state.page="Agenda";
  clearAutocomplete();
- const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state):state.page==="Comissões"?commissionsView(state):settingsView(state, appearance.preference);
+ const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services):settingsView(state, appearance.preference);
  shell(content);
  if(state.page==="Comandas"&&state.selectedOrder&&state.role==="professional"&&state.professional)bindAutocomplete();
 }
