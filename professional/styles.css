@@ -22,7 +22,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 .login p{color:var(--muted);font-size:12px;line-height:1.7}
 .field{display:block;margin:18px 0;color:var(--sp-muted);font-size:11px}
 .field input{display:block;width:100%;margin-top:7px;border:1px solid var(--sp-line-strong);border-radius:7px;padding:12px 13px;background:var(--sp-paper);color:var(--sp-ink);outline:none;font-size:12px}
-.field input:focus{border-color:var(--gold);box-shadow:0 0 0 3px #a58b5c18}
+.field input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--sp-gold-soft)}
 .primary{width:100%;border:1px solid var(--sp-action);border-radius:7px;background:var(--sp-action);color:var(--sp-on-action);padding:13px 16px;font-weight:500;font-size:12px}
 .primary:hover{background:var(--sp-action-hover)}
 .notice{margin:14px 0;padding:12px 14px;border:1px solid var(--sp-line);border-radius:7px;background:var(--sp-gold-soft);color:var(--sp-gold-text);font-size:11px;line-height:1.6}

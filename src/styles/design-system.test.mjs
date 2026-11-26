@@ -52,3 +52,8 @@ assert.match(read("src/styles/shell-base.css"),/\.unit-indicator\{[^}]*color:var
 const agendaLayout = read("src/agenda/styles/agenda.css");
 assert.match(agendaLayout,/\.blocked-slot\{[^}]*background:repeating-linear-gradient\(135deg,var\(--sp-soft\) 0 6px,var\(--sp-gold-soft\) 6px 12px\);color:var\(--sp-gold-text\)/);
 assert.match(agendaLayout,/\.week-blocked\{[^}]*background:var\(--sp-gold-soft\);color:var\(--sp-gold-text\)/);
+
+// Os avisos da Área da Cliente devem trocar fundo e texto juntos ao mudar o tema.
+const clientControls = read("cliente/styles/components.css");
+assert.match(clientControls,/\.client-alert\.error\{background:var\(--sp-error-soft\);color:var\(--sp-red\)/);
+assert.match(clientControls,/\.client-alert\.success\{background:var\(--sp-green-soft\);color:var\(--sp-green\)/);
