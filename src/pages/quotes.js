@@ -1,4 +1,5 @@
 /** Módulo de Orçamentos: propostas comerciais com itens, profissionais e regras de desconto por serviço. */
+import {mountQuoteItemSearch} from "../modules/quotes/components/quote-item-search.js";
 import {mountAutocomplete} from "../components/autocomplete.js";
 import {findQuoteCustomers} from "../modules/quotes/services/quote-customer-search.js";
 import {queryQuoteWorkspace} from "../modules/quotes/services/quote-query.service.js";
@@ -26,12 +27,14 @@ function renderBuilder() {
   const notes = host.querySelector("#quote-notes")?.value || "";
   const validUntil = host.querySelector("#quote-valid-until")?.value || "";
   host.disposeCustomerSearch?.();
+  host.disposeItemSearch?.();
   host.innerHTML = renderQuoteBuilder({
     notes, validUntil,
     items, selectedCustomer, services, professionals, discountRules,
     maxDiscount, allowFixedDiscount, discountCatalog,
     canManageSettings: ["owner","admin","manager"].includes(state.membership?.role)
   });
+  host.disposeItemSearch = mountQuoteItemSearch(host, {services, professionals, professionalServices});
   const contactSearch = host.querySelector("#quote-customer-search");
   const summary = host.querySelector("#quote-selected-customer");
   const saveButton = host.querySelector("#quote-save");
@@ -104,19 +107,6 @@ export async function loadQuotesPage() {
     if(host.dataset.bound==="true")return;
     host.dataset.bound="true";
     const current=()=>host.isConnected&&allowed()&&host.dataset.quoteReady===JSON.stringify([state.organization?.id,state.user?.id,state.branch?.id||null,state.membership?.role]);
-    host.addEventListener("change",event=>{
-      if(!current())return;
-      const orgId=state.organization.id,branchId=state.branch?.id||null;
-      if(event.target.id!=="quote-service")return;
-      const serviceId=event.target.value,professionalSelect=host.querySelector("#quote-professional");
-      if(!professionalSelect)return;
-      const eligibleIds=new Set(professionalServices.filter(link=>link.service_id===serviceId).map(link=>link.professional_id));
-      const eligible=professionals.filter(professional=>eligibleIds.has(professional.id));
-      professionalSelect.innerHTML='<option value="">A definir</option>'+eligible.map(professional=>'<option value="'+professional.id+
-'">'+esc(professional.name)+
-'</option>').join("");
-      professionalSelect.disabled=!serviceId;
-    });
     host.addEventListener("click",async e=>{
       if(!current())return;
       const orgId=state.organization.id,branchId=state.branch?.id||null;
@@ -150,11 +140,13 @@ export async function loadQuotesPage() {
         return;
       }
       if(e.target.closest("#quote-add-item")){
-        const service=services.find(s=>s.id===host.querySelector("#quote-service").value);
+        const service=services.find(s=>s.id===host.querySelector("#quote-service").dataset.selectedId);
         if(!service){toast("Selecione um serviço válido.");return;}
         try{
           if(items.length>=100)throw new Error("O orçamento permite até 100 serviços.");
-          const professionalId=host.querySelector("#quote-professional").value;
+          const professionalField=host.querySelector("#quote-professional");
+          const professionalId=professionalField.dataset.selectedId;
+          if(professionalField.value.trim()&&!professionalId)throw new Error("Selecione um profissional da lista ou deixe o campo em branco.");
           const professional=professionals.find(p=>p.id===professionalId)||null;
           if(professionalId&&!professional)throw new Error("Selecione um profissional válido.");
           const item=buildQuoteItem({service,professional,assignments:professionalServices,

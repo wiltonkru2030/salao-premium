@@ -20,3 +20,13 @@ export function findQuoteCustomers(customers, term) {
 function normalizeName(value) {
   return String(value || "").trim().normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("pt-BR");
 }
+
+/**
+ * Retorna até oito opções de catálogo cujo nome corresponde à busca.
+ * Aceita nomes com ou sem acento e preserva os identificadores dos registros.
+ */
+export function findQuoteNamedOptions(options, term) {
+  const normalizedTerm = normalizeName(term);
+  if (normalizedTerm.length < 2) return [];
+  return options.filter(option => normalizeName(option.name).includes(normalizedTerm)).slice(0, 8);
+}

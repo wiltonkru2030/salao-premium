@@ -15,3 +15,5 @@ Aparência disponível nas três entradas. Painel testado em entrada, Configura�
 CNPJ numérico e alfanumérico validados na interface e no Supabase de QA para cadastro e edição de profissional MEI.
 
 A busca de cliente no Orçamento passou a usar o autocomplete compartilhado. A seleção por ID, o cadastro rápido e a preservação de validade e observações estão cobertos no código. Busca por serviço e profissional no Orçamento e homologação do fluxo completo seguem na matriz.
+
+Busca de serviço e profissional integrada ao Orçamento. A conversão de uma proposta aceita com múltiplos profissionais ainda precisa de homologação ponta a ponta.

@@ -18,3 +18,5 @@ Regras: escopo por organização; tokens públicos são armazenados como hash; G
 Ver [README mestre](../../../README.md). Aplicar CSS global, modais/listas padronizados, máscaras, comentários JSDoc e erros pt-BR. Os testes não foram executados nesta revisão documental.
 
 A busca de cliente usa o autocomplete compartilhado com os contatos já carregados para a organização e a unidade ativa. A busca aceita nome sem acentos e sequência de dígitos do WhatsApp. A proposta envia o identificador do cliente selecionado, e alterar o texto invalida a seleção. O botão de cadastro rápido fica disponível junto à pesquisa. Validade e observações são preservadas quando o construtor é redesenhado ao editar itens.
+
+A inclusão de itens usa a busca compartilhada para serviços e profissionais. As sugestões de serviço exibem nome, preço e duração. A busca de profissionais fica disponível após selecionar o serviço e apresenta somente os habilitados para ele no catálogo carregado. Trocar o serviço limpa o responsável. O campo em branco permite definir o profissional depois, e texto digitado sem seleção não é aceito como vínculo.

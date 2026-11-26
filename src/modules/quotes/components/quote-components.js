@@ -23,10 +23,6 @@ const statusName = value => ({
 export function renderQuoteBuilder({ items, selectedCustomer, services, professionals, discountRules, maxDiscount, allowFixedDiscount, canManageSettings, discountCatalog=services, notes="", validUntil="" }) {
   const {subtotal,discount,total}=calculateQuoteTotals(items);
 
-  const serviceOptions = services.map(service => `
-    <option value="${esc(service.id)}">${esc(service.name)} · ${money(service.price)}</option>
-  `).join("");
-
   const customerSummary = selectedCustomer
     ? `<div class="notice">Cliente vinculado: <b>${esc(selectedCustomer.name)}</b> · ${esc(selectedCustomer.phone || "WhatsApp não informado")}</div>`
     : '<small class="muted">Selecione um cliente para continuar.</small>';
@@ -80,10 +76,11 @@ export function renderQuoteBuilder({ items, selectedCustomer, services, professi
       </dialog>
       <div class="quote-item-entry">
         <label>Serviço
-          <select class="field" id="quote-service"><option value="">Selecione um serviço</option>${serviceOptions}</select>
+          <input class="field" id="quote-service" placeholder="Buscar serviço pelo nome" autocomplete="off">
         </label>
         <label>Profissional
-          <select class="field" id="quote-professional" disabled><option value="">Selecione um serviço primeiro</option></select>
+          <input class="field" id="quote-professional" placeholder="Selecione um serviço primeiro" autocomplete="off" disabled>
+          <small class="muted">Opcional. Deixe em branco para definir depois.</small>
         </label>
         <label>Quantidade<input class="field" id="quote-quantity" type="number" min="1" max="1000" step="1" value="1"></label>
         <label>Tipo de desconto
