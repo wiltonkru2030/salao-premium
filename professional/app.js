@@ -22,9 +22,10 @@ import { renderProfessionalPasswordChangeView, renderProfessionalLoginView } fro
 import {ordersView,commissionsView,settingsView} from "./views/workspace.views.js";
 import { renderProfessionalCustomers } from "./views/customers.views.js";
 import { renderProfessionalServices } from "./views/services.views.js";
+import { renderProfessionalBooking } from "./views/booking.views.js";
 import { renderAgendaView } from "./views/agenda.views.js";
 import { handleAgendaClick } from "./agenda.controller.js";
-import { fetchProfessionalAppointments, updateOwnAppointmentStatus, rescheduleOwnAppointment } from "./appointments.service.js";
+import { fetchProfessionalAppointments, updateOwnAppointmentStatus, rescheduleOwnAppointment, createOwnAppointment } from "./appointments.service.js";
 import {fetchProfessionalServices} from "./services.service.js";
 import { fetchProfessionalOrders, fetchProfessionalOrderItems } from "./orders.service.js";
 import { fetchProfessionalCommissions } from "./commissions.service.js";
@@ -48,6 +49,7 @@ let sessionEpoch=0;
 const appointmentStatusEnabled = import.meta.env.VITE_PROFESSIONAL_APPOINTMENT_STATUS === "true";
 let appointmentStatusPending = false;
 // Ative após aplicar a migration de reagendamento no ambiente correspondente.
+const bookingEnabled = import.meta.env.VITE_PROFESSIONAL_BOOKING === "true";
 const rescheduleEnabled = import.meta.env.VITE_PROFESSIONAL_RESCHEDULE === "true";
 const serviceLock={active:false,operation:null};
 /** Limpa dados privados antes de exibir a tela de acesso. */
@@ -114,7 +116,10 @@ function appointmentDetails(){
 // Apresenta calendário mensal e lista de agendamentos do profissional.
 // Delega a composição visual da agenda para uma view sem efeitos colaterais.
 function agendaView(){
- return renderAgendaView({state,dateKey,monthLabel,dateLabel,appointmentCard,appointmentDetails});
+ const booking=bookingEnabled&&state.role==="professional"&&state.professional
+  ?renderProfessionalBooking({appointments:state.appointments,professionalId:state.professional.id,services:state.services,timezone:state.organization?.timezone})
+  :"";
+ return booking+renderAgendaView({state,dateKey,monthLabel,dateLabel,appointmentCard,appointmentDetails});
 }
 function render(){
  if(!state.user||!state.orgId)return;
@@ -305,7 +310,42 @@ async function applyAppointmentReschedule(form) {
  }
 }
 
+/** Salva o novo horário e recarrega a agenda do mês em que ele foi criado. */
+async function applyNewAppointment(form) {
+ if(!bookingEnabled||state.role!=="professional"||state.page!=="Agenda"||appointmentStatusPending)return;
+ const epoch=sessionEpoch,values=new FormData(form),button=form.querySelector("button");
+ appointmentStatusPending=true;
+ button.disabled=true;
+ try {
+  const saved=await createOwnAppointment({client:supabase,organizationId:state.orgId,reference:values.get("reference"),
+   service:values.get("service"),localStart:values.get("start")});
+  if(epoch!==sessionEpoch)return;
+  if(state.page==="Agenda") {
+   const date=new Date(saved.starts_at);
+   state.selectedDate=date;
+   state.month=new Date(date.getFullYear(),date.getMonth(),1);
+   state.selectedAppointment=null;
+  }
+  try {
+   await loadAppointments();
+   if(epoch===sessionEpoch)showNotice("Agendamento criado.");
+  } catch {
+   if(epoch===sessionEpoch)showNotice("Agendamento criado. Atualize a Agenda para ver o horário.");
+  }
+ } catch(error) {
+  if(epoch===sessionEpoch)showNotice(error.message);
+ } finally {
+  appointmentStatusPending=false;
+  if(button.isConnected)button.disabled=false;
+ }
+}
+
 root.addEventListener("submit",async event=>{
+ if(event.target.matches("#professional-new-appointment")){
+  event.preventDefault();
+  await applyNewAppointment(event.target);
+  return;
+ }
  if(event.target.matches("#professional-reschedule")){
   event.preventDefault();
   await applyAppointmentReschedule(event.target);

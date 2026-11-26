@@ -107,3 +107,17 @@ export async function rescheduleOwnAppointment({client, organizationId, appointm
   }
   return data;
 }
+
+/** Solicita um agendamento usando somente referências do catálogo e o horário civil. */
+export async function createOwnAppointment({client, organizationId, reference, service, localStart}) {
+  const {data, error} = await client.rpc("create_own_appointment", {
+    target_org: organizationId,
+    reference_appointment: reference,
+    target_service: service,
+    local_start: localStart
+  });
+  if (error?.code === "23P01") throw new Error("Esse horário está ocupado ou bloqueado.");
+  if (error?.code === "23514") throw new Error("Confira a unidade, o serviço e o expediente antes de agendar.");
+  if (error || !data?.id || !data.starts_at) throw new Error("Não foi possível criar o agendamento. Confira os dados e tente novamente.");
+  return data;
+}
