@@ -52,7 +52,7 @@ export async function fetchProfessionalAppointments({
   try {
     let query = client
       .from("appointments")
-      .select("id,starts_at,ends_at,customer_name,customer_phone,service_name,professional_name,status,price,booking_source,created_by_name,notes,professional_id")
+      .select("id,starts_at,ends_at,customer_id,customer_name,customer_phone,service_name,professional_name,status,price,booking_source,created_by_name,notes,professional_id")
       .eq("org_id", organizationId)
       .gte("starts_at", start.toISOString())
       .lt("starts_at", end.toISOString());
