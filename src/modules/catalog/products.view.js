@@ -16,7 +16,7 @@ export function renderProductsView(products,productCategories,canManage=false) {
   const cards=products.map(product=>{
     const actions=canManage
       ? '<button class="btn secondary" type="button" data-edit-product="'+esc(product.id)+'">Editar</button>'+
-        '<button class="text-button" type="button" data-toggle-product="'+esc(product.id)+'" data-active="'+(product.active?"true":"false")+'">'+(product.active?"Inativar":"Reativar")+'</button>'
+        '<button class="btn secondary" type="button" data-toggle-product="'+esc(product.id)+'" data-active="'+(product.active?"true":"false")+'">'+(product.active?"Inativar":"Reativar")+'</button>'
       : "";
     return '<article class="record-card"><span class="record-main"><b>'+esc(product.name)+'</b>'+
       '<small>'+esc(product.sku||"Sem SKU")+' · '+esc(product.category||"Sem categoria")+'</small>'+

@@ -18,7 +18,7 @@ export function renderServicesView(services,serviceCategories,canManage=false,br
   const cards=services.map(service=>{
     const actions=canManage
       ? '<button class="btn secondary" type="button" data-edit-service="'+esc(service.id)+'">Editar</button>'+
-        '<button class="text-button" type="button" data-toggle-service="'+esc(service.id)+'" data-active="'+(service.active?"true":"false")+'">'+(service.active?"Inativar":"Reativar")+'</button>'
+        '<button class="btn secondary" type="button" data-toggle-service="'+esc(service.id)+'" data-active="'+(service.active?"true":"false")+'">'+(service.active?"Inativar":"Reativar")+'</button>'
       : "";
     return '<article class="record-card"><span class="record-main"><b>'+esc(service.name)+'</b>'+
       '<small>'+esc(service.category||"Sem categoria")+' · '+Number(service.duration_minutes)+' min · '+esc(service.branch_id?(branchNames.get(service.branch_id)||"Unidade vinculada"):"Todas as unidades")+'</small></span>'+

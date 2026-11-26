@@ -151,3 +151,9 @@
   background: var(--sp-green-soft);
   color: var(--sp-green);
 }
+
+/* A caixa de busca fornece a superfície e o contorno também no tema escuro. */
+:root[data-theme="dark"] #app .list-toolbar .search-box input {
+  background:transparent;
+  border:0;
+}

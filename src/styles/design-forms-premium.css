@@ -3,19 +3,19 @@
  * Não altera validações de CPF/CNPJ, CEP, persistência nem permissões.
  * Aplicado por último para corrigir fontes e tamanhos herdados de módulos antigos.
  */
-:root{--sp-form-radius:9px;--sp-form-border:#dedbd4;--sp-form-label:#5d5952}
+:root{--sp-form-radius:9px;--sp-form-border:var(--sp-line-strong);--sp-form-label:var(--sp-muted)}
 :where(.sp-modal-body,.settings-form,.settings-card>form,.agenda-form,.professional-modal-body,.form-field,.professional-form-grid) :where(label){font-size:12px;line-height:1.5;color:var(--sp-form-label)}
 :where(.sp-modal-body,.settings-form,.settings-card>form,.agenda-form,.professional-modal-body,.form-field,.professional-form-grid) :where(input:not([type=checkbox]):not([type=radio]),select,textarea),
 :where(input.field,select.field,textarea.field){
  font-family:var(--sp-font-ui,'Poppins',sans-serif);font-size:14px;line-height:1.45;
  min-height:44px;max-width:100%;border-radius:var(--sp-form-radius);
- border-color:var(--sp-form-border);background:#fff;color:var(--sp-ink)
+ border-color:var(--sp-form-border);background:var(--sp-paper);color:var(--sp-ink)
 }
 :where(.sp-modal-body,.settings-form,.settings-card>form,.agenda-form,.professional-modal-body,.form-field,.professional-form-grid) textarea,
 textarea.field{min-height:104px;resize:vertical}
 :where(.sp-modal-body,.settings-form,.settings-card>form,.agenda-form,.professional-modal-body,.form-field,.professional-form-grid) :where(input,select,textarea):focus-visible,
-:where(input.field,select.field,textarea.field):focus-visible{outline:2px solid #ad9568;outline-offset:1px;border-color:#ad9568}
-:where(.sp-modal-body,.settings-form,.settings-card>form,.agenda-form,.professional-modal-body,.form-field,.professional-form-grid) :where(input,select,textarea):disabled{background:#f6f5f2;color:#77716b;cursor:not-allowed}
+:where(input.field,select.field,textarea.field):focus-visible{outline:2px solid var(--sp-focus-ring);outline-offset:1px;border-color:var(--sp-focus-ring)}
+:where(.sp-modal-body,.settings-form,.settings-card>form,.agenda-form,.professional-modal-body,.form-field,.professional-form-grid) :where(input,select,textarea):disabled{background:var(--sp-soft);color:var(--sp-muted);cursor:not-allowed}
 :where(.sp-modal-body,.settings-form,.settings-card>form,.agenda-form,.professional-modal-body,.form-field,.professional-form-grid) :where(input,select,textarea)[aria-invalid=true]{border-color:#b65e52;box-shadow:0 0 0 2px #b65e521c}
 :where(.sp-modal-body,.settings-form,.settings-card>form,.agenda-form,.professional-modal-body,.form-field,.professional-form-grid) :where(small,.field-hint,.help-text){font-size:12px;line-height:1.55}
 dialog.sp-modal{width:min(720px,calc(100vw - 28px));max-height:min(90dvh,900px);border-radius:14px}
@@ -29,7 +29,7 @@ dialog.sp-modal{width:min(720px,calc(100vw - 28px));max-height:min(90dvh,900px);
 .sp-modal-foot{padding:17px 25px;gap:10px}
 .sp-modal-foot .btn{min-height:44px;font-size:13px}
 .sp-modal-close{width:44px;height:44px;min-width:44px;cursor:pointer}
-.sp-modal-close:focus-visible{outline:2px solid #ad9568;outline-offset:2px}
+.sp-modal-close:focus-visible{outline:2px solid var(--sp-focus-ring);outline-offset:2px}
 .settings-card>h3{font-size:15px;line-height:1.4}
 .settings-card>summary{font-size:14px;min-height:58px}
 .setting-row span:first-child,.setting-row b{font-size:12px;line-height:1.5}

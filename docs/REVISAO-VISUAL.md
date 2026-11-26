@@ -12,3 +12,5 @@ A revisão abrange o painel administrativo, o App Profissional e a Área da Clie
 Nesta revisão, os controles compartilhados receberam foco visível e estados acionado e desabilitado. Textos auxiliares do menu e das listas passaram a usar o token de contraste. O menu recolhido no celular saiu da ordem de foco. O toast usa uma região de anúncio e o carregamento de agendamentos da cliente foi identificado como estado de progresso. Foram removidos os seletores da pesquisa de Orçamentos substituída pelo autocomplete.
 
 A suíte local, a auditoria CSS e o build foram executados. A rodada em navegador nas cinco larguras e o aceite individual das telas autenticadas continuam abertos. O executável Chromium disponível no ambiente apontava para um binário ausente.
+
+A rodada de acabamento ajustou as superfícies de formulários, configurações e lista de espera para usar a paleta do tema. A Agenda ganhou uma faixa de profissionais, barra de ações e resumo mais compactos. Nos cadastros, as ações existentes de edição e inativação foram alinhadas ao botão secundário, com altura de toque e quebra de linha. Mantidas as condições de acesso e as ações de cada cadastro.

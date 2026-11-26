@@ -73,7 +73,7 @@ export async function loadBranchesPage() {
   const cards=branchesCache.map(branch=>{
     const actions=canManageBranches()&&!branch.is_main
       ? '<button class="btn secondary" type="button" data-edit-branch="'+esc(branch.id)+'">Editar</button>'+
-        '<button class="text-button" type="button" data-toggle-branch="'+esc(branch.id)+'" data-active="'+(branch.active?"true":"false")+'">'+(branch.active?"Inativar":"Reativar")+'</button>'
+        '<button class="btn secondary" type="button" data-toggle-branch="'+esc(branch.id)+'" data-active="'+(branch.active?"true":"false")+'">'+(branch.active?"Inativar":"Reativar")+'</button>'
       : "";
     return '<article class="record-card"><span class="record-main"><b>'+esc(branch.name)+(branch.is_main?' <small>· Matriz</small>':"")+'</b>'+
       '<small>'+esc(branch.phone||"Telefone não informado")+'</small>'+

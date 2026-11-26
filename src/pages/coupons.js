@@ -127,7 +127,7 @@ export async function loadCouponsPage() {
           '<small>Usos: '+used+(coupon.usage_limit?' / '+coupon.usage_limit:'')+' · '+(coupon.usage_per_customer||1)+' por cliente</small></div>' +
           '<div class="coupon-record-actions"><span class="status-pill '+(coupon.active?'active':'inactive')+'">'+(coupon.active?'Ativo':'Inativo')+'</span>' +
           '<button class="btn secondary" type="button" data-edit-coupon="'+esc(coupon.id)+'">Editar</button>' +
-          (coupon.active?'<button class="text-button" type="button" data-deactivate-coupon="'+esc(coupon.id)+'">Desativar</button>':'') +
+          (coupon.active?'<button class="btn secondary" type="button" data-deactivate-coupon="'+esc(coupon.id)+'">Inativar</button>':'') +
           '</div></article>';
       }).join("")||'<div class="empty-state">Nenhum cupom cadastrado.</div>'}</div>`;
 

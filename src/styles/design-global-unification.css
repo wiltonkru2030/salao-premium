@@ -139,3 +139,21 @@
  #app #sales-manager .metrics {grid-template-columns:minmax(0,1fr)}
  #app #sales-manager .metric-card {min-height:0}
 }
+
+/* Ações de registro mantêm altura de toque e largura baseada no rótulo. */
+#app :is(.record-trailing,.professional-card-actions) .btn {
+  min-block-size:var(--sp-control-height);
+  block-size:auto;
+  flex:0 0 auto;
+  padding:8px 12px;
+}
+@media(max-width:700px) {
+ #app :is(#customers-manager,#categories-manager,#branches-manager,#coupons-manager) .record-card {flex-wrap:wrap}
+ #app :is(#customers-manager,#categories-manager,#branches-manager,#coupons-manager) .record-trailing {
+   flex-direction:row;
+   flex-wrap:wrap;
+   align-items:center;
+   justify-content:flex-start;
+   max-inline-size:100%;
+ }
+}

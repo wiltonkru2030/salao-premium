@@ -17,7 +17,7 @@ export function renderCategoriesView(categories,selectedType,canManage=false) {
   const cards=visible.map(category=>{
     const actions=canManage
       ? '<button class="btn secondary" type="button" data-edit-category="'+esc(category.id)+'">Editar</button>'+
-        '<button class="text-button" type="button" data-toggle-category="'+esc(category.id)+'" data-active="'+(category.active?"true":"false")+'">'+(category.active?"Inativar":"Reativar")+'</button>'
+        '<button class="btn secondary" type="button" data-toggle-category="'+esc(category.id)+'" data-active="'+(category.active?"true":"false")+'">'+(category.active?"Inativar":"Reativar")+'</button>'
       : "";
     return '<article class="record-card"><span class="record-main"><b>'+esc(category.name)+'</b>'+
       '<small class="status-pill '+(category.active?"active":"inactive")+'">'+(category.active?"Ativa":"Inativa")+'</small></span>'+
