@@ -195,3 +195,9 @@ O teste em Chromium simulou resposta atrasada, troca de CEP, edição manual dur
 ### Busca de cliente no Orçamento
 
 Os testes locais verificaram busca por nome sem acento, sequência de WhatsApp com pontuação, limite de oito resultados, acesso ao cadastro rápido e renderização dos valores de validade e observações. Os testes de componentes e regras do Orçamento, a auditoria CSS e o build das três aplicações passaram. A jornada com cliente real e a conversão do orçamento em agendamento seguem para homologação.
+
+### Orçamento com dois profissionais e recebimento agrupado
+
+Em 26/11, a fixture transacional [quote-group-audit.sql](../tests/integration/quote-group-audit.sql) passou duas vezes no Supabase de QA. O orçamento aceito criou horários de 30 e 45 minutos, com os respectivos profissionais, sem gerar lançamento financeiro no agendamento. O início agrupado retornou uma comanda para os dois serviços. O caixa aceitou R$ 60 em PIX e R$ 90 em dinheiro. As comissões foram de R$ 50 para o primeiro profissional e R$ 20 para o segundo. O rollback foi confirmado pela ausência da conta da fixture.
+
+A suíte local, a auditoria CSS e o build passaram. O teste de banco usa o papel autenticado de proprietária. A mesma jornada no navegador e a devolução agrupada por papel seguem pendentes. A consulta pública de configuração do Auth de QA retornou Google desabilitado e não confirmou Passkey.
