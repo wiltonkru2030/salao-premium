@@ -3,7 +3,6 @@
  * Responsabilidade: encapsular seleção DOM, escape HTML e componentes visuais reutilizáveis.
  * Segurança: valores dinâmicos inseridos em texto/atributos devem ser escapados antes da renderização.
  */
-import { state } from './state.js';
 
 /** Localiza o primeiro elemento que corresponde ao seletor CSS informado. */
 export const $=s=>document.querySelector(s);
@@ -16,7 +15,7 @@ export function icon(name){return '<span class="ui-icon" aria-hidden="true">'+na
 /** Gera botão com ação delegada por atributo data-action para o controlador da aplicação. */
 export function btn(label,action,kind='secondary'){return '<button type="button" class="btn '+kind+'" data-action="'+action+'">'+label+'</button>'}
 /** Monta o cabeçalho padronizado da página com título, descrição e ações opcionais. */
-export function head(title,desc,action=''){return '<div class="page-head"><div><div class="eyebrow">SALÃO PREMIUM <span>/</span> '+esc(state.page.toUpperCase())+'</div><h1>'+esc(title)+'</h1><p>'+esc(desc)+'</p></div><div class="head-actions">'+action+'</div></div>'}
+export function head(title,desc,action=''){return '<div class="page-head"><div><h1>'+esc(title)+'</h1><p>'+esc(desc)+'</p></div>'+(action?'<div class="head-actions">'+action+'</div>':'')+'</div>'}
 /** Converte um status em etiqueta visual; o texto é escapado antes de entrar no HTML. */
 export function status(text){let cls=/confirmado|ativo|concluída|recebido|pago|entrada|frequente|vip/i.test(text)?'success':/cancel|baixo|pendente|aguardando|apurar|aberto/i.test(text)?'warning':'neutral';return '<span class="status '+cls+'">'+esc(text)+'</span>'}
 /** Gera cartão de indicador com valor, variação e legenda contextual. */
