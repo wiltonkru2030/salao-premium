@@ -11,3 +11,5 @@
 
 /* Módulo 09 — experiência mobile e acessibilidade. */
 @import url('./styles/design-mobile-premium.css');
+
+@import url("../src/styles/interface-controls.css");

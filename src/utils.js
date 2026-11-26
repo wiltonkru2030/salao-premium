@@ -9,7 +9,21 @@ export const $=s=>document.querySelector(s);
 /** Escapa caracteres especiais para impedir que texto dinâmico seja interpretado como HTML. */
 export const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /** Exibe uma notificação temporária e a remove automaticamente da interface. */
-export function toast(msg){const el=document.createElement('div');el.className='toast';el.textContent=msg;document.body.append(el);setTimeout(()=>el.remove(),2600)}
+export function toast(msg) {
+  let region = document.querySelector("#sp-toast-region");
+  if (!region) {
+    region = document.createElement("div");
+    region.id = "sp-toast-region";
+    region.setAttribute("role", "status");
+    document.body.append(region);
+  }
+
+  const message = document.createElement("div");
+  message.className = "toast";
+  region.append(message);
+  message.textContent = msg;
+  setTimeout(() => message.remove(), 2600);
+}
 /** Gera o fragmento visual do ícone de interface identificado pelo nome informado. */
 export function icon(name){return '<span class="ui-icon" aria-hidden="true">'+name+'</span>'}
 /** Gera botão com ação delegada por atributo data-action para o controlador da aplicação. */

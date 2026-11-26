@@ -1,0 +1,38 @@
+/* Contrato visual dos controles, listas e estados nas três interfaces. */
+:where(#app,#professional-app,#cliente-app) :where(button,[href],input,select,textarea,summary):focus-visible {
+  outline:2px solid var(--sp-focus-ring);
+  outline-offset:2px;
+}
+
+:where(#app,#professional-app,#cliente-app) :where(button,input,select,textarea):disabled {
+  cursor:not-allowed;
+  opacity:.62;
+}
+
+:where(#app,#professional-app,#cliente-app) :where(button:not(:disabled)):active {
+  filter:brightness(.94);
+}
+
+:where(#app,#professional-app,#cliente-app) :where(input,select,textarea)[aria-invalid="true"] {
+  border-color:var(--sp-red);
+}
+
+:where(.sp-modal-body,.form-grid,.professional-form-grid,.client-panel) :where(input,select,textarea) {
+  min-inline-size:0;
+  max-inline-size:100%;
+}
+
+.record-main {min-inline-size:0;overflow-wrap:anywhere}
+.record-trailing > b,.metric-card > strong {font-variant-numeric:tabular-nums}
+:where(.record-main small,.metric-card small,.nav-group-label) {overflow-wrap:anywhere}
+
+@media (max-width:700px) {
+  :where(#app,#professional-app,#cliente-app) :where(.sp-modal-close,.icon-button,.client-button,.slot-option) {
+    min-block-size:var(--sp-control-height);
+  }
+
+  #professional-app .icon-button {min-inline-size:var(--sp-control-height)}
+  :where(.sp-modal-body,.professional-form-grid,.client-panel) :where(input:not([type="checkbox"]):not([type="radio"]),select,textarea) {
+    font-size:1rem;
+  }
+}

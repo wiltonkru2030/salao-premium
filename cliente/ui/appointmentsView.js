@@ -40,7 +40,7 @@ function money(value) {
 export function renderAppointmentsView({ appointments = [], loading = false, error = "", changeOptions = [], change = null } = {}) {
   const heading = '<div class="page-heading"><span class="eyebrow">SUA ROTINA</span><h1>Agendamentos</h1><p>Seus próximos horários e seu histórico em um só lugar.</p></div>';
   if (loading) {
-    return '<section class="page-content">' + heading + '<div class="empty-state"><span class="spinner"></span><p>Carregando seus agendamentos…</p></div></section>';
+    return '<section class="page-content">' + heading + '<div class="empty-state" role="status"><span class="spinner" aria-hidden="true"></span><p>Carregando seus agendamentos…</p></div></section>';
   }
   if (error) {
     return '<section class="page-content">' + heading +

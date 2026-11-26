@@ -105,7 +105,7 @@ button.record-card{cursor:pointer;transition:border-color .16s,background .16s}
 button.record-card:hover{border-color:#cbb993;background:#fdfcf9}
 .record-main{display:flex;flex:1;flex-direction:column;gap:4px;min-width:0}
 .record-main b{color:#292824;font-size:11px;font-weight:600}
-.record-main small{overflow:hidden;color:#89867f;font-size:9px;line-height:1.5;text-overflow:ellipsis}
+.record-main small{color:var(--sp-muted);font-size:var(--sp-caption-size);line-height:1.5;overflow-wrap:anywhere}
 .record-trailing{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
 .record-trailing>b{color:#34322d;font-size:11px;font-weight:600}
 .record-trailing small{color:#8b8881;font-size:9px}

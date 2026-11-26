@@ -4,16 +4,16 @@
  * O menu continua abrindo pela classe .open já usada pelo controlador.
  */
 @media (max-width:700px), (hover:none) and (pointer:coarse) and (max-width:1100px){
- html,body,#app{width:100%;max-width:100%;overflow-x:hidden}
- .sidebar{position:fixed!important;inset:0 auto 0 0!important;width:min(320px,88vw)!important;max-width:88vw!important;transform:translateX(-105%)!important;z-index:50!important;box-shadow:none!important;display:flex!important;visibility:visible!important}
- .sidebar.open{transform:translateX(0)!important;box-shadow:14px 0 48px #1a171630!important}
+ #app{min-inline-size:0;max-inline-size:100%}
+ .sidebar{position:fixed!important;inset:0 auto 0 0!important;width:min(320px,88vw)!important;max-width:88vw!important;transform:translateX(-105%)!important;z-index:50!important;box-shadow:none!important;display:flex!important;visibility:hidden!important}
+ .sidebar.open{visibility:visible!important;transform:translateX(0)!important;box-shadow:14px 0 48px #1a171630!important}
  .sidebar-collapse{display:none!important}
  .sidebar-close,.menu-toggle{display:inline-grid!important}
  .mobile-scrim.visible{display:block!important;position:fixed!important;inset:0!important;z-index:49!important;background:#17151380!important}
  .main-area,.main-area.sidebar-collapsed{margin-left:0!important;width:100%!important;min-width:0!important}
  .topbar{min-height:64px!important;height:auto!important;padding:10px 16px!important;gap:12px!important}
  .topbar-left{flex:0 0 auto!important}
- .topbar-right{min-width:0!important;flex:1 1 auto!important;gap:8px!important}
+ .topbar-right{min-width:0!important;flex:1 1 auto!important;gap:8px!important;flex-wrap:wrap}
  .topbar .breadcrumb{display:none!important}
  .topbar .unit-indicator{max-width:145px!important;font-size:12px!important}
  .topbar .icon-btn{min-width:44px!important;width:44px!important;height:44px!important}

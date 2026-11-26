@@ -19,27 +19,6 @@ padding-top:16px;
 margin-top:8px}
 .quote-grand-total strong{font-size:1.45rem;
 color:var(--text,#202020)}
-.quote-suggestions{display:grid;
-gap:5px;
-margin-top:6px}
-.quote-suggestion{display:flex;
-justify-content:space-between;
-gap:16px;
-text-align:left;
-padding:12px 14px;
-border:1px solid var(--border,#e8e5df);
-border-radius:10px;
-background:#fff;
-color:inherit;
-cursor:pointer}
-.quote-suggestion small{color:var(--muted,#777)}
-.quote-not-found{display:flex;
-align-items:center;
-justify-content:space-between;
-gap:12px;
-padding:12px;
-background:#faf9f6;
-border-radius:10px}
 .quote-actions{display:flex;
 flex-wrap:wrap;
 gap:10px;
