@@ -13,3 +13,5 @@ SEG-02 em implementação, com gestão de atribuições na equipe e guardas de u
 Aparência disponível nas três entradas. Painel testado em entrada, Configurações e Dashboard, com verificação visual por módulo ainda pendente.
 
 CNPJ numérico e alfanumérico validados na interface e no Supabase de QA para cadastro e edição de profissional MEI.
+
+A busca de cliente no Orçamento passou a usar o autocomplete compartilhado. A seleção por ID, o cadastro rápido e a preservação de validade e observações estão cobertos no código. Busca por serviço e profissional no Orçamento e homologação do fluxo completo seguem na matriz.

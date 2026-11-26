@@ -16,3 +16,5 @@ Regras: escopo por organização; tokens públicos são armazenados como hash; G
 - Testes via npm run: test:quotes, test:quote-rules, test:tenant, test:agenda. Homologar orçamento com dois profissionais, desconto, aceite, PDF e agendamento sem duplicação.
 
 Ver [README mestre](../../../README.md). Aplicar CSS global, modais/listas padronizados, máscaras, comentários JSDoc e erros pt-BR. Os testes não foram executados nesta revisão documental.
+
+A busca de cliente usa o autocomplete compartilhado com os contatos já carregados para a organização e a unidade ativa. A busca aceita nome sem acentos e sequência de dígitos do WhatsApp. A proposta envia o identificador do cliente selecionado, e alterar o texto invalida a seleção. O botão de cadastro rápido fica disponível junto à pesquisa. Validade e observações são preservadas quando o construtor é redesenhado ao editar itens.

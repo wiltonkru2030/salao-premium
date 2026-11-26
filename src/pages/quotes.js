@@ -1,4 +1,6 @@
 /** Módulo de Orçamentos: propostas comerciais com itens, profissionais e regras de desconto por serviço. */
+import {mountAutocomplete} from "../components/autocomplete.js";
+import {findQuoteCustomers} from "../modules/quotes/services/quote-customer-search.js";
 import {queryQuoteWorkspace} from "../modules/quotes/services/quote-query.service.js";
 import {renderQuotePreview} from "../modules/quotes/components/quote-preview.js";
 import { supabase } from "../supabase/client.js";
@@ -21,10 +23,35 @@ function allowed() { return ["owner","admin","manager","receptionist"].includes(
 function renderBuilder() {
   const host = document.querySelector("#quote-builder");
   if (!host) return;
+  const notes = host.querySelector("#quote-notes")?.value || "";
+  const validUntil = host.querySelector("#quote-valid-until")?.value || "";
+  host.disposeCustomerSearch?.();
   host.innerHTML = renderQuoteBuilder({
+    notes, validUntil,
     items, selectedCustomer, services, professionals, discountRules,
     maxDiscount, allowFixedDiscount, discountCatalog,
     canManageSettings: ["owner","admin","manager"].includes(state.membership?.role)
+  });
+  const contactSearch = host.querySelector("#quote-customer-search");
+  const summary = host.querySelector("#quote-selected-customer");
+  const saveButton = host.querySelector("#quote-save");
+  const scopedCustomers = customers;
+  const context = quoteContext;
+  const loadedVersion = loadVersion;
+  host.disposeCustomerSearch = mountAutocomplete(contactSearch, {
+    search: term => findQuoteCustomers(scopedCustomers, term),
+    getLabel: customer => customer.name + (customer.phone ? " · " + customer.phone : ""),
+    placeholder: "Cliente não encontrado",
+    onSelect(customer) {
+      const current = JSON.stringify([state.organization?.id,state.user?.id,state.branch?.id||null,state.membership?.role]);
+      if (!host.isConnected || context !== current || loadedVersion !== loadVersion) return;
+      selectedCustomer = customer;
+      if (customer) contactSearch.value = customer.name;
+      summary.textContent = customer
+        ? "Cliente vinculado: " + customer.name + " · " + (customer.phone || "WhatsApp não informado")
+        : "Selecione um cliente para continuar.";
+      saveButton.disabled = saveButton.dataset.saving === "true" || !customer || !items.length;
+    }
   });
 }
 
@@ -90,24 +117,9 @@ export async function loadQuotesPage() {
 '</option>').join("");
       professionalSelect.disabled=!serviceId;
     });
-    host.addEventListener("input",async e=>{
-      if(!current())return;
-      const orgId=state.organization.id,branchId=state.branch?.id||null;
-      if(e.target.id!=="quote-customer-search")return;
-      const term=e.target.value.trim().toLocaleLowerCase("pt-BR"),box=host.querySelector("#quote-customer-results");
-      if(term.length<2){box.innerHTML="";return;}
-      const matches=customers.filter(c=>(c.name+
-" "+(c.phone||"")).toLocaleLowerCase("pt-BR").includes(term)).slice(0,8);
-      box.innerHTML=matches.length?matches.map(c=>'<button type="button" class="quote-suggestion" data-select-customer="'+c.id+
-'"><b>'+esc(c.name)+
-'</b><small>'+esc(c.phone||"WhatsApp não informado")+
-'</small></button>').join(""):'<div class="quote-not-found">Cliente não encontrado <button class="btn secondary" type="button" id="quote-show-quick">＋ Cadastrar cliente</button></div>';
-    });
     host.addEventListener("click",async e=>{
       if(!current())return;
       const orgId=state.organization.id,branchId=state.branch?.id||null;
-      const select=e.target.closest("[data-select-customer]");
-      if(select){selectedCustomer=customers.find(c=>c.id===select.dataset.selectCustomer)||null;renderBuilder();return;}
       if(e.target.closest("#quote-show-quick")){
         const dialog=host.querySelector("#quote-quick-customer");
         if(dialog&&!dialog.open){dialog.showModal();dialog.querySelector("[name=name]")?.focus();}
@@ -119,7 +131,7 @@ export async function loadQuotesPage() {
       if(e.target.closest("#quote-save")){
         if(!branchId){toast("Selecione uma unidade específica para gerar o orçamento.");return;}
         if(!selectedCustomer||!items.length){toast("Selecione um cliente e adicione ao menos um serviço.");return;}
-        const button=host.querySelector("#quote-save");if(!button||button.disabled)return;button.disabled=true;button.textContent="Salvando orçamento…";
+        const button=host.querySelector("#quote-save");if(!button||button.disabled)return;button.dataset.saving="true";button.disabled=true;button.textContent="Salvando orçamento…";
         try{
           const notes=host.querySelector("#quote-notes").value.trim(),validUntil=host.querySelector("#quote-valid-until").value||null;
           const payload=makeQuotePayload(items);
@@ -134,7 +146,7 @@ export async function loadQuotesPage() {
           toast("Orçamento #"+quote.quote_number+
 " gerado e marcado como Em análise.");
           await openQuote(quote.id,orgId);
-        }catch(error){reportError(error,{context:"Orçamentos > gerar orçamento"});button.disabled=false;button.textContent="Gerar orçamento e deixar em análise";}
+        }catch(error){reportError(error,{context:"Orçamentos > gerar orçamento"});button.dataset.saving="false";button.disabled=!selectedCustomer||!items.length;button.textContent="Gerar orçamento e deixar em análise";}
         return;
       }
       if(e.target.closest("#quote-add-item")){

@@ -20,7 +20,7 @@ const statusName = value => ({
  * @param {object} options Itens selecionados, cliente, catálogo, profissionais e permissões.
  * @returns {string} HTML do formulário e resumo financeiro do orçamento.
  */
-export function renderQuoteBuilder({ items, selectedCustomer, services, professionals, discountRules, maxDiscount, allowFixedDiscount, canManageSettings, discountCatalog=services }) {
+export function renderQuoteBuilder({ items, selectedCustomer, services, professionals, discountRules, maxDiscount, allowFixedDiscount, canManageSettings, discountCatalog=services, notes="", validUntil="" }) {
   const {subtotal,discount,total}=calculateQuoteTotals(items);
 
   const serviceOptions = services.map(service => `
@@ -61,7 +61,7 @@ export function renderQuoteBuilder({ items, selectedCustomer, services, professi
       <label>Cliente
         <input id="quote-customer-search" class="field" placeholder="Buscar por nome ou WhatsApp" autocomplete="off" value="${esc(selectedCustomer?.name || "")}">
       </label>
-      <div id="quote-customer-results" class="quote-suggestions"></div>
+      <button class="btn secondary" type="button" id="quote-show-quick">＋ Cadastrar cliente</button>
       <div id="quote-selected-customer">${customerSummary}</div>
       <dialog id="quote-quick-customer" class="sp-modal" aria-labelledby="quote-customer-title">
         <div class="sp-modal-shell">
@@ -101,8 +101,8 @@ export function renderQuoteBuilder({ items, selectedCustomer, services, professi
         <div class="setting-row"><span>Descontos</span><b>− ${money(discount)}</b></div>
         <div class="setting-row quote-grand-total"><b>Valor final</b><strong>${money(total)}</strong></div>
       </div>
-      <label>Validade do orçamento<input class="field" id="quote-valid-until" type="date"></label>
-      <label>Observações<textarea class="field" id="quote-notes" rows="2" maxlength="1000" placeholder="Informações adicionais para o cliente"></textarea></label>
+      <label>Validade do orçamento<input class="field" id="quote-valid-until" type="date" value="${esc(validUntil)}"></label>
+      <label>Observações<textarea class="field" id="quote-notes" rows="2" maxlength="1000" placeholder="Informações adicionais para o cliente">${esc(notes)}</textarea></label>
       <button class="btn primary" id="quote-save" type="button" ${!selectedCustomer || !items.length ? "disabled" : ""}>Gerar orçamento e deixar em análise</button>
     </section>
     <section class="settings-card" id="quote-discount-settings-card" ${canManageSettings ? "" : "hidden"}>

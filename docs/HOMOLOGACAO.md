@@ -191,3 +191,7 @@ A migration foi aplicada somente em QA. A consulta de produção encontrou dois 
 ### Consulta de CEP da vitrine pública
 
 O teste em Chromium simulou resposta atrasada, troca de CEP, edição manual durante a consulta, CEP não encontrado e falha de rede. Foram preservados os campos preenchidos manualmente, e somente a resposta associada ao CEP vigente foi aplicada. A chamada real de leitura ao ViaCEP confirmou São Paulo/SP para o CEP público da Praça da Sé. A consulta é feita no rascunho da unidade e a publicação continua condicionada ao botão de salvar.
+
+### Busca de cliente no Orçamento
+
+Os testes locais verificaram busca por nome sem acento, sequência de WhatsApp com pontuação, limite de oito resultados, acesso ao cadastro rápido e renderização dos valores de validade e observações. Os testes de componentes e regras do Orçamento, a auditoria CSS e o build das três aplicações passaram. A jornada com cliente real e a conversão do orçamento em agendamento seguem para homologação.
