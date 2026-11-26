@@ -128,3 +128,9 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
  }
 }
 @keyframes professional-sheet-enter{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+/* Campos compactos do agendamento, com sugestões dentro da área rolável do modal. */
+.professional-booking-sheet .sp-modal-body{gap:12px;overflow-y:auto}
+.professional-booking-sheet .autocomplete-menu{position:static;margin-top:4px;max-height:144px;box-shadow:none}
+.professional-booking-sheet [data-booking-error]{color:var(--sp-red);margin:0}
+.professional-booking-sheet [data-booking-error][hidden]{display:none}

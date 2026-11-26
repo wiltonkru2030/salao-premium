@@ -24,6 +24,7 @@ import { renderProfessionalPasswordChangeView, renderProfessionalLoginView } fro
 import {ordersView,commissionsView,settingsView} from "./views/workspace.views.js";
 import { renderProfessionalCustomers } from "./views/customers.views.js";
 import { renderProfessionalServices } from "./views/services.views.js";
+import {bindProfessionalBookingSearch} from "./booking-search.js";
 import { renderProfessionalBooking } from "./views/booking.views.js";
 import { renderAgendaView } from "./views/agenda.views.js";
 import { handleAgendaClick } from "./agenda.controller.js";
@@ -116,7 +117,7 @@ function appointmentDetails(){
 // Delega a composição visual da agenda para uma view sem efeitos colaterais.
 function agendaView(){
  const booking=bookingEnabled&&state.role==="professional"&&state.professional
-  ?renderProfessionalBooking({appointments:state.appointments,professionalId:state.professional.id,professionalBranchId:state.professional.branch_id,services:state.services,timezone:state.organization?.timezone})
+  ?renderProfessionalBooking()
   :"";
  return renderAgendaView({state,dateKey,monthLabel,dateLabel,appointmentCard,appointmentDetails,booking});
 }
@@ -275,7 +276,10 @@ root.addEventListener("click",async event=>{
   }
   if(action==="open-professional-booking"||action==="close-professional-booking"){
    const dialog=root.querySelector("#professional-booking-dialog");
-   if(action==="open-professional-booking"&&dialog&&!dialog.open)dialog.showModal();
+   if(action==="open-professional-booking"&&dialog&&!dialog.open){
+    bindProfessionalBookingSearch(dialog.querySelector("form"),state);
+    dialog.showModal();
+   }
    if(action==="close-professional-booking")dialog?.close();
    return;
   }
@@ -365,12 +369,22 @@ async function applyAppointmentReschedule(form) {
 /** Salva o novo horário e recarrega a agenda do mês em que ele foi criado. */
 async function applyNewAppointment(form) {
  if(!bookingEnabled||state.role!=="professional"||state.page!=="Agenda"||appointmentStatusPending)return;
- const epoch=sessionEpoch,values=new FormData(form),button=form.querySelector("button");
+ const reference=form.querySelector("[data-booking-client]").dataset.selectedId;
+ const service=form.querySelector("[data-booking-service]").dataset.selectedId;
+ const hour=new FormData(form).get("start");
+ const feedback=form.querySelector("[data-booking-error]");
+ if(!reference||!service||!/^\d{2}:\d{2}$/.test(hour||"")){
+  feedback.textContent="Escolha o cliente e o serviço nas sugestões e informe a hora.";
+  feedback.hidden=false;
+  return;
+ }
+ feedback.hidden=true;
+ const epoch=sessionEpoch,button=form.querySelector("button[type=submit]");
+ const localStart=dateKey(state.selectedDate)+"T"+hour;
  appointmentStatusPending=true;
  button.disabled=true;
  try {
-  const saved=await createOwnAppointment({client:supabase,organizationId:state.orgId,reference:values.get("reference"),
-   service:values.get("service"),localStart:values.get("start")});
+  const saved=await createOwnAppointment({client:supabase,organizationId:state.orgId,reference,service,localStart});
   if(epoch!==sessionEpoch)return;
   if(state.page==="Agenda") {
    const date=salonCalendarDate(saved.starts_at,state.organization?.timezone);
@@ -386,7 +400,6 @@ async function applyNewAppointment(form) {
   }
  } catch(error) {
   if(epoch===sessionEpoch&&form.isConnected){
-   const feedback=form.querySelector("[data-booking-error]");
    feedback.textContent=error.message;
    feedback.hidden=false;
   }
