@@ -47,3 +47,8 @@ assert.match(read("src/styles/settings.css"),/\.availability-form\{[^}]*backgrou
 assert.match(read("src/styles/design-modals.css"),/\.demo-note\{[^}]*background:var\(--sp-soft\);color:var\(--sp-muted\)/);
 assert.match(read("src/styles/design-components.css"),/\.section-heading h2,\.section-title h2\{[^}]*color:var\(--sp-ink\)/);
 assert.match(read("src/styles/shell-base.css"),/\.unit-indicator\{[^}]*color:var\(--sp-muted\)/);
+
+// Os bloqueios usam a mesma paleta nos calendários diário e semanal.
+const agendaLayout = read("src/agenda/styles/agenda.css");
+assert.match(agendaLayout,/\.blocked-slot\{[^}]*background:repeating-linear-gradient\(135deg,var\(--sp-soft\) 0 6px,var\(--sp-gold-soft\) 6px 12px\);color:var\(--sp-gold-text\)/);
+assert.match(agendaLayout,/\.week-blocked\{[^}]*background:var\(--sp-gold-soft\);color:var\(--sp-gold-text\)/);

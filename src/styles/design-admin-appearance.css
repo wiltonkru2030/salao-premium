@@ -101,16 +101,6 @@
   color: var(--sp-muted);
 }
 
-:root[data-theme="dark"] #agenda-db-content :is(.blocked-slot,.week-blocked) {
-  background: repeating-linear-gradient(135deg,
-    var(--sp-soft) 0 6px, var(--sp-gold-soft) 6px 12px);
-}
-
-:root[data-theme="dark"] #agenda-db-content :is(.blocked-slot,.week-blocked,.remove-block,
-  .week-blocked button,.month-day .month-blocked) {
-  color: var(--sp-gold-text);
-}
-
 /* Comanda e Caixa. Usa as mesmas cores para valores, formulários e estados. */
 :root[data-theme="dark"] :is(#comanda-manager,#cash-manager) :is(.settings-card,
   .setting-row,.section-title,.commission-summary,.search-box) {
