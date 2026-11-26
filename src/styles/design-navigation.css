@@ -2,9 +2,9 @@
 .sidebar{border-right-color:var(--sp-line);padding-top:25px}
 .brand{padding-bottom:25px}
 .brand b{font-size:11px;letter-spacing:1.45px}
-.nav-item{min-height:43px;border-radius:7px;font-size:11px;color:#66645f}
-.nav-item:hover{background:#f8f7f4;color:#292824}
-.nav-item.active{background:var(--sp-gold-soft);color:#292720}
+.nav-item{min-height:46px;border-radius:9px;font-size:13px;color:var(--sp-muted)}
+.nav-item:hover{background:var(--sp-soft);color:var(--sp-ink)}
+.nav-item.active{background:var(--sp-gold-soft);color:var(--sp-ink);box-shadow:inset 3px 0 var(--sp-gold)}
 .topbar{height:70px;padding-inline:38px;border-bottom-color:var(--sp-line)}
 .breadcrumb{font-size:11px}
 .unit-indicator{font-size:11px}

@@ -11,23 +11,23 @@
   transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease;
 }
 #app :is(.btn.primary,button.primary,.professional-add-button,.auth-submit){
-  background:#1c1c1c;color:#fff;border:1px solid #1c1c1c;
+  background:var(--sp-action);color:var(--sp-on-action);border:1px solid var(--sp-action);
 }
 #app :is(.btn.primary,button.primary,.professional-add-button,.auth-submit):hover:not(:disabled){
-  background:#35302a;border-color:#35302a;box-shadow:0 4px 14px #18161216;
+  background:var(--sp-action-hover);border-color:var(--sp-action-hover);box-shadow:0 4px 14px #18161216;
 }
 #app :is(.btn.secondary,button.secondary){
-  background:#fff;color:#282622;border:1px solid #d9d6d0;
+  background:var(--sp-paper);color:var(--sp-ink);border:1px solid var(--sp-line-strong);
 }
 #app :is(.btn.secondary,button.secondary):hover:not(:disabled){
-  background:#f8f6f2;border-color:#b4a27e;
+  background:var(--sp-soft);border-color:var(--sp-gold);
 }
 #app :is(.btn,button.primary,button.secondary):focus-visible{
-  outline:2px solid #b29a6d;outline-offset:3px;
+  outline:2px solid var(--sp-focus-ring);outline-offset:3px;
 }
 #app :is(.btn,button.primary,button.secondary):disabled{opacity:.52;cursor:not-allowed;box-shadow:none}
 #app :is(.professional-person-card,.record-card,.surface,.settings-card){
-  border-radius:14px;border-color:#e6e2db;
+  border-radius:14px;border-color:var(--sp-line);
 }
 #app :is(.professional-person-card,.record-card) :is(button,.btn){font-size:12px}
 #app :is(.professional-form-grid,.form-grid,.form-row,.sp-modal-body,.settings-form) label{
