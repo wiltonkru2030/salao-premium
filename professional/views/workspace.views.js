@@ -12,8 +12,16 @@ export function ordersView(state){
    '<div class="section-title"><h2>Atendimentos e itens</h2></div>'+rows+
    (canRegister?'<section class="detail"><strong>Registrar serviço realizado</strong><label class="field service-search">Buscar serviço<input id="service-search" placeholder="Digite o nome do serviço" autocomplete="off"></label><button class="primary" id="add-service" disabled>Registrar serviço</button><p class="muted">O valor é confirmado pelo catálogo do salão. Produtos e pagamentos são geridos pela equipe autorizada.</p></section>':"");
  }
- return '<div class="section-title"><h2>Comandas</h2><span class="muted">Atendimentos vinculados ao seu acesso</span></div>'+
- (state.orders.length?state.orders.map(o=>'<button class="order" data-order="'+esc(o.id)+'"><strong>Comanda #'+esc(o.order_number)+'</strong><div class="meta">Status: '+esc(statusLabel(o.status))+' · '+money(o.total)+'</div></button>').join(""):'<div class="empty">Nenhuma comanda disponível.</div>');
+ return '<section data-professional-list aria-labelledby="professional-orders-title">'+
+ '<div class="section-title"><h2 id="professional-orders-title">Comandas</h2></div>'+
+ '<div class="professional-list-tools"><label class="field">Buscar comanda<input type="search" data-professional-list-search placeholder="Número ou status"></label>'+
+ '<button type="button" class="btn secondary" data-action="refresh-professional-orders">Atualizar</button></div>'+
+ '<p class="empty" data-professional-search-empty hidden>Nenhuma comanda encontrada.</p>'+
+ (state.orders.length?state.orders.map(o=>'<button type="button" class="order" data-professional-search-text="'+
+ esc(o.order_number+" "+statusLabel(o.status))+'" data-order="'+esc(o.id)+'"><strong>Comanda #'+esc(o.order_number)+
+ '</strong><div class="meta">Status: '+esc(statusLabel(o.status))+' · '+money(o.total)+'</div></button>').join(""):
+ '<div class="empty">Nenhuma comanda disponível.</div>')+'</section>';
+
 }
 // Apresenta valores e histórico de comissões do profissional.
 export function commissionsView(state){

@@ -116,9 +116,9 @@ function appointmentDetails(){
 // Delega a composição visual da agenda para uma view sem efeitos colaterais.
 function agendaView(){
  const booking=bookingEnabled&&state.role==="professional"&&state.professional
-  ?renderProfessionalBooking({appointments:state.appointments,professionalId:state.professional.id,services:state.services,timezone:state.organization?.timezone})
+  ?renderProfessionalBooking({appointments:state.appointments,professionalId:state.professional.id,professionalBranchId:state.professional.branch_id,services:state.services,timezone:state.organization?.timezone})
   :"";
- return booking+renderAgendaView({state,dateKey,monthLabel,dateLabel,appointmentCard,appointmentDetails});
+ return renderAgendaView({state,dateKey,monthLabel,dateLabel,appointmentCard,appointmentDetails,booking});
 }
 function render(){
  if(!state.user||!state.orgId)return;
@@ -134,7 +134,7 @@ async function loadBase(selectedOrgId=null){
  if(!userId)throw new Error("Sua sessão expirou.");
  const [members,profiles]=await Promise.all([
   supabase.from("org_memberships").select("org_id,role,status,professional_app_enabled,professional_app_scope").eq("user_id",userId).eq("status","active"),
-  supabase.from("professionals").select("id,name,profile_id,org_id,active,access_enabled").eq("profile_id",userId).eq("active",true).eq("access_enabled",true)
+  supabase.from("professionals").select("id,name,profile_id,org_id,branch_id,active,access_enabled").eq("profile_id",userId).eq("active",true).eq("access_enabled",true)
  ]);
  if(epoch!==sessionEpoch)return;
  if(members.error||profiles.error)throw new Error("Não foi possível consultar as permissões da conta.");
@@ -223,6 +223,23 @@ matchMedia("(max-width:760px)").addEventListener("change", event=>{
 root.addEventListener("keydown", event => {
  if(event.key==="Escape"&&root.querySelector(".app-shell.is-menu-open"))setProfessionalMenuOpen(root,false);
 });
+// Filtra a lista em memória sem enviar buscas ao banco ou perder o foco.
+root.addEventListener("input", event => {
+ const control=event.target.closest("[data-professional-list-search]");
+ if(!control)return;
+ const normalize=value=>value.normalize("NFD").replace(/\p{M}/gu,"").toLocaleLowerCase("pt-BR").trim();
+ const term=normalize(control.value);
+ const list=control.closest("[data-professional-list]");
+ let visible=0;
+ for(const item of list.querySelectorAll("[data-professional-search-text]")){
+  const text=normalize(item.dataset.professionalSearchText);
+  const digits=term.replace(/\D/g,"");
+  const phoneMatch=digits&&/^[+()\d\s-]+$/.test(term)&&item.dataset.professionalPhone?.includes(digits);
+  item.hidden=!text.includes(term)&&!phoneMatch;
+  if(!item.hidden)visible++;
+ }
+ list.querySelector("[data-professional-search-empty]").hidden=visible>0||!term;
+});
 root.addEventListener("change", event => {
  if (event.target.matches("[data-platform-appearance]")) appearance.set(event.target.value);
 });
@@ -254,6 +271,28 @@ root.addEventListener("click",async event=>{
   const action=event.target.closest("[data-action]")?.dataset.action;
   if(action==="open-professional-menu"||action==="close-professional-menu"){
    setProfessionalMenuOpen(root,action==="open-professional-menu");
+   return;
+  }
+  if(action==="open-professional-booking"||action==="close-professional-booking"){
+   const dialog=root.querySelector("#professional-booking-dialog");
+   if(action==="open-professional-booking"&&dialog&&!dialog.open)dialog.showModal();
+   if(action==="close-professional-booking")dialog?.close();
+   return;
+  }
+  const visit=event.target.closest("[data-customer-visit]");
+  if(visit&&state.page==="Clientes"){
+   const appointment=state.appointments.find(item=>item.id===visit.dataset.customerVisit&&item.professional_id===state.professional?.id);
+   if(appointment){
+    state.selectedDate=salonCalendarDate(appointment.starts_at,state.organization?.timezone);
+    state.selectedAppointment=appointment;
+    state.page="Agenda";
+    render();
+   }
+   return;
+  }
+  if(action==="refresh-professional-orders"&&state.page==="Comandas"){
+   await loadOrders();
+   if(state.page==="Comandas")render();
    return;
   }
   if(action==="logout"){await endSession();return;}
@@ -346,7 +385,11 @@ async function applyNewAppointment(form) {
    if(epoch===sessionEpoch)showNotice("Agendamento criado. Atualize a Agenda para ver o horário.");
   }
  } catch(error) {
-  if(epoch===sessionEpoch)showNotice(error.message);
+  if(epoch===sessionEpoch&&form.isConnected){
+   const feedback=form.querySelector("[data-booking-error]");
+   feedback.textContent=error.message;
+   feedback.hidden=false;
+  }
  } finally {
   appointmentStatusPending=false;
   if(button.isConnected)button.disabled=false;

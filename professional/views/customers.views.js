@@ -11,12 +11,22 @@ export function renderProfessionalCustomers(appointments, professionalId, monthL
 
   const rows = [...customers.values()]
     .sort((left, right) => String(left.customer_name || "").localeCompare(String(right.customer_name || ""), "pt-BR"))
-    .map(customer => '<article class="detail"><strong>' + escapeHtml(customer.customer_name || "Cliente") +
-      '</strong><p class="meta">' + escapeHtml(customer.customer_phone || "Telefone não informado") +
-      '</p></article>').join("");
+    .map(customer => {
+      const phone = String(customer.customer_phone || "");
+      const digits = phone.replace(/\D/g,"");
+      return '<article class="detail" data-professional-search-text="'+escapeHtml(customer.customer_name||"")+
+        '" data-professional-phone="'+digits+'"><strong>'+escapeHtml(customer.customer_name||"Cliente")+
+        '</strong><p class="meta">'+escapeHtml(phone||"Telefone não informado")+'</p>'+
+        '<div class="professional-card-actions"><button class="btn secondary" type="button" data-customer-visit="'+
+        escapeHtml(customer.id)+'">Ver atendimento</button>'+
+        (digits.length>=10&&digits.length<=15?'<a class="btn secondary" href="tel:'+(phone.trim().startsWith("+")?"+":"")+digits+'">Ligar</a>':'')+
+        '</div></article>';
+    }).join("");
 
-  return '<section aria-labelledby="professional-customers-heading">' +
+  return '<section data-professional-list aria-labelledby="professional-customers-heading">' +
     '<div class="section-title"><h2 id="professional-customers-heading">Clientes</h2></div>' +
     '<p class="muted">Clientes da sua agenda de ' + escapeHtml(monthLabel) + '.</p>' +
+    '<label class="field">Buscar cliente<input type="search" data-professional-list-search placeholder="Nome ou telefone"></label>'+
+    '<p class="empty" data-professional-search-empty hidden>Nenhum cliente encontrado.</p>'+
     (rows || '<p class="empty">Nenhum cliente na sua agenda deste mês.</p>') + '</section>';
 }

@@ -20,7 +20,7 @@ function renderStatusMark(status) {
  * @returns {string} Markup da Agenda.
  */
 export function renderAgendaView(context) {
-  const { state, monthLabel, dateLabel, appointmentCard, appointmentDetails } = context;
+  const { state, monthLabel, dateLabel, appointmentCard, appointmentDetails, booking = "" } = context;
   const { cells, selectedAppointments } = buildMonthlyCalendar({
     month: state.month, selectedDate: state.selectedDate, appointments: state.appointments, timezone:state.organization?.timezone || (state.organization ? "America/Sao_Paulo" : null)
   });
@@ -38,6 +38,7 @@ export function renderAgendaView(context) {
     '<div class="calendar">' + weekdays + calendarCells + '</div>' +
     '<ul class="calendar-status-legend" aria-label="Legenda dos agendamentos">' +
       marks.map(([status,name])=>'<li>'+renderStatusMark(status)+name+'</li>').join("")+'</ul>' +
+    booking +
     '<div class="section-title section-title--tight-spaced"><h2>' + escapeHtml(dateLabel(state.selectedDate)) + '</h2><span class="muted">' + selectedAppointments.length + ' agendamento(s)</span></div>' +
     (selectedAppointments.length ? selectedAppointments.map(appointmentCard).join("") : '<div class="empty">Nenhum agendamento neste dia.</div>') + appointmentDetails();
 }

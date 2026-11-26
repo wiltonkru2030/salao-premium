@@ -114,3 +114,17 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
  .is-menu-open .professional-sidebar{visibility:visible;transform:none;box-shadow:var(--sp-shadow)}
  .is-menu-open .professional-menu-scrim{display:block;position:fixed;inset:0;z-index:20;border:0;background:#0008}
 }
+
+/* O formulário usa o diálogo e os botões do painel; só o posicionamento móvel é local. */
+.professional-booking-action{margin-block:14px}
+#professional-app [data-professional-list] [hidden]{display:none}
+.professional-list-tools{display:flex;align-items:end;gap:10px;flex-wrap:wrap}
+.professional-list-tools .field{flex:1 1 200px}
+@media(max-width:760px){
+ dialog.professional-booking-sheet{position:fixed;inset:auto 0 0;width:100%;max-width:none;margin:0;border-radius:18px 18px 0 0}
+ dialog.professional-booking-sheet .sp-modal-foot{padding-bottom:max(14px,env(safe-area-inset-bottom))}
+ @media(prefers-reduced-motion:no-preference){
+  dialog.professional-booking-sheet[open]{animation:professional-sheet-enter .2s ease-out}
+ }
+}
+@keyframes professional-sheet-enter{from{transform:translateY(100%)}to{transform:translateY(0)}}
