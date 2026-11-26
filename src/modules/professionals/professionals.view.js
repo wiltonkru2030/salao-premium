@@ -72,7 +72,7 @@ export function renderProfessionalsView(workspace,{currentUserId,canManage=false
      <label>Nome fantasia (opcional)<input class="field" name="trade_name" maxlength="160" placeholder="Nome fantasia"></label>
     </div>
     <h3>Serviços que atende</h3>
-    <p id="professional-edit-services-notice" class="demo-note" hidden>Os serviços atuais serão preservados. A alteração dos vínculos será liberada após a implantação da operação segura no banco.</p>
+    <p id="professional-edit-services-notice" class="demo-note" hidden>A edição de serviços ainda não está disponível para profissionais já cadastrados. Você pode consultar os serviços vinculados no cartão do profissional.</p>
     <p class="demo-note" id="professional-new-services-help">Marque todos os serviços compatíveis com este profissional. Ex.: unhas para manicure; cabelo para cabeleireiro.</p>
     <input class="field" id="professional-service-filter" type="search" placeholder="Buscar serviço..." autocomplete="off">
     <div id="professional-service-choices">${serviceChoices||'<p class="empty-state">Cadastre serviços antes de vincular um profissional.</p>'}</div>
