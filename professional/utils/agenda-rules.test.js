@@ -27,3 +27,10 @@ const salonCalendar = buildMonthlyCalendar({
   timezone:"America/Manaus",appointments:[{id:"late",starts_at:"2026-12-01T02:00:00Z"}]
 });
 assert.deepEqual(salonCalendar.selectedAppointments.map(item=>item.id),["late"]);
+
+// O mesmo dia pode apresentar os três estados, sem duplicar riscos.
+const mixedDay = buildMonthlyCalendar({month:new Date(2026,10,1),selectedDate:new Date(2026,10,20),
+  appointments:["confirmed","completed","cancelled","confirmed"].map(status=>({status,starts_at:new Date(2026,10,20,12).toISOString()}))
+});
+assert.deepEqual([...mixedDay.cells.find(cell=>cell.key==="2026-11-20").statuses],["confirmed","completed","cancelled"]);
+assert.equal(mixedDay.cells.find(cell=>cell.key==="2026-11-21").statuses.size,0);

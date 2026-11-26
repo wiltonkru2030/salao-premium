@@ -27,17 +27,22 @@ export function buildMonthlyCalendar({ month, selectedDate, appointments = [], t
   const year = month.getFullYear(), monthIndex = month.getMonth();
   const firstWeekday = new Date(year, monthIndex, 1).getDay();
   const dayInCalendar = instant => timezone ? salonCalendarDate(instant,timezone) : new Date(instant);
-  const appointmentDays = new Set(appointments.filter(item => item?.starts_at && !Number.isNaN(new Date(item.starts_at).getTime()))
-    .map(item => localDateKey(dayInCalendar(item.starts_at))));
+  const appointmentsByDay = new Map();
+  for (const appointment of appointments) {
+    if (!appointment?.starts_at || Number.isNaN(new Date(appointment.starts_at).getTime())) continue;
+    const key = localDateKey(dayInCalendar(appointment.starts_at));
+    if (!appointmentsByDay.has(key)) appointmentsByDay.set(key, []);
+    appointmentsByDay.get(key).push(appointment);
+  }
   const selectedKey = localDateKey(selectedDate), todayKey = localDateKey(dayInCalendar(today));
   const cells = Array.from({ length: 42 }, (_, index) => {
     const date = new Date(year, monthIndex, index - firstWeekday + 1);
     const key = localDateKey(date);
+    const dayAppointments = appointmentsByDay.get(key) || [];
     return { date, key, day: date.getDate(), inMonth: date.getMonth() === monthIndex,
-      selected: key === selectedKey, today: key === todayKey, hasAppointments: appointmentDays.has(key) };
+      selected: key === selectedKey, today: key === todayKey, hasAppointments: dayAppointments.length > 0, statuses: new Set(dayAppointments.map(appointment => appointment.status)) };
   });
-  const selectedAppointments = appointments.filter(item => item?.starts_at &&
-    !Number.isNaN(new Date(item.starts_at).getTime()) && localDateKey(dayInCalendar(item.starts_at)) === selectedKey).slice()
+  const selectedAppointments = [...(appointmentsByDay.get(selectedKey) || [])]
     .sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at));
   return { cells, selectedAppointments };
 }

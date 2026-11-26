@@ -16,6 +16,9 @@
  --sp-gold-soft:#f5f1e8;
  --sp-green:#396447;
  --sp-red:#a23f36;
+ --sp-calendar-confirmed:#28734f;
+ --sp-calendar-completed:#245eb5;
+ --sp-calendar-cancelled:#ae383e;
  --sp-radius:9px;
  --sp-control-radius:7px;
  --sp-shadow:0 18px 55px rgba(25,22,16,.12);
@@ -57,5 +60,8 @@
  --sp-gold-text:#c4a575;
  --sp-gold-soft:#302b22;
  --sp-red:#ffafa4;
+ --sp-calendar-confirmed:#79cba1;
+ --sp-calendar-completed:#8bb8ff;
+ --sp-calendar-cancelled:#ff9a9d;
  --sp-theme-card-shadow:0 16px 42px #0005;
 }
