@@ -2,6 +2,7 @@
  * Interface da equipe: cartões, cadastro e gerenciamento de acessos.
  * Gera marcação sem consultar o banco ou instalar eventos.
  */
+import {formatSavedPhone} from "../../utils/input-masks.js";
 import {esc} from "../../utils.js";
 /**
  * Renderiza os dados da equipe do contexto ativo.
@@ -25,19 +26,18 @@ export function renderProfessionalsView(workspace,{currentUserId,canManage=false
  const serviceChoices=[...groups.entries()].map(([category,items])=>'<section class="professional-service-group"><b>'+esc(category)+'</b><div class="professional-service-options">'+items.map(s=>'<label><input type="checkbox" name="service_ids" value="'+esc(s.id)+'"><span>'+esc(s.name)+'</span></label>').join("")+'</div></section>').join("");
  let html=`
  <div class="professional-page-toolbar">
-  <div><span class="professional-kicker">GESTÃO DA EQUIPE</span><h2>Sua equipe</h2><p>Organize especialidades, serviços e acessos em um só lugar.</p></div>
   <button class="btn primary professional-add-button" type="button" data-open-professional-modal style="${canManage?"":"display:none"}"><span>＋</span> Novo profissional</button>
  </div>
- <div class="professional-roster-heading"><div><b>Sua equipe</b><small>Profissionais cadastrados no salão</small></div><span class="professional-count">${data?.length||0} <small>PROFISSIONAIS</small></span></div>
+ <div class="professional-roster-heading"><b>Equipe cadastrada</b><span class="professional-count">${data?.length||0} <small>PROFISSIONAIS</small></span></div>
  <div class="professional-roster">${(data||[]).map(p=>`
  <article class="professional-person-card" data-professional-card="${esc(p.id)}">
   <div class="professional-person-top">
    <div class="professional-avatar">${esc((p.name||"P").trim().split(/\s+/).slice(0,2).map(part=>part[0]).join("").toUpperCase())}</div>
    <div class="professional-person-identity"><h3>${esc(p.name)}</h3><p>${esc(p.specialty||"Profissional")} <span>·</span> ${p.tax_regime==="mei"?"MEI":"Pessoa física"}</p></div>
    <span class="professional-status ${p.active?"is-active":"is-inactive"}"><i></i>${p.active?"Ativo":"Inativo"}</span>
-   ${canManage?'<button type="button" class="btn secondary" data-edit-professional="'+esc(p.id)+'">Editar cadastro</button><button type="button" class="btn secondary" data-toggle-professional-active="'+esc(p.id)+'" data-active="'+(p.active?"true":"false")+'" '+(p.access_enabled?'disabled title="Revogue o acesso ao App antes de inativar."':"")+'>'+(p.active?"Inativar":"Reativar")+'</button>':""}
+   ${canManage?'<div class="professional-card-actions"><button type="button" class="btn secondary" data-edit-professional="'+esc(p.id)+'">Editar cadastro</button><button type="button" class="btn secondary" data-toggle-professional-active="'+esc(p.id)+'" data-active="'+(p.active?"true":"false")+'" '+(p.access_enabled?'disabled title="Revogue o acesso ao App antes de inativar."':"")+'>'+(p.active?"Inativar":"Reativar")+'</button></div>':""}
   </div>
-  <div class="professional-person-meta"><span>${esc(p.phone||p.email||"Contato não informado")}</span><span>Comissão <b>${Number(p.commission_rate||0)}%</b></span>${p.tax_regime==="mei"?'<span>CNPJ '+esc(p.cnpj||"—")+'</span>':''}</div>
+  <div class="professional-person-meta"><span>${esc(formatSavedPhone(p.phone)||p.email||"Contato não informado")}</span><span>Comissão <b>${Number(p.commission_rate||0)}%</b></span>${p.tax_regime==="mei"?'<span>CNPJ '+esc(p.cnpj||"—")+'</span>':''}</div>
   <div class="professional-assigned-services"><small>SERVIÇOS HABILITADOS</small><div>${(assignedNames.get(p.id)||[]).length?(assignedNames.get(p.id)||[]).map(name=>'<span>'+esc(name)+'</span>').join(""):'<em>Nenhum serviço vinculado</em>'}</div></div>
   <div class="professional-person-footer" style="${canManage?"":"display:none"}">
    <label class="professional-app-toggle"><input type="checkbox" data-professional-toggle="${esc(p.id)}" ${p.access_enabled?"checked":""} ${!p.active?"disabled":""}><span class="professional-switch"></span><span>App Profissional</span></label>

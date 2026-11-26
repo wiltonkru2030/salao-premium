@@ -3,6 +3,7 @@
  * Responsabilidade: gerar a marcação da listagem e do modal, sem eventos ou API.
  * Integração: o controlador de clientes fornece os registros e a permissão visual.
  */
+import {formatSavedPhone} from "../../utils/input-masks.js";
 import { esc } from "../../utils.js";
 
 /**
@@ -17,10 +18,10 @@ export function renderCustomersView(customers,canManage=false) {
   const cards=customers.map(customer=>{
     const actions=canManage
       ? '<button class="btn secondary" type="button" data-edit-customer="'+esc(customer.id)+'">Editar</button>'+
-        '<button class="text-button" type="button" data-toggle-customer="'+esc(customer.id)+'" data-active="'+(customer.active?"true":"false")+'">'+(customer.active?"Inativar":"Reativar")+'</button>'
+        '<button class="btn secondary" type="button" data-toggle-customer="'+esc(customer.id)+'" data-active="'+(customer.active?"true":"false")+'">'+(customer.active?"Inativar":"Reativar")+'</button>'
       : "";
     return '<article class="record-card"><span class="record-main"><b>'+esc(customer.name)+'</b>'+
-      '<small>'+esc(customer.phone||"Telefone não informado")+'</small>'+
+      '<small>'+esc(formatSavedPhone(customer.phone)||"Telefone não informado")+'</small>'+
       '<small>'+esc(customer.email||"")+'</small></span>'+
       '<span class="record-trailing"><small class="status-pill '+(customer.active?"active":"inactive")+'">'+(customer.active?"Ativo":"Inativo")+'</small>'+actions+'</span></article>';
   }).join("");
@@ -35,7 +36,7 @@ export function renderCustomersView(customers,canManage=false) {
       '<label>Data de nascimento<input name="birth_date" type="date"></label>'+
       '</div><footer class="sp-modal-foot"><button class="btn secondary" type="button" data-close-customer-modal>Cancelar</button>'+
       '<button class="btn primary" type="submit">Cadastrar cliente</button></footer></form></div></dialog>'+
-    '<div class="list-toolbar"><span class="result-count">'+customers.length+' clientes</span></div>'+
+    '<div class="list-toolbar"><span class="result-count">'+customers.length+(customers.length===1?' cliente':' clientes')+'</span></div>'+
     '<div class="record-list">'+(cards||'<div class="empty-state">Nenhum cliente cadastrado.</div>')+'</div>';
 
 }

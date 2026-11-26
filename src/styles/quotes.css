@@ -70,3 +70,23 @@ gap:12px}
 grid-template-columns:1fr}
 .quote-actions .btn{width:100%}
 }
+
+/* Espaçamento do formulário de proposta. O cartão contém os campos, totais e ações. */
+#app .quote-builder-card {
+  display:grid;
+  gap:14px;
+  padding:clamp(16px,3vw,28px);
+}
+#app .quote-builder-card > .section-title {
+  margin:0;
+  padding:0 0 14px;
+}
+.quote-builder-card :is(label,.quote-item-entry) {min-width:0}
+.quote-builder-card label {display:grid;gap:6px}
+.quote-builder-card > .btn {justify-self:start}
+.quote-builder-card .quote-item-entry {
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr));
+  align-items:start;
+  margin:0;
+}
+.quote-builder-card .quote-totals {width:min(100%,440px);margin-block:0}

@@ -51,8 +51,7 @@ export function renderQuoteBuilder({ items, selectedCustomer, services, professi
   return `
     <section class="settings-card quote-builder-card">
       <div class="section-title">
-        <div><h3>Novo orçamento</h3><small class="muted">Monte uma proposta com serviços e responsáveis individuais.</small></div>
-        <span class="status">Proposta comercial</span>
+        <h3>Novo orçamento</h3>
       </div>
       <label>Cliente
         <input id="quote-customer-search" class="field" placeholder="Buscar por nome ou WhatsApp" autocomplete="off" value="${esc(selectedCustomer?.name || "")}">

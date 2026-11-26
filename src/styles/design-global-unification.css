@@ -72,8 +72,7 @@
  #app .professional-modal-head,#app .professional-modal-foot{padding:16px}
  #app .professional-form-grid{grid-template-columns:minmax(0,1fr)}
  #app .professional-person-top>[data-edit-professional]{margin-left:0}
- #app .professional-person-top>[data-edit-professional],
- #app .professional-person-top>[data-toggle-professional-active]{flex:1 1 130px}
+
 }
 
 /* Catálogo de serviços: lista de cartões sem tabela e ações com toque confortável.
@@ -83,7 +82,7 @@
 #app #services-manager .record-main{min-width:0;flex:1}
 #app #services-manager .record-main b{font-size:15px;line-height:1.4}
 #app #services-manager .record-main small{font-size:12px;line-height:1.6}
-#app #services-manager .record-trailing{display:flex;align-items:center;flex-wrap:wrap;gap:10px;justify-content:flex-end}
+#app #services-manager .record-trailing{display:flex;flex-direction:row;align-items:center;flex-wrap:wrap;gap:10px;justify-content:flex-end}
 #app #services-manager .record-trailing>b{font-size:17px;white-space:nowrap}
 #app #services-manager .record-trailing :is(.btn,.text-button){min-height:42px;padding:10px 14px;border-radius:9px;font-size:13px}
 #app #service-create-modal .sp-modal-body label{display:flex;flex-direction:column;gap:8px;font-size:13px}
@@ -92,7 +91,7 @@
 @media(max-width:700px){
  #app #services-manager .record-card{align-items:stretch;flex-direction:column;padding:17px;gap:14px}
  #app #services-manager .record-trailing{justify-content:flex-start}
- #app #services-manager .record-trailing :is(.btn,.text-button){flex:1 1 120px}
+ #app #services-manager .record-trailing :is(.btn,.text-button){flex:0 1 auto}
  #app #service-create-modal .sp-modal-body :is(input,select,textarea){font-size:16px}
 }
 
@@ -103,7 +102,7 @@
 #app #products-manager .record-main{min-width:0;flex:1}
 #app #products-manager .record-main b{font-size:15px;line-height:1.4}
 #app #products-manager .record-main small{display:block;font-size:12px;line-height:1.6}
-#app #products-manager .record-trailing{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:10px}
+#app #products-manager .record-trailing{display:flex;flex-direction:row;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:10px}
 #app #products-manager .record-trailing>b{font-size:17px;white-space:nowrap}
 #app #products-manager .record-trailing :is(.btn,.text-button){min-height:42px;padding:10px 14px;border-radius:9px;font-size:13px}
 #app #product-create-modal .sp-modal-body label{display:flex;flex-direction:column;gap:8px;font-size:13px}
@@ -113,6 +112,30 @@
 @media(max-width:700px){
  #app #products-manager .record-card{flex-direction:column;align-items:stretch;padding:17px;gap:14px}
  #app #products-manager .record-trailing{justify-content:flex-start}
- #app #products-manager .record-trailing :is(.btn,.text-button){flex:1 1 120px}
+ #app #products-manager .record-trailing :is(.btn,.text-button){flex:0 1 auto}
  #app #product-create-modal .sp-modal-body :is(input,select,textarea){font-size:16px}
+}
+
+/* Listas operacionais usam um único contorno de busca e mantêm ações separadas dos dados. */
+#app .list-toolbar .search-box {height:auto;align-items:center}
+#app .list-toolbar .search-box input {
+  flex:1;
+  min-width:0;
+  min-height:44px;
+  padding-inline:8px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  outline:none;
+}
+#app .list-toolbar .search-box:focus-within {outline:2px solid var(--sp-focus-ring);outline-offset:2px}
+#app .professional-person-top {flex-wrap:nowrap}
+#app .professional-person-identity h3 {white-space:normal;overflow-wrap:anywhere}
+#app .professional-card-actions {display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:700px) {
+ #app .professional-person-top {display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start}
+ #app .professional-card-actions {grid-column:1/-1}
+ #app #sales-manager .metrics {grid-template-columns:minmax(0,1fr)}
+ #app #sales-manager .metric-card {min-height:0}
 }
