@@ -52,7 +52,7 @@ export async function fetchProfessionalAppointments({
   try {
     let query = client
       .from("appointments")
-      .select("id,starts_at,ends_at,customer_id,customer_name,customer_phone,service_name,professional_name,status,price,booking_source,created_by_name,notes,professional_id")
+      .select("id,starts_at,ends_at,customer_id,customer_name,customer_phone,service_name,professional_name,status,price,booking_source,created_by_name,notes,professional_id,appointment_group_id,service_order_id")
       .eq("org_id", organizationId)
       .gte("starts_at", start.toISOString())
       .lt("starts_at", end.toISOString());
@@ -75,4 +75,17 @@ export async function fetchProfessionalAppointments({
     safeError.code = "PROFESSIONAL_APPOINTMENTS_FETCH_FAILED";
     throw safeError;
   }
+}
+
+/** Solicita alteração de estado de um agendamento próprio e confere o retorno do servidor. */
+export async function updateOwnAppointmentStatus({client, organizationId, appointmentId, status}) {
+  const {data, error} = await client.rpc("set_own_appointment_status", {
+    target_org: organizationId,
+    target_appointment: appointmentId,
+    next_status: status
+  });
+  if (error || data?.id !== appointmentId || data.status !== status) {
+    throw new Error("Não foi possível alterar o agendamento. Atualize a Agenda e tente novamente.");
+  }
+  return data;
 }

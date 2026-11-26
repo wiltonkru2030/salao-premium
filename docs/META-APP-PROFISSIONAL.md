@@ -13,3 +13,5 @@ Entregar uma área de trabalho móvel em que o profissional opere sua agenda, co
 | Notificações | Inscrever o dispositivo com consentimento, enviar eventos de agenda pelo FCM, tratar recusa e revogar inscrição ao sair. Homologar entrega em dispositivo compatível. | Pendente de implementação e configuração do projeto Firebase. |
 
 A homologação deve confirmar atualização entre apps, isolamento por organização e unidade, disponibilidade no agendamento e recebimento de notificação em dispositivo real.
+
+Confirmação e cancelamento de agendamentos individuais foram verificados no Supabase de QA com transação revertida. A alteração de agendamento de outro profissional foi recusada. A migration `20261126223517_professional_own_appointment_status.sql` deve estar presente no ambiente antes de compilar com `VITE_PROFESSIONAL_APPOINTMENT_STATUS=true`. Agendamentos agrupados ou com comanda vinculada ficam fora desse fluxo. Criação, remarcação e testes em navegador permanecem pendentes.

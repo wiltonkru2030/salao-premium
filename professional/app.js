@@ -24,7 +24,7 @@ import { renderProfessionalCustomers } from "./views/customers.views.js";
 import { renderProfessionalServices } from "./views/services.views.js";
 import { renderAgendaView } from "./views/agenda.views.js";
 import { handleAgendaClick } from "./agenda.controller.js";
-import { fetchProfessionalAppointments } from "./appointments.service.js";
+import { fetchProfessionalAppointments, updateOwnAppointmentStatus } from "./appointments.service.js";
 import {fetchProfessionalServices} from "./services.service.js";
 import { fetchProfessionalOrders, fetchProfessionalOrderItems } from "./orders.service.js";
 import { fetchProfessionalCommissions } from "./commissions.service.js";
@@ -44,6 +44,9 @@ const state={
 };
 let disposeAutocomplete=null;
 let sessionEpoch=0;
+// Ative a interface no build após instalar a migration correspondente no Supabase.
+const appointmentStatusEnabled = import.meta.env.VITE_PROFESSIONAL_APPOINTMENT_STATUS === "true";
+let appointmentStatusPending = false;
 const serviceLock={active:false,operation:null};
 /** Limpa dados privados antes de exibir a tela de acesso. */
 function clearPrivateState(){sessionEpoch++;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();Object.assign(state,{user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,organization:null,page:"Agenda",appointments:[],orders:[],services:[],commissions:[],commissionPayouts:[],selectedAppointment:null,selectedOrder:null,orderItems:[]});}
@@ -74,6 +77,17 @@ function appointmentCard(a){
  '<div class="meta">'+esc(a.service_name)+' · '+timeLabel(a.ends_at)+'<br>'+esc(a.customer_phone||"Telefone não informado")+' · '+money(a.price)+'<br>'+esc(a.professional_name||state.professional?.name||"Profissional")+' · '+duration+' min</div>'+
  '<span class="tag">'+esc(statusLabel(a.status))+' · Agendado por: '+esc(sourceLabel(a.booking_source))+'</span></button>';
 }
+/** Exibe ações de status somente para o agendamento individual elegível. */
+function appointmentStatusActions(appointment) {
+ if(!appointmentStatusEnabled || state.role!=="professional" || appointment.professional_id!==state.professional?.id ||
+   appointment.appointment_group_id || appointment.service_order_id ||
+   !["scheduled","confirmed"].includes(appointment.status))return "";
+ return '<div class="professional-card-actions">'+
+   (appointment.status==="scheduled"?'<button type="button" class="secondary" data-own-appointment-status="confirmed">Confirmar</button>':'')+
+   '<button type="button" class="secondary" data-own-appointment-status="cancelled">Cancelar agendamento</button></div>';
+}
+
+/** Renderiza os dados do agendamento selecionado e as ações disponíveis. */
 function appointmentDetails(){
  const a=state.selectedAppointment;if(!a)return "";
  const duration=Math.max(0,Math.round((new Date(a.ends_at)-new Date(a.starts_at))/60000));
@@ -89,7 +103,7 @@ function appointmentDetails(){
  '<div class="detail-row"><span>Status</span><b>'+esc(statusLabel(a.status))+'</b></div>'+
  '<div class="detail-row"><span>Origem</span><b>'+esc(sourceLabel(a.booking_source))+'</b></div>'+
  '<div class="detail-row"><span>Quem criou</span><b>'+esc(a.created_by_name||sourceLabel(a.booking_source))+'</b></div>'+
- '<div class="detail-row"><span>Observações</span><b>'+esc(a.notes||"—")+'</b></div></section>';
+ '<div class="detail-row"><span>Observações</span><b>'+esc(a.notes||"—")+'</b></div>'+appointmentStatusActions(a)+'</section>';
 }
 // Apresenta calendário mensal e lista de agendamentos do profissional.
 // Delega a composição visual da agenda para uma view sem efeitos colaterais.
@@ -192,6 +206,29 @@ function bindAutocomplete(){
 root.addEventListener("change", event => {
  if (event.target.matches("[data-platform-appearance]")) appearance.set(event.target.value);
 });
+/** Persiste a mudança e atualiza o cartão apenas se a sessão ainda for a mesma. */
+async function applyAppointmentStatus(control) {
+ const appointment=state.selectedAppointment;
+ if(!appointment || appointmentStatusPending || !appointmentStatusActions(appointment))return;
+ const status=control.dataset.ownAppointmentStatus;
+ if(status==="cancelled"&&!window.confirm("Cancelar este agendamento?"))return;
+ const epoch=sessionEpoch;
+ appointmentStatusPending=true;
+ control.disabled=true;
+ try {
+  const saved=await updateOwnAppointmentStatus({client:supabase,organizationId:state.orgId,appointmentId:appointment.id,status});
+  if(epoch!==sessionEpoch)return;
+  state.appointments=state.appointments.map(item=>item.id===saved.id?{...item,...saved}:item);
+  if(state.selectedAppointment?.id===saved.id)state.selectedAppointment={...appointment,...saved};
+  showNotice(status==="confirmed"?"Agendamento confirmado.":"Agendamento cancelado.");
+ } catch(error) {
+  if(epoch===sessionEpoch)showNotice(error.message);
+ } finally {
+  appointmentStatusPending=false;
+  if(control.isConnected)control.disabled=false;
+ }
+}
+
 root.addEventListener("click",async event=>{
  try{
   const action=event.target.closest("[data-action]")?.dataset.action;
@@ -199,6 +236,8 @@ root.addEventListener("click",async event=>{
   const orgControl=event.target.closest("[data-context-org]");
   if(orgControl&&state.user){orgControl.disabled=true;try{await loadBase(orgControl.dataset.contextOrg);}catch(error){await endSession("Não foi possível acessar este salão.");}return;}
   if(!state.user||!state.orgId)return;
+  const statusControl=event.target.closest("[data-own-appointment-status]");
+  if(statusControl&&state.page==="Agenda"){await applyAppointmentStatus(statusControl);return;}
   const epoch=sessionEpoch;
   // O controlador especializado consome eventos da Agenda antes das ações gerais.
   if(await handleAgendaClick({event,state,loadAppointments,render}))return;
