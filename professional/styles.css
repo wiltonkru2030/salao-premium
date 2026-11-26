@@ -39,8 +39,11 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 .day.selected{border-color:var(--sp-gold);background:var(--sp-gold-soft)}
 .day.today{font-weight:700}
 /* Riscos por status no calendário mensal, com cores do tema compartilhado. */
-.calendar-status-marks{position:absolute;inset-inline:2px;inset-block-end:5px;display:flex;justify-content:center;gap:3px}
-.calendar-status-mark{display:block;flex:none;inline-size:7px;block-size:3px;border-radius:2px;background:var(--calendar-mark)}
+.day{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.calendar-status-marks{display:flex;justify-content:center;gap:2px;max-inline-size:100%}
+.calendar-day-number{line-height:1}
+.calendar-status-mark{display:block;flex:none;inline-size:6px;block-size:3px;border-radius:2px;background:var(--calendar-mark)}
+.calendar-status-mark--scheduled{--calendar-mark:var(--sp-gold-text)}
 .calendar-status-mark--confirmed{--calendar-mark:var(--sp-calendar-confirmed)}
 .calendar-status-mark--completed{--calendar-mark:var(--sp-calendar-completed)}
 .calendar-status-mark--cancelled{--calendar-mark:var(--sp-calendar-cancelled)}

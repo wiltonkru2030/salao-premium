@@ -78,7 +78,7 @@ function appointmentCard(a){
  const duration=Math.max(0,Math.round((new Date(a.ends_at)-new Date(a.starts_at))/60000));
  return '<button type="button" class="appointment '+appointmentClass(a)+'" data-appointment="'+esc(a.id)+'"><strong>'+timeLabel(a.starts_at,salonTimezone(state.organization?.timezone))+' · '+esc(a.customer_name)+'</strong>'+
  '<div class="meta">'+esc(a.service_name)+' · '+timeLabel(a.ends_at,salonTimezone(state.organization?.timezone))+'<br>'+esc(a.customer_phone||"Telefone não informado")+' · '+money(a.price)+'<br>'+esc(a.professional_name||state.professional?.name||"Profissional")+' · '+duration+' min</div>'+
- '<span class="tag">'+esc(statusLabel(a.status))+' · Agendado por: '+esc(sourceLabel(a.booking_source))+'</span></button>';
+ '<span class="tag">'+esc(statusLabel(a.status))+' · Agendado por: '+esc(sourceLabel(a.booking_source))+'</span>'+(appointmentStatusActions(a)?'<small class="meta">Toque para ver as ações</small>':'')+'</button>';
 }
 /** Exibe ações de status somente para o agendamento individual elegível. */
 function appointmentStatusActions(appointment) {

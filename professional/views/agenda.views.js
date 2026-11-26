@@ -7,7 +7,7 @@ import { escapeHtml } from "../utils/formatters.js";
 import { buildMonthlyCalendar } from "../utils/agenda-rules.js";
 
 // Uma faixa por status presente, na mesma ordem dos rótulos da legenda.
-const marks = [["confirmed","Confirmado"],["completed","Finalizado"],["cancelled","Cancelado"]];
+const marks = [["confirmed","Confirmado"],["completed","Finalizado"],["cancelled","Cancelado"],["scheduled","Agendado"]];
 
 /** Gera o risco visual de um estado; o texto equivalente fica no dia e na legenda. */
 function renderStatusMark(status) {
@@ -28,7 +28,7 @@ export function renderAgendaView(context) {
     const classes = [cell.inMonth ? "" : "outside", cell.selected ? "selected" : "", cell.today ? "today" : ""].filter(Boolean).join(" ");
     const statuses = marks.filter(([status])=>cell.statuses.has(status));
     const label = dateLabel(cell.date) + (statuses.length ? " · "+statuses.map(([,name])=>name).join(", ") : "");
-    return '<button class="day ' + classes + '" data-date="' + cell.key + '" aria-label="'+escapeHtml(label)+'">' + cell.day +
+    return '<button class="day ' + classes + '" data-date="' + cell.key + '" aria-label="'+escapeHtml(label)+'">' + '<span class="calendar-day-number">' + cell.day + '</span>' +
       (statuses.length ? '<span class="calendar-status-marks">'+statuses.map(([status])=>renderStatusMark(status)).join("")+'</span>' : '') + '</button>';
   }).join("");
   const weekdays = ["D", "S", "T", "Q", "Q", "S", "S"].map(day => '<div class="weekday">' + day + '</div>').join("");
