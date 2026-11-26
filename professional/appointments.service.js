@@ -52,7 +52,7 @@ export async function fetchProfessionalAppointments({
   try {
     let query = client
       .from("appointments")
-      .select("id,starts_at,ends_at,customer_id,customer_name,customer_phone,service_name,professional_name,status,price,booking_source,created_by_name,notes,professional_id,appointment_group_id,service_order_id")
+      .select("id,starts_at,ends_at,customer_id,customer_name,customer_phone,service_name,professional_name,status,price,booking_source,created_by_name,notes,professional_id,appointment_group_id,service_order_id,branch_id")
       .eq("org_id", organizationId)
       .gte("starts_at", start.toISOString())
       .lt("starts_at", end.toISOString());
@@ -86,6 +86,24 @@ export async function updateOwnAppointmentStatus({client, organizationId, appoin
   });
   if (error || data?.id !== appointmentId || data.status !== status) {
     throw new Error("Não foi possível alterar o agendamento. Atualize a Agenda e tente novamente.");
+  }
+  return data;
+}
+
+/** Envia o horário civil para o banco converter no fuso do salão e preservar a duração. */
+export async function rescheduleOwnAppointment({client, organizationId, appointment, localStart}) {
+  const {data, error} = await client.rpc("reschedule_own_appointment", {
+    target_org: organizationId,
+    target_appointment: appointment.id,
+    expected_start: appointment.starts_at,
+    new_local_start: localStart
+  });
+
+  if (error?.code === "23P01" || error?.code === "23514") {
+    throw new Error("O novo horário está indisponível. Confira o expediente e escolha outro.");
+  }
+  if (error || data?.id !== appointment.id || !data.starts_at || !data.ends_at) {
+    throw new Error("Não foi possível reagendar. Atualize a Agenda e escolha um horário futuro.");
   }
   return data;
 }

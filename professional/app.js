@@ -24,7 +24,7 @@ import { renderProfessionalCustomers } from "./views/customers.views.js";
 import { renderProfessionalServices } from "./views/services.views.js";
 import { renderAgendaView } from "./views/agenda.views.js";
 import { handleAgendaClick } from "./agenda.controller.js";
-import { fetchProfessionalAppointments, updateOwnAppointmentStatus } from "./appointments.service.js";
+import { fetchProfessionalAppointments, updateOwnAppointmentStatus, rescheduleOwnAppointment } from "./appointments.service.js";
 import {fetchProfessionalServices} from "./services.service.js";
 import { fetchProfessionalOrders, fetchProfessionalOrderItems } from "./orders.service.js";
 import { fetchProfessionalCommissions } from "./commissions.service.js";
@@ -47,6 +47,8 @@ let sessionEpoch=0;
 // Ative a interface no build após instalar a migration correspondente no Supabase.
 const appointmentStatusEnabled = import.meta.env.VITE_PROFESSIONAL_APPOINTMENT_STATUS === "true";
 let appointmentStatusPending = false;
+// Ative após aplicar a migration de reagendamento no ambiente correspondente.
+const rescheduleEnabled = import.meta.env.VITE_PROFESSIONAL_RESCHEDULE === "true";
 const serviceLock={active:false,operation:null};
 /** Limpa dados privados antes de exibir a tela de acesso. */
 function clearPrivateState(){sessionEpoch++;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();Object.assign(state,{user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,organization:null,page:"Agenda",appointments:[],orders:[],services:[],commissions:[],commissionPayouts:[],selectedAppointment:null,selectedOrder:null,orderItems:[]});}
@@ -79,12 +81,16 @@ function appointmentCard(a){
 }
 /** Exibe ações de status somente para o agendamento individual elegível. */
 function appointmentStatusActions(appointment) {
- if(!appointmentStatusEnabled || state.role!=="professional" || appointment.professional_id!==state.professional?.id ||
+ if(state.role!=="professional" || appointment.professional_id!==state.professional?.id ||
    appointment.appointment_group_id || appointment.service_order_id ||
    !["scheduled","confirmed"].includes(appointment.status))return "";
- return '<div class="professional-card-actions">'+
+ const statusButtons=appointmentStatusEnabled?'<div class="professional-card-actions">'+
    (appointment.status==="scheduled"?'<button type="button" class="secondary" data-own-appointment-status="confirmed">Confirmar</button>':'')+
-   '<button type="button" class="secondary" data-own-appointment-status="cancelled">Cancelar agendamento</button></div>';
+   '<button type="button" class="secondary" data-own-appointment-status="cancelled">Cancelar agendamento</button></div>':"";
+ const rescheduleForm=rescheduleEnabled&&appointment.branch_id
+   ? '<details><summary>Reagendar</summary><form id="professional-reschedule"><label class="field">Novo horário · '+esc(state.organization?.timezone||"Fuso do salão")+'<input name="local_start" type="datetime-local" required></label><button type="submit" class="secondary">Salvar novo horário</button></form></details>'
+   : "";
+ return statusButtons+rescheduleForm;
 }
 
 /** Renderiza os dados do agendamento selecionado e as ações disponíveis. */
@@ -209,7 +215,7 @@ root.addEventListener("change", event => {
 /** Persiste a mudança e atualiza o cartão apenas se a sessão ainda for a mesma. */
 async function applyAppointmentStatus(control) {
  const appointment=state.selectedAppointment;
- if(!appointment || appointmentStatusPending || !appointmentStatusActions(appointment))return;
+ if(!appointmentStatusEnabled || !appointment || appointmentStatusPending || !appointmentStatusActions(appointment))return;
  const status=control.dataset.ownAppointmentStatus;
  if(status==="cancelled"&&!window.confirm("Cancelar este agendamento?"))return;
  const epoch=sessionEpoch;
@@ -266,7 +272,45 @@ root.addEventListener("click",async event=>{
  }
  }catch(error){reportError(error,{context:"App Profissional > ação de tela"});}
 });
+/** Salva a remarcação e mantém o calendário consistente com o horário retornado. */
+async function applyAppointmentReschedule(form) {
+ const appointment=state.selectedAppointment;
+ if(!rescheduleEnabled||!appointment?.branch_id||appointmentStatusPending||!appointmentStatusActions(appointment))return;
+ const localStart=new FormData(form).get("local_start");
+ const button=form.querySelector("button[type=submit]");
+ const epoch=sessionEpoch;
+ appointmentStatusPending=true;
+ button.disabled=true;
+ try {
+  const saved=await rescheduleOwnAppointment({client:supabase,organizationId:state.orgId,appointment,localStart});
+  if(epoch!==sessionEpoch)return;
+  const newDate=new Date(saved.starts_at);
+  if(state.page==="Agenda"&&state.selectedAppointment?.id===saved.id) {
+   state.selectedDate=newDate;
+   state.month=new Date(newDate.getFullYear(),newDate.getMonth(),1);
+   state.selectedAppointment={...appointment,...saved};
+  }
+  state.appointments=state.appointments.filter(item=>item.id!==saved.id);
+  try {
+   await loadAppointments();
+   if(epoch===sessionEpoch)showNotice("Agendamento reagendado.");
+  } catch {
+   if(epoch===sessionEpoch)showNotice("Agendamento reagendado. Atualize a Agenda para recarregar os horários.");
+  }
+ } catch(error) {
+  if(epoch===sessionEpoch)showNotice(error.message);
+ } finally {
+  appointmentStatusPending=false;
+  if(button.isConnected)button.disabled=false;
+ }
+}
+
 root.addEventListener("submit",async event=>{
+ if(event.target.matches("#professional-reschedule")){
+  event.preventDefault();
+  await applyAppointmentReschedule(event.target);
+  return;
+ }
  try{
  if(event.target.matches("#professional-password-change")){
   event.preventDefault();const values=new FormData(event.target),password=String(values.get("password")||""),confirm=String(values.get("confirm")||"");
