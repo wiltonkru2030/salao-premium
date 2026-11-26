@@ -19,17 +19,16 @@
 #professional-app .calendar-head button{font-size:12px}
 #professional-app .weekday{font-size:11px}
 #professional-app .day{font-size:13px;min-height:58px}
-#professional-app .appointment,#professional-app .order,#professional-app .service,#professional-app .commission{padding:17px;border-radius:10px;min-width:0}
+#professional-app .appointment,#professional-app .order,#professional-app .service,#professional-app .commission{min-width:0}
 #professional-app .appointment strong,#professional-app .order strong,#professional-app .service strong,#professional-app .commission strong{font-size:14px;line-height:1.45}
 #professional-app .appointment .meta,#professional-app .order .meta,#professional-app .service .meta,#professional-app .commission .meta{font-size:12px;line-height:1.65;overflow-wrap:anywhere}
 #professional-app .tag{font-size:11px}
-#professional-app .detail{padding:17px;border-radius:10px}
 #professional-app .detail-row{font-size:13px;line-height:1.55;flex-wrap:wrap}
 #professional-app .detail-row b{overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 #professional-app .empty{font-size:13px}
 #professional-app .suggestions button{min-height:44px;font-size:13px}
 @media(max-width:600px){
- #professional-app .content{padding:21px 17px calc(24px + env(safe-area-inset-bottom))}
+ #professional-app .content{padding-block:21px calc(24px + env(safe-area-inset-bottom))}
  #professional-app .top{padding:16px 17px}
  #professional-app .login{padding:26px 20px}
  #professional-app .day{min-height:52px}

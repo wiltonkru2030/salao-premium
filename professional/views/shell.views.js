@@ -29,7 +29,7 @@ export function renderProfessionalShell({state, content, pages}) {
           <button type="button" class="secondary" data-action="logout">Sair</button>
         </div></details>
       </header>
-      <main class="content">${state.notice?'<div class="notice">'+escapeHtml(state.notice)+'</div>':''}${content}</main>
+      <main class="content sp-page-flow">${state.notice?'<div class="notice">'+escapeHtml(state.notice)+'</div>':''}${content}</main>
     </div>
   </div>`;
 }

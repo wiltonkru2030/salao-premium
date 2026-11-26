@@ -14,7 +14,7 @@ export function renderProfessionalCustomers(appointments, professionalId, monthL
     .map(customer => {
       const phone = String(customer.customer_phone || "");
       const digits = phone.replace(/\D/g,"");
-      return '<article class="detail" data-professional-search-text="'+escapeHtml(customer.customer_name||"")+
+      return '<article class="detail sp-content-surface" data-professional-search-text="'+escapeHtml(customer.customer_name||"")+
         '" data-professional-phone="'+digits+'"><strong>'+escapeHtml(customer.customer_name||"Cliente")+
         '</strong><p class="meta">'+escapeHtml(phone||"Telefone não informado")+'</p>'+
         '<div class="professional-card-actions"><button class="btn secondary" type="button" data-customer-visit="'+
@@ -27,6 +27,6 @@ export function renderProfessionalCustomers(appointments, professionalId, monthL
     '<div class="section-title"><h2 id="professional-customers-heading">Clientes</h2></div>' +
     '<p class="muted">Clientes da sua agenda de ' + escapeHtml(monthLabel) + '.</p>' +
     '<label class="field">Buscar cliente<input type="search" data-professional-list-search placeholder="Nome ou telefone"></label>'+
-    '<p class="empty" data-professional-search-empty hidden>Nenhum cliente encontrado.</p>'+
-    (rows || '<p class="empty">Nenhum cliente na sua agenda deste mês.</p>') + '</section>';
+    '<p class="empty sp-content-surface sp-content-surface--empty" data-professional-search-empty hidden>Nenhum cliente encontrado.</p>'+
+    (rows || '<p class="empty sp-content-surface sp-content-surface--empty">Nenhum cliente na sua agenda deste mês.</p>') + '</section>';
 }

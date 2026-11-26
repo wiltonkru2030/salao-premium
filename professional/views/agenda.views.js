@@ -40,5 +40,5 @@ export function renderAgendaView(context) {
       marks.map(([status,name])=>'<li>'+renderStatusMark(status)+name+'</li>').join("")+'</ul>' +
     booking +
     '<div class="section-title section-title--tight-spaced"><h2>' + escapeHtml(dateLabel(state.selectedDate)) + '</h2><span class="muted">' + selectedAppointments.length + ' agendamento(s)</span></div>' +
-    (selectedAppointments.length ? selectedAppointments.map(appointmentCard).join("") : '<div class="empty">Nenhum agendamento neste dia.</div>') + appointmentDetails();
+    (selectedAppointments.length ? selectedAppointments.map(appointmentCard).join("") : '<div class="empty sp-content-surface sp-content-surface--empty">Nenhum agendamento neste dia.</div>') + appointmentDetails();
 }

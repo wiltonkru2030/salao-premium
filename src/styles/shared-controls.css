@@ -93,3 +93,26 @@ font-size:12px}
   background: var(--sp-paper);
   color: var(--sp-ink);
 }
+
+/* Estrutura de leitura reutilizável para páginas, cartões e estados vazios. */
+.sp-page-flow {
+  inline-size:100%;
+  max-inline-size:var(--sp-content);
+  margin-inline:auto;
+  padding-inline:clamp(16px,3vw,36px);
+}
+.sp-content-surface {
+  min-inline-size:0;
+  border:1px solid var(--sp-line);
+  border-radius:var(--sp-radius);
+  padding:clamp(14px,2.5vw,20px);
+  background:var(--sp-paper);
+  color:var(--sp-ink);
+  overflow-wrap:anywhere;
+}
+.sp-content-surface--empty {
+  border-style:dashed;
+  background:var(--sp-soft);
+  color:var(--sp-muted);
+  text-align:center;
+}
