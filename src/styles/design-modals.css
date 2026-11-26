@@ -173,14 +173,14 @@ dialog.sp-modal.recycle-dialog{width:min(760px,calc(100vw - 28px));padding:0;ove
 }
 .empty-state{
   padding:25px 18px;border:1px dashed var(--sp-line-strong);
-  background:#fbfaf8;color:var(--sp-muted);text-align:center
+  background:var(--sp-soft);color:var(--sp-muted);text-align:center
 }
-.notice{padding:12px 15px;border:1px solid #e8e1d4;background:#faf8f3;color:#665a43}
-.demo-note{margin:0;padding:12px 17px;background:#faf9f6;color:var(--sp-muted)}
+.notice{padding:12px 15px;border:1px solid #e8e1d4;background:var(--sp-gold-soft);color:var(--sp-gold-text)}
+.demo-note{margin:0;padding:12px 17px;background:var(--sp-soft);color:var(--sp-muted)}
 .status{
   display:inline-flex;align-items:center;justify-content:center;
   min-height:24px;padding:4px 9px;border:1px solid var(--sp-line);
-  border-radius:99px;background:#faf9f6;color:#69665f;
+  border-radius:99px;background:var(--sp-soft);color:var(--sp-muted);
   font-size:9px;font-weight:500;white-space:nowrap
 }
 .section-title--spaced{margin:24px 0 12px}

@@ -41,3 +41,9 @@ assert.match(clientShell, /class="sp-platform-mark brand-logo"/);
 assert.match(clientShell, /<main><h1>Meus horários<\/h1><\/main>/);
 assert.match(clientShell, /data-bottom-nav/);
 console.log("Contrato visual compartilhado: OK");
+
+// Protege as superfícies que misturavam valores fixos e cores do tema.
+assert.match(read("src/styles/settings.css"),/\.availability-form\{[^}]*background:var\(--sp-paper\);color:var\(--sp-ink\)/);
+assert.match(read("src/styles/design-modals.css"),/\.demo-note\{[^}]*background:var\(--sp-soft\);color:var\(--sp-muted\)/);
+assert.match(read("src/styles/design-components.css"),/\.section-heading h2,\.section-title h2\{[^}]*color:var\(--sp-ink\)/);
+assert.match(read("src/styles/shell-base.css"),/\.unit-indicator\{[^}]*color:var\(--sp-muted\)/);

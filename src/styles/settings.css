@@ -16,7 +16,7 @@ text-align:left;
 font-size:10px;
 color:#777;
 cursor:pointer}
-.settings-nav button.active,.settings-nav button:hover{background:#f7f4ee;
+.settings-nav button.active,.settings-nav button:hover{background:var(--sp-gold-soft);
 color:#222}
 .settings-panel{padding:19px}
 .setting-row{width:100%;
@@ -46,10 +46,10 @@ color:#aaa}
 
 /* Disponibilidade da agenda: formulários responsivos e listas administrativas. */
 .availability-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}
-.availability-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:start;padding:15px;border:1px solid var(--border,#e8e5df);border-radius:12px;background:var(--surface,#fff)}
+.availability-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:start;padding:15px;border:1px solid var(--border,#e8e5df);border-radius:12px;background:var(--sp-paper);color:var(--sp-ink)}
 .availability-form h3{grid-column:1/-1;margin:0 0 4px;font-size:14px}
-.availability-form label{display:grid;gap:5px;font-size:12px;color:var(--text-muted,#666)}
-.availability-form input,.availability-form select{width:100%;min-width:0;min-height:40px;padding:8px 10px;border:1px solid var(--border,#ddd);border-radius:8px;background:var(--sp-paper);color:inherit;font:inherit}
+.availability-form label{display:grid;gap:5px;font-size:12px;color:var(--sp-muted)}
+.availability-form input,.availability-form select{width:100%;min-width:0;min-height:40px;padding:8px 10px;border:1px solid var(--border,#ddd);border-radius:8px;background:var(--sp-paper);color:var(--sp-ink);font:inherit}
 .availability-form .sp-span,.availability-form button{grid-column:1/-1}
 .availability-lists{margin-top:18px}
 .availability-lists h3{font-size:14px;margin:0 0 10px}
@@ -60,7 +60,7 @@ color:#aaa}
 .public-profile-panel form{display:grid;gap:12px}
 .public-profile-panel .sp-modal-body{padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .public-profile-panel label{display:grid;gap:6px;font-size:12px;font-weight:600}
-.public-profile-panel input,.public-profile-panel textarea{width:100%;min-width:0;padding:10px 12px;border:1px solid var(--border,#ddd);border-radius:9px;background:var(--surface,#fff);color:var(--text-muted,#222);font:inherit}
+.public-profile-panel input,.public-profile-panel textarea{width:100%;min-width:0;padding:10px 12px;border:1px solid var(--border,#ddd);border-radius:9px;background:var(--sp-paper);color:var(--sp-ink);color:var(--text-muted,#222);font:inherit}
 .public-profile-panel .sp-span{grid-column:1/-1}
 .public-profile-panel .public-check{display:flex;align-items:center;gap:9px;font-weight:500}
 .public-profile-panel .public-check input{width:18px;height:18px;accent-color:var(--gold,#b59b62)}
