@@ -4,6 +4,7 @@ import {formatMoney} from "./utils/formatters.js";
 import {canManageOrder,orderItemEditPayload,professionalOrderAction} from "./order-management.service.js";
 /** Normaliza acentos para pesquisa no catálogo. */
 const normalize=value=>String(value??"").normalize("NFD").replace(/\p{M}/gu,"").toLocaleLowerCase("pt-BR").trim();
+/** Monta os controles da comanda e retorna a rotina de limpeza dos listeners. */
 export function bindOrderManagement({root,state,client,getEpoch,lock,loadOrders,loadAppointments,chooseOrder,showNotice,reportError}){
  const panel=root.querySelector("[data-managed-order]");
  if(!panel||!canManageOrder(state)||state.orderItemsStatus!=="ready")return null;

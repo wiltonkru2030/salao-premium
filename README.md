@@ -319,3 +319,7 @@ Não executar integração que cria/altera registros em produção. Leia os scri
 - [Contratos de pacotes, espera e fidelidade](docs/sql/appointment-offers-applied.test.mjs)
 
 **Regra permanente:** documentação, segurança, desempenho, identidade visual e integridade dos dados fazem parte da implementação, não são melhorias opcionais para depois. Ao concluir uma alteração, registrar o que mudou, o que foi testado e o que continua pendente.
+
+## Homologação atual do App Profissional
+
+Build, testes agregados e Agenda aprovados no GitHub para `d6f0e80`. Smoke integrado em QA aprovado e revertido. Ainda há pendências de estrutura, segurança, financeiro, navegador e publicação. Consulte o [relatório de homologação](docs/HOMOLOGACAO-APP-PROFISSIONAL.md) e o script de reprodução. Não houve liberação de produção nesta etapa.

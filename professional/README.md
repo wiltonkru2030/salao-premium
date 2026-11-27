@@ -117,3 +117,6 @@ Migration `20261127021133_professional_notifications_inbox.sql` instalada em QA,
 
 ### Revisão visual e atualização PWA
 CSS organizado em entrada, layout, acabamento móvel e workspace; tokens globais preservados. Ajustados espaçamento, formulários, cartões, contraste nos dois temas, botão/ícone de Perfil e modal em uma coluna com campo apenas de hora. `hidden` vence flex/grid para impedir a exibição simultânea de formulários. CPF numérico recebe máscara sem alterar e-mail. Worker legado deixa de interceptar a rede e remove apenas caches do App Profissional; offline não é oferecido, para evitar conteúdo antigo e dados privados. Build passa a emitir worker, manifesto e ícone no caminho estável. Testes recentes incluídos no comando agregado. Teste estático `npm run test:professional-visual-contract`; build e revisão em navegador/dispositivo ainda necessários.
+
+### Evidências de homologação
+Build e suíte agregada aprovados em `d6f0e80`. Smoke SQL integrado de clientes, serviços, perfil, agenda, notificações e comanda aprovado em QA com rollback. Ver [relatório atualizado](../docs/HOMOLOGACAO-APP-PROFISSIONAL.md) para critérios restantes. Não habilitar flags em produção antes de concluir os bloqueios listados.

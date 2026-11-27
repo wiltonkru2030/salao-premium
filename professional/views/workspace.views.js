@@ -4,7 +4,7 @@ import {escapeHtml as esc,formatMoney as money,formatStatus as statusLabel,forma
 import {canRegisterProfessionalService} from "../access.rules.js";
 export {commissionsView} from "./commissions.views.js";
 import {renderManagedOrder} from "./order-management.views.js";
-// Apresenta comandas autorizadas e seus detalhes.
+/** Apresenta comandas autorizadas e seus detalhes a partir do estado, sem acessar rede. */
 export function ordersView(state,{managementEnabled=false}={}){
  if(state.selectedOrder&&managementEnabled&&state.role==="professional")return renderManagedOrder(state);
  if(state.selectedOrder){

@@ -19,5 +19,7 @@ export function filterCommissionStatement(rows,payouts,filters={},timezone){
 }
 /** Traduz estados e métodos registrados; valores desconhecidos não vazam códigos técnicos. */
 export const commissionStatusLabel=status=>({pending:"Pendente",approved:"Aprovada",paid:"Paga",cancelled:"Cancelada"})[status]||"Não informado";
+/** Rótulo de tipo de lançamento financeiro em português. */
 export const commissionTypeLabel=type=>({service:"Serviço",product:"Produto"})[type]||"Comissão";
+/** Tradução do método registrado no repasse, sem presumir método desconhecido. */
 export const paymentMethodLabel=method=>({cash:"Dinheiro",pix:"Pix",credit_card:"Cartão de crédito",debit_card:"Cartão de débito",transfer:"Transferência",voucher:"Vale",other:"Outro"})[method]||"Não informado";
