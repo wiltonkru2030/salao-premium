@@ -18,13 +18,13 @@ export function renderProfessionalShell({state, content, pages}) {
   return `<div class="app-shell">
     <aside class="professional-sidebar" id="professional-sidebar">
       <div class="professional-sidebar-brand"><div class="brand sp-professional-brand">${renderPlatformMark()}<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div>
-      <button type="button" class="icon-button professional-menu-close" data-action="close-professional-menu" aria-label="Fechar menu">×</button></div>
+      <button type="button" class="icon-button professional-menu-close" data-action="close-professional-menu" aria-label="Fechar menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
       <nav aria-label="Navegação do App Profissional">${navigation}</nav>
     </aside>
     <button class="professional-menu-scrim" type="button" data-action="close-professional-menu" tabindex="-1" aria-label="Fechar menu"></button>
     <div class="professional-workspace">
       <header class="top">
-        <button type="button" class="icon-button professional-menu-toggle" data-action="open-professional-menu" aria-label="Abrir menu" aria-controls="professional-sidebar" aria-expanded="false">☰</button>
+        <button type="button" class="icon-button professional-menu-toggle" data-action="open-professional-menu" aria-label="Abrir menu" aria-controls="professional-sidebar" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
         <div class="brand sp-professional-brand professional-top-brand">${renderPlatformMark()}<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div>
         <details class="professional-profile-menu"><summary class="secondary" aria-label="Perfil de ${escapeHtml(greeting)}">Perfil</summary><div class="detail sp-content-surface">
           <button type="button" class="secondary" data-page="Perfil">Meu perfil</button>

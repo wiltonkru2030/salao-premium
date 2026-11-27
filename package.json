@@ -88,7 +88,8 @@
     "test:professional-password-branches": "node professional/password-branches.test.js",
     "test:professional-workspace-state": "node professional/workspace-state.test.js",
     "test:professional-navigation": "node professional/controllers/navigation.controller.test.js",
-    "test:professional-fields-search": "node professional/utils/fields-search.test.js"
+    "test:professional-fields-search": "node professional/utils/fields-search.test.js",
+    "test:professional-browser": "node tests/visual/professional-browser.mjs"
   },
   "engines": {
     "node": ">=20"

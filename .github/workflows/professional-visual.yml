@@ -1,0 +1,37 @@
+# Homologação visual separada: não usa segredos nem conecta Supabase.
+name: Professional visual browser
+on:
+  push:
+    branches: [main]
+    paths: ['professional/**', 'src/styles/**', 'src/components/**', 'src/utils/**', 'tests/visual/**', '.github/workflows/professional-visual.yml']
+  workflow_dispatch:
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install temporary browser test dependency
+        run: npm install --no-save --package-lock=false playwright@1.55.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start Vite and validate real views
+        run: |
+          npx --yes vite@6 --host 127.0.0.1 --port 4173 --strictPort > /tmp/professional-vite.log 2>&1 &
+          PID=$!
+          trap 'kill "$PID" || true' EXIT
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:4173/professional/ >/dev/null; then break; fi
+            sleep 1
+          done
+          npm run test:professional-browser
+      - name: Upload screenshots and results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: professional-visual
+          path: artifacts/professional-visual/
+          if-no-files-found: warn

@@ -1,5 +1,6 @@
 /** Composição visual da Agenda, sem rede ou manipulação de DOM. */
 import {salonTimezone} from "../utils/salon-time.js";
+import {formatSavedPhone} from "../../src/utils/input-masks.js";
 import {escapeHtml as esc,formatMoney as money,toDateKey as dateKey,formatMonthLabel as monthLabel,formatDateLabel as dateLabel,formatTime as timeLabel,formatBookingSource as sourceLabel,formatStatus as statusLabel,getAppointmentClass as appointmentClass} from "../utils/formatters.js";
 import {renderAttendanceActions} from "../attendance.service.js";
 import {renderProfessionalBooking} from "./booking.views.js";
@@ -9,7 +10,7 @@ export function createAgendaWorkspaceViews({state,attendanceEnabled,appointmentS
  function appointmentCard(a){
   const duration=Math.max(0,Math.round((new Date(a.ends_at)-new Date(a.starts_at))/60000));
   return '<button type="button" class="appointment sp-content-surface '+appointmentClass(a)+'" data-appointment="'+esc(a.id)+'"><span class="professional-appointment-heading"><time datetime="'+esc(a.starts_at)+'">'+timeLabel(a.starts_at,salonTimezone(state.organization?.timezone))+'</time><strong>'+esc(a.customer_name)+'</strong></span>'+
-  '<div class="meta">'+esc(a.service_name)+' · '+timeLabel(a.ends_at,salonTimezone(state.organization?.timezone))+'<br>'+esc(a.customer_phone||"Telefone não informado")+' · '+money(a.price)+'<br>'+esc(a.professional_name||state.professional?.name||"Profissional")+' · '+duration+' min</div>'+
+  '<div class="meta">'+esc(a.service_name)+' · '+timeLabel(a.ends_at,salonTimezone(state.organization?.timezone))+'<br>'+esc(formatSavedPhone(a.customer_phone)||"Telefone não informado")+' · '+money(a.price)+'<br>'+esc(a.professional_name||state.professional?.name||"Profissional")+' · '+duration+' min</div>'+
   '<span class="tag">'+esc(statusLabel(a.status))+' · Agendado por: '+esc(sourceLabel(a.booking_source))+'</span>'+((appointmentStatusActions(a)||renderAttendanceActions(state,a,attendanceEnabled))?'<small class="meta">Toque para ver as ações</small>':'')+'</button>';
  }
  /** Exibe ações de status somente para o agendamento individual elegível. */
@@ -32,7 +33,7 @@ export function createAgendaWorkspaceViews({state,attendanceEnabled,appointmentS
   const duration=Math.max(0,Math.round((new Date(a.ends_at)-new Date(a.starts_at))/60000));
   return '<section class="detail sp-content-surface"><div class="section-title"><h2>Detalhes do agendamento</h2><button class="secondary" data-action="close-appointment">Fechar</button></div>'+
   '<div class="detail-row"><span>Cliente</span><b>'+esc(a.customer_name)+'</b></div>'+
-  '<div class="detail-row"><span>Telefone</span><b>'+esc(a.customer_phone||"—")+'</b></div>'+
+  '<div class="detail-row"><span>Telefone</span><b>'+esc(formatSavedPhone(a.customer_phone)||"—")+'</b></div>'+
   '<div class="detail-row"><span>Serviço</span><b>'+esc(a.service_name)+'</b></div>'+
   '<div class="detail-row"><span>Profissional</span><b>'+esc(a.professional_name||state.professional?.name||"—")+'</b></div>'+
   '<div class="detail-row"><span>Data</span><b>'+new Date(a.starts_at).toLocaleDateString("pt-BR",{timeZone:salonTimezone(state.organization?.timezone)})+'</b></div>'+

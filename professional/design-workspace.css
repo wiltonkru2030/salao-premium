@@ -76,3 +76,36 @@
 #professional-app #professional-profile-preferences label:has(input[type=checkbox]){display:flex;align-items:center;gap:10px;min-block-size:44px}
 #professional-app .professional-workspace :is(button,input,select):disabled{cursor:not-allowed}
 @media(prefers-reduced-motion:reduce){#professional-app *,#professional-app *::before,#professional-app *::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* Revisão responsiva: textos longos, grupos de ações e filtros não alargam a página. */
+#professional-app .professional-workspace .content{inline-size:100%;margin-inline:auto;padding-inline:clamp(16px,3vw,28px)}
+#professional-app .professional-workspace .content > section{min-inline-size:0;max-inline-size:100%}
+#professional-app .professional-workspace :is(.record-main,.detail-row,.notice,.meta,.professional-service-record){overflow-wrap:anywhere}
+#professional-app .professional-workspace .detail-row > *{min-inline-size:0}
+#professional-app .professional-workspace :is(.sp-labeled-field,input,select,textarea){min-inline-size:0;max-inline-size:100%}
+#professional-app .professional-workspace .professional-appointment-heading strong{font-size:var(--sp-text-size);flex:1;min-inline-size:0;overflow-wrap:anywhere}
+#professional-app .professional-workspace .professional-appointment-heading time{font-variant-numeric:tabular-nums}
+#professional-app .professional-workspace .muted{font-size:var(--sp-caption-size)}
+#professional-app .professional-workspace [data-managed-order]{display:grid;gap:12px}
+#professional-app .professional-workspace [data-managed-order] > .detail{margin:0}
+#professional-app .professional-workspace [data-managed-order] .detail > details{margin-block:12px}
+#professional-app .professional-workspace [data-managed-order] .detail > :is(button,form){margin-block-start:8px}
+#professional-app .professional-workspace [data-managed-order] .detail > .sp-labeled-field{margin-block-start:12px}
+#professional-app .professional-workspace #professional-commission-filter{grid-template-columns:repeat(2,minmax(0,1fr))}
+#professional-app .professional-workspace #professional-commission-filter > :is(.professional-card-actions,[role=alert]){grid-column:1/-1}
+#professional-app .professional-workspace .professional-profile-menu summary{white-space:nowrap}
+#professional-app .professional-menu-toggle,#professional-app .professional-menu-close{min-inline-size:44px;min-block-size:44px}
+#professional-app .professional-workspace .top .professional-top-brand span{min-inline-size:0;overflow-wrap:anywhere}
+#professional-app .professional-workspace .top .professional-top-brand img{flex:none}
+#professional-app dialog.professional-booking-sheet .sp-modal-shell > form{min-block-size:0;flex-direction:column;overflow:hidden}
+#professional-app dialog.professional-booking-sheet .sp-modal-body{min-block-size:0;overflow-y:auto;overscroll-behavior:contain}
+#professional-app dialog.professional-booking-sheet .sp-modal-foot{flex:none}
+@media(max-width:400px){
+ #professional-app .professional-workspace .content{padding-inline:12px}
+ #professional-app .professional-workspace #professional-commission-filter{grid-template-columns:minmax(0,1fr)}
+ #professional-app .professional-workspace .top{gap:8px;padding-inline:10px}
+ #professional-app .professional-workspace .professional-top-brand{letter-spacing:.04em}
+ #professional-app .professional-workspace .professional-top-brand small{letter-spacing:.06em}
+ #professional-app dialog.professional-booking-sheet .sp-modal-body{padding:14px}
+ #professional-app dialog.professional-booking-sheet .sp-modal-foot{padding-inline:14px}
+}
