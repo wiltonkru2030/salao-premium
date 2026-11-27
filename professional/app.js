@@ -33,7 +33,7 @@ import {createAgendaWorkspaceViews} from "./views/agenda-workspace.views.js";
 import {syncAppointmentDialog} from "./appointment-dialog.js";
 import { handleAgendaClick } from "./agenda.controller.js";
 import {fetchProfessionalAppointments,fetchNotificationAppointment} from "./appointments.service.js";
-import {fetchProfessionalNotifications} from "./notifications.service.js";
+import {fetchProfessionalNotification} from "./notifications.service.js";
 import {createNotificationNavigation,readNotificationLink} from "./controllers/notification-navigation.controller.js";
 import {allowedProfessionalPages} from "./access.rules.js";
 
@@ -78,7 +78,7 @@ const {loadProfilePreferences,submitProfilePreferences}=createProfileController(
 const {loadOrders,loadCommissions,chooseOrder}=createFinancialController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError});
 const {applyAppointmentStatus,applyAttendance,openAttendanceOrder,applyAppointmentReschedule,applyNewAppointment}=createAttendanceController({state,supabase,getEpoch:()=>sessionEpoch,showNotice,loadAppointments,loadOrders,chooseOrder,appointmentStatusActions,appointmentStatusEnabled,attendanceEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled});
 const push=createProfessionalPush({client:supabase,onMessage:()=>{if(state.user&&state.orgId)void loadNotifications();}});
-const notificationNavigation=createNotificationNavigation({state,getEpoch:()=>sessionEpoch,fetchAppointment:params=>fetchNotificationAppointment({client:supabase,...params}),fetchInbox:orgId=>fetchProfessionalNotifications({client:supabase,organizationId:orgId}),loadAppointments,render,showNotice});
+const notificationNavigation=createNotificationNavigation({state,getEpoch:()=>sessionEpoch,fetchAppointment:params=>fetchNotificationAppointment({client:supabase,...params}),fetchNotification:(orgId,id)=>fetchProfessionalNotification({client:supabase,organizationId:orgId,notificationId:id}),loadAppointments,render,showNotice});
 let pendingNotification=readNotificationLink(globalThis.location.href);
 /** Só resolve o aviso depois de autenticar e selecionar o contexto; não conserva IDs em armazenamento local. */
 async function resolvePendingNotification(){

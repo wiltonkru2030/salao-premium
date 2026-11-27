@@ -13,3 +13,11 @@ export async function markProfessionalNotificationsRead({client,organizationId,n
  if(error||data===null||!Number.isSafeInteger(Number(data))||Number(data)<0)throw new Error("Não foi possível marcar as notificações como lidas.");
  return Number(data);
 }
+
+/** Consulta um aviso individual autorizado, inclusive fora das 100 últimas notificações. */
+export async function fetchProfessionalNotification({client,organizationId,notificationId}){
+ if(!client?.rpc||!organizationId||typeof notificationId!=="string"||!notificationId)throw new Error("Notificação inválida.");
+ const {data,error}=await client.rpc("get_professional_notification",{target_org:organizationId,target_notification:notificationId});
+ if(error||data&&data.id!==notificationId)throw new Error("Não foi possível consultar este aviso.");
+ return data||null;
+}

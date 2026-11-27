@@ -6,15 +6,14 @@ export function readNotificationLink(url){
  try{const id=new URL(url).searchParams.get("notification");return validId(id)?id:null;}catch{return null;}
 }
 /** Resolve o destino após verificar contexto e RLS; evita respostas de sessão antiga. */
-export function createNotificationNavigation({state,getEpoch,fetchAppointment,fetchInbox,loadAppointments,render,showNotice}){
+export function createNotificationNavigation({state,getEpoch,fetchAppointment,fetchNotification,loadAppointments,render,showNotice}){
  let sequence=0;
  async function open(id){
   if(!validId(id)||state.role!=="professional"||!state.orgId||!state.branchId||!state.professional?.id)return false;
   const epoch=getEpoch(),request=++sequence,current=()=>getEpoch()===epoch&&sequence===request;
   try{
-   const inbox=await fetchInbox(state.orgId);
+   const item=await fetchNotification(state.orgId,id);
    if(!current())return false;
-   const item=inbox.items.find(row=>row.id===id);
    if(!item||!item.appointment_id){showNotice("Aviso sem agendamento disponível. Consulte suas notificações.");return false;}
    const appointment=await fetchAppointment({organizationId:state.orgId,professionalId:state.professional.id,branchId:state.branchId,appointmentId:item.appointment_id});
    if(!current())return false;

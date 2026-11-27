@@ -62,9 +62,12 @@ Deno.serve(async(req:Request)=>{
   for(let i=0;i<jobs.length;i+=6)await Promise.all(jobs.slice(i,i+6).map(async job=>{
    let outcome="retry";
    try{
+    // O título vem de uma lista fixa no banco e só pode ser lido pelo lease ativo.
+    const {data:title,error:titleError}=await admin.rpc("get_professional_push_title",{target_notification:job.notification_id,target_device:job.device_id,target_lease:job.lease_id});
+    if(titleError||typeof title!=="string")throw new Error("Aviso indisponível para envio");
     const response=await fetch("https://fcm.googleapis.com/v1/projects/"+projectId+"/messages:send",{
      method:"POST",headers:{Authorization:"Bearer "+bearer,"Content-Type":"application/json"},
-     body:JSON.stringify({message:{token:job.token,data:{kind:"professional_update",notification_id:job.notification_id},webpush:{headers:{TTL:"300",Urgency:"normal"}}}}),signal:AbortSignal.timeout(8000)
+     body:JSON.stringify({message:{token:job.token,data:{kind:"professional_update",notification_id:job.notification_id,title},webpush:{headers:{TTL:"300",Urgency:"normal"}}}}),signal:AbortSignal.timeout(8000)
     });
     if(response.ok)outcome="sent";
     else{
