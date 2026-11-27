@@ -128,3 +128,22 @@ font-size:12px}
   background:var(--sp-paper);
   color:var(--sp-ink);
 }
+
+/* Autocomplete rico reutilizável: campo com lupa, resultados em duas linhas e criação contextual.
+ * Usa tokens globais, sem depender de cores específicas da página ou do tema.
+ */
+:is(#app,#professional-app,#cliente-app) .autocomplete-rich{position:relative;min-inline-size:0}
+:is(#app,#professional-app,#cliente-app) .autocomplete-rich > .autocomplete-search-icon{position:absolute;inset-inline-start:13px;inset-block-start:0;block-size:var(--sp-control-height);display:grid;place-items:center;color:var(--sp-muted);pointer-events:none;z-index:1}
+:is(#app,#professional-app,#cliente-app) .autocomplete-rich > input{display:block;inline-size:100%;min-inline-size:0;min-block-size:var(--sp-control-height);padding-inline-start:40px;padding-inline-end:12px;font-size:var(--sp-text-size);border-radius:var(--sp-control-radius)}
+:is(#app,#professional-app,#cliente-app) .autocomplete-rich > input:focus-visible{outline:2px solid var(--sp-focus-ring);outline-offset:1px;box-shadow:none}
+:is(#app,#professional-app,#cliente-app) .autocomplete-rich > .autocomplete-menu{border:1px solid var(--sp-line-strong);border-radius:var(--sp-control-radius);background:var(--sp-paper);padding:0;margin-block-start:5px;max-block-size:208px;overflow:auto;overscroll-behavior:contain}
+:is(#app,#professional-app,#cliente-app) .autocomplete-rich .autocomplete-option{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:44px;padding:9px 12px;border:0;border-radius:0;background:transparent;color:var(--sp-ink,inherit);text-align:start;font-weight:500;box-shadow:none;white-space:normal}
+:is(#app,#professional-app,#cliente-app) .autocomplete-rich .autocomplete-option + .autocomplete-option{border-block-start:1px solid var(--sp-line)}
+:is(#app,#professional-app,#cliente-app) .autocomplete-rich .autocomplete-option:is(:hover,.active,:focus-visible){background:var(--sp-gold-soft)}
+:is(#app,#professional-app,#cliente-app) .autocomplete-result-body{display:grid;gap:3px;min-inline-size:0;flex:1}
+:is(#app,#professional-app,#cliente-app) .autocomplete-result-title{font-size:var(--sp-text-size);line-height:1.35;overflow-wrap:anywhere}
+:is(#app,#professional-app,#cliente-app) .autocomplete-result-detail{font-size:var(--sp-caption-size);color:var(--sp-muted);line-height:1.4;overflow-wrap:anywhere}
+:is(#app,#professional-app,#cliente-app) .autocomplete-result-arrow{font-size:20px;color:var(--sp-muted);flex:none}
+:is(#app,#professional-app,#cliente-app) .autocomplete-rich .autocomplete-empty{padding:10px 12px;font-size:var(--sp-caption-size);line-height:1.5}
+:is(#app,#professional-app,#cliente-app) .autocomplete-rich .autocomplete-create{justify-content:flex-start;color:var(--sp-gold-text);font-weight:600;background:var(--sp-gold-soft)}
+:is(#app,#professional-app,#cliente-app) .autocomplete-result-icon{font-size:20px;font-weight:400;line-height:1;display:grid;place-items:center;flex:none;width:22px}

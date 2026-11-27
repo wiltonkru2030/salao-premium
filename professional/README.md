@@ -195,3 +195,6 @@ A seleção de hora agora é um input nativo editável desde a abertura do modal
 
 ### Agenda: detalhes em modal e ações na lista
 Os cartões da lista diária exibem ações individuais (iniciar/finalizar atendimento, abrir comanda, confirmar, cancelar e reagendar, conforme permissões e estado). Os detalhes abrem em dialog nativo; reagendar abre o modal com formulário. As ações usam o ID explícito de cada cartão. Escape, fechar e toque no fundo encerram o modal. Sem alteração nas regras de banco.
+
+### Pesquisa de cliente e serviço
+Autocomplete rico opt-in no componente compartilhado: lupa SVG, nome e detalhe em duas linhas, telefone formatado, valor e duração do serviço, lista integrada ao modal com CSS global. O cadastro rápido aparece somente após busca bem-sucedida sem resultados, aproveita o nome ou telefone pesquisado e retorna o cliente selecionado ao agendamento. Não aparece durante consulta nem em falha de rede. Testes Chromium cobrem cliente encontrado, ausência de cadastro, abertura e retorno do cadastro rápido com dados fictícios.

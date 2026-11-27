@@ -37,3 +37,7 @@ assert.match(markup,/<input name="start" type="time" step="60" required>/);
 assert.match(markup,/<select data-booking-suggestions disabled>/);
 assert.doesNotMatch(markup,/<input name="start"[^>]*disabled/);
 console.log("Horário manual e sugestões: regressão aprovada.");
+
+// Cadastro rápido existe, mas seu atalho só é renderizado pelo resultado vazio da busca.
+assert.doesNotMatch(markup,/data-booking-quick-open/);
+assert.match(markup,/booking-search-field/);

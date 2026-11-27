@@ -5,6 +5,7 @@ import {selectedUnitArgs} from "./unit-context.js";
 import {mountAutocomplete} from "../src/components/autocomplete.js";
 import {getProfessionalBookingClients} from "./views/booking.views.js";
 import {listUnitCustomers,saveUnitCustomer} from "./customers.service.js";
+import {formatSavedPhone} from "../src/utils/input-masks.js";
 import {formatMoney} from "./utils/formatters.js";
 import {matchesSearch,matchesPhone,searchCatalog} from "./utils/search.js";
 
@@ -34,8 +35,13 @@ export function bindProfessionalBookingSearch(form,state,{client,isCurrent=()=>t
  const legacy=getProfessionalBookingClients({appointments:state.appointments,professional:state.professional});
  const current=()=>active&&isCurrent()&&form.isConnected&&dialog.open;
  const getCustomers=()=>unitBooking?(customersPromise??=listUnitCustomers({client,organizationId,...unitArgs}).catch(error=>{customersPromise=null;throw error;})):Promise.resolve(legacy);
- const label=customer=>customer.name+(customer.phone?" · "+customer.phone:"");
- const disposeClient=mountAutocomplete(input,{search:async term=>searchBookingClients(await getCustomers(),term),getLabel:label,placeholder:"Nenhum cliente encontrado",onSelect(){}});
+ const label=customer=>customer.name;
+ const disposeClient=mountAutocomplete(input,{
+  search:async term=>searchBookingClients(await getCustomers(),term),getLabel:label,
+  rich:true,getPrimary:label,getSecondary:customer=>formatSavedPhone(customer.phone)||"Telefone não informado",
+  placeholder:"Nenhum cliente encontrado",onSelect(){},
+  onEmptyAction:unitBooking?term=>showQuick(term):null,emptyActionLabel:"Cadastrar novo cliente"
+ });
  const slotsEnabled=form.dataset.availableSlots==="true",hour=form.querySelector("[name=start]"),suggestions=form.querySelector("[data-booking-suggestions]"),slotStatus=form.querySelector("[data-booking-slot-status]"),retry=form.querySelector("[data-booking-retry]");
  let request=0,selectedService=null;
  function setSuggestionPlaceholder(text){
@@ -65,12 +71,22 @@ export function bindProfessionalBookingSearch(form,state,{client,isCurrent=()=>t
  suggestions?.addEventListener("change",chooseSuggestion);retry?.addEventListener("click",refreshSuggestions);hour.addEventListener("input",manualHourChanged);
  const disposeService=mountAutocomplete(form.querySelector("[data-booking-service]"),{
   search:term=>searchCatalog(state.services,term),
-  getLabel:service=>service.name+" · "+service.duration_minutes+" min · "+formatMoney(service.price),
+  rich:true,getLabel:service=>service.name,getPrimary:service=>service.name,
+  getSecondary:service=>service.duration_minutes+" min · "+formatMoney(service.price),
   placeholder:"Nenhum serviço vinculado encontrado",onSelect:service=>void updateSlots(service)
  });
  const quick=dialog.querySelector("#professional-booking-quick-customer");
- const open=form.querySelector("[data-booking-quick-open]"),back=quick?.querySelector("[data-booking-quick-back]");
- const showQuick=()=>{form.hidden=true;quick.hidden=false;quick.querySelector("[name=name]").focus();};
+ const back=quick?.querySelector("[data-booking-quick-back]");
+ /** Reaproveita o termo pesquisado sem confundir nome e telefone. */
+ const showQuick=term=>{
+  if(!current()||!quick)return;
+  quick.reset();quick.querySelector("[data-quick-customer-error]").hidden=true;
+  const value=String(term||"").trim(),digits=value.replace(/\D/g,"");
+  const phone=/^[\d\s()+.-]+$/.test(value)&&digits.length>=10&&digits.length<=11;
+  if(phone)quick.querySelector("[name=phone]").value=formatSavedPhone(digits);
+  else if(/\p{L}/u.test(value))quick.querySelector("[name=name]").value=value.slice(0,120);
+  form.hidden=true;quick.hidden=false;quick.querySelector(phone?"[name=name]":quick.querySelector("[name=name]").value?"[name=phone]":"[name=name]").focus();
+ };
  const showBooking=()=>{quick.hidden=true;form.hidden=false;input.focus();};
  const saveQuick=async event=>{
   event.preventDefault();event.stopPropagation();
@@ -91,13 +107,13 @@ export function bindProfessionalBookingSearch(form,state,{client,isCurrent=()=>t
  const dispose=()=>{
   active=false;request++;disposeClient();disposeService();if(slotsEnabled){setSuggestionPlaceholder("Selecione um serviço primeiro");retry.hidden=true;slotStatus.textContent="Você também pode informar a hora diretamente.";}
   suggestions?.removeEventListener("change",chooseSuggestion);retry?.removeEventListener("click",refreshSuggestions);hour.removeEventListener("input",manualHourChanged);
-  open?.removeEventListener("click",showQuick);back?.removeEventListener("click",showBooking);
+  back?.removeEventListener("click",showBooking);
   quick?.removeEventListener("submit",saveQuick);dialog.removeEventListener("close",dispose);
   form.hidden=false;form.reset();
   delete input.dataset.selectedId;delete form.querySelector("[data-booking-service]").dataset.selectedId;
   if(quick){quick.hidden=true;quick.reset();quick.querySelector("[data-quick-customer-error]").hidden=true;}
   bindings.delete(form);
  };
- if(quick){open.addEventListener("click",showQuick);back.addEventListener("click",showBooking);quick.addEventListener("submit",saveQuick);}
+ if(quick){back.addEventListener("click",showBooking);quick.addEventListener("submit",saveQuick);}
  dialog.addEventListener("close",dispose);bindings.set(form,dispose);
 }

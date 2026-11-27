@@ -43,7 +43,7 @@ function show(scenario,theme){
  if(["Novo agendamento","Cadastro rápido"].includes(scenario)){
   const dialog=root.querySelector("dialog");dialog.showModal();
   if(scenario==="Novo agendamento"){
-   const mockClient={rpc:async(name)=>name==="list_own_professional_booking_slots"?{data:{reason:"available",slots:["13:00","13:05","14:30"]}}:{data:[customer]}};
+   const mockClient={rpc:async(name,args)=>name==="list_own_professional_booking_slots"?{data:{reason:"available",slots:["13:00","13:05","14:30"]}}:name.startsWith("save_professional_unit_customer")?{data:{id:"new-c",name:args.customer_name,phone:args.customer_phone,branch_id:"b"}}:{data:[customer]}};
    bindProfessionalBookingSearch(dialog.querySelector("#professional-new-appointment"),state,{client:mockClient});
   }
   if(scenario==="Cadastro rápido"){root.querySelector("#professional-new-appointment").hidden=true;root.querySelector("#professional-booking-quick-customer").hidden=false;}
