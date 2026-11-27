@@ -1,4 +1,9 @@
 /** App Profissional (PWA): autenticação, sessão individual, Agenda, Comandas, Comissões e configurações do próprio perfil. */
+import {createCustomersController} from "./controllers/customers.controller.js";
+import {createServicesController} from "./controllers/services.controller.js";
+import {createNotificationsController} from "./controllers/notifications.controller.js";
+import {createProfileController} from "./controllers/profile.controller.js";
+import {createFinancialController} from "./controllers/financial.controller.js";
 import {salonCalendarDate, salonTimezone} from "./utils/salon-time.js";
 import { createPlatformAppearance } from "../src/components/platform-appearance.js";
 import {renderProfessionalShell, setProfessionalMenuOpen} from "./views/shell.views.js";
@@ -10,8 +15,6 @@ import {fetchProfessionalBranches,selectProfessionalBranch} from "./branches.ser
 import { supabase } from "./supabase.client.js";
 import {bindOrderService} from "./order-service.controller.js";
 import {bindOrderManagement} from "./order-management.controller.js";
-import {fetchProfilePreferences,saveProfilePreferences} from "./profile-preferences.service.js";
-import {fetchProfessionalNotifications,markProfessionalNotificationsRead} from "./notifications.service.js";
 import {renderNotificationsView} from "./views/notifications.views.js";
 import { installGlobalErrorHandlers, reportError } from "../src/utils/errors.js";
 import { installGlobalMasks, formatCpf } from "../src/utils/input-masks.js";
@@ -30,17 +33,12 @@ import {
 import { renderProfessionalPasswordChangeView, renderProfessionalLoginView } from "./views/auth.views.js";
 import {ordersView,commissionsView,profileView,settingsView} from "./views/workspace.views.js";
 import { renderProfessionalCustomers } from "./views/customers.views.js";
-import {fetchProfessionalCustomers,fetchProfessionalCustomerHistory,listUnitCustomers,saveUnitCustomer} from "./customers.service.js";
 import { renderProfessionalServices } from "./views/services.views.js";
 import {bindProfessionalBookingSearch} from "./booking-search.js";
-import {attendanceActions,renderAttendanceActions,performAttendanceAction} from "./attendance.service.js";
-import { renderProfessionalBooking } from "./views/booking.views.js";
-import { renderAgendaView } from "./views/agenda.views.js";
+import {attendanceActions,performAttendanceAction} from "./attendance.service.js";
+import {createAgendaWorkspaceViews} from "./views/agenda-workspace.views.js";
 import { handleAgendaClick } from "./agenda.controller.js";
 import { fetchProfessionalAppointments, updateOwnAppointmentStatus, rescheduleOwnAppointment, createOwnAppointment, createUnitAppointment } from "./appointments.service.js";
-import {fetchProfessionalServices,listUnitServices,saveUnitService,setUnitServiceLink} from "./services.service.js";
-import { fetchProfessionalOrders, fetchProfessionalOrderItems } from "./orders.service.js";
-import { fetchProfessionalCommissions } from "./commissions.service.js";
 import { resolveProfessionalContexts, allowedProfessionalPages, canRegisterProfessionalService, summarizeProfessionalCommissions } from "./access.rules.js";
 
 // Aplicação PWA do profissional: autenticação, navegação, Agenda, Comandas e Comissões.
@@ -73,6 +71,14 @@ const serviceManagementEnabled = import.meta.env.VITE_PROFESSIONAL_SERVICE_MANAG
 const unitBookingEnabled = import.meta.env.VITE_PROFESSIONAL_UNIT_BOOKING === "true";
 const rescheduleEnabled = import.meta.env.VITE_PROFESSIONAL_RESCHEDULE === "true";
 const serviceLock={active:false,operation:null};
+const {agendaView,appointmentStatusActions}=createAgendaWorkspaceViews({state,attendanceEnabled,appointmentStatusEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled});
+// Controladores recebem a geração da sessão por função, nunca como valor congelado.
+const {loadCustomers,openCustomer,submitProfessionalCustomer}=createCustomersController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError,customerRegistrationEnabled});
+const {loadServices,canManageServices,loadServiceCatalog,changeServiceLink,submitProfessionalService}=createServicesController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError,showNotice,serviceManagementEnabled});
+const {loadNotifications,readNotifications}=createNotificationsController({state,supabase,getEpoch:()=>sessionEpoch,render,showNotice,notificationsEnabled});
+const {loadProfilePreferences,submitProfilePreferences}=createProfileController({state,supabase,getEpoch:()=>sessionEpoch,render,showNotice,profilePreferencesEnabled});
+const {loadOrders,loadCommissions,loadOrderItems,chooseOrder}=createFinancialController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError});
+
 /** Limpa dados privados antes de exibir a tela de acesso. */
 function clearPrivateState(){sessionEpoch++;appointmentStatusPending=false;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();Object.assign(state,{user:null,contextCount:0,branches:[],branchId:null,orgId:null,role:null,scope:"none",professional:null,profile:null,profilePreferences:null,profilePreferencesStatus:"idle",notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,organization:null,page:"Agenda",appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedAppointment:null,selectedOrder:null,orderItems:[]});}
 /** Limpa a interface imediatamente; encerra apenas a sessão profissional local. */
@@ -100,52 +106,6 @@ function shell(content) {
  root.innerHTML=renderProfessionalShell({state,content,pages:allowedProfessionalPages(state)});
 }
 
-function appointmentCard(a){
- const duration=Math.max(0,Math.round((new Date(a.ends_at)-new Date(a.starts_at))/60000));
- return '<button type="button" class="appointment sp-content-surface '+appointmentClass(a)+'" data-appointment="'+esc(a.id)+'"><span class="professional-appointment-heading"><time datetime="'+esc(a.starts_at)+'">'+timeLabel(a.starts_at,salonTimezone(state.organization?.timezone))+'</time><strong>'+esc(a.customer_name)+'</strong></span>'+
- '<div class="meta">'+esc(a.service_name)+' · '+timeLabel(a.ends_at,salonTimezone(state.organization?.timezone))+'<br>'+esc(a.customer_phone||"Telefone não informado")+' · '+money(a.price)+'<br>'+esc(a.professional_name||state.professional?.name||"Profissional")+' · '+duration+' min</div>'+
- '<span class="tag">'+esc(statusLabel(a.status))+' · Agendado por: '+esc(sourceLabel(a.booking_source))+'</span>'+((appointmentStatusActions(a)||renderAttendanceActions(state,a,attendanceEnabled))?'<small class="meta">Toque para ver as ações</small>':'')+'</button>';
-}
-/** Exibe ações de status somente para o agendamento individual elegível. */
-function appointmentStatusActions(appointment) {
- if(state.role!=="professional" || appointment.professional_id!==state.professional?.id ||
-   appointment.appointment_group_id || appointment.service_order_id ||
-   !["scheduled","confirmed"].includes(appointment.status))return "";
- const statusButtons=appointmentStatusEnabled?'<div class="professional-card-actions">'+
-   (appointment.status==="scheduled"?'<button type="button" class="secondary" data-own-appointment-status="confirmed">Confirmar</button>':'')+
-   '<button type="button" class="secondary" data-own-appointment-status="cancelled">Cancelar agendamento</button></div>':"";
- const rescheduleForm=rescheduleEnabled&&appointment.branch_id
-   ? '<details><summary>Reagendar</summary><form id="professional-reschedule"><label class="field">Novo horário · '+esc(state.organization?.timezone||"Fuso do salão")+'<input name="local_start" type="datetime-local" required></label><button type="submit" class="secondary">Salvar novo horário</button></form></details>'
-   : "";
- return statusButtons+rescheduleForm;
-}
-
-/** Renderiza os dados do agendamento selecionado e as ações disponíveis. */
-function appointmentDetails(){
- const a=state.selectedAppointment;if(!a)return "";
- const duration=Math.max(0,Math.round((new Date(a.ends_at)-new Date(a.starts_at))/60000));
- return '<section class="detail sp-content-surface"><div class="section-title"><h2>Detalhes do agendamento</h2><button class="secondary" data-action="close-appointment">Fechar</button></div>'+
- '<div class="detail-row"><span>Cliente</span><b>'+esc(a.customer_name)+'</b></div>'+
- '<div class="detail-row"><span>Telefone</span><b>'+esc(a.customer_phone||"—")+'</b></div>'+
- '<div class="detail-row"><span>Serviço</span><b>'+esc(a.service_name)+'</b></div>'+
- '<div class="detail-row"><span>Profissional</span><b>'+esc(a.professional_name||state.professional?.name||"—")+'</b></div>'+
- '<div class="detail-row"><span>Data</span><b>'+new Date(a.starts_at).toLocaleDateString("pt-BR",{timeZone:salonTimezone(state.organization?.timezone)})+'</b></div>'+
- '<div class="detail-row"><span>Horário</span><b>'+timeLabel(a.starts_at,salonTimezone(state.organization?.timezone))+'–'+timeLabel(a.ends_at,salonTimezone(state.organization?.timezone))+'</b></div>'+
- '<div class="detail-row"><span>Duração</span><b>'+duration+' minutos</b></div>'+
- '<div class="detail-row"><span>Valor previsto</span><b>'+money(a.price)+'</b></div>'+
- '<div class="detail-row"><span>Status</span><b>'+esc(statusLabel(a.status))+'</b></div>'+
- '<div class="detail-row"><span>Origem</span><b>'+esc(sourceLabel(a.booking_source))+'</b></div>'+
- '<div class="detail-row"><span>Quem criou</span><b>'+esc(a.created_by_name||sourceLabel(a.booking_source))+'</b></div>'+
- '<div class="detail-row"><span>Observações</span><b>'+esc(a.notes||"—")+'</b></div>'+appointmentStatusActions(a)+renderAttendanceActions(state,a,attendanceEnabled)+'</section>';
-}
-// Apresenta calendário mensal e lista de agendamentos do profissional.
-// Delega a composição visual da agenda para uma view sem efeitos colaterais.
-function agendaView(){
- const booking=bookingEnabled&&state.role==="professional"&&state.professional
-  ?renderProfessionalBooking({unitBooking:unitBookingEnabled&&customerRegistrationEnabled&&!!state.professional.branch_id})
-  :"";
- return renderAgendaView({state,dateKey,monthLabel,dateLabel,appointmentCard,appointmentDetails,booking});
-}
 function render(){
  if(!state.user||!state.orgId)return;
  if(!allowedProfessionalPages(state).includes(state.page))state.page="Agenda";
@@ -209,174 +169,6 @@ async function loadAppointments(){
   month,branchId:state.branchId,timezone:salonTimezone(state.organization?.timezone),professionalId:state.scope==='self'?state.professional?.id:null
  });
  if(epoch===sessionEpoch&&month===state.month)state.appointments=appointments;
-}
-/** Carrega a carteira somente ao abrir Clientes; descarta respostas de sessões encerradas. */
-async function loadCustomers(){
- const epoch=sessionEpoch;
- state.customersStatus="loading";render();
- try {
-  const options={client:supabase,organizationId:state.orgId,professional:state.professional};
-  const rows=customerRegistrationEnabled&&state.professional?.branch_id?await listUnitCustomers(options):await fetchProfessionalCustomers(options);
-  if(epoch!==sessionEpoch)return;
-  state.customers=rows;state.customersStatus="ready";
- }catch(error){
-  if(epoch!==sessionEpoch)return;
-  state.customers=[];state.customersStatus="error";reportError(error,{context:"App Profissional > clientes"});
- }
- if(epoch===sessionEpoch&&state.page==="Clientes")render();
-}
-/** Abre ficha autorizada e consulta os últimos atendimentos próprios, sem depender do mês. */
-async function openCustomer(id){
- const customer=state.customers.find(row=>row.id===id);
- if(!customer)return;
- const epoch=sessionEpoch;
- state.selectedCustomer=customer;state.customerHistory=[];state.customerHistoryStatus="loading";render();
- try {
-  const rows=await fetchProfessionalCustomerHistory({client:supabase,organizationId:state.orgId,professional:state.professional,customerId:id});
-  if(epoch!==sessionEpoch||state.selectedCustomer?.id!==id)return;
-  state.customerHistory=rows;state.customerHistoryStatus="ready";
- }catch(error){
-  if(epoch!==sessionEpoch||state.selectedCustomer?.id!==id)return;
-  state.customerHistoryStatus="error";reportError(error,{context:"App Profissional > histórico do cliente"});
- }
- if(epoch===sessionEpoch&&state.page==="Clientes"&&state.selectedCustomer?.id===id)render();
-}
-// Carrega comandas visíveis ao usuário autenticado.
-async function loadOrders(){
- const epoch=sessionEpoch;
- const rows=await fetchProfessionalOrders({client:supabase,organizationId:state.orgId,branchId:state.branchId});
- if(epoch===sessionEpoch)state.orders=rows;
-}
-/** Carrega o catálogo apenas para o contexto profissional atual. */
-async function loadServices(){
- const epoch=sessionEpoch;
- const rows=await fetchProfessionalServices({client:supabase,organizationId:state.orgId,professionalId:state.professional?.id});
- if(epoch===sessionEpoch)state.services=rows;
-}
-/** Habilita gerenciamento somente para a unidade atribuída e contrato homologado. */
-function canManageServices(){return serviceManagementEnabled&&state.role==="professional"&&!!state.professional?.branch_id;}
-/** Atualiza catálogo e serviços vinculados sem misturar sessões ou alterar o calendário. */
-async function loadServiceCatalog(){
- if(!canManageServices())return;
- const epoch=sessionEpoch;
- state.serviceCatalogStatus="loading";if(state.page==="Serviços")render();
- try{
-  const rows=await listUnitServices({client:supabase,organizationId:state.orgId});
-  if(epoch!==sessionEpoch)return;
-  state.serviceCatalog=rows;state.services=rows.filter(row=>row.linked);state.serviceCatalogStatus="ready";
- }catch(error){
-  if(epoch!==sessionEpoch)return;
-  state.serviceCatalogStatus="error";reportError(error,{context:"App Profissional > catálogo"});
- }
- if(epoch===sessionEpoch&&state.page==="Serviços")render();
-}
-/** Envia alteração de vínculo apenas uma vez e mantém a autorização no servidor. */
-async function changeServiceLink(button){
- if(!canManageServices()||state.page!=="Serviços"||button.disabled)return;
- const row=state.serviceCatalog.find(item=>item.id===button.dataset.serviceLink);
- if(!row)return;
- const linked=!row.linked;
- if(!linked&&!window.confirm("Remover este serviço dos seus vínculos? O cadastro do salão será preservado."))return;
- const epoch=sessionEpoch;button.disabled=true;
- try{
-  await setUnitServiceLink({client:supabase,organizationId:state.orgId,serviceId:row.id,linked});
-  if(epoch!==sessionEpoch)return;
-  state.notice=linked?"Serviço vinculado.":"Vínculo removido.";await loadServiceCatalog();
- }catch(error){if(epoch===sessionEpoch&&state.page==="Serviços")showNotice(error.message);}
- finally{button.disabled=false;}
-}
-// Carrega comissões e pagamentos do profissional autenticado.
-/** Consulta a central e o contador; respostas de sessões anteriores são ignoradas. */
-async function loadNotifications(){
- if(!notificationsEnabled||state.role!=="professional"||state.notificationsStatus==="loading")return;
- const epoch=sessionEpoch,onlyUnread=state.notificationsFilter;
- state.notificationsStatus="loading";
- if(state.page==="Notificações")render();
- try{
-  const result=await fetchProfessionalNotifications({client:supabase,organizationId:state.orgId,onlyUnread});
-  if(epoch!==sessionEpoch)return;
-  state.notifications=result.items;state.notificationsUnread=result.unreadCount;state.notificationsStatus="ready";
- }catch{
-  if(epoch!==sessionEpoch)return;
-  state.notifications=[];state.notificationsStatus="error";
- }
- if(epoch===sessionEpoch&&state.page==="Notificações")render();
-}
-/** Marca somente notificações da conta ativa; recarrega o extrato após confirmação. */
-async function readNotifications(control,id=null){
- if(!notificationsEnabled||state.role!=="professional"||state.page!=="Notificações"||state.notificationsStatus!=="ready"||control.disabled)return;
- if(id&&!state.notifications.some(item=>item.id===id))return;
- const epoch=sessionEpoch;
- control.disabled=true;
- try{
-  await markProfessionalNotificationsRead({client:supabase,organizationId:state.orgId,notificationId:id});
-  if(epoch!==sessionEpoch)return;
-  await loadNotifications();
- }catch(error){if(epoch===sessionEpoch&&state.page==="Notificações")showNotice(error.message);}
- finally{if(control.isConnected)control.disabled=false;}
-}
-/** Carrega preferências somente nas telas de perfil, descartando respostas de outras sessões. */
-async function loadProfilePreferences(){
- if(!profilePreferencesEnabled||state.role!=="professional"||state.profilePreferencesStatus==="loading")return;
- const epoch=sessionEpoch;
- state.profilePreferencesStatus="loading";
- if(["Perfil","Configurações"].includes(state.page))render();
- try{
-  const data=await fetchProfilePreferences({client:supabase,organizationId:state.orgId});
-  if(epoch!==sessionEpoch)return;
-  state.profilePreferences=data;state.profilePreferencesStatus="ready";
- }catch{
-  if(epoch!==sessionEpoch)return;
-  state.profilePreferences=null;state.profilePreferencesStatus="error";
- }
- if(epoch===sessionEpoch&&["Perfil","Configurações"].includes(state.page))render();
-}
-/** Salva apenas campos editáveis; erros não registram conteúdo da chave Pix. */
-async function submitProfilePreferences(form){
- if(!profilePreferencesEnabled||state.role!=="professional"||state.page!=="Configurações"||state.profilePreferencesStatus!=="ready")return;
- const button=form.querySelector("[type=submit]"),feedback=form.querySelector("[data-profile-preferences-error]");
- if(button.disabled)return;
- button.disabled=true;feedback.hidden=true;
- const epoch=sessionEpoch,values=new FormData(form);
- try{
-  const data=await saveProfilePreferences({client:supabase,organizationId:state.orgId,email:values.get("email"),pixType:values.get("pixType"),pixKey:values.get("pixKey"),photoUrl:values.get("photoUrl"),notifyAgenda:values.has("notifyAgenda"),notifyCommissions:values.has("notifyCommissions")});
-  if(epoch!==sessionEpoch)return;
-  state.profilePreferences=data;state.professional={...state.professional,email:data.email};
-  if(["Perfil","Configurações"].includes(state.page))showNotice("Preferências salvas.");
- }catch(error){if(epoch===sessionEpoch&&form.isConnected){feedback.textContent=error.message;feedback.hidden=false;}}
- finally{button.disabled=false;}
-}
-async function loadCommissions(){
- if(!state.professional?.id||state.commissionStatus==="loading")return;
- const epoch=sessionEpoch;
- state.commissionStatus="loading";
- if(state.page==="Comissões")render();
- try{
-  const result=await fetchProfessionalCommissions({
-   client:supabase,organizationId:state.orgId,professionalId:state.professional.id
-  });
-  if(epoch!==sessionEpoch)return;
-  state.commissions=result.commissions;state.commissionPayouts=result.payouts;state.commissionStatus="ready";
- }catch(error){
-  if(epoch!==sessionEpoch)return;
-  state.commissions=[];state.commissionPayouts=[];state.commissionStatus="error";
-  reportError(error,{context:"App Profissional > extrato de comissões"});
- }
- if(epoch===sessionEpoch&&state.page==="Comissões")render();
-}
-async function loadOrderItems(){
- if(!state.selectedOrder)return;
- const epoch=sessionEpoch,orderId=state.selectedOrder.id;
- const items=await fetchProfessionalOrderItems({
-  client:supabase,organizationId:state.orgId,orderId
- });
- if(epoch!==sessionEpoch||state.selectedOrder?.id!==orderId)return;
- state.orderItems=items;state.orderItemsStatus="ready";render();
-}
-async function chooseOrder(id){
- state.selectedOrder=state.orders.find(o=>o.id===id)||null;state.orderItems=[];state.orderItemsStatus="loading";render();
- const epoch=sessionEpoch;
- try{await loadOrderItems();}catch(error){if(epoch===sessionEpoch&&state.selectedOrder?.id===id){state.orderItemsStatus="error";render();reportError(error,{context:"App Profissional > itens da comanda"});}}
 }
 /** Monta o controlador de serviços da comanda atual. */
 function bindAutocomplete(){
@@ -656,37 +448,6 @@ async function applyNewAppointment(form) {
  }
 }
 
-/** Persiste o cadastro pelo contrato restrito à unidade; mantém os campos em caso de erro. */
-async function submitProfessionalCustomer(form){
- if(!customerRegistrationEnabled||state.role!=="professional"||state.page!=="Clientes"||!state.customerEditor||!state.professional?.branch_id)return;
- const button=form.querySelector("button[type=submit]"),feedback=form.querySelector("[data-customer-save-error]");
- if(button.disabled)return;
- button.disabled=true;feedback.hidden=true;
- const epoch=sessionEpoch,editor=state.customerEditor,values=new FormData(form);
- try {
-  const saved=await saveUnitCustomer({client:supabase,organizationId:state.orgId,customerId:editor.id||null,name:values.get("name"),phone:values.get("phone")});
-  if(epoch!==sessionEpoch||state.page!=="Clientes"||state.customerEditor!==editor)return;
-  state.customerEditor=null;state.selectedCustomer=null;state.notice="Cadastro salvo.";
-  await loadCustomers();
-  if(epoch===sessionEpoch&&state.page==="Clientes")await openCustomer(saved.id);
- }catch(error){
-  if(epoch===sessionEpoch&&form.isConnected){feedback.textContent=error.message;feedback.hidden=false;}
- }finally{button.disabled=false;}
-}
-/** Valida formulário, evita envio repetido e atualiza serviços usados pela Agenda. */
-async function submitProfessionalService(form){
- if(!canManageServices()||state.page!=="Serviços"||!state.serviceEditor)return;
- const button=form.querySelector("[type=submit]"),feedback=form.querySelector("[data-service-save-error]");
- if(button.disabled)return;
- button.disabled=true;feedback.hidden=true;
- const epoch=sessionEpoch,editor=state.serviceEditor,values=new FormData(form);
- try{
-  await saveUnitService({client:supabase,organizationId:state.orgId,serviceId:editor.id||null,name:values.get("name"),category:values.get("category"),minutes:values.get("minutes"),price:values.get("price")});
-  if(epoch!==sessionEpoch||state.page!=="Serviços"||state.serviceEditor!==editor)return;
-  state.serviceEditor=null;state.notice="Serviço salvo.";await loadServiceCatalog();
- }catch(error){if(epoch===sessionEpoch&&form.isConnected){feedback.textContent=error.message;feedback.hidden=false;}}
- finally{button.disabled=false;}
-}
 root.addEventListener("submit",async event=>{
  if(event.target.matches("#professional-profile-preferences")){event.preventDefault();await submitProfilePreferences(event.target);return;}
  if(event.target.matches("#professional-commission-filter")){
