@@ -23,3 +23,7 @@ const cross=createNotificationNavigation({state,getEpoch:()=>epoch,fetchNotifica
 assert.equal(await cross.open(id),true);assert.deepEqual(switched,{branch:"other",notification:id});
 const forbidden=createNotificationNavigation({state,getEpoch:()=>epoch,fetchNotification:async()=>({id,appointment_id:"a"}),fetchAppointment:async()=>({...appointment,branch_id:"forbidden"}),loadAppointments:async()=>{},render:()=>{},showNotice:()=>{},switchBranch:async()=>{throw Error("Unidade não autorizada");}});
 assert.equal(await forbidden.open(id),false);
+
+let readArgs, refreshed=0;
+const opened=createNotificationNavigation({state,getEpoch:()=>epoch,fetchNotification:async()=>({id,appointment_id:"a"}),fetchAppointment:async()=>appointment,loadAppointments:async()=>{state.appointments=[appointment];},render:()=>{},showNotice:()=>{},markRead:async(...args)=>{readArgs=args;},refreshInbox:()=>{refreshed++;}});
+assert.equal(await opened.open(id),true);assert.deepEqual(readArgs,["org",id]);assert.equal(refreshed,1);

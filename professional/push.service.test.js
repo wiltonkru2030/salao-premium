@@ -20,3 +20,21 @@ assert.equal(supplied.config.messagingSenderId,"357526985236");
 assert.match(supplied.vapidKey,/^[A-Za-z0-9_-]{87}$/);
 assert.equal(Object.hasOwn(supplied.config,"private_key"),false);
 assert.equal(readPushConfig({VITE_PROFESSIONAL_PUSH:"false"}),null);
+
+// Preferência é específica da conta e salão, e o conteúdo de push não carrega dados privados.
+const {createPushConsent,foregroundNotice}=await import("./push-consent.js");
+const memory=new Map(),storage={getItem:k=>memory.get(k),setItem:(k,v)=>memory.set(k,v),removeItem:k=>memory.delete(k)};
+const consent=createPushConsent(storage);
+assert.equal(consent.matches("user","org"),false);
+assert.equal(consent.save("user","org"),true);
+assert.equal(consent.matches("user","org"),true);
+assert.equal(consent.matches("other","org"),false);
+assert.equal(consent.matches("user","other"),false);
+assert.doesNotMatch([...memory.values()][0],/token|private_key/);
+consent.clear();assert.equal(consent.matches("user","org"),false);
+const id="550e8400-e29b-41d4-a716-446655440000";
+assert.equal(foregroundNotice({data:{notification_id:"bad"}}),null);
+assert.equal(foregroundNotice({data:{notification_id:id,title:"Cliente agendou"}}).title,"Cliente agendou");
+const safe=foregroundNotice({data:{notification_id:id,title:"Nome privado",body:"Telefone"}});
+assert.equal(safe.title,"SALÃO PREMIUM");assert.doesNotMatch(JSON.stringify(safe),/Nome privado|Telefone/);
+assert.equal(safe.options.data.notificationId,id);

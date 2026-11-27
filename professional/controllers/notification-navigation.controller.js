@@ -6,7 +6,7 @@ export function readNotificationLink(url){
  try{const id=new URL(url).searchParams.get("notification");return validId(id)?id:null;}catch{return null;}
 }
 /** Resolve o destino após verificar contexto e RLS; evita respostas de sessão antiga. */
-export function createNotificationNavigation({state,getEpoch,fetchAppointment,fetchNotification,loadAppointments,render,showNotice,switchBranch=async()=>false}){
+export function createNotificationNavigation({state,getEpoch,fetchAppointment,fetchNotification,loadAppointments,render,showNotice,switchBranch=async()=>false,markRead=async()=>{},refreshInbox=async()=>{}}){
  let sequence=0;
  async function open(id){
   if(!validId(id)||state.role!=="professional"||!state.orgId||!state.branchId||!state.professional?.id)return false;
@@ -29,7 +29,10 @@ export function createNotificationNavigation({state,getEpoch,fetchAppointment,fe
    if(!current()||state.page!=="Agenda")return false;
    const refreshed=state.appointments.find(row=>row.id===appointment.id);
    if(!refreshed){showNotice("Agendamento não encontrado na Agenda. Atualize e tente novamente.");return false;}
-   state.selectedAppointment=refreshed;state.appointmentModalMode="details";render();return true;
+   state.selectedAppointment=refreshed;state.appointmentModalMode="details";render();
+   // Falha ao marcar como lido não impede o atendimento de abrir.
+   try{await markRead(state.orgId,id);if(current())void refreshInbox();}catch{/* marcação manual continua disponível */}
+   return true;
   }catch{if(current())showNotice("Não foi possível abrir o aviso. Tente novamente.");return false;}
  }
  return {open};

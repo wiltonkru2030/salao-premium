@@ -1,5 +1,6 @@
 /** FCM opt-in: configuração pública e inscrição explícita; sem credenciais de servidor. */
 import {professionalFirebaseConfig,professionalFirebaseVapidKey} from "./firebase-public.config.js";
+import {createPushConsent,foregroundNotice} from "./push-consent.js";
 const SDK="https://www.gstatic.com/firebasejs/11.10.0/";
 /** Lê apenas campos públicos de configuração. */
 export function readPushConfig(env=import.meta.env||{}){
@@ -25,7 +26,9 @@ export async function setPushDevice(client,organizationId,token,enabled){
  return data;
 }
 /** Carrega SDK somente sob demanda e protege a troca de contexto. */
-export function createProfessionalPush({client,config=readPushConfig(),onMessage=()=>{}}){
+export function createProfessionalPush({client,config=readPushConfig(),onMessage=()=>{},getStorage=()=>globalThis.localStorage}){
+ let storage;try{storage=getStorage();}catch{/* navegador bloqueou armazenamento */}
+ const consent=createPushConsent(storage);
  let instance=null,unsubscribe=null,active=null,pending=false,generation=0;
  async function getMessaging(){
   if(!config||!globalThis.Notification||!navigator.serviceWorker)throw new Error("Notificações no dispositivo indisponíveis.");
@@ -39,12 +42,16 @@ export function createProfessionalPush({client,config=readPushConfig(),onMessage
   return instance;
  }
  /** Solicita permissão somente após ação explícita. */
- async function enable(organizationId,isCurrent=()=>true){
+ async function subscribe(organizationId,userId,isCurrent=()=>true,restore=false){
   if(pending)throw new Error("Aguarde a operação anterior.");
   pending=true;const epoch=++generation,current=()=>epoch===generation&&isCurrent();
   try{
    if(!config||!globalThis.Notification)throw new Error("Serviço de notificações não configurado.");
-   if(await Notification.requestPermission()!=="granted")throw new Error("Permissão de notificações não concedida.");
+   if(restore){
+    if(!consent.matches(userId,organizationId)||Notification.permission!=="granted")return false;
+    const existing=await navigator.serviceWorker.getRegistration(new URL("/professional/",location.origin));
+    if(!await existing?.pushManager.getSubscription())return false;
+   }else if(await Notification.requestPermission()!=="granted")throw new Error("Permissão de notificações não concedida.");
    if(!current())throw new Error("A sessão foi alterada.");
    const registration=await registerProfessionalWorker(config);
    if(!registration)throw new Error("Instalação de notificações indisponível.");
@@ -53,14 +60,26 @@ export function createProfessionalPush({client,config=readPushConfig(),onMessage
    if(!token||!current())throw new Error("Não foi possível concluir a inscrição.");
    await setPushDevice(client,organizationId,token,true);
    if(!current()){await setPushDevice(client,organizationId,token,false).catch(()=>{});throw new Error("A sessão foi alterada.");}
-   active={organizationId,token};
-   unsubscribe?.();unsubscribe=sdk.onMessage(messaging,()=>{if(current())onMessage();});
+   active={organizationId,token,userId};
+   consent.save(userId,organizationId);
+   unsubscribe?.();unsubscribe=sdk.onMessage(messaging,payload=>{
+    if(!current())return;
+    onMessage();
+    const notice=foregroundNotice(payload);
+    if(notice&&Notification.permission==="granted")void registration.showNotification(notice.title,notice.options).catch(()=>{});
+   });
    return true;
   }finally{pending=false;}
  }
+ /** Ativação explícita e restauração sem solicitar permissão novamente. */
+ async function enable(organizationId,isCurrent=()=>true,userId=null){return subscribe(organizationId,userId,isCurrent,false);}
+ async function restore(organizationId,userId,isCurrent=()=>true){
+  if(!config||!consent.matches(userId,organizationId))return false;
+  return subscribe(organizationId,userId,isCurrent,true);
+ }
  /** Cancela inscrição no servidor e no navegador; nunca cria inscrição para desativá-la. */
  async function disable(organizationId){
-  generation++;unsubscribe?.();unsubscribe=null;
+  generation++;unsubscribe?.();unsubscribe=null;consent.clear();
   const previous=active;active=null;
   let failed=false;
   if(previous){try{await setPushDevice(client,previous.organizationId,previous.token,false);}catch{failed=true;}}
@@ -78,5 +97,5 @@ export function createProfessionalPush({client,config=readPushConfig(),onMessage
   if(failed)throw new Error("Não foi possível confirmar a remoção. Revogue a permissão de notificações nas configurações do navegador.");
   return false;
  }
- return {configured:!!config,enable,disable};
+ return {configured:!!config,enable,restore,disable};
 }

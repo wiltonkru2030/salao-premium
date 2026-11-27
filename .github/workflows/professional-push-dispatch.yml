@@ -59,7 +59,7 @@ jobs:
 
   production-dispatch:
     # Ativação separada; push de código nunca envia em produção.
-    if: github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && inputs.production_check) || (github.event_name == 'schedule' && vars.PROFESSIONAL_PUSH_PRODUCTION_ENABLED == 'true'))
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.production_check) || (github.event_name == 'schedule' && vars.PROFESSIONAL_PUSH_PRODUCTION_ENABLED == 'true'))
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     concurrency:
@@ -82,7 +82,8 @@ jobs:
           if(!response.ok)throw Error("Dispatcher: HTTP "+response.status);
           const result=await response.json();
           if(process.env.DISPATCH_MODE==="check"){
-           if(result.authenticated!==true||result.transportConfigured!==true||result.oauthValidated!==true||result.fcmValidated!==true)throw Error("Transporte de produção não validado.");
+           console.log("Produção: autenticado:",result.authenticated===true,"credencial:",result.transportConfigured===true,"OAuth:",result.oauthValidated===true,"FCM:",result.fcmValidated===true);
+           if(result.authenticated!==true||result.transportConfigured!==true||result.oauthValidated!==true||result.fcmValidated!==true)throw Error("Transporte de produção não validado; confira secret exclusivo no Supabase.");
            console.log("Produção: OIDC, OAuth e FCM validate_only aprovados.");
           }else{
            console.log("Produção: envios confirmados:",Number(result.sent||0),"reenvios:",Number(result.retry||0),"inválidos:",Number(result.invalid||0));

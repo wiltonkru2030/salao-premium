@@ -33,7 +33,7 @@ import {createAgendaWorkspaceViews} from "./views/agenda-workspace.views.js";
 import {syncAppointmentDialog} from "./appointment-dialog.js";
 import { handleAgendaClick } from "./agenda.controller.js";
 import {fetchProfessionalAppointments,fetchNotificationAppointment} from "./appointments.service.js";
-import {fetchProfessionalNotification} from "./notifications.service.js";
+import {fetchProfessionalNotification,markProfessionalNotificationsRead} from "./notifications.service.js";
 import {createNotificationNavigation,readNotificationLink} from "./controllers/notification-navigation.controller.js";
 import {allowedProfessionalPages} from "./access.rules.js";
 
@@ -78,7 +78,7 @@ const {loadProfilePreferences,submitProfilePreferences}=createProfileController(
 const {loadOrders,loadCommissions,chooseOrder}=createFinancialController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError});
 const {applyAppointmentStatus,applyAttendance,openAttendanceOrder,applyAppointmentReschedule,applyNewAppointment}=createAttendanceController({state,supabase,getEpoch:()=>sessionEpoch,showNotice,loadAppointments,loadOrders,chooseOrder,appointmentStatusActions,appointmentStatusEnabled,attendanceEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled});
 const push=createProfessionalPush({client:supabase,onMessage:()=>{if(state.user&&state.orgId)void loadNotifications();}});
-const notificationNavigation=createNotificationNavigation({state,getEpoch:()=>sessionEpoch,fetchAppointment:params=>fetchNotificationAppointment({client:supabase,...params}),fetchNotification:(orgId,id)=>fetchProfessionalNotification({client:supabase,organizationId:orgId,notificationId:id}),loadAppointments,render,showNotice,switchBranch:switchNotificationBranch});
+const notificationNavigation=createNotificationNavigation({state,getEpoch:()=>sessionEpoch,fetchAppointment:params=>fetchNotificationAppointment({client:supabase,...params}),fetchNotification:(orgId,id)=>fetchProfessionalNotification({client:supabase,organizationId:orgId,notificationId:id}),loadAppointments,render,showNotice,switchBranch:switchNotificationBranch,markRead:(orgId,id)=>markProfessionalNotificationsRead({client:supabase,organizationId:orgId,notificationId:id}),refreshInbox:loadNotifications});
 let pendingNotification=readNotificationLink(globalThis.location.href);
 /** Só resolve o aviso depois de autenticar e selecionar o contexto; não conserva IDs em armazenamento local. */
 async function resolvePendingNotification(){
@@ -96,7 +96,16 @@ async function switchNotificationBranch(branchId,id){
  if(pendingNotification===id)pendingNotification=null;
  return state.branchId===branchId&&state.selectedAppointment!==null;
 }
-const session=createSessionController({state,root,supabase,getEpoch:()=>sessionEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled,explicitBranchEnabled,afterReady:resolvePendingNotification,beforeExit:orgId=>push.configured?push.disable(orgId):Promise.resolve()});
+/** Reativa somente uma inscrição previamente consentida pela mesma conta e salão. */
+async function afterProfessionalReady(){
+ const epoch=sessionEpoch;
+ if(push.configured&&state.role==="professional"&&state.user?.id&&state.orgId){
+  const orgId=state.orgId,userId=state.user.id;
+  void push.restore(orgId,userId,()=>epoch===sessionEpoch).then(enabled=>{if(epoch===sessionEpoch){state.pushStatus=enabled?"enabled":"idle";if(state.page==="Configurações")render();}}).catch(()=>{if(epoch===sessionEpoch){state.pushStatus="error";if(state.page==="Configurações")render();}});
+ }
+ await resolvePendingNotification();
+}
+const session=createSessionController({state,root,supabase,getEpoch:()=>sessionEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled,explicitBranchEnabled,afterReady:afterProfessionalReady,beforeExit:orgId=>push.configured?push.disable(orgId):Promise.resolve()});
 const {switchContext,endSession,boot}=session;
 const {navigate,refreshOrders}=createNavigationController({state,root,getEpoch:()=>sessionEpoch,render,showNotice,loadOrders,loadServices,loadServiceCatalog,canManageServices,loadCustomers,loadCommissions,loadNotifications,loadProfilePreferences,profilePreferencesEnabled});
 
@@ -237,7 +246,7 @@ root.addEventListener("click",async event=>{
   if((action==="enable-professional-push"||action==="disable-professional-push")&&state.page==="Configurações"&&state.role==="professional"&&push.configured){
    const control=event.target.closest("[data-action]");if(control.disabled||state.pushStatus==="loading")return;
    const epoch=sessionEpoch,orgId=state.orgId;control.disabled=true;state.pushStatus="loading";
-   try{const enabled=action==="enable-professional-push"?await push.enable(orgId,()=>epoch===sessionEpoch):await push.disable(orgId);if(epoch!==sessionEpoch)return;state.pushStatus=enabled?"enabled":"disabled";showNotice(enabled?"Notificações ativadas neste dispositivo.":"Notificações desativadas neste dispositivo.");}
+   try{const enabled=action==="enable-professional-push"?await push.enable(orgId,()=>epoch===sessionEpoch,state.user?.id):await push.disable(orgId);if(epoch!==sessionEpoch)return;state.pushStatus=enabled?"enabled":"disabled";showNotice(enabled?"Notificações ativadas neste dispositivo.":"Notificações desativadas neste dispositivo.");}
    catch(error){if(epoch===sessionEpoch){state.pushStatus="error";showNotice(error.message);}}finally{if(control.isConnected)control.disabled=false;}return;
   }
   if(action==="refresh-professional-profile"&&["Perfil","Configurações"].includes(state.page)){await loadProfilePreferences();return;}
