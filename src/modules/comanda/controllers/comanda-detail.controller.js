@@ -111,7 +111,7 @@ export function bindComandaDetails({host,order,orgId,supabase,tenant,toast,repor
    try{
     requireCurrent();
     const {user,orgId:currentOrg}=await tenant();requireCurrent();
-    if(currentOrg!==orgId||!user?.id)throw new Error("A sessão de pagamento foi alterada.");
+    if(currentOrg!==orgId||!user?.id||(protectedPayments&&user.id!==paymentStore?.userId))throw new Error("A sessão de pagamento foi alterada.");
     const run=async()=>{
      requireCurrent();
      if(protectedPayments){

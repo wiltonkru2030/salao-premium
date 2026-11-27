@@ -29,7 +29,7 @@ export function createPaymentIntentStore({storage,organizationId,userId,orderId,
  function complete(requestId){
   if(read()?.requestId===requestId)storage.removeItem(key);
  }
- return {key,read,begin,complete};
+ return {key,userId,read,begin,complete};
 }
 /** Erros explícitos de transação podem liberar uma primeira tentativa sem confirmação anterior ambígua. */
 export function isDefinitePaymentRejection(error){
