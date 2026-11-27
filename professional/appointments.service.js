@@ -141,11 +141,11 @@ export async function createUnitAppointment({client,organizationId,customerId,se
  return data;
 }
 
-/** Consulta o destino do aviso sob RLS e limita explicitamente ao profissional e à unidade ativos. */
-export async function fetchNotificationAppointment({client,organizationId,professionalId,branchId,appointmentId}){
- if(!client?.from||![organizationId,professionalId,branchId,appointmentId].every(value=>typeof value==="string"&&value))throw new Error("Contexto do agendamento indisponível.");
+/** Consulta o destino sob RLS e limita ao profissional e às unidades previamente autorizadas. */
+export async function fetchNotificationAppointment({client,organizationId,professionalId,branchIds,appointmentId}){
+ if(!client?.from||![organizationId,professionalId,appointmentId].every(value=>typeof value==="string"&&value)||!Array.isArray(branchIds)||!branchIds.length||!branchIds.every(value=>typeof value==="string"&&value))throw new Error("Contexto do agendamento indisponível.");
  const {data,error}=await client.from("appointments").select(APPOINTMENT_FIELDS)
-  .eq("org_id",organizationId).eq("professional_id",professionalId).eq("branch_id",branchId).eq("id",appointmentId).maybeSingle();
+  .eq("org_id",organizationId).eq("professional_id",professionalId).in("branch_id",branchIds).eq("id",appointmentId).maybeSingle();
  if(error)throw new Error("Não foi possível consultar o agendamento.");
  return data||null;
 }

@@ -6,7 +6,7 @@ export function readNotificationLink(url){
  try{const id=new URL(url).searchParams.get("notification");return validId(id)?id:null;}catch{return null;}
 }
 /** Resolve o destino após verificar contexto e RLS; evita respostas de sessão antiga. */
-export function createNotificationNavigation({state,getEpoch,fetchAppointment,fetchNotification,loadAppointments,render,showNotice}){
+export function createNotificationNavigation({state,getEpoch,fetchAppointment,fetchNotification,loadAppointments,render,showNotice,switchBranch=async()=>false}){
  let sequence=0;
  async function open(id){
   if(!validId(id)||state.role!=="professional"||!state.orgId||!state.branchId||!state.professional?.id)return false;
@@ -15,9 +15,14 @@ export function createNotificationNavigation({state,getEpoch,fetchAppointment,fe
    const item=await fetchNotification(state.orgId,id);
    if(!current())return false;
    if(!item||!item.appointment_id){showNotice("Aviso sem agendamento disponível. Consulte suas notificações.");return false;}
-   const appointment=await fetchAppointment({organizationId:state.orgId,professionalId:state.professional.id,branchId:state.branchId,appointmentId:item.appointment_id});
+   const branchIds=[...new Set([state.branchId,...(state.branches||[]).map(row=>row.id)].filter(Boolean))];
+   const appointment=await fetchAppointment({organizationId:state.orgId,professionalId:state.professional.id,branchIds,appointmentId:item.appointment_id});
    if(!current())return false;
-   if(!appointment){showNotice("Agendamento indisponível nesta unidade ou sem acesso. Confira a unidade selecionada.");return false;}
+   if(!appointment||!branchIds.includes(appointment.branch_id)){showNotice("Agendamento indisponível ou sem acesso.");return false;}
+   if(appointment.branch_id!==state.branchId){
+    // Recarrega o contexto autorizado antes de abrir o modal; nunca mistura os dados das unidades.
+    return await switchBranch(appointment.branch_id,id);
+   }
    const date=salonCalendarDate(appointment.starts_at,salonTimezone(state.organization?.timezone));
    Object.assign(state,{page:"Agenda",selectedDate:date,month:new Date(date.getFullYear(),date.getMonth(),1),selectedAppointment:null,appointmentModalMode:null,notice:""});
    await loadAppointments();

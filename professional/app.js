@@ -78,14 +78,23 @@ const {loadProfilePreferences,submitProfilePreferences}=createProfileController(
 const {loadOrders,loadCommissions,chooseOrder}=createFinancialController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError});
 const {applyAppointmentStatus,applyAttendance,openAttendanceOrder,applyAppointmentReschedule,applyNewAppointment}=createAttendanceController({state,supabase,getEpoch:()=>sessionEpoch,showNotice,loadAppointments,loadOrders,chooseOrder,appointmentStatusActions,appointmentStatusEnabled,attendanceEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled});
 const push=createProfessionalPush({client:supabase,onMessage:()=>{if(state.user&&state.orgId)void loadNotifications();}});
-const notificationNavigation=createNotificationNavigation({state,getEpoch:()=>sessionEpoch,fetchAppointment:params=>fetchNotificationAppointment({client:supabase,...params}),fetchNotification:(orgId,id)=>fetchProfessionalNotification({client:supabase,organizationId:orgId,notificationId:id}),loadAppointments,render,showNotice});
+const notificationNavigation=createNotificationNavigation({state,getEpoch:()=>sessionEpoch,fetchAppointment:params=>fetchNotificationAppointment({client:supabase,...params}),fetchNotification:(orgId,id)=>fetchProfessionalNotification({client:supabase,organizationId:orgId,notificationId:id}),loadAppointments,render,showNotice,switchBranch:switchNotificationBranch});
 let pendingNotification=readNotificationLink(globalThis.location.href);
 /** Só resolve o aviso depois de autenticar e selecionar o contexto; não conserva IDs em armazenamento local. */
 async function resolvePendingNotification(){
  if(!pendingNotification||!notificationsEnabled||state.role!=="professional")return;
  const id=pendingNotification;pendingNotification=null;
  const url=new URL(location.href);url.searchParams.delete("notification");history.replaceState(null,"",url);
- await notificationNavigation.open(id);
+ return await notificationNavigation.open(id);
+}
+/** Troca para unidade já autorizada com o mesmo fluxo de sessão; o callback de contexto reabre o aviso. */
+async function switchNotificationBranch(branchId,id){
+ if(!state.branches.some(row=>row.id===branchId)||state.branchId===branchId)return false;
+ pendingNotification=id;
+ await session.loadBase(state.orgId,branchId);
+ // Se a sessão não pôde ser carregada, descarte a intenção para evitar abrir em outro contexto.
+ if(pendingNotification===id)pendingNotification=null;
+ return state.branchId===branchId&&state.selectedAppointment!==null;
 }
 const session=createSessionController({state,root,supabase,getEpoch:()=>sessionEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled,explicitBranchEnabled,afterReady:resolvePendingNotification,beforeExit:orgId=>push.configured?push.disable(orgId):Promise.resolve()});
 const {switchContext,endSession,boot}=session;
