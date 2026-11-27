@@ -24,3 +24,7 @@ O script [professional-qa-smoke.sql](sql/professional-qa-smoke.sql) reúne os ce
 6. Comparar migrations reais de QA e produção, backup e estratégia de rollback. Só liberar as flags após verificação de schema e testes. Nenhuma alteração de produção foi realizada nesta homologação.
 
 A aprovação de build e smoke SQL não equivale à aprovação comercial ou a um deploy.
+
+## Homologação financeira complementar — 26/11/2026
+
+Em QA, com contas fictícias de proprietário e profissional e rollback: comanda de R$ 70 (serviço R$ 50 a 50%, produto R$ 20 a 10%), parcial de R$ 25 e quitação de R$ 45. Comissão parcial R$ 8,93 de serviço e R$ 0,71 de produto; total R$ 27. Entradas de R$ 70; estoque 10 → 9 na quitação, retorna a 10 na devolução; saída de R$ 70 e comissões canceladas. Profissional sem autorização de Caixa não consegue receber. Detectada divergência de arredondamento: R$ 0,02 a 50% em duas parcelas de R$ 0,01 gerava R$ 0,02. Migration `20261127021953_cumulative_partial_commission_rounding.sql` instalada em QA: cálculo cumulativo por item e taxa, sem alterar lançamentos históricos; novo teste retorna R$ 0,01 e repasse gera saída e aviso. Devolução após repasse permanece bloqueada no contrato de QA (não equivale a homologar reversão pós-repasse). Script `docs/sql/professional-financial-qa.sql` aprovado. Pendentes: conciliação histórica, taxa alterada entre parcelas, concorrência real, reversões após repasse, fechamento do Caixa, descontos complexos, comparação das funções de produção e homologação visual. Nenhuma alteração de produção.

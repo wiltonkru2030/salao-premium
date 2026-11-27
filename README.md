@@ -323,3 +323,5 @@ Não executar integração que cria/altera registros em produção. Leia os scri
 ## Homologação atual do App Profissional
 
 Build, testes agregados e Agenda aprovados no GitHub para `d6f0e80`. Smoke integrado em QA aprovado e revertido. Ainda há pendências de estrutura, segurança, financeiro, navegador e publicação. Consulte o [relatório de homologação](docs/HOMOLOGACAO-APP-PROFISSIONAL.md) e o script de reprodução. Não houve liberação de produção nesta etapa.
+
+Homologação financeira complementar: teste SQL integrado aprovado em QA, incluindo correção de arredondamento de comissão por parcelas. Ver [relatório](docs/HOMOLOGACAO-APP-PROFISSIONAL.md) e [script](docs/sql/professional-financial-qa.sql). Ainda não autoriza publicação em produção.

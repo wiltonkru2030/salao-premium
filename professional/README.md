@@ -120,3 +120,5 @@ CSS organizado em entrada, layout, acabamento móvel e workspace; tokens globais
 
 ### Evidências de homologação
 Build e suíte agregada aprovados em `d6f0e80`. Smoke SQL integrado de clientes, serviços, perfil, agenda, notificações e comanda aprovado em QA com rollback. Ver [relatório atualizado](../docs/HOMOLOGACAO-APP-PROFISSIONAL.md) para critérios restantes. Não habilitar flags em produção antes de concluir os bloqueios listados.
+
+Homologação financeira complementar em QA: recebimento parcial/integral, comissão de serviço e produto, estoque, devolução antes de repasse e pagamento de comissão aprovados. Corrigido arredondamento cumulativo em QA. Ver relatório `docs/HOMOLOGACAO-APP-PROFISSIONAL.md`; produção permanece inalterada.
