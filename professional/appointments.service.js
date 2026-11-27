@@ -1,3 +1,4 @@
+import {unitRpc} from "./unit-context.js";
 /**
  * Serviço de consulta dos agendamentos do App Profissional.
  *
@@ -128,8 +129,9 @@ export async function createOwnAppointment({client, organizationId, reference, s
 }
 
 /** Agenda cliente da unidade por ID; valores e disponibilidade são conferidos pelo servidor. */
-export async function createUnitAppointment({client,organizationId,customerId,service,localStart}){
- const {data,error}=await client.rpc("create_professional_unit_appointment",{target_org:organizationId,target_customer:customerId,target_service:service,local_start:localStart});
+export async function createUnitAppointment({client,organizationId,customerId,service,localStart,branchId=null}){
+ const rpc=unitRpc("create_professional_unit_appointment",{target_org:organizationId,target_customer:customerId,target_service:service,local_start:localStart},branchId);
+ const {data,error}=await client.rpc(rpc.name,rpc.args);
  if(error?.code==="23P01")throw new Error("Esse horário está ocupado ou bloqueado.");
  if(error?.code==="42501")throw new Error("Cliente ou unidade não autorizados.");
  if(error?.code==="23514")throw new Error("Confira o serviço vinculado e o expediente.");

@@ -1,3 +1,4 @@
+import {canUseSelectedUnit,selectedUnitArgs} from "../unit-context.js";
 /** Agenda e Atendimento: coordena mutações sem acessar sessão global. */
 import {updateOwnAppointmentStatus,rescheduleOwnAppointment,createOwnAppointment,createUnitAppointment} from "../appointments.service.js";
 import {attendanceActions,performAttendanceAction} from "../attendance.service.js";
@@ -37,7 +38,7 @@ export function createAttendanceController({state,supabase,getEpoch,showNotice,l
   const epoch=getEpoch();
   pendingEpoch=epoch;control.disabled=true;
   try{
-   const saved=await performAttendanceAction({client:supabase,organizationId:state.orgId,appointmentId:appointment.id,operation});
+   const saved=await performAttendanceAction({client:supabase,organizationId:state.orgId,appointmentId:appointment.id,operation,...selectedUnitArgs(state)});
    if(epoch!==getEpoch())return;
    const patch={status:saved.status,service_order_id:saved.order_id};
    state.appointments=state.appointments.map(item=>item.id===appointment.id?{...item,...patch}:item);
@@ -111,9 +112,9 @@ export function createAttendanceController({state,supabase,getEpoch,showNotice,l
   pendingEpoch=epoch;
   button.disabled=true;
   try {
-   const unitBooking=unitBookingEnabled&&customerRegistrationEnabled&&!!state.professional?.branch_id&&form.dataset.unitBooking==="true";
+   const unitBooking=unitBookingEnabled&&customerRegistrationEnabled&&canUseSelectedUnit(state)&&form.dataset.unitBooking==="true";
    const options={client:supabase,organizationId:state.orgId,reference,service,localStart};
-   const saved=await (unitBooking?createUnitAppointment({...options,customerId:reference}):createOwnAppointment(options));
+   const saved=await (unitBooking?createUnitAppointment({...options,customerId:reference,...selectedUnitArgs(state)}):createOwnAppointment(options));
    if(epoch!==getEpoch())return;
    if(state.page==="Agenda") {
     const date=salonCalendarDate(saved.starts_at,state.organization?.timezone);

@@ -1,9 +1,10 @@
+import {unitRpc,canUseSelectedUnit} from "./unit-context.js";
 /** Regras de apresentação e contrato do atendimento individual. O servidor repete toda autorização. */
 
 /** Determina ações exibidas somente para o profissional e a unidade principal atribuídos. */
 export function attendanceActions(state,appointment){
- if(!appointment||state.role!=="professional"||!state.professional?.branch_id||
- appointment.professional_id!==state.professional.id||appointment.branch_id!==state.professional.branch_id||
+ if(!appointment||!canUseSelectedUnit(state)||
+ appointment.professional_id!==state.professional.id||appointment.branch_id!==(state.explicitBranchEnabled?state.branchId:state.professional.branch_id)||
  appointment.appointment_group_id)return [];
  if(!appointment.service_order_id&&["scheduled","confirmed","arrived"].includes(appointment.status))return ["start"];
  if(appointment.service_order_id&&appointment.status==="in_progress")return ["order","finish"];
@@ -21,9 +22,10 @@ export function renderAttendanceActions(state,appointment,enabled){
 }
 
 /** Solicita transição atômica e valida o retorno antes de modificar estado local. */
-export async function performAttendanceAction({client,organizationId,appointmentId,operation}){
+export async function performAttendanceAction({client,organizationId,appointmentId,operation,branchId=null}){
  if(!client?.rpc||!organizationId||!appointmentId||!["start","finish"].includes(operation))throw new Error("Operação de atendimento inválida.");
- const {data,error}=await client.rpc("professional_attendance_action",{target_org:organizationId,target_appointment:appointmentId,operation});
+ const rpc=unitRpc("professional_attendance_action",{target_org:organizationId,target_appointment:appointmentId,operation},branchId);
+ const {data,error}=await client.rpc(rpc.name,rpc.args);
  if(error?.code==="42501")throw new Error("Atendimento ou unidade não autorizados.");
  if(error?.code==="23514")throw new Error("O atendimento ou a comanda precisa ser conferido pela recepção.");
  const expected=operation==="start"?"in_progress":"completed";

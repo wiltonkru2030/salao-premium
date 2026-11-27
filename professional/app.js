@@ -1,5 +1,6 @@
 /** App Profissional (PWA): autenticação, sessão individual, Agenda, Comandas, Comissões e configurações do próprio perfil. */
 import {createProfessionalState,resetProfessionalState} from "./workspace-state.js";
+import {canUseSelectedUnit} from "./unit-context.js";
 import {createCustomersController} from "./controllers/customers.controller.js";
 import {createServicesController} from "./controllers/services.controller.js";
 import {createNotificationsController} from "./controllers/notifications.controller.js";
@@ -50,6 +51,7 @@ const orderManagementEnabled = import.meta.env.VITE_PROFESSIONAL_ORDER_MANAGEMEN
 const attendanceEnabled = import.meta.env.VITE_PROFESSIONAL_ATTENDANCE === "true";
 const serviceManagementEnabled = import.meta.env.VITE_PROFESSIONAL_SERVICE_MANAGEMENT === "true";
 const unitBookingEnabled = import.meta.env.VITE_PROFESSIONAL_UNIT_BOOKING === "true";
+const explicitBranchEnabled = import.meta.env.VITE_PROFESSIONAL_EXPLICIT_BRANCH === "true";
 const rescheduleEnabled = import.meta.env.VITE_PROFESSIONAL_RESCHEDULE === "true";
 const serviceLock={active:false,operation:null};
 const {agendaView,appointmentStatusActions}=createAgendaWorkspaceViews({state,attendanceEnabled,appointmentStatusEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled});
@@ -62,7 +64,7 @@ const {loadNotifications,readNotifications}=createNotificationsController({state
 const {loadProfilePreferences,submitProfilePreferences}=createProfileController({state,supabase,getEpoch:()=>sessionEpoch,render,showNotice,profilePreferencesEnabled});
 const {loadOrders,loadCommissions,chooseOrder}=createFinancialController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError});
 const {applyAppointmentStatus,applyAttendance,openAttendanceOrder,applyAppointmentReschedule,applyNewAppointment}=createAttendanceController({state,supabase,getEpoch:()=>sessionEpoch,showNotice,loadAppointments,loadOrders,chooseOrder,appointmentStatusActions,appointmentStatusEnabled,attendanceEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled});
-const session=createSessionController({state,root,supabase,getEpoch:()=>sessionEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled});
+const session=createSessionController({state,root,supabase,getEpoch:()=>sessionEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled,explicitBranchEnabled});
 const {switchContext,endSession,boot}=session;
 const {navigate,refreshOrders}=createNavigationController({state,root,getEpoch:()=>sessionEpoch,render,showNotice,loadOrders,loadServices,loadServiceCatalog,canManageServices,loadCustomers,loadCommissions,loadNotifications,loadProfilePreferences,profilePreferencesEnabled});
 
@@ -89,7 +91,7 @@ function render(){
  if(!state.user||!state.orgId||(state.role==="professional"&&!state.branchId))return;
  if(!allowedProfessionalPages(state).includes(state.page))state.page="Agenda";
  clearAutocomplete();
- const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state,{managementEnabled:orderManagementEnabled}):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services,{manage:canManageServices(),catalog:state.serviceCatalog,editor:state.serviceEditor,status:state.serviceCatalogStatus}):state.page==="Clientes"?renderProfessionalCustomers({...state,canManageCustomers:customerRegistrationEnabled&&state.role==="professional"&&!!state.professional?.branch_id}):state.page==="Notificações"?renderNotificationsView(state):state.page==="Perfil"?profileView(state,{preferencesEnabled:profilePreferencesEnabled}):settingsView(state, appearance.preference,{preferencesEnabled:profilePreferencesEnabled});
+ const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state,{managementEnabled:orderManagementEnabled}):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services,{manage:canManageServices(),catalog:state.serviceCatalog,editor:state.serviceEditor,status:state.serviceCatalogStatus}):state.page==="Clientes"?renderProfessionalCustomers({...state,canManageCustomers:customerRegistrationEnabled&&canUseSelectedUnit(state)}):state.page==="Notificações"?renderNotificationsView(state):state.page==="Perfil"?profileView(state,{preferencesEnabled:profilePreferencesEnabled}):settingsView(state, appearance.preference,{preferencesEnabled:profilePreferencesEnabled});
  shell(content);
  if(state.page==="Comandas"&&state.selectedOrder&&state.role==="professional"&&state.professional)bindAutocomplete();
 }
@@ -176,7 +178,7 @@ root.addEventListener("click",async event=>{
   }
   if(state.page==="Clientes"){
    if(action==="new-professional-customer"||action==="edit-professional-customer"){
-    if(!customerRegistrationEnabled||state.role!=="professional"||!state.professional?.branch_id)return;
+    if(!customerRegistrationEnabled||!canUseSelectedUnit(state))return;
     state.customerEditor=action==="edit-professional-customer"?state.selectedCustomer:{};render();return;
    }
    if(action==="cancel-professional-customer"){state.customerEditor=null;render();return;}

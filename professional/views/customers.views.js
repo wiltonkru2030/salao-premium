@@ -26,7 +26,7 @@ export function renderProfessionalCustomers(state){
  }
  if(state.selectedCustomer){
   const customer=state.selectedCustomer;
-  return '<button type="button" class="btn secondary" data-action="back-professional-customers">← Voltar aos clientes</button><section class="detail sp-content-surface"><h2>'+esc(customer.name)+'</h2>'+contact(customer)+(state.canManageCustomers&&customer.branch_id===state.professional?.branch_id?'<button class="btn secondary" type="button" data-action="edit-professional-customer">Editar cadastro</button>':"")+'</section><div class="section-title"><h2>Histórico de atendimentos</h2></div><p class="muted">Até 50 atendimentos próprios, nas unidades autorizadas.</p>'+history(state);
+  return '<button type="button" class="btn secondary" data-action="back-professional-customers">← Voltar aos clientes</button><section class="detail sp-content-surface"><h2>'+esc(customer.name)+'</h2>'+contact(customer)+(state.canManageCustomers&&customer.branch_id===(state.branchId||state.professional?.branch_id)?'<button class="btn secondary" type="button" data-action="edit-professional-customer">Editar cadastro</button>':"")+'</section><div class="section-title"><h2>Histórico de atendimentos</h2></div><p class="muted">Até 50 atendimentos próprios na unidade selecionada.</p>'+history(state);
  }
  const title='<div class="section-title"><h2 id="professional-customers-heading">Clientes</h2></div>';
  if(state.customersStatus==="loading"||state.customersStatus==="idle")return title+'<p role="status" class="muted">Carregando clientes...</p>';

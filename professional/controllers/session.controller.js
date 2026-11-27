@@ -8,7 +8,7 @@ import {allowedProfessionalPages} from "../access.rules.js";
 import {escapeHtml as esc} from "../utils/formatters.js";
 import {renderPlatformMark} from "../../src/components/platform-mark.js";
 /** Coordena acesso com geração injetada e expõe somente operações do ciclo de sessão. */
-export function createSessionController({state,root,supabase,getEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled}){
+export function createSessionController({state,root,supabase,getEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled,explicitBranchEnabled=false}){
  let recheckingSession=false,endingSession=false,loginPending=false,contextPending=false;
  /** Limpa a interface imediatamente; encerra apenas a sessão profissional local. */
  async function endSession(notice=""){
@@ -43,13 +43,13 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
    root.innerHTML='<main class="login"><div class="brand sp-professional-brand">' + renderPlatformMark() + '<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Escolha o salão</h1><p>Seus dados ficam separados por estabelecimento.</p>'+contexts.map(c=>'<button type="button" class="primary" data-context-org="'+esc(c.orgId)+'">'+esc(orgs.get(c.orgId)?.name||"Salão")+'</button>').join("")+'<button class="secondary" data-action="logout">Sair</button></main>';
    return;
   }
-  Object.assign(state,context,{organization:orgs.get(context.orgId),notificationsEnabled});
+  Object.assign(state,context,{organization:orgs.get(context.orgId),notificationsEnabled,explicitBranchEnabled});
   if(state.role==="professional"){
    const branches=await fetchProfessionalBranches({client:supabase,organizationId:state.orgId,professional:state.professional});
    if(loadEpoch!==getEpoch())return;
    state.branches=branches;const branch=selectProfessionalBranch(branches,selectedBranchId);
    if(!branch){
-    root.innerHTML='<main class="login"><div class="brand sp-professional-brand">'+renderPlatformMark()+'<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Escolha a unidade</h1><p>Agenda e comandas serão filtradas pela unidade.</p>'+branches.map(row=>'<button type="button" class="primary" data-context-branch="'+esc(row.id)+'">'+esc(row.name)+'</button>').join("")+'<button class="secondary" data-action="logout">Sair</button></main>';
+    root.innerHTML='<main class="login"><div class="brand sp-professional-brand">'+renderPlatformMark()+'<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Escolha a unidade</h1><p>Agenda, comandas, clientes e serviços serão filtrados pela unidade.</p>'+branches.map(row=>'<button type="button" class="primary" data-context-branch="'+esc(row.id)+'">'+esc(row.name)+'</button>').join("")+'<button class="secondary" data-action="logout">Sair</button></main>';
     return;
    }
    state.branchId=branch.id;

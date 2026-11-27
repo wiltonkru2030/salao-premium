@@ -1,4 +1,5 @@
 /** Composição visual da Agenda, sem rede ou manipulação de DOM. */
+import {canUseSelectedUnit} from "../unit-context.js";
 import {salonTimezone} from "../utils/salon-time.js";
 import {formatSavedPhone} from "../../src/utils/input-masks.js";
 import {escapeHtml as esc,formatMoney as money,toDateKey as dateKey,formatMonthLabel as monthLabel,formatDateLabel as dateLabel,formatTime as timeLabel,formatBookingSource as sourceLabel,formatStatus as statusLabel,getAppointmentClass as appointmentClass} from "../utils/formatters.js";
@@ -49,7 +50,7 @@ export function createAgendaWorkspaceViews({state,attendanceEnabled,appointmentS
  // Delega a composição visual da agenda para uma view sem efeitos colaterais.
  function agendaView(){
   const booking=bookingEnabled&&state.role==="professional"&&state.professional
-   ?renderProfessionalBooking({unitBooking:unitBookingEnabled&&customerRegistrationEnabled&&!!state.professional.branch_id})
+   ?renderProfessionalBooking({unitBooking:unitBookingEnabled&&customerRegistrationEnabled&&canUseSelectedUnit(state)})
    :"";
   return renderAgendaView({state,dateKey,monthLabel,dateLabel,appointmentCard,appointmentDetails,booking});
  }

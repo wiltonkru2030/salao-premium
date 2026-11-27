@@ -1,3 +1,4 @@
+import {canUseSelectedUnit,selectedUnitArgs} from "../unit-context.js";
 /** createCustomersController — coordena estado e serviços; não possui sessão global. */
 import {fetchProfessionalCustomers,fetchProfessionalCustomerHistory,listUnitCustomers,saveUnitCustomer} from "../customers.service.js";
 
@@ -8,8 +9,8 @@ export function createCustomersController({state,supabase,getEpoch,render,report
   const epoch=getEpoch();
   state.customersStatus="loading";render();
   try {
-   const options={client:supabase,organizationId:state.orgId,professional:state.professional};
-   const rows=customerRegistrationEnabled&&state.professional?.branch_id?await listUnitCustomers(options):await fetchProfessionalCustomers(options);
+   const options={client:supabase,organizationId:state.orgId,professional:state.professional,branchId:state.branchId};
+   const rows=customerRegistrationEnabled&&canUseSelectedUnit(state)?await listUnitCustomers({...options,branchId:state.explicitBranchEnabled?state.branchId:null}):await fetchProfessionalCustomers(options);
    if(epoch!==getEpoch())return;
    state.customers=rows;state.customersStatus="ready";
   }catch(error){
@@ -25,7 +26,7 @@ export function createCustomersController({state,supabase,getEpoch,render,report
   const epoch=getEpoch();
   state.selectedCustomer=customer;state.customerHistory=[];state.customerHistoryStatus="loading";render();
   try {
-   const rows=await fetchProfessionalCustomerHistory({client:supabase,organizationId:state.orgId,professional:state.professional,customerId:id});
+   const rows=await fetchProfessionalCustomerHistory({client:supabase,organizationId:state.orgId,professional:state.professional,customerId:id,branchId:state.branchId});
    if(epoch!==getEpoch()||state.selectedCustomer?.id!==id)return;
    state.customerHistory=rows;state.customerHistoryStatus="ready";
   }catch(error){
@@ -37,13 +38,13 @@ export function createCustomersController({state,supabase,getEpoch,render,report
  
  /** Persiste o cadastro pelo contrato restrito à unidade; mantém os campos em caso de erro. */
  async function submitProfessionalCustomer(form){
-  if(!customerRegistrationEnabled||state.role!=="professional"||state.page!=="Clientes"||!state.customerEditor||!state.professional?.branch_id)return;
+  if(!customerRegistrationEnabled||state.role!=="professional"||state.page!=="Clientes"||!state.customerEditor||!canUseSelectedUnit(state))return;
   const button=form.querySelector("button[type=submit]"),feedback=form.querySelector("[data-customer-save-error]");
   if(button.disabled)return;
   button.disabled=true;feedback.hidden=true;
   const epoch=getEpoch(),editor=state.customerEditor,values=new FormData(form);
   try {
-   const saved=await saveUnitCustomer({client:supabase,organizationId:state.orgId,customerId:editor.id||null,name:values.get("name"),phone:values.get("phone")});
+   const saved=await saveUnitCustomer({client:supabase,organizationId:state.orgId,...selectedUnitArgs(state),customerId:editor.id||null,name:values.get("name"),phone:values.get("phone")});
    if(epoch!==getEpoch()||state.page!=="Clientes"||state.customerEditor!==editor)return;
    state.customerEditor=null;state.selectedCustomer=null;state.notice="Cadastro salvo.";
    await loadCustomers();

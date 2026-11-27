@@ -33,7 +33,7 @@ export function renderProfessionalShell({state, content, pages}) {
           <button type="button" class="secondary" data-action="logout">Sair</button>
         </div></details>
       </header>
-      <main class="content sp-page-flow">${state.branchId?'<p class="meta">Unidade da Agenda e Comandas: '+escapeHtml(state.branches.find(row=>row.id===state.branchId)?.name||"Unidade")+'</p>':""}${state.notice?'<div class="notice" role="status">'+escapeHtml(state.notice)+'</div>':''}${content}</main>
+      <main class="content sp-page-flow">${state.branchId?'<p class="meta">Unidade operacional: '+escapeHtml(state.branches.find(row=>row.id===state.branchId)?.name||"Unidade")+'</p>':""}${state.notice?'<div class="notice" role="status">'+escapeHtml(state.notice)+'</div>':''}${content}</main>
     </div>
   </div>`;
 }

@@ -1,0 +1,27 @@
+/** Testa unidade explícita e compatibilidade legada sem rede. */
+import assert from "node:assert/strict";
+import {canUseSelectedUnit,unitRpc,selectedUnitArgs} from "./unit-context.js";
+import {listUnitCustomers,saveUnitCustomer} from "./customers.service.js";
+import {listUnitServices,saveUnitService,setUnitServiceLink} from "./services.service.js";
+import {createUnitAppointment} from "./appointments.service.js";
+import {attendanceActions,performAttendanceAction} from "./attendance.service.js";
+const b="11111111-1111-4111-8111-111111111111",o="22222222-2222-4222-8222-222222222222",p="33333333-3333-4333-8333-333333333333",a="44444444-4444-4444-8444-444444444444";
+const state={role:"professional",explicitBranchEnabled:true,branchId:b,branches:[{id:b}],professional:{id:p,branch_id:null}};
+assert.equal(canUseSelectedUnit(state),true);
+assert.equal(canUseSelectedUnit({...state,branches:[]}),false);
+assert.equal(canUseSelectedUnit({...state,explicitBranchEnabled:false}),false);
+assert.equal(canUseSelectedUnit({...state,explicitBranchEnabled:false,professional:{id:p,branch_id:b}}),true);
+assert.deepEqual(selectedUnitArgs(state),{branchId:b});
+assert.equal(unitRpc("test",{}).name,"test");
+assert.throws(()=>unitRpc("test",{},"bad"),/Unidade/);
+const calls=[];
+const client={rpc:async(name,args)=>{calls.push({name,args});return {data:name.startsWith("list_")?[]:name.startsWith("set_")?true:name.startsWith("save_professional_unit_service")?a:name.startsWith("professional_attendance")?{id:a,status:"in_progress",order_id:b}:{id:a,branch_id:b,starts_at:"2026-12-01T10:00:00Z"}};}};
+const opts={client,organizationId:o,branchId:b};
+await listUnitCustomers(opts);await saveUnitCustomer({...opts,name:"Cliente",phone:"67999991234"});
+await listUnitServices(opts);await saveUnitService({...opts,name:"Corte",category:"Cabelo",minutes:30,price:"50,00"});await setUnitServiceLink({...opts,serviceId:a,linked:true});
+await createUnitAppointment({...opts,customerId:a,service:a,localStart:"2026-12-01T10:00"});
+await performAttendanceAction({...opts,appointmentId:a,operation:"start"});
+assert.equal(calls.length,7);assert.ok(calls.every(x=>x.name.endsWith("_at_branch")&&x.args.target_unit===b));
+assert.deepEqual(attendanceActions(state,{id:a,professional_id:p,branch_id:b,status:"scheduled"}),["start"]);
+assert.deepEqual(attendanceActions(state,{id:a,professional_id:p,branch_id:o,status:"scheduled"}),[]);
+console.log("Contratos da unidade selecionada: OK");
