@@ -8,17 +8,15 @@ import {listUnitCustomers,saveUnitCustomer} from "./customers.service.js";
 import {formatMoney} from "./utils/formatters.js";
 import {matchesSearch,matchesPhone,searchCatalog} from "./utils/search.js";
 
-/** Atualiza controles de horário depois da resposta do servidor.
- * Aceita somente HH:mm válidos, sem duplicatas; não deixa o texto de carregamento
- * depois de uma consulta concluída. O servidor revalida na gravação.
+/** Apresenta sugestões sem bloquear nem sobrescrever a hora escolhida manualmente.
+ * O servidor continua sendo a autoridade sobre disponibilidade na gravação.
  */
-export function applyBookingSlots({hour,submit,slotStatus,result}){
+export function applyBookingSlots({suggestions,slotStatus,result}){
  const times=[...new Set((result.slots||[]).filter(time=>typeof time==="string"&&/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)))].sort();
- const option=(label,value)=>{const node=hour.ownerDocument.createElement("option");node.textContent=label;node.value=value;return node;};
- hour.replaceChildren(option(times.length?"Selecione o horário":"Nenhum horário disponível",""),...times.map(time=>option(time,time)));
- hour.disabled=times.length===0;submit.disabled=hour.disabled;
- hour.value=times[0]||"";
- slotStatus.textContent=times.length?slotMessages.available:(result.reason==="available"?"Não foi possível interpretar os horários. Selecione o serviço novamente.":slotMessages[result.reason]||slotMessages.no_slots);
+ const option=(label,value)=>{const node=suggestions.ownerDocument.createElement("option");node.textContent=label;node.value=value;return node;};
+ suggestions.replaceChildren(option(times.length?"Escolher horário livre":"Nenhum horário livre",""),...times.map(time=>option(time,time)));
+ suggestions.disabled=times.length===0;
+ slotStatus.textContent=times.length?"Escolha uma sugestão ou informe a hora diretamente.":(result.reason==="available"?"Não foi possível interpretar as sugestões. Atualize os horários.":slotMessages[result.reason]||slotMessages.no_slots);
 }
 const bindings=new WeakMap();
 /** Filtra clientes por nome ou telefone e evita exibir o histórico como rótulo. */
@@ -38,19 +36,33 @@ export function bindProfessionalBookingSearch(form,state,{client,isCurrent=()=>t
  const getCustomers=()=>unitBooking?(customersPromise??=listUnitCustomers({client,organizationId,...unitArgs}).catch(error=>{customersPromise=null;throw error;})):Promise.resolve(legacy);
  const label=customer=>customer.name+(customer.phone?" · "+customer.phone:"");
  const disposeClient=mountAutocomplete(input,{search:async term=>searchBookingClients(await getCustomers(),term),getLabel:label,placeholder:"Nenhum cliente encontrado",onSelect(){}});
- const slotsEnabled=form.dataset.availableSlots==="true",hour=form.querySelector("[name=start]"),slotStatus=form.querySelector("[data-booking-slot-status]"),submit=form.querySelector("[type=submit]");
- let request=0;
+ const slotsEnabled=form.dataset.availableSlots==="true",hour=form.querySelector("[name=start]"),suggestions=form.querySelector("[data-booking-suggestions]"),slotStatus=form.querySelector("[data-booking-slot-status]"),retry=form.querySelector("[data-booking-retry]");
+ let request=0,selectedService=null;
+ function setSuggestionPlaceholder(text){
+  if(!suggestions)return;
+  const option=suggestions.ownerDocument.createElement("option");option.value="";option.textContent=text;
+  suggestions.replaceChildren(option);suggestions.disabled=true;
+ }
  async function updateSlots(service){
   if(!slotsEnabled)return;
-  const seq=++request;hour.disabled=true;submit.disabled=true;hour.innerHTML='<option value="">'+(service?"Consultando horários…":"Selecione um serviço primeiro")+'</option>';slotStatus.textContent="";
+  selectedService=service;
+  const seq=++request;retry.hidden=true;
+  setSuggestionPlaceholder(service?"Consultando horários…":"Selecione um serviço primeiro");
+  slotStatus.textContent=service?"Consultando sugestões. Você já pode informar a hora.":"Informe a hora diretamente ou selecione um serviço para ver sugestões.";
   if(!service)return;
+  let timer;
   try{
-   const result=await listOwnBookingSlots(client,{org:organizationId,unit:state.branchId||state.professional.branch_id,service:service.id,day:toDateKey(state.selectedDate)});
+   const result=await Promise.race([listOwnBookingSlots(client,{org:organizationId,unit:state.branchId||state.professional.branch_id,service:service.id,day:toDateKey(state.selectedDate)}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("A consulta demorou demais.")),12000);})]);
    if(!current()||seq!==request)return;
-   applyBookingSlots({hour,submit,slotStatus,result});
-  }catch(error){if(current()&&seq===request){hour.replaceChildren();const option=hour.ownerDocument.createElement("option");option.value="";option.textContent="Falha ao consultar horários";hour.add(option);hour.disabled=true;submit.disabled=true;slotStatus.textContent=error.message+" Selecione o serviço novamente para tentar.";}}
+   applyBookingSlots({suggestions,slotStatus,result});
+   retry.hidden=false;
+  }catch(error){if(current()&&seq===request){setSuggestionPlaceholder("Sugestões indisponíveis");slotStatus.textContent="Não foi possível consultar os horários livres. Atualize a lista ou informe a hora diretamente; o servidor conferirá a disponibilidade.";retry.hidden=false;}}
+  finally{clearTimeout(timer);}
  }
- if(slotsEnabled)submit.disabled=true;
+ const chooseSuggestion=()=>{if(suggestions.value)hour.value=suggestions.value;};
+ const refreshSuggestions=()=>void updateSlots(selectedService);
+ const manualHourChanged=()=>{if(suggestions&&suggestions.value!==hour.value)suggestions.value="";};
+ suggestions?.addEventListener("change",chooseSuggestion);retry?.addEventListener("click",refreshSuggestions);hour.addEventListener("input",manualHourChanged);
  const disposeService=mountAutocomplete(form.querySelector("[data-booking-service]"),{
   search:term=>searchCatalog(state.services,term),
   getLabel:service=>service.name+" · "+service.duration_minutes+" min · "+formatMoney(service.price),
@@ -77,7 +89,8 @@ export function bindProfessionalBookingSearch(form,state,{client,isCurrent=()=>t
   finally{button.disabled=false;back.disabled=false;}
  };
  const dispose=()=>{
-  active=false;request++;disposeClient();disposeService();if(slotsEnabled){hour.innerHTML='<option value="">Selecione um serviço primeiro</option>';hour.disabled=true;submit.disabled=true;slotStatus.textContent="";}
+  active=false;request++;disposeClient();disposeService();if(slotsEnabled){setSuggestionPlaceholder("Selecione um serviço primeiro");retry.hidden=true;slotStatus.textContent="Você também pode informar a hora diretamente.";}
+  suggestions?.removeEventListener("change",chooseSuggestion);retry?.removeEventListener("click",refreshSuggestions);hour.removeEventListener("input",manualHourChanged);
   open?.removeEventListener("click",showQuick);back?.removeEventListener("click",showBooking);
   quick?.removeEventListener("submit",saveQuick);dialog.removeEventListener("close",dispose);
   form.hidden=false;form.reset();

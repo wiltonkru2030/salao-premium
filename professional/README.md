@@ -189,3 +189,6 @@ Perfil → Configurações → Meu expediente permite adicionar, editar e exclui
 
 ### Correção da seleção de horários
 Corrigido filtro de HH:mm que descartava slots válidos retornados pelo servidor e mantinha o campo em `Consultando horários…`. A renderização substitui o placeholder, habilita a seleção e o botão somente se houver slots válidos, e apresenta estado de erro/ausência de horários. Teste de regressão em `booking-search.test.js` simula resposta e verifica controles. Nenhuma alteração nos dados do salão.
+
+### Horário manual independente das sugestões
+A seleção de hora agora é um input nativo editável desde a abertura do modal. As sugestões do banco aparecem em um campo separado e opcional, com atualização manual e limite de espera de 12 segundos. Selecionar uma sugestão preenche a hora; editar a hora limpa a sugestão. Toda gravação continua sujeita à validação de disponibilidade do servidor. O teste Chromium interage com autocomplete e seleção; o smoke de Hosting compara HTML/JS com o pacote compilado e exige no-store na entrada da PWA.

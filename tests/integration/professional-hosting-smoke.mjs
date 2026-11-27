@@ -2,7 +2,7 @@
  * Confere a página e os assets PWA servidos pelo Hosting, incluindo tipo MIME do worker.
  */
 import assert from "node:assert/strict";
-import {appendFileSync} from "node:fs";
+import {appendFileSync,readFileSync} from "node:fs";
 const origin=new URL(process.env.QA_PREVIEW_URL||"");
 assert.equal(origin.protocol,"https:");
 assert.match(origin.hostname,/^salao-premium--professional-qa-[a-z0-9-]+\.web\.app$/,"Destino não é o canal QA previsto.");
@@ -17,11 +17,16 @@ async function get(path){
 const page=await get("/professional/index.html");
 assert.match(page.headers.get("content-type")||"",/text\/html/);
 const html=await page.text();
+assert.equal(html,readFileSync("dist/professional/index.html","utf8"),"HTML publicado não corresponde ao pacote atual");
+const entry=await get("/professional/");
+assert.match(entry.headers.get("cache-control")||"",/no-store/,"Entrada PWA deve impedir cache antigo");
+assert.equal(await entry.text(),html,"Entrada PWA diferente do HTML publicado");
 assert.match(html,/SALÃO PREMIUM/);
 const script=html.match(/<script\b[^>]*\bsrc=["']([^"']+\.js)["']/i)?.[1];
 assert.ok(script,"Entrada JS não encontrada.");
 const js=await get(script);
 assert.match(js.headers.get("content-type")||"",/(?:javascript|ecmascript)/i);
+assert.deepEqual(Buffer.from(await js.arrayBuffer()),readFileSync("dist"+new URL(script,origin).pathname),"JS publicado não corresponde ao pacote atual");
 const worker=await get("/professional/sw.js");
 assert.match(worker.headers.get("content-type")||"",/(?:javascript|ecmascript)/i);
 assert.match(await worker.text(),/onBackgroundMessage/);

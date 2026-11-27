@@ -8,6 +8,7 @@ import {renderProfessionalServices} from "../../professional/views/services.view
 import {ordersView,commissionsView,profileView,settingsView} from "../../professional/views/workspace.views.js";
 import {renderNotificationsView} from "../../professional/views/notifications.views.js";
 import {installGlobalMasks} from "../../src/utils/input-masks.js";
+import {bindProfessionalBookingSearch} from "../../professional/booking-search.js";
 import {updatePixField} from "../../professional/utils/pix-fields.js";
 const root=document.querySelector("#professional-app");
 const pages=["Agenda","Clientes","Serviços","Comandas","Comissões","Notificações","Perfil","Configurações"];
@@ -24,7 +25,7 @@ const state=Object.assign(createProfessionalState(new Date(2026,10,26,12)),{
  commissionPayouts:[],notificationsStatus:"ready",notificationsUnread:1,notifications:[{id:"n",title:"Novo agendamento",body:"Consulte sua Agenda para verificar os detalhes.",created_at:appointment.starts_at,read_at:null}],
  profilePreferencesStatus:"ready",profilePreferences:{email:"qa@example.invalid",pix_type:"cpf",pix_key:"52998224725",notify_agenda:true,notify_commissions:false}
 });
-const {agendaView}=createAgendaWorkspaceViews({state,attendanceEnabled:true,appointmentStatusEnabled:true,rescheduleEnabled:true,bookingEnabled:true,unitBookingEnabled:true,customerRegistrationEnabled:true});
+const {agendaView}=createAgendaWorkspaceViews({state,attendanceEnabled:true,appointmentStatusEnabled:true,rescheduleEnabled:true,bookingEnabled:true,unitBookingEnabled:true,customerRegistrationEnabled:true,workingHoursEnabled:true});
 const renderers={Agenda:agendaView,Clientes:()=>renderProfessionalCustomers({...state,canManageCustomers:true}),"Serviços":()=>renderProfessionalServices(state.services,{manage:true,catalog:state.serviceCatalog,editor:state.serviceEditor,status:"ready"}),Comandas:()=>ordersView(state,{managementEnabled:true}),"Comissões":()=>commissionsView(state),"Notificações":()=>renderNotificationsView(state),Perfil:()=>profileView(state,{preferencesEnabled:true}),"Configurações":()=>settingsView(state,document.documentElement.dataset.theme,{preferencesEnabled:true})};
 /** Monta o cenário solicitado, utilizando exatamente os renderizadores de produção. */
 function show(scenario,theme){
@@ -37,7 +38,11 @@ function show(scenario,theme){
  state.page=parent;
  root.innerHTML=parent==="Login"?renderProfessionalLoginView("",theme):renderProfessionalShell({state,pages,content:renderers[parent]()});
  if(["Novo agendamento","Cadastro rápido"].includes(scenario)){
-  root.querySelector("dialog").showModal();
+  const dialog=root.querySelector("dialog");dialog.showModal();
+  if(scenario==="Novo agendamento"){
+   const mockClient={rpc:async(name)=>name==="list_own_professional_booking_slots"?{data:{reason:"available",slots:["13:00","13:05","14:30"]}}:{data:[customer]}};
+   bindProfessionalBookingSearch(dialog.querySelector("#professional-new-appointment"),state,{client:mockClient});
+  }
   if(scenario==="Cadastro rápido"){root.querySelector("#professional-new-appointment").hidden=true;root.querySelector("#professional-booking-quick-customer").hidden=false;}
  }
 }

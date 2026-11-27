@@ -37,7 +37,23 @@ try{
       assert.equal(await page.locator("dialog").evaluate(d=>d.open),true);
       const visible=await page.locator("dialog form").evaluateAll(forms=>forms.filter(form=>getComputedStyle(form).display!=="none").length);
       assert.equal(visible,1,"Formulários sobrepostos");
-      if(scenario==="Novo agendamento"){assert.equal(await page.locator("dialog input[type=date]").count(),0);assert.equal(await page.locator("dialog input[type=time]").count(),1);}
+      if(scenario==="Novo agendamento"){
+       assert.equal(await page.locator("dialog input[type=date]").count(),0);
+       const hour=page.locator("dialog input[name=start]"),suggestions=page.locator("[data-booking-suggestions]");
+       assert.equal(await hour.isEnabled(),true,"Hora manual bloqueada");
+       await page.locator("[data-booking-client]").fill("Cliente");
+       await page.getByRole("option",{name:/Cliente Fictícia/}).click();
+       await page.locator("[data-booking-service]").fill("Hidratação");
+       await page.getByRole("option",{name:/Hidratação capilar/}).click();
+       await suggestions.locator('option[value="13:05"]').waitFor({state:"attached"});
+       assert.equal(await suggestions.isEnabled(),true);
+       await suggestions.selectOption("13:05");
+       assert.equal(await hour.inputValue(),"13:05");
+       await hour.fill("14:17");
+       assert.equal(await hour.inputValue(),"14:17");
+       assert.equal(await page.locator("#professional-new-appointment button[type=submit]").isEnabled(),true);
+       assert.equal(await suggestions.inputValue(),"");
+      }
      }
      if(scenario==="Agenda"){
       const layout=await page.locator(".professional-agenda-layout").evaluate(el=>({calendar:el.children[0].getBoundingClientRect().toJSON(),day:el.children[1].getBoundingClientRect().toJSON()}));

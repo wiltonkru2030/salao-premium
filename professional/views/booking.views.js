@@ -18,7 +18,8 @@ export function renderProfessionalBooking({unitBooking=false,availableSlots=fals
           <div class="sp-span sp-labeled-field"><label for="professional-booking-client">Cliente</label><div><input id="professional-booking-client" type="search" data-booking-client placeholder="Buscar por nome ou telefone" autocomplete="off" required></div></div>
           ${unitBooking?'<button class="btn secondary" type="button" data-booking-quick-open>+ Cadastrar cliente</button>':""}
           <div class="sp-span sp-labeled-field"><label for="professional-booking-service">Serviço</label><div><input id="professional-booking-service" type="search" data-booking-service placeholder="Buscar serviço" autocomplete="off" required></div></div>
-          <label class="sp-span sp-labeled-field">Hora${availableSlots?'<select name="start" required disabled><option value="">Selecione um serviço primeiro</option></select>':'<input name="start" type="time" required>'}</label><p class="muted" data-booking-slot-status role="status" ${availableSlots?"":"hidden"}></p>
+          <label class="sp-span sp-labeled-field">Hora<input name="start" type="time" step="60" required></label>
+          ${availableSlots?'<label class="sp-span sp-labeled-field">Horários livres (opcional)<select data-booking-suggestions disabled><option value="">Selecione um serviço primeiro</option></select></label><p class="muted" data-booking-slot-status role="status">Você também pode informar a hora diretamente. A disponibilidade será conferida ao agendar.</p><button class="btn secondary" type="button" data-booking-retry hidden>Atualizar horários livres</button>':""}
           <p class="sp-span" data-booking-error role="alert" hidden></p>
         </div>
         <footer class="sp-modal-foot">

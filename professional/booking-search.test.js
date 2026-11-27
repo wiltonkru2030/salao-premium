@@ -19,21 +19,21 @@ assert.equal(call.args.local_start,opts.localStart);
 await assert.rejects(()=>createUnitAppointment({...opts,client:{rpc:async()=>({error:{code:"23P01"}})}}),/ocupado/);
 console.log("Busca e agendamento por cliente: OK");
 
-// Regressão: a resposta real usa HH:mm e o campo deve sair do estado de carregamento.
-const hour={disabled:true,value:"",options:[{textContent:"Consultando horários…"}],ownerDocument:{createElement:()=>({})},replaceChildren(...options){this.options=options;}};
-const submit={disabled:true},slotStatus={textContent:""};
-applyBookingSlots({hour,submit,slotStatus,result:{reason:"available",slots:["13:05","12:40","13:05","24:00","12:60","invalid"]}});
-assert.deepEqual(hour.options.map(o=>o.value),["","12:40","13:05"]);
-assert.equal(hour.disabled,false);
-assert.equal(submit.disabled,false);
-assert.equal(hour.value,"12:40");
-assert.doesNotMatch(hour.options[0].textContent,/Consultando/);
-applyBookingSlots({hour,submit,slotStatus,result:{reason:"professional_closed",slots:[]}});
-assert.equal(hour.disabled,true);
-assert.equal(submit.disabled,true);
+// Regressão: sugestões válidas são apresentadas e não travam o horário manual.
+const suggestions={disabled:true,options:[],ownerDocument:{createElement:()=>({})},replaceChildren(...options){this.options=options;}};
+const slotStatus={textContent:""};
+applyBookingSlots({suggestions,slotStatus,result:{reason:"available",slots:["13:05","12:40","13:05","24:00","12:60","invalid"]}});
+assert.deepEqual(suggestions.options.map(o=>o.value),["","12:40","13:05"]);
+assert.equal(suggestions.disabled,false);
+assert.doesNotMatch(suggestions.options[0].textContent,/Consultando/);
+applyBookingSlots({suggestions,slotStatus,result:{reason:"professional_closed",slots:[]}});
+assert.equal(suggestions.disabled,true);
 assert.match(slotStatus.textContent,/Meu expediente/);
-assert.equal(hour.options[0].textContent,"Nenhum horário disponível");
-applyBookingSlots({hour,submit,slotStatus,result:{reason:"available",slots:["inválido"]}});
-assert.equal(submit.disabled,true);
+applyBookingSlots({suggestions,slotStatus,result:{reason:"available",slots:["inválido"]}});
+assert.equal(suggestions.disabled,true);
 assert.match(slotStatus.textContent,/interpretar/);
-console.log("Seleção de horários: regressão aprovada.");
+const markup=renderProfessionalBooking({unitBooking:true,availableSlots:true});
+assert.match(markup,/<input name="start" type="time" step="60" required>/);
+assert.match(markup,/<select data-booking-suggestions disabled>/);
+assert.doesNotMatch(markup,/<input name="start"[^>]*disabled/);
+console.log("Horário manual e sugestões: regressão aprovada.");
