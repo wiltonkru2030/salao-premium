@@ -180,3 +180,6 @@ Pré-verificação de 26/11/2026 (horário de Campo Grande), somente contagens a
 
 ### Projeto Firebase informado em 26/11/2026
 Projeto `salao-premium` e chave VAPID pública integrados em `professional/firebase-public.config.js`. QA habilita push no build, produção mantém o flag falso até reconciliação do banco. Worker usa rota absoluta /professional/sw.js, escopo /professional/. Workflow Professional QA package oferece `deploy_preview` manual, canal `professional-qa`, validade de 7 dias; não publica em live. Workflow de produção e `.firebaserc` apontam ao projeto indicado. O JSON administrativo NÃO faz parte do Git nem do bundle; a chave enviada deve ser substituída/rotacionada no Google Cloud IAM. É necessário cadastrar a nova chave FCM exclusiva como secret `PROFESSIONAL_FCM_SERVICE_ACCOUNT` no Supabase QA; conta Hosting separada no secret GitHub `FIREBASE_SERVICE_ACCOUNT` se desejar publicar o preview. Acesso HTTP externo indisponível neste ambiente; entrega e hospedagem reais ainda não verificadas.
+
+### Hospedagem de homologação
+Workflow `Professional QA package`: canal temporário `professional-qa`, deploy apenas com secret de Hosting separado, pós-verificação HTTPS da PWA. Nenhuma publicação em live. OAuth Google/FCM validate_only já aprovados, falta confirmar dispositivo real. Ver [entrega QA](../docs/ENTREGA-APP-PROFISSIONAL.md).

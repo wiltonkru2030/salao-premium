@@ -1,5 +1,5 @@
 # Compila uma versão isolada, com todos os módulos profissionais habilitados.
-# O arquivo ZIP não é implantado automaticamente e aponta somente para QA.
+# O ZIP aponta somente para QA; preview temporário quando houver credencial de Hosting.
 name: Professional QA package
 on:
   push:
@@ -9,6 +9,9 @@ on:
       - 'src/**'
       - 'supabase/**'
       - 'tests/integration/professional-auth-qa.mjs'
+      - 'tests/integration/professional-hosting-smoke.mjs'
+      - 'firebase.json'
+      - '.firebaserc'
       - '.github/workflows/professional-qa.yml'
       - 'package.json'
       - 'vite.config.js'
@@ -61,28 +64,67 @@ jobs:
           path: dist/
           retention-days: 7
   preview-qa:
-    if: github.event_name == 'workflow_dispatch' && inputs.deploy_preview
+    # Publicação temporária exclusivamente QA; nunca usa o canal live.
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy_preview))
     needs: build-qa
     runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    concurrency:
+      group: professional-qa-hosting
+      cancel-in-progress: false
     permissions:
       contents: read
     steps:
+      - name: Verificar disponibilidade da credencial de Hosting
+        id: hosting-credential
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo 'available=false' >> "$GITHUB_OUTPUT"
+            echo 'Hosting QA: falta o secret FIREBASE_SERVICE_ACCOUNT.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'HOSTING_QA_SECRET_MISSING'
+            exit 0
+          fi
+          node --input-type=module <<'NODE'
+          const a=JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+          if(a.type!=="service_account"||a.project_id!=="salao-premium"||!a.client_email||!a.private_key)throw Error("Credencial de Hosting inválida ou de outro projeto.");
+          NODE
+          echo 'available=true' >> "$GITHUB_OUTPUT"
+          echo 'HOSTING_QA_SECRET_AVAILABLE'
       - uses: actions/checkout@v4
+        if: steps.hosting-credential.outputs.available == 'true'
       - uses: actions/download-artifact@v4
+        if: steps.hosting-credential.outputs.available == 'true'
         with:
           name: salao-premium-qa
           path: dist/
-      - name: Conferir credencial de hospedagem
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: test -n "$FIREBASE_SERVICE_ACCOUNT" || { echo 'Configure o secret FIREBASE_SERVICE_ACCOUNT com conta exclusiva de Hosting.'; exit 1; }
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Conferir pacote isolado
+        if: steps.hosting-credential.outputs.available == 'true'
+        run: |
+          test -f dist/professional/index.html
+          grep -r -q 'eaiutjqvyesboldcznyr.supabase.co' dist/assets
+          if grep -r -q 'vlifbvzlyzoncefvfgol.supabase.co' dist/assets; then
+            echo 'Publicação bloqueada: referência de produção no pacote QA.'; exit 1
+          fi
+      - name: Publicar canal temporário
+        id: deploy
+        if: steps.hosting-credential.outputs.available == 'true'
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: salao-premium
           channelId: professional-qa
           expires: 7d
+          disableComment: true
+      - name: Testar PWA no endereço publicado
+        if: steps.hosting-credential.outputs.available == 'true'
+        env:
+          QA_PREVIEW_URL: ${{ steps.deploy.outputs.details_url }}
+        run: node tests/integration/professional-hosting-smoke.mjs
+      - name: Credencial necessária para publicação manual
+        if: steps.hosting-credential.outputs.available == 'false' && github.event_name == 'workflow_dispatch'
+        run: exit 1
   auth-qa:
     if: github.event_name == 'workflow_dispatch' && inputs.run_auth
     runs-on: ubuntu-24.04

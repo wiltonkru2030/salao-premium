@@ -1,0 +1,35 @@
+/** Verificação pós-deploy: somente canal temporário QA, sem autenticar nem alterar dados.
+ * Confere a página e os assets PWA servidos pelo Hosting, incluindo tipo MIME do worker.
+ */
+import assert from "node:assert/strict";
+import {appendFileSync} from "node:fs";
+const origin=new URL(process.env.QA_PREVIEW_URL||"");
+assert.equal(origin.protocol,"https:");
+assert.match(origin.hostname,/^salao-premium--professional-qa-[a-z0-9-]+\.web\.app$/,"Destino não é o canal QA previsto.");
+assert.equal(origin.username+origin.password+origin.search+origin.hash,"");
+async function get(path){
+ const url=new URL(path,origin);
+ assert.equal(url.origin,origin.origin);
+ const response=await fetch(url,{redirect:"error",signal:AbortSignal.timeout(20000),headers:{"Cache-Control":"no-cache"}});
+ assert.ok(response.ok,"Hosting QA: "+path+" HTTP "+response.status);
+ return response;
+}
+const page=await get("/professional/index.html");
+assert.match(page.headers.get("content-type")||"",/text\/html/);
+const html=await page.text();
+assert.match(html,/SALÃO PREMIUM/);
+const script=html.match(/<script\b[^>]*\bsrc=["']([^"']+\.js)["']/i)?.[1];
+assert.ok(script,"Entrada JS não encontrada.");
+const js=await get(script);
+assert.match(js.headers.get("content-type")||"",/(?:javascript|ecmascript)/i);
+const worker=await get("/professional/sw.js");
+assert.match(worker.headers.get("content-type")||"",/(?:javascript|ecmascript)/i);
+assert.match(await worker.text(),/onBackgroundMessage/);
+const manifest=await get("/professional/manifest.webmanifest");
+const data=await manifest.json();
+assert.ok(data.name&&data.start_url,"Manifesto incompleto.");
+const icon=await get("/professional/icon.svg");
+assert.match(icon.headers.get("content-type")||"",/image\/svg\+xml/);
+const link=new URL("/professional/",origin).href;
+console.log("QA_PREVIEW_VERIFIED="+link);
+if(process.env.GITHUB_STEP_SUMMARY)appendFileSync(process.env.GITHUB_STEP_SUMMARY,"App Profissional QA publicado e assets verificados: "+link+"\n");
