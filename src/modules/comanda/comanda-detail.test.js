@@ -40,3 +40,8 @@ assert.doesNotMatch(unauthorizedProfessionalView.html,/Adicionar serviço/);
 assert.doesNotMatch(unauthorizedProfessionalView.html,/Adicionar produto/);
 
 process.stdout.write("Testes do componente Comanda: OK\n");
+
+const pendingView=buildComandaDetails({id:"order-1",order_number:12,status:"closed",total:25,subtotal:25,discount:0,created_at:"2026-11-13T10:00:00Z"},{items:[],payments:[],customer:null,professional:null,services:[],products:[],professionals:[]},{canManage:true,canPay:true,pendingPayment:{requestId:"key",amount:25,paymentMethod:"pix"}});
+assert.match(pendingView.html,/Recebimento pendente de confirmação/);assert.match(pendingView.html,/comanda-payment-retry/);assert.doesNotMatch(pendingView.html,/id="comanda-payment-form"/);
+const unavailableView=buildComandaDetails({id:"order-1",order_number:12,status:"open",total:25,subtotal:25,discount:0,created_at:"2026-11-13T10:00:00Z"},{items:[],payments:[],customer:null,professional:null,services:[],products:[],professionals:[]},{canManage:true,canPay:true,paymentStorageUnavailable:true});
+assert.match(unavailableView.html,/Recebimento indisponível/);assert.doesNotMatch(unavailableView.html,/id="comanda-payment-form"/);

@@ -8,6 +8,8 @@ import { userErrorMessage, reportError } from "../utils/errors.js";
 import { buildComandaDetails } from "../modules/comanda/components/comanda-detail.js";
 import { currency, statusLabel, paymentStatusLabel, paymentMethodLabel } from "../modules/comanda/comanda.formatters.js";
 import { cancelComanda } from "../modules/comanda/services/comanda-operations.js";
+import {createPaymentIntentStore} from "../modules/comanda/services/payment-intent.js";
+const protectedPayments=import.meta.env?.VITE_COMANDA_PAYMENT_IDEMPOTENCY==="true";
 
 /** @typedef {import("../types/tenant.types").TenantContext} TenantContext */
 /** @typedef {import("../types/operations.types").ServiceOrderRecord} ServiceOrderRecord */
@@ -44,7 +46,16 @@ function renderOrderDetails(host,order,data,orgId){
  const {items,payments,customer,professional,services,products,professionals}=data;
  const isProfessional=state.membership?.role==="professional";
  const canAddOwnService=isProfessional&&editable&&Boolean(order.assigned_professional_id)&&professionals.some(item=>item.id===order.assigned_professional_id);
+ let paymentStore=null,pendingPayment=null,paymentStorageUnavailable=false;
+ if(protectedPayments&&canPay()){
+  try{
+   if(!navigator.locks?.request)throw new Error("Navegador sem bloqueio de operações.");
+   paymentStore=createPaymentIntentStore({storage:window.localStorage,organizationId:orgId,userId:state.user?.id,orderId:order.id});
+   pendingPayment=paymentStore.read();
+  }catch{paymentStorageUnavailable=true;paymentStore=null;}
+ }
  const view=buildComandaDetails(order,data,{
+  pendingPayment,paymentStorageUnavailable,
   canManage:canManage(),canPay:canPay(),canAddOwnService,isProfessional,
   canEditItems:editable&&["owner","admin","manager"].includes(state.membership?.role)&&!data.payments.some(p=>p.status==="confirmed"),
   canRefund:["owner","admin","manager","finance"].includes(state.membership?.role)
@@ -54,7 +65,7 @@ function renderOrderDetails(host,order,data,orgId){
  clearAutocomplete();
  const version=loadVersion,key=orderContext;
  const isCurrent=()=>host.isConnected&&version===loadVersion&&key===JSON.stringify([state.organization?.id,state.user?.id,state.branch?.id||null]);
- cleanup=bindComandaDetails({host,order,orgId,supabase,tenant,toast,reportError,isCurrent,refresh:()=>isCurrent()?loadComandaPage(order.id):Promise.resolve(),editable,allowEdit,allowPay,canEditItems,canAddOwnService,isProfessional,professionals});
+ cleanup=bindComandaDetails({host,order,orgId,supabase,tenant,toast,reportError,isCurrent,refresh:()=>isCurrent()?loadComandaPage(order.id):Promise.resolve(),editable,allowEdit,allowPay,canEditItems,canAddOwnService,isProfessional,professionals,paymentStore,pendingPayment,protectedPayments,withPaymentLock:task=>navigator.locks.request(paymentStore.key,task)});
 }
 // Controla carregamento da lista ou dos detalhes de uma comanda.
 /** Carrega a lista de Comandas ou os detalhes de uma Comanda específica, incluindo itens e pagamentos. */

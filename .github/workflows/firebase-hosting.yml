@@ -41,6 +41,7 @@ jobs:
           VITE_PROFESSIONAL_ATTENDANCE: 'false'
           VITE_PROFESSIONAL_SERVICE_MANAGEMENT: 'false'
           VITE_PROFESSIONAL_UNIT_BOOKING: 'false'
+          VITE_COMANDA_PAYMENT_IDEMPOTENCY: 'false'
         run: npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:

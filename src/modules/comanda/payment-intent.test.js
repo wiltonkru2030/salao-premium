@@ -1,0 +1,23 @@
+/** Testa persistência, isolamento e recuperação de intenção sem rede ou dados reais. */
+import assert from "node:assert/strict";
+import {createPaymentIntentStore,isDefinitePaymentRejection} from "./services/payment-intent.js";
+const data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};
+const ids=["00000000-0000-4000-8000-000000000001","00000000-0000-4000-8000-000000000002","00000000-0000-4000-8000-000000000003","00000000-0000-4000-8000-000000000004","00000000-0000-4000-8000-000000000005"];
+const opts={storage,organizationId:ids[0],userId:ids[1],orderId:ids[2],makeId:()=>ids[3]};
+const first=createPaymentIntentStore(opts);
+assert.equal(first.read(),null);
+const intent=first.begin(25,"pix");
+const reopened=createPaymentIntentStore(opts);
+assert.deepEqual(reopened.read(),intent);
+assert.throws(()=>reopened.begin(25,"pix"),/pendente/);
+assert.equal(createPaymentIntentStore({...opts,userId:ids[4]}).read(),null);
+reopened.complete(ids[4]);assert.deepEqual(reopened.read(),intent);
+reopened.complete(ids[3]);assert.equal(reopened.read(),null);
+const second=createPaymentIntentStore({...opts,makeId:()=>ids[4]});
+assert.notEqual(second.begin(25,"pix").requestId,intent.requestId);
+data.set(second.key,"broken");assert.throws(()=>second.read(),/indisponível/);
+const unavailable=createPaymentIntentStore({...opts,storage:{getItem:()=>null,setItem:()=>{throw Error("storage")}}});
+assert.throws(()=>unavailable.begin(25,"pix"),/storage/);
+assert.equal(isDefinitePaymentRejection({code:"22023"}),true);
+assert.equal(isDefinitePaymentRejection({code:"NETWORK_ERROR"}),false);
+console.log("Intenções de recebimento: OK");

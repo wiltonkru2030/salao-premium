@@ -7,12 +7,13 @@ import {mountAutocomplete} from "../../../components/autocomplete.js";
 import {currency} from "../comanda.formatters.js";
 import {parseBRL} from "../../../utils/input-masks.js";
 import {registerComandaPayment} from "../services/comanda-operations.js";
+import {isDefinitePaymentRejection} from "../services/payment-intent.js";
 /**
  * Vincula eventos de itens e pagamentos ao detalhe atual.
  * @param {object} options Dependências, permissões e contexto do detalhe.
  * @returns {Array<Function>} Funções para limpar autocompletes.
  */
-export function bindComandaDetails({host,order,orgId,supabase,tenant,toast,reportError,refresh,isCurrent,editable,allowEdit,allowPay,canEditItems,canAddOwnService,isProfessional,professionals}){
+export function bindComandaDetails({host,order,orgId,supabase,tenant,toast,reportError,refresh,isCurrent,editable,allowEdit,allowPay,canEditItems,canAddOwnService,isProfessional,professionals,paymentStore=null,pendingPayment=null,protectedPayments=false,withPaymentLock=null}){
  let selectedService=null,selectedProduct=null;
  const cleanup=[];
  /** Impede gravações de uma tela ou sessão que não está mais ativa. */
@@ -98,21 +99,74 @@ export function bindComandaDetails({host,order,orgId,supabase,tenant,toast,repor
    finally{if(submit.isConnected){submit.disabled=false;submit.textContent="Adicionar produto";}}
   });
  }
- if(editable&&allowPay){
-  host.querySelector("#comanda-payment-form").addEventListener("submit",async e=>{
-   e.preventDefault();const form=e.currentTarget,submit=form.querySelector('[type="submit"]');if(!submit||submit.disabled)return;
-   if(!form.reportValidity())return;
-   const v=new FormData(form),amount=parseBRL(v.get("amount")),method=String(v.get("payment_method"));
-   if(!Number.isFinite(amount)||amount<=0){toast("Informe um valor válido.");return;}
-   submit.disabled=true;submit.textContent="Registrando…";
+ // Uma confirmação perdida não permite criar outra intenção automaticamente.
+ if(allowPay){
+  const paymentForm=host.querySelector("#comanda-payment-form");
+  const retry=host.querySelector("#comanda-payment-retry");
+  /** Executa uma intenção persistida ou nova, sem fallback após falha de rede. */
+  async function sendPayment({amount,method,button,existing=null}){
+   let intent=null,confirmed=false;
+   const label=button.textContent;
+   if(button.disabled)return;button.disabled=true;button.textContent="Registrando…";
    try{
     requireCurrent();
-    const {data,error}=await registerComandaPayment({supabase,orderId:order.id,amount,paymentMethod:method});
-    if(error)throw error;
-    toast(data?.closed?"Comanda quitada e finalizada. Estoque, caixa e comissões atualizados.":"Pagamento parcial registrado.");
-    await refresh();
-   }catch(error){reportError(error,{context:"Comanda > registrar pagamento"});}
-   finally{if(submit.isConnected){submit.disabled=false;submit.textContent="Registrar pagamento";}}
+    const {user,orgId:currentOrg}=await tenant();requireCurrent();
+    if(currentOrg!==orgId||!user?.id)throw new Error("A sessão de pagamento foi alterada.");
+    const run=async()=>{
+     requireCurrent();
+     if(protectedPayments){
+      if(!paymentStore)throw new Error("Proteção de pagamento indisponível.");
+      const prior=paymentStore.read();
+      if(existing){
+       if(prior?.requestId!==existing.requestId)throw new Error("A operação foi alterada. Atualize a comanda.");
+       intent=prior;
+      }else{
+       if(prior)throw new Error("Já existe um pagamento pendente. Atualize a comanda.");
+       intent=paymentStore.begin(amount,method);
+      }
+     }
+     const {data,error}=await registerComandaPayment({supabase,orderId:order.id,amount:intent?.amount??amount,paymentMethod:intent?.paymentMethod??method,requestId:intent?.requestId??null});
+     if(error){
+      // Primeira resposta comprovadamente rejeitada pelo banco: sem gravação nesta transação.
+      // Se já havia incerteza, nunca apagar a chave apenas por uma rejeição posterior.
+      if(intent&&!existing&&isDefinitePaymentRejection(error))paymentStore.complete(intent.requestId);
+      throw error;
+     }
+     if(protectedPayments&&!data?.payment_id)throw new Error("O servidor não confirmou o identificador do recebimento.");
+     confirmed=true;
+     if(intent)paymentStore.complete(intent.requestId);
+     if(isCurrent())toast(data?.replayed?"Recebimento anterior localizado. Conferindo o histórico.":data?.closed?"Comanda quitada e finalizada. Estoque, caixa e comissões atualizados.":"Pagamento parcial registrado.");
+    };
+    if(protectedPayments){
+     if(!paymentStore||!withPaymentLock)throw new Error("Proteção de pagamento indisponível.");
+     await withPaymentLock(run);
+    }else await run();
+   }catch(error){
+    if(isCurrent()){
+     if(confirmed)toast("Recebimento confirmado. Atualize a comanda antes de registrar outro.");
+     else if(intent&&protectedPayments&&!isDefinitePaymentRejection(error))toast("Confirmação não recebida. Não registre outro pagamento; confira o histórico e repita a mesma operação.");
+     reportError(error,{context:"Comanda > registrar pagamento"});
+    }
+   }finally{
+    // Recarrega o detalhe após qualquer envio protegido para mostrar intenção pendente.
+    // Nunca reativa o botão antigo depois de confirmação ou tentativa ambígua.
+    if(isCurrent()&&(confirmed||protectedPayments)){
+     try{await refresh();}catch{if(isCurrent())toast("Atualize a comanda para conferir o recebimento.");}
+    }else if(!confirmed&&button.isConnected&&isCurrent()){
+     button.disabled=false;button.textContent=label;
+    }
+   }
+  }
+  if(editable&&paymentForm)paymentForm.addEventListener("submit",async e=>{
+   e.preventDefault();const form=e.currentTarget,button=form.querySelector('[type="submit"]');
+   if(!button||button.disabled||!form.reportValidity())return;
+   const v=new FormData(form),amount=parseBRL(v.get("amount")),method=String(v.get("payment_method"));
+   if(!Number.isFinite(amount)||amount<=0){toast("Informe um valor válido.");return;}
+   await sendPayment({amount,method,button});
+  });
+  if(retry&&pendingPayment)retry.addEventListener("click",async()=>{
+   if(retry.disabled||!window.confirm("Repetir a mesma intenção de recebimento? Confira se o pagamento foi realmente recebido. Não será gerado um novo identificador."))return;
+   await sendPayment({amount:pendingPayment.amount,method:pendingPayment.paymentMethod,button:retry,existing:pendingPayment});
   });
  }
  return cleanup;
