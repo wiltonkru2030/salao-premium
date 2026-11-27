@@ -9,7 +9,7 @@ export function createProfessionalState(now=new Date()){
   orders:[],ordersStatus:"idle",selectedOrder:null,orderItems:[],orderItemsStatus:"idle",
   services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",
   commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,
-  notificationsEnabled:false,notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,notice:""
+  pushStatus:"idle",notificationsEnabled:false,notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,notice:""
  };
 }
 /** Limpa inclusive campos adicionados dinamicamente sem substituir a referência dos controladores. */

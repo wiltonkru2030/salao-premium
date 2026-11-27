@@ -1,5 +1,6 @@
 /** App Profissional (PWA): autenticação, sessão individual, Agenda, Comandas, Comissões e configurações do próprio perfil. */
 import {createProfessionalState,resetProfessionalState} from "./workspace-state.js";
+import {createProfessionalPush} from "./push.service.js";
 import {canUseSelectedUnit} from "./unit-context.js";
 import {createCustomersController} from "./controllers/customers.controller.js";
 import {createServicesController} from "./controllers/services.controller.js";
@@ -64,7 +65,8 @@ const {loadNotifications,readNotifications}=createNotificationsController({state
 const {loadProfilePreferences,submitProfilePreferences}=createProfileController({state,supabase,getEpoch:()=>sessionEpoch,render,showNotice,profilePreferencesEnabled});
 const {loadOrders,loadCommissions,chooseOrder}=createFinancialController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError});
 const {applyAppointmentStatus,applyAttendance,openAttendanceOrder,applyAppointmentReschedule,applyNewAppointment}=createAttendanceController({state,supabase,getEpoch:()=>sessionEpoch,showNotice,loadAppointments,loadOrders,chooseOrder,appointmentStatusActions,appointmentStatusEnabled,attendanceEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled});
-const session=createSessionController({state,root,supabase,getEpoch:()=>sessionEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled,explicitBranchEnabled});
+const push=createProfessionalPush({client:supabase,onMessage:()=>{if(state.user&&state.orgId)void loadNotifications();}});
+const session=createSessionController({state,root,supabase,getEpoch:()=>sessionEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled,explicitBranchEnabled,beforeExit:orgId=>push.configured?push.disable(orgId):Promise.resolve()});
 const {switchContext,endSession,boot}=session;
 const {navigate,refreshOrders}=createNavigationController({state,root,getEpoch:()=>sessionEpoch,render,showNotice,loadOrders,loadServices,loadServiceCatalog,canManageServices,loadCustomers,loadCommissions,loadNotifications,loadProfilePreferences,profilePreferencesEnabled});
 
@@ -91,7 +93,7 @@ function render(){
  if(!state.user||!state.orgId||(state.role==="professional"&&!state.branchId))return;
  if(!allowedProfessionalPages(state).includes(state.page))state.page="Agenda";
  clearAutocomplete();
- const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state,{managementEnabled:orderManagementEnabled}):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services,{manage:canManageServices(),catalog:state.serviceCatalog,editor:state.serviceEditor,status:state.serviceCatalogStatus}):state.page==="Clientes"?renderProfessionalCustomers({...state,canManageCustomers:customerRegistrationEnabled&&canUseSelectedUnit(state)}):state.page==="Notificações"?renderNotificationsView(state):state.page==="Perfil"?profileView(state,{preferencesEnabled:profilePreferencesEnabled}):settingsView(state, appearance.preference,{preferencesEnabled:profilePreferencesEnabled});
+ const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state,{managementEnabled:orderManagementEnabled}):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services,{manage:canManageServices(),catalog:state.serviceCatalog,editor:state.serviceEditor,status:state.serviceCatalogStatus}):state.page==="Clientes"?renderProfessionalCustomers({...state,canManageCustomers:customerRegistrationEnabled&&canUseSelectedUnit(state)}):state.page==="Notificações"?renderNotificationsView(state):state.page==="Perfil"?profileView(state,{preferencesEnabled:profilePreferencesEnabled}):settingsView(state, appearance.preference,{preferencesEnabled:profilePreferencesEnabled,pushConfigured:push.configured});
  shell(content);
  if(state.page==="Comandas"&&state.selectedOrder&&state.role==="professional"&&state.professional)bindAutocomplete();
 }
@@ -195,6 +197,12 @@ root.addEventListener("click",async event=>{
    if(filter){if(state.notificationsStatus==="loading")return;state.notificationsFilter=filter.dataset.notificationFilter==="unread";await loadNotifications();return;}
    const mark=event.target.closest("[data-notification-read]");
    if(mark){await readNotifications(mark,mark.dataset.notificationRead);return;}
+  }
+  if((action==="enable-professional-push"||action==="disable-professional-push")&&state.page==="Configurações"&&state.role==="professional"&&push.configured){
+   const control=event.target.closest("[data-action]");if(control.disabled||state.pushStatus==="loading")return;
+   const epoch=sessionEpoch,orgId=state.orgId;control.disabled=true;state.pushStatus="loading";
+   try{const enabled=action==="enable-professional-push"?await push.enable(orgId,()=>epoch===sessionEpoch):await push.disable(orgId);if(epoch!==sessionEpoch)return;state.pushStatus=enabled?"enabled":"disabled";showNotice(enabled?"Notificações ativadas neste dispositivo.":"Notificações desativadas neste dispositivo.");}
+   catch(error){if(epoch===sessionEpoch){state.pushStatus="error";showNotice(error.message);}}finally{if(control.isConnected)control.disabled=false;}return;
   }
   if(action==="refresh-professional-profile"&&["Perfil","Configurações"].includes(state.page)){await loadProfilePreferences();return;}
   if(state.page==="Comissões"){

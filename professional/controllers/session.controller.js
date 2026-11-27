@@ -6,14 +6,16 @@ import {fetchProfessionalBranches,selectProfessionalBranch} from "../branches.se
 import {salonCalendarDate} from "../utils/salon-time.js";
 import {allowedProfessionalPages} from "../access.rules.js";
 import {escapeHtml as esc} from "../utils/formatters.js";
+import {registerProfessionalWorker} from "../push.service.js";
 import {renderPlatformMark} from "../../src/components/platform-mark.js";
 /** Coordena acesso com geração injetada e expõe somente operações do ciclo de sessão. */
-export function createSessionController({state,root,supabase,getEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled,explicitBranchEnabled=false}){
+export function createSessionController({state,root,supabase,getEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled,explicitBranchEnabled=false,beforeExit=async()=>{}}){
  let recheckingSession=false,endingSession=false,loginPending=false,contextPending=false;
  /** Limpa a interface imediatamente; encerra apenas a sessão profissional local. */
  async function endSession(notice=""){
   if(endingSession)return;
-  endingSession=true;clearPrivateState();state.notice=notice;loginView();
+  endingSession=true;const orgId=state.orgId;clearPrivateState();state.notice=notice;loginView();
+  try{await Promise.race([beforeExit(orgId),new Promise(resolve=>setTimeout(resolve,3000))]);}catch{/* logout não depende de push */}
   try{const {error}=await supabase.auth.signOut({scope:"local"});if(error)throw error;}
   catch{state.notice=notice||"Não foi possível confirmar o encerramento da sessão. Confira a conexão.";loginView();}
   finally{endingSession=false;}
@@ -81,7 +83,7 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
  async function switchContext(orgId=null,branchId=null){
   if(contextPending||endingSession||recheckingSession||loginPending||!state.user)return;
   contextPending=true;
-  try{await loadBase(orgId,branchId);}
+  try{if(state.orgId&&state.orgId!==orgId)await beforeExit(state.orgId).catch(()=>{});await loadBase(orgId,branchId); }
   finally{contextPending=false;}
  }
  /** Oculta dados quando não é possível verificar a conta; permite retomar sessão válida. */
@@ -122,7 +124,7 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
   if(recheckingSession||endingSession||loginPending||contextPending)return;
   recheckingSession=true;const epoch=getEpoch();
   try{
-   if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"}).catch(()=>{});
+   if(globalThis.navigator?.serviceWorker)registerProfessionalWorker().catch(()=>{});
    const user=await verifyProfessionalSession(supabase);
    if(epoch!==getEpoch())return;
    state.user=user;
@@ -183,7 +185,7 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
  /** Instala eventos externos de sessão uma única vez, fora do callback do SDK. */
  function start(){
   supabase.auth.onAuthStateChange(event=>{
-   if(event==="SIGNED_OUT"&&!endingSession){clearPrivateState();state.notice="Sua sessão terminou. Entre novamente.";loginView();}
+   if(event==="SIGNED_OUT"&&!endingSession){void beforeExit(state.orgId).catch(()=>{});clearPrivateState();state.notice="Sua sessão terminou. Entre novamente.";loginView();}
   });
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")void recheckSession();});
   return boot();
