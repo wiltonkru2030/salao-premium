@@ -331,3 +331,5 @@ Revisão de sessão: verificação ao retornar ao app, mensagens seguras e troca
 Preparação da publicação: [inventário e critérios de liberação do App Profissional](docs/PUBLICACAO-APP-PROFISSIONAL.md). A validação visual e a reconciliação de migrations são pendências; não executar publicação com funcionalidades novas sem suas dependências homologadas.
 
 Reconciliação da primeira onda (clientes, serviços e agenda): pré-verificação somente leitura executada em QA e produção. Consulte [relatório](docs/PUBLICACAO-APP-PROFISSIONAL.md) e [SQL](docs/sql/professional-wave1-preflight.sql). Publicação segue bloqueada.
+
+Segurança de unidades: homologado cenário de gerente, recepção e proprietário em QA. Identificado pacote de 17 políticas de escopo ausentes em produção. Consulte [roteiro de reconciliação](docs/PUBLICACAO-APP-PROFISSIONAL.md) antes de atualizar o banco.

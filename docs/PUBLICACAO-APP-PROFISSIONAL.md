@@ -50,3 +50,25 @@ Comparação em modo somente leitura: 29 políticas RLS em QA e 26 em produção
 Teste integrado [professional-isolation-qa.sql](sql/professional-isolation-qa.sql) executado em QA com três profissionais fictícios, duas unidades e outra organização: agenda/comanda alheias ocultas; edição de serviço de outro autor e atendimento alheio negados; notificação alheia inacessível e marcação retorna zero; carteira da mesma unidade compartilhada intencionalmente; clientes e serviços da outra filial ocultos, edição/vínculo/agendamento cruzados negados; agendamento na filial própria aprovado; acesso a outro salão negado. Todos os registros revertidos. Advisors QA: quatro INFO de tabelas privadas sem política direta, intencionalmente fechadas. Não equivale a auditoria integral.
 
 O Chromium instalou e executou os cenários no runner corrigido, mas a validação falhou em quatro interações de fechar menu móvel: seletor genérico escolhia a sobreposição por trás do menu. Ajustado o seletor para o botão interno da barra lateral; nova execução pendente. A revisão estética das capturas e teste autenticado continuam pendentes. Produção não alterada.
+
+## Reconciliação do pacote de escopo de funcionários
+
+A consulta ampliada identificou 17 políticas restritivas de unidade em QA e zero em produção: Agenda (appointments, appointment_blocks, appointment_groups, appointment_waitlist), branches, customers, Caixa (cash_movements, cash_registers), expenses, estoque (inventory_movements), vendas (sales, sale_items), comandas (service_orders, service_order_items, service_order_payments), pacotes (service_packages, service_package_items). A tabela branch_memberships e a função private.has_staff_branch_scope também não existem em produção. O recorte anterior de três políticas não representava o pacote completo.
+
+Pré-verificação somente leitura: na consulta de 26/11, produção tinha três vínculos ativos owner e nenhum gerente/recepcionista ativo; QA não tinha vínculos ativos desses papéis antes dos testes. Contagens são uma fotografia, não autorização para implantação. Repetir a consulta imediatamente antes de qualquer atualização. Se houver funcionários ativos sem unidade atribuída, interromper e cadastrar a unidade real com autorização do proprietário; não atribuir matriz automaticamente.
+
+### Ordem de ensaio (não executar diretamente em produção)
+
+1. `20261124121304_scope_staff_to_assigned_branches.sql`: tabela de atribuições, chaves, RLS, helper. Conferir grants e compatibilidade dos objetos existentes.
+2. Popular atribuições autorizadas (quando necessárias) e testar proprietários e gerentes/recepção. Reexecutar a pré-verificação.
+3. `20261124121700_enforce_unit_scope_for_staff.sql`: políticas de unidades, clientes, agenda, Caixa e despesas; RPCs relacionadas.
+4. `20261124121910_constrain_linked_financial_staff_operations.sql`: comandas, pagamentos, vendas, estoque e RPCs financeiras.
+5. `20261124122045_scope_agenda_workflows_to_assigned_units.sql`: espera, grupos e início de atendimento.
+6. `20261124122253_scope_service_package_management.sql`: pacotes.
+7. `20261124214835_scope_expense_cancellation_to_assigned_units.sql`: cancelamento de despesas. Revisar a migration de CNPJ alfanumérico separadamente, por não integrar o escopo de funcionários.
+
+Esses nomes são os arquivos locais, não os números do histórico remoto QA. Reconciliar por conteúdo, sem renomear histórico nem reaplicar por versão automaticamente. A ordem acima é um roteiro para ensaio: funções redefinidas em 27/11 (inclusive recebimentos e arredondamento de comissão) precisam ser conciliadas com as definições finais; não reverter correções posteriores. Backup verificável e ensaio numa cópia do estado real de produção ainda não foram realizados. Não remover políticas restritivas em produção como rollback improvisado; preservar segurança e usar recuperação revisada.
+
+### Evidência de teste
+
+[staff-branch-isolation-qa.sql](sql/staff-branch-isolation-qa.sql) aprovado em QA com três contas fictícias, matriz e filial. Proprietário consulta todos os clientes, inclusive central, atribui unidades e abre dois caixas. Gerente consulta e edita cliente da própria unidade; não vê a outra, não transfere registro para unidade não autorizada, não se autoatribui unidade e não consulta/fecha Caixa alheio. Recepção consulta somente sua unidade e seu Caixa; após revogação de atribuição perde acesso mesmo com claims antigas. Nenhum Caixa foi fechado indevidamente. Todos os registros revertidos. Testes de espera, pacotes, cancelamento de despesas, concorrência e reconciliação das definições finais permanecem pendentes. [SQL de pré-verificação](sql/staff-branch-release-preflight.sql) registra as consultas para repetir. Produção permanece inalterada.
