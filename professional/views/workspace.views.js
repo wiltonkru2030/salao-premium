@@ -1,7 +1,8 @@
 /** Views do aplicativo profissional: comandas, comissões e configurações. Recebem estado e retornam HTML sem efeitos colaterais. */
 import { renderPlatformAppearance } from "../../src/components/platform-appearance.js";
 import {escapeHtml as esc,formatMoney as money,formatStatus as statusLabel,formatDateTime as dateTimeLabel} from "../utils/formatters.js";
-import {canRegisterProfessionalService,summarizeProfessionalCommissions} from "../access.rules.js";
+import {canRegisterProfessionalService} from "../access.rules.js";
+export {commissionsView} from "./commissions.views.js";
 import {renderManagedOrder} from "./order-management.views.js";
 // Apresenta comandas autorizadas e seus detalhes.
 export function ordersView(state,{managementEnabled=false}={}){
@@ -24,17 +25,6 @@ export function ordersView(state,{managementEnabled=false}={}){
  '</strong><span class="tag">'+esc(statusLabel(o.status))+'</span></span><span class="detail-row"><span>Total</span><b>'+money(o.total)+'</b></span></button>').join(""):
  '<div class="empty sp-content-surface sp-content-surface--empty">Nenhuma comanda disponível.</div>')+'</section>';
 
-}
-// Apresenta valores e histórico de comissões do profissional.
-export function commissionsView(state){
- const summary=summarizeProfessionalCommissions(state.commissions,state.commissionPayouts);
- const payoutTotal=summary.received;
- return '<div class="section-title"><h2>Comissões</h2><span class="muted">Valores, histórico e pagamentos</span></div>'+
- '<section class="detail sp-content-surface professional-commission-summary"><div class="professional-balance"><span>Saldo líquido</span><strong>'+money(summary.open)+'</strong></div><div class="detail-row"><span>Créditos em aberto</span><b>'+money(summary.credit)+'</b></div><div class="detail-row"><span>Débitos por estorno</span><b>'+money(summary.debit)+'</b></div></section>'+
- '<div class="section-title"><h2>Histórico de comissões</h2></div>'+
- (state.commissions.length?state.commissions.map(c=>'<article class="commission sp-content-surface"><strong>'+money(c.amount)+'</strong><div class="meta">'+(Number(c.amount)<0?"Débito por estorno · ":"")+'Base: '+money(c.base_amount)+' · Taxa: '+Number(c.rate)+'%<br>Registro: '+dateTimeLabel(c.created_at)+(c.paid_at?' · Pagamento: '+dateTimeLabel(c.paid_at):'')+'</div><span class="tag">'+esc(statusLabel(c.status))+'</span></article>').join(""):'<div class="empty sp-content-surface sp-content-surface--empty">Nenhuma comissão registrada.</div>')+
- '<div class="section-title"><h2>Pagamentos recebidos</h2><span class="muted">'+money(payoutTotal)+' em pagamentos</span></div>'+
- (state.commissionPayouts.length?state.commissionPayouts.map(p=>'<article class="commission sp-content-surface"><strong>'+money(p.amount)+'</strong><div class="meta">'+esc(p.payment_method)+' · '+dateTimeLabel(p.paid_at)+(p.notes?' · '+esc(p.notes):'')+'</div><span class="tag success">Pago</span></article>').join(""):'<div class="empty sp-content-surface sp-content-surface--empty">Nenhum pagamento de comissão registrado.</div>');
 }
 /** Apresenta a identificação somente para consulta; as configurações ficam dentro do Perfil. */
 export function profileView(state){

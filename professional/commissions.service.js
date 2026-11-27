@@ -67,14 +67,14 @@ export async function fetchProfessionalCommissions({ client, organizationId, pro
   validateContext(client, organizationId, professionalId);
 
   const commissionsQuery = () => client.from("commissions")
-    .select("id,base_amount,rate,amount,status,paid_at,created_at,professional_id,payout_id")
+    .select("id,base_amount,rate,amount,status,paid_at,created_at,professional_id,payout_id,item_type,service_order_payment_id,service_order_item_id,service_order_items!commissions_service_order_item_id_fkey(description)")
     .eq("org_id", organizationId)
     .eq("professional_id", professionalId)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false });
 
   const payoutsQuery = () => client.from("commission_payouts")
-    .select("id,professional_id,amount,payment_method,paid_at,notes")
+    .select("id,professional_id,amount,payment_method,paid_at,notes,cash_movement_id")
     .eq("org_id", organizationId)
     .eq("professional_id", professionalId)
     .order("paid_at", { ascending: false })

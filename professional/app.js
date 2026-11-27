@@ -47,7 +47,7 @@ const state={
  user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,organization:null,
  page:"Agenda",month:new Date(new Date().getFullYear(),new Date().getMonth(),1),
  selectedDate:new Date(),selectedAppointment:null,appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",
- commissions:[],commissionPayouts:[],selectedOrder:null,orderItems:[],notice:""
+ commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedOrder:null,orderItems:[],notice:""
 };
 let disposeAutocomplete=null;
 let sessionEpoch=0;
@@ -64,7 +64,7 @@ const unitBookingEnabled = import.meta.env.VITE_PROFESSIONAL_UNIT_BOOKING === "t
 const rescheduleEnabled = import.meta.env.VITE_PROFESSIONAL_RESCHEDULE === "true";
 const serviceLock={active:false,operation:null};
 /** Limpa dados privados antes de exibir a tela de acesso. */
-function clearPrivateState(){sessionEpoch++;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();Object.assign(state,{user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,organization:null,page:"Agenda",appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],selectedAppointment:null,selectedOrder:null,orderItems:[]});}
+function clearPrivateState(){sessionEpoch++;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();Object.assign(state,{user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,organization:null,page:"Agenda",appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedAppointment:null,selectedOrder:null,orderItems:[]});}
 async function endSession(notice=""){clearPrivateState();state.notice=notice;loginView();try{const {error}=await supabase.auth.signOut({scope:"local"});if(error)throw error;}catch(error){reportError(error,{context:"App Profissional > encerrar sessão"});}}
 
 // Formatadores puros são mantidos em professional/utils/formatters.js.
@@ -157,12 +157,12 @@ async function loadBase(selectedOrgId=null){
  if(!contexts.length)throw new Error("Não foi possível identificar um salão autorizado.");
  const context=selectedOrgId?contexts.find(c=>c.orgId===selectedOrgId):contexts.length===1?contexts[0]:null;
  if(!context){
-  Object.assign(state,{orgId:null,role:null,scope:"none",professional:null,organization:null,profile:null,appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],selectedAppointment:null,selectedOrder:null,orderItems:[]});
+  Object.assign(state,{orgId:null,role:null,scope:"none",professional:null,organization:null,profile:null,appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedAppointment:null,selectedOrder:null,orderItems:[]});
   clearAutocomplete();
   root.innerHTML='<main class="login"><div class="brand sp-professional-brand">' + renderPlatformMark() + '<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Escolha o salão</h1><p>Seus dados ficam separados por estabelecimento.</p>'+contexts.map(c=>'<button type="button" class="primary" data-context-org="'+esc(c.orgId)+'">'+esc(orgs.get(c.orgId)?.name||"Salão")+'</button>').join("")+'<button class="secondary" data-action="logout">Sair</button></main>';
   return;
  }
- Object.assign(state,context,{organization:orgs.get(context.orgId),page:"Agenda",selectedAppointment:null,selectedOrder:null,orderItems:[],appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[]});
+ Object.assign(state,context,{organization:orgs.get(context.orgId),page:"Agenda",selectedAppointment:null,selectedOrder:null,orderItems:[],appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null});
  state.selectedDate=salonCalendarDate(new Date(),state.organization?.timezone);
  state.month=new Date(state.selectedDate.getFullYear(),state.selectedDate.getMonth(),1);
  const profileResult=await supabase.from("profiles").select("full_name,phone").eq("id",userId).maybeSingle();
@@ -261,14 +261,22 @@ async function changeServiceLink(button){
 }
 // Carrega comissões e pagamentos do profissional autenticado.
 async function loadCommissions(){
- if(!state.professional?.id)return;
+ if(!state.professional?.id||state.commissionStatus==="loading")return;
  const epoch=sessionEpoch;
- const result=await fetchProfessionalCommissions({
-  client:supabase,organizationId:state.orgId,professionalId:state.professional?.id
- });
- if(epoch!==sessionEpoch)return;
- state.commissions=result.commissions;
- state.commissionPayouts=result.payouts;
+ state.commissionStatus="loading";
+ if(state.page==="Comissões")render();
+ try{
+  const result=await fetchProfessionalCommissions({
+   client:supabase,organizationId:state.orgId,professionalId:state.professional.id
+  });
+  if(epoch!==sessionEpoch)return;
+  state.commissions=result.commissions;state.commissionPayouts=result.payouts;state.commissionStatus="ready";
+ }catch(error){
+  if(epoch!==sessionEpoch)return;
+  state.commissions=[];state.commissionPayouts=[];state.commissionStatus="error";
+  reportError(error,{context:"App Profissional > extrato de comissões"});
+ }
+ if(epoch===sessionEpoch&&state.page==="Comissões")render();
 }
 async function loadOrderItems(){
  if(!state.selectedOrder)return;
@@ -408,6 +416,13 @@ root.addEventListener("click",async event=>{
    if(action==="refresh-professional-customers"){state.selectedCustomer=null;await loadCustomers();return;}
    if(action==="retry-professional-customer-history"&&state.selectedCustomer){await openCustomer(state.selectedCustomer.id);return;}
   }
+  if(state.page==="Comissões"){
+   if(action==="refresh-professional-commissions"){state.selectedPayout=null;await loadCommissions();return;}
+   if(action==="reset-professional-commission-filters"){state.commissionFilters={from:"",to:"",status:"all",type:"all"};render();return;}
+   if(action==="back-professional-payout"){state.selectedPayout=null;render();return;}
+   const payout=event.target.closest("[data-professional-payout]");
+   if(payout){state.selectedPayout=state.commissionPayouts.find(row=>row.id===payout.dataset.professionalPayout)||null;render();return;}
+  }
   if(action==="retry-professional-order-items"&&state.page==="Comandas"&&state.selectedOrder){await chooseOrder(state.selectedOrder.id);return;}
   if(action==="refresh-professional-orders"&&state.page==="Comandas"){
    await loadOrders();
@@ -427,7 +442,7 @@ root.addEventListener("click",async event=>{
   if(await handleAgendaClick({event,state,loadAppointments,render}))return;
   if(epoch!==sessionEpoch)return;
   const page=event.target.closest("[data-page]");
- if(page){if(!allowedProfessionalPages(state).includes(page.dataset.page))return;const menuWasOpen=root.querySelector(".app-shell.is-menu-open");state.page=page.dataset.page;state.selectedOrder=null;state.selectedAppointment=null;state.selectedCustomer=null;state.customerEditor=null;state.serviceEditor=null;state.customerHistory=[];state.notice="";render();if(menuWasOpen)root.querySelector("[data-action=open-professional-menu]")?.focus();if(state.page==="Clientes")await loadCustomers();if(state.page==="Serviços"&&canManageServices())await loadServiceCatalog();return;}
+ if(page){if(!allowedProfessionalPages(state).includes(page.dataset.page))return;const menuWasOpen=root.querySelector(".app-shell.is-menu-open");state.page=page.dataset.page;state.selectedOrder=null;state.selectedAppointment=null;state.selectedCustomer=null;state.customerEditor=null;state.serviceEditor=null;state.customerHistory=[];state.notice="";render();if(menuWasOpen)root.querySelector("[data-action=open-professional-menu]")?.focus();if(state.page==="Comissões"){state.selectedPayout=null;await loadCommissions();}if(state.page==="Clientes")await loadCustomers();if(state.page==="Serviços"&&canManageServices())await loadServiceCatalog();return;}
  const order=event.target.closest("[data-order]");
  if(order&&allowedProfessionalPages(state).includes("Comandas")){await chooseOrder(order.dataset.order);return;}
  if(action==="back-orders"){state.selectedOrder=null;state.orderItems=[];render();}
@@ -561,6 +576,14 @@ async function submitProfessionalService(form){
  finally{button.disabled=false;}
 }
 root.addEventListener("submit",async event=>{
+ if(event.target.matches("#professional-commission-filter")){
+  event.preventDefault();
+  if(state.page!=="Comissões")return;
+  const values=new FormData(event.target),from=String(values.get("from")||""),to=String(values.get("to")||"");
+  const error=event.target.querySelector("[data-commission-filter-error]");
+  if(from&&to&&from>to){error.textContent="A data inicial deve ser anterior ou igual à final.";error.hidden=false;return;}
+  state.commissionFilters={from,to,status:String(values.get("status")||"all"),type:String(values.get("type")||"all")};render();return;
+ }
  if(event.target.matches("#professional-service-form")){event.preventDefault();await submitProfessionalService(event.target);return;}
  if(event.target.matches("#professional-customer-form")){
   event.preventDefault();await submitProfessionalCustomer(event.target);return;
