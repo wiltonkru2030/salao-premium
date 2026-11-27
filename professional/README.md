@@ -87,3 +87,6 @@ Arquivos e contratos localizados no Git, não homologados nesta revisão. Exist�
 ## Retomada da meta aprovada — 26/11/2026
 
 Perfil disponível na navegação, com Configurações acessíveis por ele. Para o papel professional, nome e telefone ficam somente para consulta na interface e o controlador não executa a antiga ação de edição. A proteção definitiva deve ser confirmada no banco. Busca instantânea nos serviços vinculados usa o filtro compartilhado. Ainda pendentes: Pix, e-mail e foto por URL com contratos seguros; CRUD e busca de clientes por unidade; cadastro rápido, histórico, CRUD/vínculos de serviços e homologação do fluxo de atendimento/comanda. Não considerar concluído sem testes e validação no navegador.
+
+### Carteira profissional — consulta
+A página Clientes usa a tabela de clientes sob RLS, restringida às unidades ativas acessíveis, e não mais o mês da Agenda. A ficha exibe até 50 atendimentos próprios nas unidades autorizadas. Cadastro, edição, inativação e seleção de cliente sem atendimento anterior na Agenda ainda exigem contratos seguros no servidor; não foram liberados por esta alteração. Teste: `npm run test:professional-customers-service`.

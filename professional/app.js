@@ -23,6 +23,7 @@ import {
 import { renderProfessionalPasswordChangeView, renderProfessionalLoginView } from "./views/auth.views.js";
 import {ordersView,commissionsView,profileView,settingsView} from "./views/workspace.views.js";
 import { renderProfessionalCustomers } from "./views/customers.views.js";
+import {fetchProfessionalCustomers,fetchProfessionalCustomerHistory} from "./customers.service.js";
 import { renderProfessionalServices } from "./views/services.views.js";
 import {bindProfessionalBookingSearch} from "./booking-search.js";
 import { renderProfessionalBooking } from "./views/booking.views.js";
@@ -43,7 +44,7 @@ const root=document.querySelector("#professional-app");
 const state={
  user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,organization:null,
  page:"Agenda",month:new Date(new Date().getFullYear(),new Date().getMonth(),1),
- selectedDate:new Date(),selectedAppointment:null,appointments:[],orders:[],services:[],
+ selectedDate:new Date(),selectedAppointment:null,appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],
  commissions:[],commissionPayouts:[],selectedOrder:null,orderItems:[],notice:""
 };
 let disposeAutocomplete=null;
@@ -56,7 +57,7 @@ const bookingEnabled = import.meta.env.VITE_PROFESSIONAL_BOOKING === "true";
 const rescheduleEnabled = import.meta.env.VITE_PROFESSIONAL_RESCHEDULE === "true";
 const serviceLock={active:false,operation:null};
 /** Limpa dados privados antes de exibir a tela de acesso. */
-function clearPrivateState(){sessionEpoch++;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();Object.assign(state,{user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,organization:null,page:"Agenda",appointments:[],orders:[],services:[],commissions:[],commissionPayouts:[],selectedAppointment:null,selectedOrder:null,orderItems:[]});}
+function clearPrivateState(){sessionEpoch++;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();Object.assign(state,{user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,organization:null,page:"Agenda",appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],commissions:[],commissionPayouts:[],selectedAppointment:null,selectedOrder:null,orderItems:[]});}
 async function endSession(notice=""){clearPrivateState();state.notice=notice;loginView();try{const {error}=await supabase.auth.signOut({scope:"local"});if(error)throw error;}catch(error){reportError(error,{context:"App Profissional > encerrar sessão"});}}
 
 // Formatadores puros são mantidos em professional/utils/formatters.js.
@@ -125,7 +126,7 @@ function render(){
  if(!state.user||!state.orgId)return;
  if(!allowedProfessionalPages(state).includes(state.page))state.page="Agenda";
  clearAutocomplete();
- const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services):state.page==="Clientes"?renderProfessionalCustomers(state.appointments,state.professional?.id,monthLabel(state.month)):state.page==="Perfil"?profileView(state):settingsView(state, appearance.preference);
+ const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services):state.page==="Clientes"?renderProfessionalCustomers(state):state.page==="Perfil"?profileView(state):settingsView(state, appearance.preference);
  shell(content);
  if(state.page==="Comandas"&&state.selectedOrder&&state.role==="professional"&&state.professional)bindAutocomplete();
 }
@@ -149,12 +150,12 @@ async function loadBase(selectedOrgId=null){
  if(!contexts.length)throw new Error("Não foi possível identificar um salão autorizado.");
  const context=selectedOrgId?contexts.find(c=>c.orgId===selectedOrgId):contexts.length===1?contexts[0]:null;
  if(!context){
-  Object.assign(state,{orgId:null,role:null,scope:"none",professional:null,organization:null,profile:null,appointments:[],orders:[],services:[],commissions:[],commissionPayouts:[],selectedAppointment:null,selectedOrder:null,orderItems:[]});
+  Object.assign(state,{orgId:null,role:null,scope:"none",professional:null,organization:null,profile:null,appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],commissions:[],commissionPayouts:[],selectedAppointment:null,selectedOrder:null,orderItems:[]});
   clearAutocomplete();
   root.innerHTML='<main class="login"><div class="brand sp-professional-brand">' + renderPlatformMark() + '<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Escolha o salão</h1><p>Seus dados ficam separados por estabelecimento.</p>'+contexts.map(c=>'<button type="button" class="primary" data-context-org="'+esc(c.orgId)+'">'+esc(orgs.get(c.orgId)?.name||"Salão")+'</button>').join("")+'<button class="secondary" data-action="logout">Sair</button></main>';
   return;
  }
- Object.assign(state,context,{organization:orgs.get(context.orgId),page:"Agenda",selectedAppointment:null,selectedOrder:null,orderItems:[],appointments:[],orders:[],services:[],commissions:[],commissionPayouts:[]});
+ Object.assign(state,context,{organization:orgs.get(context.orgId),page:"Agenda",selectedAppointment:null,selectedOrder:null,orderItems:[],appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],commissions:[],commissionPayouts:[]});
  state.selectedDate=salonCalendarDate(new Date(),state.organization?.timezone);
  state.month=new Date(state.selectedDate.getFullYear(),state.selectedDate.getMonth(),1);
  const profileResult=await supabase.from("profiles").select("full_name,phone").eq("id",userId).maybeSingle();
@@ -175,6 +176,36 @@ async function loadAppointments(){
   month,timezone:salonTimezone(state.organization?.timezone),professionalId:state.scope==='self'?state.professional?.id:null
  });
  if(epoch===sessionEpoch&&month===state.month)state.appointments=appointments;
+}
+/** Carrega a carteira somente ao abrir Clientes; descarta respostas de sessões encerradas. */
+async function loadCustomers(){
+ const epoch=sessionEpoch;
+ state.customersStatus="loading";render();
+ try {
+  const rows=await fetchProfessionalCustomers({client:supabase,organizationId:state.orgId,professional:state.professional});
+  if(epoch!==sessionEpoch)return;
+  state.customers=rows;state.customersStatus="ready";
+ }catch(error){
+  if(epoch!==sessionEpoch)return;
+  state.customers=[];state.customersStatus="error";reportError(error,{context:"App Profissional > clientes"});
+ }
+ if(epoch===sessionEpoch&&state.page==="Clientes")render();
+}
+/** Abre ficha autorizada e consulta os últimos atendimentos próprios, sem depender do mês. */
+async function openCustomer(id){
+ const customer=state.customers.find(row=>row.id===id);
+ if(!customer)return;
+ const epoch=sessionEpoch;
+ state.selectedCustomer=customer;state.customerHistory=[];state.customerHistoryStatus="loading";render();
+ try {
+  const rows=await fetchProfessionalCustomerHistory({client:supabase,organizationId:state.orgId,professional:state.professional,customerId:id});
+  if(epoch!==sessionEpoch||state.selectedCustomer?.id!==id)return;
+  state.customerHistory=rows;state.customerHistoryStatus="ready";
+ }catch(error){
+  if(epoch!==sessionEpoch||state.selectedCustomer?.id!==id)return;
+  state.customerHistoryStatus="error";reportError(error,{context:"App Profissional > histórico do cliente"});
+ }
+ if(epoch===sessionEpoch&&state.page==="Clientes"&&state.selectedCustomer?.id===id)render();
 }
 // Carrega comandas visíveis ao usuário autenticado.
 async function loadOrders(){
@@ -283,16 +314,12 @@ root.addEventListener("click",async event=>{
    if(action==="close-professional-booking")dialog?.close();
    return;
   }
-  const visit=event.target.closest("[data-customer-visit]");
-  if(visit&&state.page==="Clientes"){
-   const appointment=state.appointments.find(item=>item.id===visit.dataset.customerVisit&&item.professional_id===state.professional?.id);
-   if(appointment){
-    state.selectedDate=salonCalendarDate(appointment.starts_at,state.organization?.timezone);
-    state.selectedAppointment=appointment;
-    state.page="Agenda";
-    render();
-   }
-   return;
+  if(state.page==="Clientes"){
+   const customer=event.target.closest("[data-professional-customer]");
+   if(customer){await openCustomer(customer.dataset.professionalCustomer);return;}
+   if(action==="back-professional-customers"){state.selectedCustomer=null;state.customerHistory=[];render();return;}
+   if(action==="refresh-professional-customers"){state.selectedCustomer=null;await loadCustomers();return;}
+   if(action==="retry-professional-customer-history"&&state.selectedCustomer){await openCustomer(state.selectedCustomer.id);return;}
   }
   if(action==="refresh-professional-orders"&&state.page==="Comandas"){
    await loadOrders();
@@ -310,7 +337,7 @@ root.addEventListener("click",async event=>{
   if(await handleAgendaClick({event,state,loadAppointments,render}))return;
   if(epoch!==sessionEpoch)return;
   const page=event.target.closest("[data-page]");
- if(page){if(!allowedProfessionalPages(state).includes(page.dataset.page))return;const menuWasOpen=root.querySelector(".app-shell.is-menu-open");state.page=page.dataset.page;state.selectedOrder=null;state.selectedAppointment=null;state.notice="";render();if(menuWasOpen)root.querySelector("[data-action=open-professional-menu]")?.focus();return;}
+ if(page){if(!allowedProfessionalPages(state).includes(page.dataset.page))return;const menuWasOpen=root.querySelector(".app-shell.is-menu-open");state.page=page.dataset.page;state.selectedOrder=null;state.selectedAppointment=null;state.selectedCustomer=null;state.customerHistory=[];state.notice="";render();if(menuWasOpen)root.querySelector("[data-action=open-professional-menu]")?.focus();if(state.page==="Clientes")await loadCustomers();return;}
  const order=event.target.closest("[data-order]");
  if(order&&allowedProfessionalPages(state).includes("Comandas")){await chooseOrder(order.dataset.order);return;}
  if(action==="back-orders"){state.selectedOrder=null;state.orderItems=[];render();}
