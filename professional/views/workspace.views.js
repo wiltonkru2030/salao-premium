@@ -15,7 +15,7 @@ export function ordersView(state,{managementEnabled=false}={}){
   return '<button class="secondary" data-action="back-orders">← Voltar às comandas</button>'+
    '<div class="detail sp-content-surface"><strong>Comanda #'+esc(order.order_number)+'</strong><div class="detail-row"><span>Status</span><b>'+esc(statusLabel(order.status))+'</b></div><div class="detail-row"><span>Total</span><b>'+money(order.total)+'</b></div></div>'+
    '<div class="section-title"><h2>Atendimentos e itens</h2></div>'+rows+
-   (canRegister?'<section class="detail sp-content-surface"><strong>Registrar serviço realizado</strong><label class="sp-labeled-field service-search">Buscar serviço<input id="service-search" placeholder="Digite o nome do serviço" autocomplete="off"></label><button class="primary" id="add-service" disabled>Registrar serviço</button><p class="muted">O valor é confirmado pelo catálogo do salão. Produtos e pagamentos são geridos pela equipe autorizada.</p></section>':"");
+   (canRegister?'<section class="detail sp-content-surface professional-control-stack"><strong>Registrar serviço realizado</strong><label class="sp-labeled-field service-search">Buscar serviço<input id="service-search" placeholder="Digite o nome do serviço" autocomplete="off"></label><button class="primary" id="add-service" disabled>Registrar serviço</button><p class="muted">O valor é confirmado pelo catálogo do salão. Produtos e pagamentos são geridos pela equipe autorizada.</p></section>':"");
  }
  return '<section data-professional-list aria-labelledby="professional-orders-title">'+
  '<div class="section-title"><h2 id="professional-orders-title">Comandas</h2></div>'+

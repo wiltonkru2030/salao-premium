@@ -7,6 +7,6 @@ function form(row={}){
 }
 export function renderOwnWorkingHours(state){
  const status=state.workingHoursStatus||"idle",rows=state.workingHours||[];
- return '<section class="detail sp-content-surface professional-settings-card"><h3>Meu expediente</h3><p class="muted">Configure seus dias e horários de trabalho. Para almoço, cadastre dois intervalos separados. As reservas também respeitam o expediente da unidade, folgas e bloqueios.</p>'+
+ return '<section class="detail sp-content-surface professional-settings-card professional-control-stack"><h3>Meu expediente</h3><p class="muted">Configure seus dias e horários de trabalho. Para almoço, cadastre dois intervalos separados. As reservas também respeitam o expediente da unidade, folgas e bloqueios.</p>'+
  (status==="loading"?'<p role="status">Carregando horários…</p>':status!=="ready"?'<button type="button" class="btn secondary" data-action="load-own-hours">'+(status==="error"?"Tentar novamente":"Carregar expediente")+'</button>':(rows.length?rows.map(row=>'<details><summary>'+days[row.weekday]+' · '+esc(String(row.starts_at).slice(0,5))+' às '+esc(String(row.ends_at).slice(0,5))+(row.active?"":" · Inativo")+'</summary>'+form(row)+'</details>').join(""):'<p class="muted">Nenhum expediente cadastrado.</p>')+'<details open><summary>Adicionar horário</summary>'+form()+'</details>')+'</section>';
 }

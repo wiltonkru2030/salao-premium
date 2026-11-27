@@ -10,6 +10,26 @@ const scenarios=["Login","Agenda","Novo agendamento","Cadastro rápido","Atendim
 await mkdir(folder,{recursive:true});
 const browser=await chromium.launch({headless:true});
 const failures=[],results=[];
+/** Mede distâncias reais entre controles visíveis, incluindo linhas quebradas no celular. */
+async function checkControlSpacing(page){
+ const violations=await page.evaluate(()=>{
+  const visible=el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&!el.closest("[hidden]")&&getComputedStyle(el).visibility!=="hidden";};
+  const control=el=>el.matches("button,a.btn,input:not([type=hidden]),select,.sp-labeled-field,.professional-card-actions,form,details");
+  const groups=document.querySelectorAll(".professional-card-actions,.professional-control-stack,.professional-list-tools,.sp-modal-foot,form:not(.auth-form),.auth-form");
+  const bad=[];
+  for(const group of groups){
+   if(!visible(group)||group.closest("dialog:not([open])"))continue;
+   const items=[...group.children].filter(el=>control(el)&&visible(el));
+   for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){
+    const a=items[i].getBoundingClientRect(),b=items[j].getBoundingClientRect();
+    const dx=Math.max(a.left-b.right,b.left-a.right),dy=Math.max(a.top-b.bottom,b.top-a.bottom);
+    if(dx<7.5&&dy<7.5)bad.push((group.className||group.id||group.tagName)+": "+items[i].textContent.trim().slice(0,35)+" / "+items[j].textContent.trim().slice(0,35)+" ("+dx.toFixed(1)+","+dy.toFixed(1)+")");
+   }
+  }
+  return bad;
+ });
+ assert.deepEqual(violations,[],"Controles sem espaçamento mínimo");
+}
 try{
  for(const viewport of [{width:320,height:740},{width:390,height:844},{width:1440,height:900}]){
   const context=await browser.newContext({viewport,locale:"pt-BR",timezoneId:"America/Campo_Grande",reducedMotion:"reduce"});
@@ -33,6 +53,7 @@ try{
      const layout=await page.evaluate(()=>({width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth,body:document.querySelector("#professional-app").innerText.trim().length,theme:document.documentElement.dataset.theme,background:getComputedStyle(document.body).backgroundColor}));
      assert.ok(layout.body>20,"Tela vazia");assert.equal(layout.theme,theme);assert.ok(layout.scroll<=layout.width+1,"Rolagem horizontal: "+layout.scroll+" > "+layout.width);
      assert.equal(errors.length,0,errors.join("; "));
+     await checkControlSpacing(page);
      if(scenario==="Novo agendamento"||scenario==="Cadastro rápido"){
       assert.equal(await page.locator("dialog").evaluate(d=>d.open),true);
       const visible=await page.locator("dialog form").evaluateAll(forms=>forms.filter(form=>getComputedStyle(form).display!=="none").length);
@@ -107,7 +128,14 @@ try{
       await page.locator("#professional-sidebar").getByRole("button",{name:"Fechar menu",exact:true}).click();
       assert.equal(await page.locator(".professional-workspace").evaluate(el=>el.inert),false);
      }
+     if(scenario==="Notificações"){
+      const filters=page.locator(".professional-filter-actions"),mark=page.getByRole("button",{name:"Marcar todas como lidas"});
+      const a=await filters.boundingBox(),b=await mark.boundingBox();assert.ok(b.y>=a.y+a.height+10,"Marcar todas colado ao filtro");
+     }
      if(scenario==="Configurações"){
+      const pass=page.locator("#settings-password"),confirm=page.locator("#settings-password-confirm"),save=page.getByRole("button",{name:"Atualizar senha"});
+      const a=await pass.boundingBox(),b=await confirm.boundingBox(),s=await save.boundingBox();assert.ok(b.y>a.y+a.height+10);assert.ok(s.y>=b.y+b.height+10);
+      await checkControlSpacing(page);
       await page.locator("[name=pixType]").selectOption("phone");
       await page.locator("[name=pixKey]").fill("67999991234");
       assert.equal(await page.locator("[name=pixKey]").inputValue(),"(67) 99999-1234");

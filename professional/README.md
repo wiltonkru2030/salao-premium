@@ -201,3 +201,6 @@ Autocomplete rico opt-in no componente compartilhado: lupa SVG, nome e detalhe e
 
 ### Cabeçalho e ficha da cliente
 Cabeçalho compartilhado: marca, saudação conforme fuso do salão (manhã antes de 12h, tarde até 17h59, noite a partir de 18h), nome completo do profissional e ícone SVG sol/lua. Alternância usa preferência global, persiste neste aparelho e não desmonta formulários. Perfil, troca de unidade/salão e saída ficam no menu lateral. Ficha de cliente apresenta Ligar e Editar cadastro em grupo responsivo com espaçamento e ícones SVG. Testes de limites da saudação, alternância, menu e geometria dos botões.
+
+### Ritmo global de controles
+Revisão das views de Agenda, Clientes, Serviços, Comandas, Comissões, Notificações, Perfil, Configurações, expediente e autenticação. `control-spacing.css` é importado por último e centraliza 12px entre controles/ações e 16px entre seções. Cards com controles independentes usam `professional-control-stack` para impedir botões ou campos colados. Filtros de notificações ficam em duas colunas com ação de leitura em linha própria. Teste de navegador mede distâncias dos controles visíveis em 320, 390 e 1440px, temas claro/escuro, incluindo configurações com expediente e push habilitados. Não altera regras de negócio ou dados.

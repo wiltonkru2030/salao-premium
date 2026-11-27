@@ -1,0 +1,55 @@
+/* Ritmo de espaçamento de todas as telas profissionais. Importado por último.
+ * Grupos de ações, pilhas de controles, formulários e rodapés usam os mesmos tokens.
+ * Não altera calendário, itens de autocomplete, permissões ou lógica dos controles.
+ */
+#professional-app {
+ --professional-control-gap:12px;
+ --professional-section-gap:16px;
+ --professional-action-min:132px;
+}
+#professional-app .professional-workspace .content,
+#professional-app .professional-workspace [data-professional-list],
+#professional-app .professional-workspace [data-managed-order]{
+ gap:var(--professional-section-gap);
+}
+#professional-app .professional-workspace .professional-control-stack{
+ display:grid;grid-template-columns:minmax(0,1fr);gap:var(--professional-control-gap);
+ min-inline-size:0;
+}
+#professional-app .professional-workspace .professional-control-stack > :is(h2,h3,p,form,details,.detail-row,.professional-card-actions,.sp-labeled-field){
+ margin:0;
+}
+#professional-app .professional-workspace .professional-control-stack > :is(button,a.btn,.secondary,.primary){
+ justify-self:stretch;inline-size:100%;margin:0;
+}
+#professional-app .professional-workspace .professional-control-stack > .detail-row{padding-block:8px}
+#professional-app .professional-workspace .professional-control-stack details > form{margin-block-start:var(--professional-control-gap)}
+#professional-app .professional-workspace .professional-control-stack details > summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
+#professional-app .professional-workspace .professional-card-actions{
+ display:flex;flex-wrap:wrap;align-items:stretch;gap:var(--professional-control-gap);
+ margin-block-start:var(--professional-control-gap);min-inline-size:0;
+}
+#professional-app .professional-workspace .professional-card-actions > :is(button,a.btn){
+ flex:1 1 var(--professional-action-min);min-inline-size:0;max-inline-size:100%;
+ inline-size:auto;min-block-size:44px;margin:0;white-space:normal;
+ display:flex;align-items:center;justify-content:center;text-align:center;
+}
+#professional-app .professional-workspace :is(form,.professional-control-stack) > .professional-card-actions{margin:0}
+#professional-app .professional-workspace .professional-customer-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+#professional-app .professional-workspace .professional-filter-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+#professional-app .professional-workspace .professional-list-tools{gap:var(--professional-control-gap);margin:0}
+#professional-app .professional-workspace form:not(.auth-form){gap:var(--professional-control-gap)}
+#professional-app .professional-workspace .sp-labeled-field{gap:7px;margin:0}
+#professional-app .professional-workspace .detail:not(.professional-control-stack) > :is(.sp-labeled-field,button,a.btn,details,form,.professional-card-actions) + :is(.sp-labeled-field,button,a.btn,details,form,.professional-card-actions){margin-block-start:var(--professional-control-gap)}
+#professional-app .professional-workspace .professional-agenda-layout .appointment > .professional-card-actions{margin-block-start:var(--professional-control-gap)}
+#professional-app .professional-workspace .professional-agenda-layout .appointment > .professional-card-actions > button{flex-basis:var(--professional-action-min)}
+#professional-app .professional-workspace .section-title{gap:var(--professional-control-gap)}
+#professional-app .professional-workspace .sp-modal-body{gap:var(--professional-control-gap)}
+#professional-app .professional-workspace .sp-modal-foot{gap:var(--professional-control-gap)}
+#professional-app .professional-auth .auth-form{display:grid;gap:var(--professional-control-gap)}
+#professional-app .professional-auth .auth-panel > .auth-form + :is(details,button,.sp-appearance-control),
+#professional-app .professional-auth .auth-panel > details + .sp-appearance-control{margin-block-start:var(--professional-control-gap)}
+@media(max-width:360px){
+ #professional-app{--professional-action-min:115px}
+ #professional-app .professional-workspace .professional-card-actions > :is(button,a.btn){padding-inline:8px}
+}
