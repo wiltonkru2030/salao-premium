@@ -1,4 +1,5 @@
 /** Compositor do painel. Responsabilidade: montar menu, cabeçalho, conteúdo da rota e disparar carregadores de cada módulo. */
+import { renderPlatformThemeToggle } from "../components/platform-appearance.js";
 import { renderPlatformMark } from "../components/platform-mark.js";
 import { groups } from '../data/index.js';
 
@@ -152,6 +153,7 @@ function renderApplicationShell(navigation, content) {
         <div class="topbar-right">
           ${renderTenantControl()}
           ${renderBranchControl()}
+          ${renderPlatformThemeToggle()}
           <button class="icon-btn notification-btn" data-action="notifications" aria-label="Notificações">♧</button>
           <button class="icon-btn" data-action="sign-out" aria-label="Sair da conta" title="Sair da conta">↪</button>
         </div>

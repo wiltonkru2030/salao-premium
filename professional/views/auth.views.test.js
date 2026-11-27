@@ -9,7 +9,7 @@ import {
   renderProfessionalPasswordChangeView
 } from "./auth.views.js";
 
-assert.match(renderProfessionalLoginView("", "dark"), /<option value="dark" selected>Escura/);
+assert.doesNotMatch(renderProfessionalLoginView(), /data-platform-appearance|data-platform-theme-toggle/);
 const login = renderProfessionalLoginView("<script>alert(1)</script>");
 assert.match(login, /id="professional-login"/);
 assert.match(login, /name="login"/);

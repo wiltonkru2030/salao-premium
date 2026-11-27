@@ -346,3 +346,6 @@ Flag `VITE_COMANDA_PAYMENT_IDEMPOTENCY=true` opt-in, explicitamente falsa no wor
 Concorrência: testes QA em sessões independentes passaram nas invariantes, mas sem sobreposição; executor direto preparado. Ver [relatório](docs/PUBLICACAO-APP-PROFISSIONAL.md).
 
 Pacote QA e Auth real: ver [entrega final](docs/ENTREGA-APP-PROFISSIONAL.md). Build QA separado, teste Auth real manual e limites de publicação documentados.
+
+### Tema no cabeçalho das três entradas
+Painel administrativo, App Profissional e Área da Cliente usam `renderPlatformThemeToggle` em suas top bars, com SVG sol/lua, tokens e foco acessível compartilhados. Não há seletor nas telas de login, recuperação, seleção de salão, perfil ou configurações. A preferência existente continua local por entrada (Área da Cliente preserva o escopo por conta e sincronização remota). O atalho alterna o tema efetivo sem recarregar a página. Testes de contrato verificam as três entradas e o navegador verifica alternância e ausência de controles duplicados. Não altera autenticação ou banco de dados.

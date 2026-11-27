@@ -1,6 +1,7 @@
 /** Cabeçalho, navegação lateral e controles de perfil do App Profissional. */
 import {navigationIcon} from "../../src/components/navigation-icons.js";
 import {renderPlatformMark} from "../../src/components/platform-mark.js";
+import {renderPlatformThemeToggle} from "../../src/components/platform-appearance.js";
 import {professionalGreeting} from "../utils/header-preferences.js";
 import {escapeHtml} from "../utils/formatters.js";
 
@@ -35,10 +36,7 @@ export function renderProfessionalShell({state, content, pages}) {
         <div class="professional-top-brand professional-header-identity">
           ${renderPlatformMark()}<div class="professional-header-copy"><span class="professional-header-brand">SALÃO PREMIUM</span><span class="professional-header-greeting" data-professional-greeting>${escapeHtml(greeting)}</span><strong class="professional-header-name">${escapeHtml(name)}</strong></div>
         </div>
-        <button type="button" class="icon-button professional-theme-toggle" data-action="toggle-professional-theme" aria-label="Alternar tema" aria-pressed="false">
-          <svg class="professional-theme-moon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 14.2A8.8 8.8 0 0 1 9.8 3.2 8.8 8.8 0 1 0 20.8 14.2Z"/></svg>
-          <svg class="professional-theme-sun" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
-        </button>
+        ${renderPlatformThemeToggle()}
       </header>
       <main class="content sp-page-flow">${state.branchId?'<p class="meta">Unidade operacional: '+escapeHtml(state.branches.find(row=>row.id===state.branchId)?.name||"Unidade")+'</p>':""}${state.notice?'<div class="notice" role="status">'+escapeHtml(state.notice)+'</div>':''}${content}</main>
     </div>

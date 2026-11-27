@@ -22,7 +22,7 @@ assert.equal(professionalGreeting(new Date("2026-11-27T16:00:00Z"),tz),"Boa tard
 assert.equal(professionalGreeting(new Date("2026-11-27T22:00:00Z"),tz),"Boa noite");
 const headerState={professional:{name:"Profissional Exemplo",branch_id:"b"},branches:[{id:"b",name:"Matriz"}],branchId:"b",organization:{timezone:tz},page:"Agenda",notificationsUnread:0};
 const header=read("./views/shell.views.js");
-assert.match(header,/data-professional-greeting/);assert.match(header,/escapeHtml\(name\)/);assert.match(header,/data-action="toggle-professional-theme"/);assert.doesNotMatch(header,/professional-profile-menu/);assert.match(header,/page==="Perfil"/);assert.match(header,/data-action="logout"/);
+assert.match(header,/data-professional-greeting/);assert.match(header,/escapeHtml\(name\)/);assert.match(header,/renderPlatformThemeToggle\(\)/);assert.doesNotMatch(header,/professional-profile-menu/);assert.match(header,/page==="Perfil"/);assert.match(header,/data-action="logout"/);
 const customerCard=renderProfessionalCustomers({...headerState,selectedCustomer:{name:"Cliente QA",branch_id:"b",phone:"67999991234"},canManageCustomers:true,customerHistory:[],customerHistoryStatus:"ready"});
 assert.match(customerCard,/professional-card-actions professional-customer-actions/);assert.match(customerCard,/href="tel:67999991234"/);assert.match(customerCard,/Editar cadastro/);
 

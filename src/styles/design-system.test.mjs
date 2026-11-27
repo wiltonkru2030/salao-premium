@@ -1,5 +1,8 @@
 /** Contrato estático do design system. Não substitui testes visuais no navegador. */
 import assert from "node:assert/strict";
+import {renderPlatformThemeToggle,nextPlatformTheme,syncPlatformThemeToggle,togglePlatformTheme} from "../components/platform-appearance.js";
+import {authScreen,organizationSelectionScreen} from "../auth/auth-screen.js";
+import {renderLoginView} from "../../cliente/ui/loginView.js";
 import { renderClientShell } from "../../cliente/ui/clientShell.js";
 import {readFileSync,existsSync} from "node:fs";
 import {dirname,resolve} from "node:path";
@@ -57,3 +60,25 @@ assert.match(agendaLayout,/\.week-blocked\{[^}]*background:var\(--sp-gold-soft\)
 const clientControls = read("cliente/styles/components.css");
 assert.match(clientControls,/\.client-alert\.error\{background:var\(--sp-error-soft\);color:var\(--sp-red\)/);
 assert.match(clientControls,/\.client-alert\.success\{background:var\(--sp-green-soft\);color:var\(--sp-green\)/);
+
+// Um componente SVG, três entradas; login e configurações não exibem seletores.
+assert.match(clientShell,/<header[^>]*>[\s\S]*data-platform-theme-toggle[\s\S]*<\/header>/);
+for(const path of ["src/layout/render.js","professional/views/shell.views.js","cliente/ui/clientShell.js"]){
+ assert.match(read(path),/renderPlatformThemeToggle\(\)/,path);
+}
+for(const path of ["src/pages/settings.js","professional/views/profile.views.js","cliente/ui/customerProfileView.js","src/auth/auth-screen.js","professional/views/auth.views.js","cliente/ui/loginView.js"]){
+ assert.doesNotMatch(read(path),/renderPlatformAppearance|data-platform-appearance|data-platform-theme-toggle|data-action="theme"/,path);
+}
+for(const mode of ["login","signup","recovery-request","recovery-update"])assert.doesNotMatch(authScreen(mode),/data-platform-appearance|data-platform-theme-toggle/);
+assert.doesNotMatch(organizationSelectionScreen([]),/data-platform-appearance|data-platform-theme-toggle/);
+assert.doesNotMatch(renderLoginView(),/data-platform-appearance|data-platform-theme-toggle/);
+assert.equal(nextPlatformTheme("light"),"dark");assert.equal(nextPlatformTheme("dark"),"light");
+assert.match(renderPlatformThemeToggle("light"),/aria-label="Ativar modo escuro"/);
+assert.match(renderPlatformThemeToggle("dark"),/aria-label="Ativar modo claro"/);
+const attrs={},button={setAttribute:(k,v)=>{attrs[k]=v;}};
+const doc={documentElement:{dataset:{theme:"light"}},querySelectorAll:()=>[button]};
+const controller={set:theme=>{doc.documentElement.dataset.theme=theme;}};
+togglePlatformTheme(controller,doc);assert.equal(doc.documentElement.dataset.theme,"dark");assert.equal(attrs["aria-label"],"Ativar modo claro");
+togglePlatformTheme(controller,doc);assert.equal(doc.documentElement.dataset.theme,"light");assert.equal(attrs["aria-label"],"Ativar modo escuro");
+assert.match(controls,/\.sp-theme-toggle/);
+console.log("Tema global no cabeçalho: OK");

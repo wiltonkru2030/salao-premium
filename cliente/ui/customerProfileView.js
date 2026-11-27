@@ -9,10 +9,10 @@ import { formatCustomerPhoneDisplay } from "../customer-profile-utils.js";
 
 /**
  * Renderiza os dados pessoais e ações de conta sem tratar contato como credencial.
- * @param {object} options Perfil, sessão autenticada e tema.
+ * @param {object} options Perfil e sessão autenticada.
  * @returns {string} HTML seguro da tela de perfil.
  */
-export function renderCustomerProfileView({profile = null, session, theme = "system"} = {}) {
+export function renderCustomerProfileView({profile = null, session} = {}) {
   const metadata = session?.user?.user_metadata || {};
   const name = profile?.fullName || metadata.full_name || metadata.name || "";
   const email = profile?.email || session?.user?.email || "E-mail não informado";
@@ -26,6 +26,5 @@ export function renderCustomerProfileView({profile = null, session, theme = "sys
       '<button class="client-button" type="submit" data-action="save-profile">Salvar alterações</button>' +
     '</form>' +
     '<div class="settings-list"><button class="settings-row" data-action="favorites"><span><strong>Salões favoritos</strong><small>Encontrar novamente seus estabelecimentos</small></span><span>›</span></button><button class="settings-row" data-action="loyalty"><span><strong>Meu relacionamento</strong><small>Atendimentos e pagamentos em cada salão</small></span><span>›</span></button><button class="settings-row" data-action="notifications"><span><strong>Notificações</strong><small>Atualizações dos seus agendamentos</small></span><span>›</span></button><button class="settings-row" data-action="identity-links"><span><strong>Vínculos com salões</strong><small>Revisar solicitações de associação</small></span><span>›</span></button><button class="settings-row" data-action="register-passkey"><span><strong>Chaves de acesso</strong><small>Adicionar Passkey neste aparelho</small></span><span>›</span></button>' +
-    '<button class="settings-row" data-action="theme"><span><strong>Aparência</strong><small>Tema: ' + escapeClientHtml(theme) + '</small></span><span>›</span></button>' +
     '<button class="settings-row" data-action="sign-out"><span><strong>Sair da conta</strong><small>Encerrar sua sessão neste aparelho</small></span><span>›</span></button></div></section>';
 }

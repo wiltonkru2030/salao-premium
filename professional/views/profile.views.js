@@ -1,6 +1,5 @@
 /** Perfil e Configurações: componentes globais, campos protegidos e edição de preferências. */
 import {renderOwnWorkingHours} from "./working-hours.views.js";
-import {renderPlatformAppearance} from "../../src/components/platform-appearance.js";
 import {formatSavedPhone} from "../../src/utils/input-masks.js";
 import {escapeHtml as esc} from "../utils/formatters.js";
 import {pixFieldConfig,displayPixKey} from "../utils/pix-fields.js";
@@ -32,7 +31,7 @@ function preferencesView(state){
  '<p role="alert" data-profile-preferences-error hidden></p><button class="btn primary" type="submit">Salvar preferências</button></form></section>';
 }
 /** Mantém configurações dentro do Perfil e exige confirmação da nova senha. */
-export function settingsView(state,appearance,{preferencesEnabled=false,pushConfigured=false,workingHoursEnabled=false}={}){
+export function settingsView(state,{preferencesEnabled=false,pushConfigured=false,workingHoursEnabled=false}={}){
  const name=state.profile?.full_name||state.professional?.name||"";
  return '<button type="button" class="btn secondary" data-page="Perfil">← Voltar ao perfil</button><div class="section-title"><h2>Configurações</h2></div>'+
  '<section class="detail sp-content-surface professional-settings-card professional-control-stack"><h3>Minha conta</h3>'+detail("Salão",state.organization?.name)+detail("Permissão",state.scope==="all"?"Acesso completo":state.scope==="calendar_all"?"Agenda completa":"Somente seus dados")+
@@ -41,5 +40,5 @@ export function settingsView(state,appearance,{preferencesEnabled=false,pushConf
  (preferencesEnabled&&state.role==="professional"?preferencesView(state):"")+
  (state.role==="professional"?'<section class="detail sp-content-surface professional-settings-card professional-control-stack"><h3>Notificações no dispositivo</h3>'+(pushConfigured?'<p class="muted">Receba avisos genéricos mesmo com o aplicativo fechado. A central mantém os detalhes protegidos.</p><p role="status">'+(state.pushStatus==="enabled"?"Ativado nesta sessão":state.pushStatus==="disabled"?"Desativado":"Ative ou desative neste dispositivo.")+'</p><div class="professional-card-actions"><button class="btn primary" type="button" data-action="enable-professional-push">Ativar notificações</button><button class="btn secondary" type="button" data-action="disable-professional-push">Desativar notificações</button></div>':'<p class="muted">Serviço de notificações no dispositivo ainda não configurado. Os avisos internos continuam disponíveis quando habilitados.</p>')+'</section>':"")+
  '<section class="detail sp-content-surface professional-settings-card professional-control-stack"><h3>Segurança</h3><label class="sp-labeled-field">Nova senha<input id="settings-password" type="password" minlength="10" autocomplete="new-password"></label><label class="sp-labeled-field">Confirmar nova senha<input id="settings-password-confirm" type="password" minlength="10" autocomplete="new-password"></label><button type="button" class="btn secondary" data-action="change-password">Atualizar senha</button><p class="muted">A redefinição de senha também pode ser feita pelo administrador.</p></section>'+
- '<section class="detail sp-content-surface professional-settings-card professional-control-stack">'+renderPlatformAppearance(appearance)+'</section><button type="button" class="btn secondary" data-action="logout">Sair da conta</button>';
+ '<button type="button" class="btn secondary" data-action="logout">Sair da conta</button>';
 }

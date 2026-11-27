@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'professional/**'
+      - 'cliente/**'
       - 'src/**'
       - 'supabase/**'
       - 'tests/integration/professional-auth-qa.mjs'

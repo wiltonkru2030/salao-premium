@@ -24,3 +24,5 @@ assert.ok(html.includes('name="phone"'));
 assert.ok(html.includes("não é considerado verificado"));
 assert.ok(!html.includes("migration e os testes RLS"));
 console.log("Testes de renderização do perfil global da cliente: OK");
+
+assert.doesNotMatch(html,/data-action="theme"|data-platform-appearance/);

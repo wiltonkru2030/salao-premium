@@ -31,7 +31,7 @@ const state=Object.assign(createProfessionalState(new Date(2026,10,26,12)),{
  workingHoursStatus:"ready",workingHours:[{id:"hours",weekday:1,starts_at:"08:00",ends_at:"12:00",active:true}],pushStatus:"idle",profilePreferencesStatus:"ready",profilePreferences:{email:"qa@example.invalid",pix_type:"cpf",pix_key:"52998224725",notify_agenda:true,notify_commissions:false}
 });
 const {agendaView}=createAgendaWorkspaceViews({state,attendanceEnabled:true,appointmentStatusEnabled:true,rescheduleEnabled:true,bookingEnabled:true,unitBookingEnabled:true,customerRegistrationEnabled:true,workingHoursEnabled:true});
-const renderers={Agenda:agendaView,Clientes:()=>renderProfessionalCustomers({...state,canManageCustomers:true}),"Serviços":()=>renderProfessionalServices(state.services,{manage:true,catalog:state.serviceCatalog,editor:state.serviceEditor,status:"ready"}),Comandas:()=>ordersView(state,{managementEnabled:true}),"Comissões":()=>commissionsView(state),"Notificações":()=>renderNotificationsView(state),Perfil:()=>profileView(state,{preferencesEnabled:true}),"Configurações":()=>settingsView(state,document.documentElement.dataset.theme,{preferencesEnabled:true,pushConfigured:true,workingHoursEnabled:true})};
+const renderers={Agenda:agendaView,Clientes:()=>renderProfessionalCustomers({...state,canManageCustomers:true}),"Serviços":()=>renderProfessionalServices(state.services,{manage:true,catalog:state.serviceCatalog,editor:state.serviceEditor,status:"ready"}),Comandas:()=>ordersView(state,{managementEnabled:true}),"Comissões":()=>commissionsView(state),"Notificações":()=>renderNotificationsView(state),Perfil:()=>profileView(state,{preferencesEnabled:true}),"Configurações":()=>settingsView(state,{preferencesEnabled:true,pushConfigured:true,workingHoursEnabled:true})};
 /** Monta o cenário solicitado, utilizando exatamente os renderizadores de produção. */
 function show(scenario,theme){
  appearance.set(theme);
@@ -42,7 +42,7 @@ function show(scenario,theme){
  state.serviceEditor=scenario==="Cadastro de serviço"?{}:null;
  const parent={"Novo agendamento":"Agenda","Cadastro rápido":"Agenda",Atendimento:"Agenda","Itens da comanda":"Comandas","Cadastro de cliente":"Clientes","Ficha do cliente":"Clientes","Cadastro de serviço":"Serviços"}[scenario]||scenario;
  state.page=parent;
- root.innerHTML=parent==="Login"?renderProfessionalLoginView("",theme):renderProfessionalShell({state,pages,content:renderers[parent]()});
+ root.innerHTML=parent==="Login"?renderProfessionalLoginView(""):renderProfessionalShell({state,pages,content:renderers[parent]()});
  syncProfessionalHeader(root,state);
  if(scenario==="Atendimento")syncAppointmentDialog(root,state,()=>show("Agenda",theme));
  if(["Novo agendamento","Cadastro rápido"].includes(scenario)){
@@ -54,7 +54,7 @@ function show(scenario,theme){
   if(scenario==="Cadastro rápido"){root.querySelector("#professional-new-appointment").hidden=true;root.querySelector("#professional-booking-quick-customer").hidden=false;}
  }
 }
-root.addEventListener("click",async event=>{const action=event.target.closest("[data-action]")?.dataset.action;if(action==="toggle-professional-theme"){toggleProfessionalTheme(root,state,appearance);return;}if(action==="open-professional-menu"||action==="close-professional-menu"){setProfessionalMenuOpen(root,action==="open-professional-menu");return;}
+root.addEventListener("click",async event=>{const action=event.target.closest("[data-action]")?.dataset.action;if(action==="toggle-platform-theme"){toggleProfessionalTheme(root,state,appearance);return;}if(action==="open-professional-menu"||action==="close-professional-menu"){setProfessionalMenuOpen(root,action==="open-professional-menu");return;}
  if(state.page==="Agenda")await handleAgendaClick({event,state,loadAppointments:async()=>{},render:()=>{const theme=document.documentElement.dataset.theme;root.innerHTML=renderProfessionalShell({state,pages,content:agendaView()});syncProfessionalHeader(root,state);syncAppointmentDialog(root,state,()=>show("Agenda",theme));}});
 });
 root.addEventListener("change",event=>{if(event.target.matches("[name=pixType]"))updatePixField(event.target.form);});

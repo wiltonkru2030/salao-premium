@@ -3,7 +3,6 @@
  * Responsabilidade: produzir exclusivamente o markup das telas de login e troca de senha.
  * Integração: chamadas pelo controlador professional/app.js; não acessa DOM, rede ou sessão.
  */
-import { renderPlatformAppearance } from "../../src/components/platform-appearance.js";
 import { renderPlatformMark } from "../../src/components/platform-mark.js";
 import { escapeHtml } from "../utils/formatters.js";
 
@@ -26,9 +25,8 @@ function renderProfessionalAuth({title, description, notice, form, footer = ""})
 
 /**
  * Renderiza login por CPF ou e-mail, preservando os campos do controlador.
- * A preferência selecionada afeta somente a aparência neste aparelho.
  */
-export function renderProfessionalLoginView(notice = "", appearance) {
+export function renderProfessionalLoginView(notice = "") {
   return renderProfessionalAuth({
     title: "Bem-vindo de volta",
     description: "Entre para acessar o App Profissional do seu salão.",
@@ -38,8 +36,7 @@ export function renderProfessionalLoginView(notice = "", appearance) {
       <label>Senha<input name="password" type="password" autocomplete="current-password" placeholder="Sua senha" required></label>
       <button class="auth-submit" type="submit">Entrar no sistema</button>
     </form>`,
-    footer: '<details class="auth-legal"><summary>Esqueci minha senha</summary><p>Solicite uma senha temporária ao administrador do salão. Não enviamos senha por SMS ou e-mail.</p></details>' +
-      renderPlatformAppearance(appearance)
+    footer: '<details class="auth-legal"><summary>Esqueci minha senha</summary><p>Solicite uma senha temporária ao administrador do salão. Não enviamos senha por SMS ou e-mail.</p></details>'
   });
 }
 

@@ -3,6 +3,7 @@
  * Responsabilidade: controlar sessão, navegação, ações e estados globais simples.
  * Cada tela, serviço, componente e estilo fica em arquivo próprio.
  */
+import {nextPlatformTheme,syncPlatformThemeToggle} from "../src/components/platform-appearance.js";
 import {validateBookingSelection,isHoldExpired,prepareAppointmentChange,selectRescheduleStart} from "./utils/booking-rules.js";
 import {startClientSession} from "./services/client-session.js";
 import { getCurrentUser, subscribeToAuthChanges, signInWithGoogle, signInWithPasskey, registerPasskey, signOut } from "./services/authService.js";
@@ -109,6 +110,7 @@ function applyTheme() {
   document.documentElement.dataset.theme = theme === "system"
     ? (darkScheme.matches ? "dark" : "light")
     : theme;
+  syncPlatformThemeToggle(document);
 }
 
 /** Monta a página ativa e a navegação inferior sem recarregar o documento. */
@@ -118,7 +120,7 @@ function renderApp() {
   if (activePage === "appointments") page = renderAppointmentsView({ appointments: appointmentsState.items, loading: appointmentsState.loading, error: appointmentsState.error, changeOptions, change: appointmentChange });
   else if (activePage === "identity-links") page = renderIdentityLinkRequestsView({requests: identityLinkRequests});
   else if (activePage === "profile") {
-    page = renderCustomerProfileView({profile: profileState, session: currentSession, theme: getLocalSettings().theme});
+    page = renderCustomerProfileView({profile: profileState, session: currentSession});
   } else if (activePage === "favorites") page = renderFavoritesView(favoritesState);
   else if (activePage === "notifications") page = renderNotificationsView(notificationsState);
   else if (activePage === "loyalty") page = renderLoyaltyView(loyaltyState);
@@ -551,15 +553,13 @@ async function runAction(action, button = null) {
     } else if (action === "reload-appointments") {
       await loadAppointments();
       requireCurrent(epoch);
-    } else if (action === "theme") {
-      const current = getLocalSettings().theme;
-      const next = current === "system" ? "light" : current === "light" ? "dark" : "system";
+    } else if (action === "toggle-platform-theme") {
+      const next = nextPlatformTheme(document.documentElement.dataset.theme);
       saveLocalSettings({theme: next});
       applyTheme();
       try { await saveRemoteSettings({client:supabase,patch:{theme:next}}); } catch { /* O tema local continua funcionando sem sincronização remota. */ }
+      // Alteração apenas visual: preserva campos e navegação, sem renderização.
       requireCurrent(epoch);
-      renderApp();
-      setNotice("Aparência atualizada.", "success");
     } else if (action === "profile") {
       activePage = "profile";
       await loadProfile();

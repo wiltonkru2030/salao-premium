@@ -4,7 +4,6 @@
  * Segurança: gravações limitadas a owner/admin pela interface e, principalmente, pelas políticas RLS.
  * Escopo: dados cadastrais e expediente têm persistência; notificações, cobrança e outras preferências seguem pendentes.
  */
-import { renderPlatformAppearance } from "../components/platform-appearance.js";
 import {bindSettingsEvents} from "../modules/settings/settings.controller.js";
 import { supabase } from "../supabase/client.js";
 import { state } from "../state.js";
@@ -20,7 +19,6 @@ const canManageSettings = () => ["owner", "admin"].includes(state.membership?.ro
 /** Renderiza a estrutura inicial; os dados reais são carregados sem recarregar a página. */
 export function settings() {
   return head("Configurações", "Dados da organização e das unidades, com alterações protegidas por perfil.") +
-    '<section class="surface admin-appearance-settings">' + renderPlatformAppearance() + '</section>' +
     '<div id="settings-manager"><div class="empty-state">Carregando configurações…</div></div>';
 }
 

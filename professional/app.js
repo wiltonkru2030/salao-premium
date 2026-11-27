@@ -89,7 +89,7 @@ function clearAutocomplete(){disposeAutocomplete?.();disposeAutocomplete=null;}
 // Views de autenticação ficam isoladas do controlador principal do PWA.
 function loginView(){
  clearAutocomplete();
- root.innerHTML=renderProfessionalLoginView(state.notice, appearance.preference);
+ root.innerHTML=renderProfessionalLoginView(state.notice);
 }
 function changePasswordView(){
  root.innerHTML=renderProfessionalPasswordChangeView(state.notice,{managed:state.user?.app_metadata?.professional_password_required===true});
@@ -104,7 +104,7 @@ function render(){
  if(!state.user||!state.orgId||(state.role==="professional"&&!state.branchId))return;
  if(!allowedProfessionalPages(state).includes(state.page))state.page="Agenda";
  clearAutocomplete();
- const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state,{managementEnabled:orderManagementEnabled}):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services,{manage:canManageServices(),catalog:state.serviceCatalog,editor:state.serviceEditor,status:state.serviceCatalogStatus}):state.page==="Clientes"?renderProfessionalCustomers({...state,canManageCustomers:customerRegistrationEnabled&&canUseSelectedUnit(state)}):state.page==="Notificações"?renderNotificationsView(state):state.page==="Perfil"?profileView(state,{preferencesEnabled:profilePreferencesEnabled}):settingsView(state, appearance.preference,{preferencesEnabled:profilePreferencesEnabled,pushConfigured:push.configured,workingHoursEnabled});
+ const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state,{managementEnabled:orderManagementEnabled}):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services,{manage:canManageServices(),catalog:state.serviceCatalog,editor:state.serviceEditor,status:state.serviceCatalogStatus}):state.page==="Clientes"?renderProfessionalCustomers({...state,canManageCustomers:customerRegistrationEnabled&&canUseSelectedUnit(state)}):state.page==="Notificações"?renderNotificationsView(state):state.page==="Perfil"?profileView(state,{preferencesEnabled:profilePreferencesEnabled}):settingsView(state,{preferencesEnabled:profilePreferencesEnabled,pushConfigured:push.configured,workingHoursEnabled});
  shell(content);
  if(state.page==="Agenda")syncAppointmentDialog(root,state,render);
  if(state.page==="Comandas"&&state.selectedOrder&&state.role==="professional"&&state.professional)bindAutocomplete();
@@ -158,14 +158,13 @@ root.addEventListener("input", event => {
  const empty=list.querySelector("[data-professional-search-empty]");if(empty)empty.hidden=visible>0||!term;
 });
 root.addEventListener("change", event => {
- if (event.target.matches("[data-platform-appearance]")) {appearance.set(event.target.value);syncProfessionalHeader(root,state);}
  if(event.target.matches("#professional-profile-preferences [name=pixType]"))updatePixField(event.target.form);
 });
 /** Persiste a mudança e atualiza o cartão apenas se a sessão ainda for a mesma. */
 root.addEventListener("click",async event=>{
  try{
   const action=event.target.closest("[data-action]")?.dataset.action;
-   if(action==="toggle-professional-theme"){toggleProfessionalTheme(root,state,appearance);return;}
+   if(action==="toggle-platform-theme"){toggleProfessionalTheme(root,state,appearance);return;}
   if(action==="open-professional-menu"||action==="close-professional-menu"){
    setProfessionalMenuOpen(root,action==="open-professional-menu");
    return;

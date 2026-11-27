@@ -54,6 +54,8 @@ try{
      assert.ok(layout.body>20,"Tela vazia");assert.equal(layout.theme,theme);assert.ok(layout.scroll<=layout.width+1,"Rolagem horizontal: "+layout.scroll+" > "+layout.width);
      assert.equal(errors.length,0,errors.join("; "));
      await checkControlSpacing(page);
+     assert.equal(await page.locator("[data-platform-appearance]").count(),0);
+     assert.equal(await page.locator("[data-platform-theme-toggle]").count(),scenario==="Login"?0:1);
      if(scenario==="Novo agendamento"||scenario==="Cadastro rápido"){
       assert.equal(await page.locator("dialog").evaluate(d=>d.open),true);
       const visible=await page.locator("dialog form").evaluateAll(forms=>forms.filter(form=>getComputedStyle(form).display!=="none").length);
@@ -96,7 +98,7 @@ try{
       const a=await call.boundingBox(),b=await edit.boundingBox();assert.ok(b.x>=a.x+a.width+8,"Botões sem espaçamento");
      }
      if(scenario==="Agenda"){
-      const toggle=page.locator("[data-action=toggle-professional-theme]");
+      const toggle=page.locator("[data-platform-theme-toggle]");
       assert.match(await page.locator(".professional-header-name").textContent(),/Profissional QA/);
       assert.match(await page.locator("[data-professional-greeting]").textContent(),/^(Bom dia|Boa tarde|Boa noite)$/);
       assert.equal(await page.locator(".top .professional-profile-menu").count(),0);

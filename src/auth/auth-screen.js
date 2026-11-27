@@ -1,5 +1,4 @@
 /** Tela de autenticação administrativa. Responsabilidade: renderizar login/cadastro e mensagens de validação. */
-import { renderPlatformAppearance } from "../components/platform-appearance.js";
 import { renderPlatformMark } from "../components/platform-mark.js";
 import { esc } from '../utils.js';
 
@@ -35,7 +34,6 @@ export function authScreen(mode = 'login', notice = '', noticeType = 'info') {
       ${!signup && !recoveryRequest && !recoveryUpdate ? `<p class="auth-switch"><button type="button" data-auth-mode="recovery-request">Esqueci minha senha</button></p>` : ''}
       <p class="auth-switch"><button type="button" data-auth-mode="${signup || recoveryRequest || recoveryUpdate ? 'login' : 'signup'}">${signup || recoveryRequest || recoveryUpdate ? 'Voltar ao login' : 'Criar cadastro'}</button></p>
       <p class="auth-legal">Acesso protegido por autenticação e permissões do SALÃO PREMIUM.</p>
-      ${renderPlatformAppearance()}
     </section>
     <aside class="auth-aside"><div><span>GESTÃO PROFISSIONAL</span><h2>Seu salão.<br>Em perfeita sintonia.</h2><p>Agenda, clientes, equipe e resultados em um só lugar.</p></div></aside>
   </main>`;
@@ -68,7 +66,6 @@ export function organizationSelectionScreen(organizations, notice = "") {
         <button class="auth-submit" type="submit">Entrar nesta organização</button>
       </form>
       <p class="auth-legal">Os dados de cada organização permanecem isolados.</p>
-      ${renderPlatformAppearance()}
     </section>
     <aside class="auth-aside"><div><span>GESTÃO PROFISSIONAL</span><h2>Seu salão.<br>Em perfeita sintonia.</h2><p>Agenda, clientes, equipe e resultados em um só lugar.</p></div></aside>
   </main>`;

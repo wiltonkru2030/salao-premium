@@ -78,21 +78,17 @@ cursor:pointer}
 color:var(--sp-muted);
 font-size:12px}
 
-/* Preferência de aparência compartilhada nos formulários de configuração. */
-.sp-appearance-control {
-  display: grid;
-  gap: 6px;
-  margin-block: 14px;
-  color: var(--sp-muted);
+/* Controle de tema global dos cabeçalhos, com o mesmo SVG nas três entradas. */
+:is(#app,#professional-app,#cliente-app) .sp-theme-toggle{
+ display:inline-grid;place-items:center;flex:0 0 44px;width:44px;height:44px;
+ min-width:44px;min-height:44px;padding:0;border:1px solid var(--sp-line);
+ border-radius:var(--sp-control-radius);background:var(--sp-paper);color:var(--sp-ink);
+ cursor:pointer;box-shadow:none;
 }
-.sp-appearance-control select {
-  min-height: var(--sp-control-height);
-  padding: 8px;
-  border: 1px solid var(--sp-line-strong);
-  border-radius: var(--sp-control-radius);
-  background: var(--sp-paper);
-  color: var(--sp-ink);
-}
+:is(#app,#professional-app,#cliente-app) .sp-theme-toggle:hover{background:var(--sp-soft)}
+.sp-theme-toggle .sp-theme-sun{display:none}
+:root[data-theme="dark"] .sp-theme-toggle .sp-theme-sun{display:block}
+:root[data-theme="dark"] .sp-theme-toggle .sp-theme-moon{display:none}
 
 /* Estrutura de leitura reutilizável para páginas, cartões e estados vazios. */
 .sp-page-flow {

@@ -3,7 +3,7 @@ name: Professional visual browser
 on:
   push:
     branches: [main]
-    paths: ['professional/**', 'src/styles/**', 'src/components/**', 'src/utils/**', 'tests/visual/**', '.github/workflows/professional-visual.yml']
+    paths: ['professional/**', 'cliente/**', 'src/layout/**', 'src/styles/**', 'src/components/**', 'src/utils/**', 'tests/visual/**', '.github/workflows/professional-visual.yml']
   workflow_dispatch:
 jobs:
   browser:

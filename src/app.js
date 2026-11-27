@@ -1,6 +1,6 @@
 /** Painel administrativo: inicializa sessão, tenant e recursos globais; delega os eventos da Agenda ao controlador de domínio. */
 // Usa o alias renderApp para evitar colisão com a importação existente na base main durante o merge.
-import { createPlatformAppearance } from './components/platform-appearance.js';
+import { createPlatformAppearance, togglePlatformTheme } from './components/platform-appearance.js';
 import { state } from './state.js';
 import { installGlobalMasks } from './utils/input-masks.js';
 import { installGlobalErrorHandlers, reportError } from './utils/errors.js';
@@ -38,11 +38,11 @@ async function refreshBranchContext() {
   }
 }
 
+// Tema é uma ação local de cabeçalho: não dispara carregadores de módulos.
+document.addEventListener("click",event=>{
+  if(event.target.closest("[data-platform-theme-toggle]"))togglePlatformTheme(appearance);
+});
 document.addEventListener("change",async event=>{
-  if (event.target?.matches("[data-platform-appearance]")) {
-    appearance.set(event.target.value);
-    return;
-  }
   if(event.target?.id==="branch-switcher") {
     const selectedValue=String(event.target.value||"");
     const selected=selectedValue==="__all__"
