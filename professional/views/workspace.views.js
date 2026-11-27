@@ -26,23 +26,4 @@ export function ordersView(state,{managementEnabled=false}={}){
  '<div class="empty sp-content-surface sp-content-surface--empty">Nenhuma comanda disponível.</div>')+'</section>';
 
 }
-/** Apresenta a identificação somente para consulta; as configurações ficam dentro do Perfil. */
-export function profileView(state){
- const name=state.professional?.name||state.profile?.full_name||"Profissional";
- return '<section aria-labelledby="professional-profile-heading"><div class="section-title"><h2 id="professional-profile-heading">Meu perfil</h2></div>'+
- '<article class="detail sp-content-surface professional-settings-card"><h3>'+esc(name)+'</h3>'+
- '<div class="detail-row"><span>Salão</span><b>'+esc(state.organization?.name||"Conta vinculada")+'</b></div>'+
- '<div class="detail-row"><span>Telefone</span><b>'+esc(state.profile?.phone||"Não informado")+'</b></div>'+
- '<p class="muted">Os dados cadastrais do profissional são mantidos pelo salão.</p>'+
- '<button type="button" class="btn secondary" data-page="Configurações">Configurações</button></article></section>';
-}
-// Apresenta dados de perfil e segurança da conta.
-export function settingsView(state, appearance){
- const name=state.profile?.full_name||state.professional?.name||"";
- return '<button type="button" class="secondary" data-page="Perfil">← Voltar ao perfil</button><div class="section-title"><h2>Configurações</h2><span class="muted">Perfil, senha e preferências</span></div>'+
- '<section class="detail sp-content-surface professional-settings-card"><h3>Meu perfil</h3><div class="detail-row"><span>Salão</span><b>'+esc(state.organization?.name||"Conta vinculada")+'</b></div><div class="detail-row"><span>Permissão</span><b>'+esc(state.scope==="all"?"Acesso completo":state.scope==="calendar_all"?"Agenda completa":"Somente seus dados")+'</b></div>'+
- (state.role==="professional"?'<p class="muted">Nome e telefone são atualizados pelo salão.</p>':'<label class="sp-labeled-field">Nome<input id="profile-name" value="'+esc(name)+'" maxlength="120"></label><label class="sp-labeled-field">Telefone<input id="profile-phone" data-mask="phone" value="'+esc(state.profile?.phone||"")+'" inputmode="tel"></label><button class="btn primary" data-action="save-profile">Salvar perfil</button>')+'</section>'+
- '<section class="detail sp-content-surface professional-settings-card"><h3>Segurança</h3><label class="sp-labeled-field">Nova senha<input id="settings-password" type="password" minlength="10" autocomplete="new-password" placeholder="Mínimo de 10 caracteres"></label><button class="btn secondary" data-action="change-password">Atualizar senha</button><p class="muted">A redefinição de senha também pode ser feita pelo administrador.</p></section>'+
- '<section class="detail sp-content-surface professional-settings-card">' + renderPlatformAppearance(appearance) + '</section>' +
- '<button class="secondary" data-action="logout">Sair da conta</button>';
-}
+export {profileView,settingsView} from "./profile.views.js";

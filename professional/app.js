@@ -7,6 +7,7 @@ import {authenticateProfessional} from "./auth.service.js";
 import { supabase } from "./supabase.client.js";
 import {bindOrderService} from "./order-service.controller.js";
 import {bindOrderManagement} from "./order-management.controller.js";
+import {fetchProfilePreferences,saveProfilePreferences} from "./profile-preferences.service.js";
 import { installGlobalErrorHandlers, reportError } from "../src/utils/errors.js";
 import { installGlobalMasks } from "../src/utils/input-masks.js";
 import {
@@ -44,7 +45,7 @@ installGlobalMasks();
 const appearance = createPlatformAppearance("salao-premium:professional-appearance");
 const root=document.querySelector("#professional-app");
 const state={
- user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,organization:null,
+ user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,profilePreferences:null,profilePreferencesStatus:"idle",organization:null,
  page:"Agenda",month:new Date(new Date().getFullYear(),new Date().getMonth(),1),
  selectedDate:new Date(),selectedAppointment:null,appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",
  commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedOrder:null,orderItems:[],notice:""
@@ -57,6 +58,7 @@ let appointmentStatusPending = false;
 // Ative após aplicar a migration de reagendamento no ambiente correspondente.
 const bookingEnabled = import.meta.env.VITE_PROFESSIONAL_BOOKING === "true";
 const customerRegistrationEnabled = import.meta.env.VITE_PROFESSIONAL_CUSTOMER_REGISTRATION === "true";
+const profilePreferencesEnabled = import.meta.env.VITE_PROFESSIONAL_PROFILE_PREFERENCES === "true";
 const orderManagementEnabled = import.meta.env.VITE_PROFESSIONAL_ORDER_MANAGEMENT === "true";
 const attendanceEnabled = import.meta.env.VITE_PROFESSIONAL_ATTENDANCE === "true";
 const serviceManagementEnabled = import.meta.env.VITE_PROFESSIONAL_SERVICE_MANAGEMENT === "true";
@@ -64,7 +66,7 @@ const unitBookingEnabled = import.meta.env.VITE_PROFESSIONAL_UNIT_BOOKING === "t
 const rescheduleEnabled = import.meta.env.VITE_PROFESSIONAL_RESCHEDULE === "true";
 const serviceLock={active:false,operation:null};
 /** Limpa dados privados antes de exibir a tela de acesso. */
-function clearPrivateState(){sessionEpoch++;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();Object.assign(state,{user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,organization:null,page:"Agenda",appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedAppointment:null,selectedOrder:null,orderItems:[]});}
+function clearPrivateState(){sessionEpoch++;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();Object.assign(state,{user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,profilePreferences:null,profilePreferencesStatus:"idle",organization:null,page:"Agenda",appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedAppointment:null,selectedOrder:null,orderItems:[]});}
 async function endSession(notice=""){clearPrivateState();state.notice=notice;loginView();try{const {error}=await supabase.auth.signOut({scope:"local"});if(error)throw error;}catch(error){reportError(error,{context:"App Profissional > encerrar sessão"});}}
 
 // Formatadores puros são mantidos em professional/utils/formatters.js.
@@ -133,7 +135,7 @@ function render(){
  if(!state.user||!state.orgId)return;
  if(!allowedProfessionalPages(state).includes(state.page))state.page="Agenda";
  clearAutocomplete();
- const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state,{managementEnabled:orderManagementEnabled}):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services,{manage:canManageServices(),catalog:state.serviceCatalog,editor:state.serviceEditor,status:state.serviceCatalogStatus}):state.page==="Clientes"?renderProfessionalCustomers({...state,canManageCustomers:customerRegistrationEnabled&&state.role==="professional"&&!!state.professional?.branch_id}):state.page==="Perfil"?profileView(state):settingsView(state, appearance.preference);
+ const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state,{managementEnabled:orderManagementEnabled}):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services,{manage:canManageServices(),catalog:state.serviceCatalog,editor:state.serviceEditor,status:state.serviceCatalogStatus}):state.page==="Clientes"?renderProfessionalCustomers({...state,canManageCustomers:customerRegistrationEnabled&&state.role==="professional"&&!!state.professional?.branch_id}):state.page==="Perfil"?profileView(state,{preferencesEnabled:profilePreferencesEnabled}):settingsView(state, appearance.preference,{preferencesEnabled:profilePreferencesEnabled});
  shell(content);
  if(state.page==="Comandas"&&state.selectedOrder&&state.role==="professional"&&state.professional)bindAutocomplete();
 }
@@ -143,7 +145,7 @@ async function loadBase(selectedOrgId=null){
  if(!userId)throw new Error("Sua sessão expirou.");
  const [members,profiles]=await Promise.all([
   supabase.from("org_memberships").select("org_id,role,status,professional_app_enabled,professional_app_scope").eq("user_id",userId).eq("status","active"),
-  supabase.from("professionals").select("id,name,profile_id,org_id,branch_id,active,access_enabled,can_edit_own_orders").eq("profile_id",userId).eq("active",true).eq("access_enabled",true)
+  supabase.from("professionals").select("id,name,phone,email,specialty,profile_id,org_id,branch_id,active,access_enabled,can_edit_own_orders").eq("profile_id",userId).eq("active",true).eq("access_enabled",true)
  ]);
  if(epoch!==sessionEpoch)return;
  if(members.error||profiles.error)throw new Error("Não foi possível consultar as permissões da conta.");
@@ -157,12 +159,12 @@ async function loadBase(selectedOrgId=null){
  if(!contexts.length)throw new Error("Não foi possível identificar um salão autorizado.");
  const context=selectedOrgId?contexts.find(c=>c.orgId===selectedOrgId):contexts.length===1?contexts[0]:null;
  if(!context){
-  Object.assign(state,{orgId:null,role:null,scope:"none",professional:null,organization:null,profile:null,appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedAppointment:null,selectedOrder:null,orderItems:[]});
+  Object.assign(state,{orgId:null,role:null,scope:"none",professional:null,organization:null,profile:null,profilePreferences:null,profilePreferencesStatus:"idle",appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedAppointment:null,selectedOrder:null,orderItems:[]});
   clearAutocomplete();
   root.innerHTML='<main class="login"><div class="brand sp-professional-brand">' + renderPlatformMark() + '<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Escolha o salão</h1><p>Seus dados ficam separados por estabelecimento.</p>'+contexts.map(c=>'<button type="button" class="primary" data-context-org="'+esc(c.orgId)+'">'+esc(orgs.get(c.orgId)?.name||"Salão")+'</button>').join("")+'<button class="secondary" data-action="logout">Sair</button></main>';
   return;
  }
- Object.assign(state,context,{organization:orgs.get(context.orgId),page:"Agenda",selectedAppointment:null,selectedOrder:null,orderItems:[],appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null});
+ Object.assign(state,context,{organization:orgs.get(context.orgId),profilePreferences:null,profilePreferencesStatus:"idle",page:"Agenda",selectedAppointment:null,selectedOrder:null,orderItems:[],appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null});
  state.selectedDate=salonCalendarDate(new Date(),state.organization?.timezone);
  state.month=new Date(state.selectedDate.getFullYear(),state.selectedDate.getMonth(),1);
  const profileResult=await supabase.from("profiles").select("full_name,phone").eq("id",userId).maybeSingle();
@@ -260,6 +262,37 @@ async function changeServiceLink(button){
  finally{button.disabled=false;}
 }
 // Carrega comissões e pagamentos do profissional autenticado.
+/** Carrega preferências somente nas telas de perfil, descartando respostas de outras sessões. */
+async function loadProfilePreferences(){
+ if(!profilePreferencesEnabled||state.role!=="professional"||state.profilePreferencesStatus==="loading")return;
+ const epoch=sessionEpoch;
+ state.profilePreferencesStatus="loading";
+ if(["Perfil","Configurações"].includes(state.page))render();
+ try{
+  const data=await fetchProfilePreferences({client:supabase,organizationId:state.orgId});
+  if(epoch!==sessionEpoch)return;
+  state.profilePreferences=data;state.profilePreferencesStatus="ready";
+ }catch{
+  if(epoch!==sessionEpoch)return;
+  state.profilePreferences=null;state.profilePreferencesStatus="error";
+ }
+ if(epoch===sessionEpoch&&["Perfil","Configurações"].includes(state.page))render();
+}
+/** Salva apenas campos editáveis; erros não registram conteúdo da chave Pix. */
+async function submitProfilePreferences(form){
+ if(!profilePreferencesEnabled||state.role!=="professional"||state.page!=="Configurações"||state.profilePreferencesStatus!=="ready")return;
+ const button=form.querySelector("[type=submit]"),feedback=form.querySelector("[data-profile-preferences-error]");
+ if(button.disabled)return;
+ button.disabled=true;feedback.hidden=true;
+ const epoch=sessionEpoch,values=new FormData(form);
+ try{
+  const data=await saveProfilePreferences({client:supabase,organizationId:state.orgId,email:values.get("email"),pixType:values.get("pixType"),pixKey:values.get("pixKey"),photoUrl:values.get("photoUrl"),notifyAgenda:values.has("notifyAgenda"),notifyCommissions:values.has("notifyCommissions")});
+  if(epoch!==sessionEpoch)return;
+  state.profilePreferences=data;state.professional={...state.professional,email:data.email};
+  if(["Perfil","Configurações"].includes(state.page))showNotice("Preferências salvas.");
+ }catch(error){if(epoch===sessionEpoch&&form.isConnected){feedback.textContent=error.message;feedback.hidden=false;}}
+ finally{button.disabled=false;}
+}
 async function loadCommissions(){
  if(!state.professional?.id||state.commissionStatus==="loading")return;
  const epoch=sessionEpoch;
@@ -416,6 +449,7 @@ root.addEventListener("click",async event=>{
    if(action==="refresh-professional-customers"){state.selectedCustomer=null;await loadCustomers();return;}
    if(action==="retry-professional-customer-history"&&state.selectedCustomer){await openCustomer(state.selectedCustomer.id);return;}
   }
+  if(action==="refresh-professional-profile"&&["Perfil","Configurações"].includes(state.page)){await loadProfilePreferences();return;}
   if(state.page==="Comissões"){
    if(action==="refresh-professional-commissions"){state.selectedPayout=null;await loadCommissions();return;}
    if(action==="reset-professional-commission-filters"){state.commissionFilters={from:"",to:"",status:"all",type:"all"};render();return;}
@@ -442,7 +476,7 @@ root.addEventListener("click",async event=>{
   if(await handleAgendaClick({event,state,loadAppointments,render}))return;
   if(epoch!==sessionEpoch)return;
   const page=event.target.closest("[data-page]");
- if(page){if(!allowedProfessionalPages(state).includes(page.dataset.page))return;const menuWasOpen=root.querySelector(".app-shell.is-menu-open");state.page=page.dataset.page;state.selectedOrder=null;state.selectedAppointment=null;state.selectedCustomer=null;state.customerEditor=null;state.serviceEditor=null;state.customerHistory=[];state.notice="";render();if(menuWasOpen)root.querySelector("[data-action=open-professional-menu]")?.focus();if(state.page==="Comissões"){state.selectedPayout=null;await loadCommissions();}if(state.page==="Clientes")await loadCustomers();if(state.page==="Serviços"&&canManageServices())await loadServiceCatalog();return;}
+ if(page){if(!allowedProfessionalPages(state).includes(page.dataset.page))return;const menuWasOpen=root.querySelector(".app-shell.is-menu-open");state.page=page.dataset.page;state.selectedOrder=null;state.selectedAppointment=null;state.selectedCustomer=null;state.customerEditor=null;state.serviceEditor=null;state.customerHistory=[];state.notice="";render();if(menuWasOpen)root.querySelector("[data-action=open-professional-menu]")?.focus();if(["Perfil","Configurações"].includes(state.page)&&profilePreferencesEnabled&&state.profilePreferencesStatus!=="ready")await loadProfilePreferences();if(state.page==="Comissões"){state.selectedPayout=null;await loadCommissions();}if(state.page==="Clientes")await loadCustomers();if(state.page==="Serviços"&&canManageServices())await loadServiceCatalog();return;}
  const order=event.target.closest("[data-order]");
  if(order&&allowedProfessionalPages(state).includes("Comandas")){await chooseOrder(order.dataset.order);return;}
  if(action==="back-orders"){state.selectedOrder=null;state.orderItems=[];render();}
@@ -458,8 +492,11 @@ root.addEventListener("click",async event=>{
  }
  if(action==="change-password"&&state.page==="Configurações"){
   const password=String(document.querySelector("#settings-password")?.value||"");
-  if(password.length<10){showNotice("A senha deve ter pelo menos 10 caracteres.");return;}
-  const {error}=await supabase.auth.updateUser({password});
+  const confirmation=String(document.querySelector("#settings-password-confirm")?.value||"");
+  if(password.length<10||password!==confirmation){showNotice("Informe uma senha de pelo menos 10 caracteres e confirme corretamente.");return;}
+  const button=event.target.closest("[data-action=change-password]");if(button.disabled)return;button.disabled=true;
+  let result;try{result=await supabase.auth.updateUser({password});}finally{button.disabled=false;}
+  const {error}=result;
   if(epoch!==sessionEpoch)return;
   if(error){reportError(error,{context:"App Profissional > alterar senha"});showNotice("Não foi possível alterar a senha. Confira os requisitos e tente novamente.");return;}
   showNotice("Senha atualizada.");
@@ -576,6 +613,7 @@ async function submitProfessionalService(form){
  finally{button.disabled=false;}
 }
 root.addEventListener("submit",async event=>{
+ if(event.target.matches("#professional-profile-preferences")){event.preventDefault();await submitProfilePreferences(event.target);return;}
  if(event.target.matches("#professional-commission-filter")){
   event.preventDefault();
   if(state.page!=="Comissões")return;
