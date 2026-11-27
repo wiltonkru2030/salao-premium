@@ -30,7 +30,7 @@ import { renderProfessionalBooking } from "./views/booking.views.js";
 import { renderAgendaView } from "./views/agenda.views.js";
 import { handleAgendaClick } from "./agenda.controller.js";
 import { fetchProfessionalAppointments, updateOwnAppointmentStatus, rescheduleOwnAppointment, createOwnAppointment, createUnitAppointment } from "./appointments.service.js";
-import {fetchProfessionalServices} from "./services.service.js";
+import {fetchProfessionalServices,listUnitServices,saveUnitService,setUnitServiceLink} from "./services.service.js";
 import { fetchProfessionalOrders, fetchProfessionalOrderItems } from "./orders.service.js";
 import { fetchProfessionalCommissions } from "./commissions.service.js";
 import { resolveProfessionalContexts, allowedProfessionalPages, canRegisterProfessionalService, summarizeProfessionalCommissions } from "./access.rules.js";
@@ -44,7 +44,7 @@ const root=document.querySelector("#professional-app");
 const state={
  user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,organization:null,
  page:"Agenda",month:new Date(new Date().getFullYear(),new Date().getMonth(),1),
- selectedDate:new Date(),selectedAppointment:null,appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],
+ selectedDate:new Date(),selectedAppointment:null,appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",
  commissions:[],commissionPayouts:[],selectedOrder:null,orderItems:[],notice:""
 };
 let disposeAutocomplete=null;
@@ -55,11 +55,12 @@ let appointmentStatusPending = false;
 // Ative após aplicar a migration de reagendamento no ambiente correspondente.
 const bookingEnabled = import.meta.env.VITE_PROFESSIONAL_BOOKING === "true";
 const customerRegistrationEnabled = import.meta.env.VITE_PROFESSIONAL_CUSTOMER_REGISTRATION === "true";
+const serviceManagementEnabled = import.meta.env.VITE_PROFESSIONAL_SERVICE_MANAGEMENT === "true";
 const unitBookingEnabled = import.meta.env.VITE_PROFESSIONAL_UNIT_BOOKING === "true";
 const rescheduleEnabled = import.meta.env.VITE_PROFESSIONAL_RESCHEDULE === "true";
 const serviceLock={active:false,operation:null};
 /** Limpa dados privados antes de exibir a tela de acesso. */
-function clearPrivateState(){sessionEpoch++;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();Object.assign(state,{user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,organization:null,page:"Agenda",appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],commissions:[],commissionPayouts:[],selectedAppointment:null,selectedOrder:null,orderItems:[]});}
+function clearPrivateState(){sessionEpoch++;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();Object.assign(state,{user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,organization:null,page:"Agenda",appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],selectedAppointment:null,selectedOrder:null,orderItems:[]});}
 async function endSession(notice=""){clearPrivateState();state.notice=notice;loginView();try{const {error}=await supabase.auth.signOut({scope:"local"});if(error)throw error;}catch(error){reportError(error,{context:"App Profissional > encerrar sessão"});}}
 
 // Formatadores puros são mantidos em professional/utils/formatters.js.
@@ -128,7 +129,7 @@ function render(){
  if(!state.user||!state.orgId)return;
  if(!allowedProfessionalPages(state).includes(state.page))state.page="Agenda";
  clearAutocomplete();
- const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services):state.page==="Clientes"?renderProfessionalCustomers({...state,canManageCustomers:customerRegistrationEnabled&&state.role==="professional"&&!!state.professional?.branch_id}):state.page==="Perfil"?profileView(state):settingsView(state, appearance.preference);
+ const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services,{manage:canManageServices(),catalog:state.serviceCatalog,editor:state.serviceEditor,status:state.serviceCatalogStatus}):state.page==="Clientes"?renderProfessionalCustomers({...state,canManageCustomers:customerRegistrationEnabled&&state.role==="professional"&&!!state.professional?.branch_id}):state.page==="Perfil"?profileView(state):settingsView(state, appearance.preference);
  shell(content);
  if(state.page==="Comandas"&&state.selectedOrder&&state.role==="professional"&&state.professional)bindAutocomplete();
 }
@@ -152,12 +153,12 @@ async function loadBase(selectedOrgId=null){
  if(!contexts.length)throw new Error("Não foi possível identificar um salão autorizado.");
  const context=selectedOrgId?contexts.find(c=>c.orgId===selectedOrgId):contexts.length===1?contexts[0]:null;
  if(!context){
-  Object.assign(state,{orgId:null,role:null,scope:"none",professional:null,organization:null,profile:null,appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],commissions:[],commissionPayouts:[],selectedAppointment:null,selectedOrder:null,orderItems:[]});
+  Object.assign(state,{orgId:null,role:null,scope:"none",professional:null,organization:null,profile:null,appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],selectedAppointment:null,selectedOrder:null,orderItems:[]});
   clearAutocomplete();
   root.innerHTML='<main class="login"><div class="brand sp-professional-brand">' + renderPlatformMark() + '<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Escolha o salão</h1><p>Seus dados ficam separados por estabelecimento.</p>'+contexts.map(c=>'<button type="button" class="primary" data-context-org="'+esc(c.orgId)+'">'+esc(orgs.get(c.orgId)?.name||"Salão")+'</button>').join("")+'<button class="secondary" data-action="logout">Sair</button></main>';
   return;
  }
- Object.assign(state,context,{organization:orgs.get(context.orgId),page:"Agenda",selectedAppointment:null,selectedOrder:null,orderItems:[],appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],commissions:[],commissionPayouts:[]});
+ Object.assign(state,context,{organization:orgs.get(context.orgId),page:"Agenda",selectedAppointment:null,selectedOrder:null,orderItems:[],appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[]});
  state.selectedDate=salonCalendarDate(new Date(),state.organization?.timezone);
  state.month=new Date(state.selectedDate.getFullYear(),state.selectedDate.getMonth(),1);
  const profileResult=await supabase.from("profiles").select("full_name,phone").eq("id",userId).maybeSingle();
@@ -221,6 +222,38 @@ async function loadServices(){
  const epoch=sessionEpoch;
  const rows=await fetchProfessionalServices({client:supabase,organizationId:state.orgId,professionalId:state.professional?.id});
  if(epoch===sessionEpoch)state.services=rows;
+}
+/** Habilita gerenciamento somente para a unidade atribuída e contrato homologado. */
+function canManageServices(){return serviceManagementEnabled&&state.role==="professional"&&!!state.professional?.branch_id;}
+/** Atualiza catálogo e serviços vinculados sem misturar sessões ou alterar o calendário. */
+async function loadServiceCatalog(){
+ if(!canManageServices())return;
+ const epoch=sessionEpoch;
+ state.serviceCatalogStatus="loading";if(state.page==="Serviços")render();
+ try{
+  const rows=await listUnitServices({client:supabase,organizationId:state.orgId});
+  if(epoch!==sessionEpoch)return;
+  state.serviceCatalog=rows;state.services=rows.filter(row=>row.linked);state.serviceCatalogStatus="ready";
+ }catch(error){
+  if(epoch!==sessionEpoch)return;
+  state.serviceCatalogStatus="error";reportError(error,{context:"App Profissional > catálogo"});
+ }
+ if(epoch===sessionEpoch&&state.page==="Serviços")render();
+}
+/** Envia alteração de vínculo apenas uma vez e mantém a autorização no servidor. */
+async function changeServiceLink(button){
+ if(!canManageServices()||state.page!=="Serviços"||button.disabled)return;
+ const row=state.serviceCatalog.find(item=>item.id===button.dataset.serviceLink);
+ if(!row)return;
+ const linked=!row.linked;
+ if(!linked&&!window.confirm("Remover este serviço dos seus vínculos? O cadastro do salão será preservado."))return;
+ const epoch=sessionEpoch;button.disabled=true;
+ try{
+  await setUnitServiceLink({client:supabase,organizationId:state.orgId,serviceId:row.id,linked});
+  if(epoch!==sessionEpoch)return;
+  state.notice=linked?"Serviço vinculado.":"Vínculo removido.";await loadServiceCatalog();
+ }catch(error){if(epoch===sessionEpoch&&state.page==="Serviços")showNotice(error.message);}
+ finally{button.disabled=false;}
 }
 // Carrega comissões e pagamentos do profissional autenticado.
 async function loadCommissions(){
@@ -318,6 +351,14 @@ root.addEventListener("click",async event=>{
    if(action==="close-professional-booking")dialog?.close();
    return;
   }
+  if(state.page==="Serviços"&&canManageServices()){
+   if(action==="new-professional-service"){state.serviceEditor={};render();return;}
+   if(action==="cancel-professional-service"){state.serviceEditor=null;render();return;}
+   if(action==="refresh-professional-services"){await loadServiceCatalog();return;}
+   const edit=event.target.closest("[data-service-edit]");
+   if(edit){const row=state.serviceCatalog.find(item=>item.id===edit.dataset.serviceEdit&&item.editable);if(row){state.serviceEditor=row;render();}return;}
+   const link=event.target.closest("[data-service-link]");if(link){await changeServiceLink(link);return;}
+  }
   if(state.page==="Clientes"){
    if(action==="new-professional-customer"||action==="edit-professional-customer"){
     if(!customerRegistrationEnabled||state.role!=="professional"||!state.professional?.branch_id)return;
@@ -346,7 +387,7 @@ root.addEventListener("click",async event=>{
   if(await handleAgendaClick({event,state,loadAppointments,render}))return;
   if(epoch!==sessionEpoch)return;
   const page=event.target.closest("[data-page]");
- if(page){if(!allowedProfessionalPages(state).includes(page.dataset.page))return;const menuWasOpen=root.querySelector(".app-shell.is-menu-open");state.page=page.dataset.page;state.selectedOrder=null;state.selectedAppointment=null;state.selectedCustomer=null;state.customerEditor=null;state.customerHistory=[];state.notice="";render();if(menuWasOpen)root.querySelector("[data-action=open-professional-menu]")?.focus();if(state.page==="Clientes")await loadCustomers();return;}
+ if(page){if(!allowedProfessionalPages(state).includes(page.dataset.page))return;const menuWasOpen=root.querySelector(".app-shell.is-menu-open");state.page=page.dataset.page;state.selectedOrder=null;state.selectedAppointment=null;state.selectedCustomer=null;state.customerEditor=null;state.serviceEditor=null;state.customerHistory=[];state.notice="";render();if(menuWasOpen)root.querySelector("[data-action=open-professional-menu]")?.focus();if(state.page==="Clientes")await loadCustomers();if(state.page==="Serviços"&&canManageServices())await loadServiceCatalog();return;}
  const order=event.target.closest("[data-order]");
  if(order&&allowedProfessionalPages(state).includes("Comandas")){await chooseOrder(order.dataset.order);return;}
  if(action==="back-orders"){state.selectedOrder=null;state.orderItems=[];render();}
@@ -465,7 +506,22 @@ async function submitProfessionalCustomer(form){
   if(epoch===sessionEpoch&&form.isConnected){feedback.textContent=error.message;feedback.hidden=false;}
  }finally{button.disabled=false;}
 }
+/** Valida formulário, evita envio repetido e atualiza serviços usados pela Agenda. */
+async function submitProfessionalService(form){
+ if(!canManageServices()||state.page!=="Serviços"||!state.serviceEditor)return;
+ const button=form.querySelector("[type=submit]"),feedback=form.querySelector("[data-service-save-error]");
+ if(button.disabled)return;
+ button.disabled=true;feedback.hidden=true;
+ const epoch=sessionEpoch,editor=state.serviceEditor,values=new FormData(form);
+ try{
+  await saveUnitService({client:supabase,organizationId:state.orgId,serviceId:editor.id||null,name:values.get("name"),category:values.get("category"),minutes:values.get("minutes"),price:values.get("price")});
+  if(epoch!==sessionEpoch||state.page!=="Serviços"||state.serviceEditor!==editor)return;
+  state.serviceEditor=null;state.notice="Serviço salvo.";await loadServiceCatalog();
+ }catch(error){if(epoch===sessionEpoch&&form.isConnected){feedback.textContent=error.message;feedback.hidden=false;}}
+ finally{button.disabled=false;}
+}
 root.addEventListener("submit",async event=>{
+ if(event.target.matches("#professional-service-form")){event.preventDefault();await submitProfessionalService(event.target);return;}
  if(event.target.matches("#professional-customer-form")){
   event.preventDefault();await submitProfessionalCustomer(event.target);return;
  }
