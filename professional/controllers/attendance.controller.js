@@ -8,10 +8,13 @@ import {toDateKey as dateKey} from "../utils/formatters.js";
 /** Recebe dependências de interface e sessão; bloqueios de operações são isolados por geração. */
 export function createAttendanceController({state,supabase,getEpoch,showNotice,loadAppointments,loadOrders,chooseOrder,appointmentStatusActions,appointmentStatusEnabled,attendanceEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled}){
  let pendingEpoch=null;
+ // Cada ação usa o ID explícito de seu cartão, nunca o detalhe aberto anteriormente.
+ const findAppointment=id=>state.appointments.find(item=>item.id===id)||null;
  async function applyAppointmentStatus(control) {
-  const appointment=state.selectedAppointment;
-  if(!appointmentStatusEnabled || !appointment || pendingEpoch===getEpoch() || !appointmentStatusActions(appointment))return;
+  const appointment=findAppointment(control.dataset.appointmentId);
+  if(state.page!=="Agenda"||!appointmentStatusEnabled || !appointment || pendingEpoch===getEpoch() || !appointmentStatusActions(appointment))return;
   const status=control.dataset.ownAppointmentStatus;
+  if(!["confirmed","cancelled"].includes(status)||(status==="confirmed"&&appointment.status!=="scheduled"))return;
   if(status==="cancelled"&&!window.confirm("Cancelar este agendamento?"))return;
   const epoch=getEpoch();
   pendingEpoch=epoch;
@@ -32,7 +35,7 @@ export function createAttendanceController({state,supabase,getEpoch,showNotice,l
  
  /** Atualiza Agenda e Comandas após confirmação do servidor, sem registrar pagamentos. */
  async function applyAttendance(control){
-  const appointment=state.selectedAppointment,operation=control.dataset.attendanceAction;
+  const appointment=findAppointment(control.dataset.appointmentId),operation=control.dataset.attendanceAction;
   if(!attendanceEnabled||state.page!=="Agenda"||pendingEpoch===getEpoch()||!attendanceActions(state,appointment).includes(operation))return;
   if(operation==="finish"&&!window.confirm("Finalizar o atendimento e encaminhar a comanda ao Caixa?"))return;
   const epoch=getEpoch();
@@ -50,12 +53,12 @@ export function createAttendanceController({state,supabase,getEpoch,showNotice,l
   finally{if(pendingEpoch===epoch)pendingEpoch=null;if(control.isConnected)control.disabled=false;}
  }
  /** Abre a comanda vinculada somente se estiver visível no contexto autorizado. */
- async function openAttendanceOrder(){
-  const appointment=state.selectedAppointment,epoch=getEpoch();
+ async function openAttendanceOrder(appointmentId){
+  const appointment=findAppointment(appointmentId),epoch=getEpoch();
   if(!attendanceEnabled||!appointment?.service_order_id||state.page!=="Agenda"||!attendanceActions(state,appointment).includes("order"))return;
   try{
    await loadOrders();
-   if(epoch!==getEpoch()||state.page!=="Agenda"||state.selectedAppointment?.id!==appointment.id)return;
+   if(epoch!==getEpoch()||state.page!=="Agenda"||!attendanceActions(state,findAppointment(appointmentId)).includes("order")||findAppointment(appointmentId)?.service_order_id!==appointment.service_order_id)return;
    if(!state.orders.some(order=>order.id===appointment.service_order_id)){showNotice("Comanda não encontrada na lista recente. Consulte a recepção.");return;}
    state.page="Comandas";state.selectedAppointment=null;state.notice="";
    await chooseOrder(appointment.service_order_id);
@@ -77,7 +80,7 @@ export function createAttendanceController({state,supabase,getEpoch,showNotice,l
    if(state.page==="Agenda"&&state.selectedAppointment?.id===saved.id) {
     state.selectedDate=newDate;
     state.month=new Date(newDate.getFullYear(),newDate.getMonth(),1);
-    state.selectedAppointment={...appointment,...saved};
+    state.selectedAppointment=null;state.appointmentModalMode=null;
    }
    state.appointments=state.appointments.filter(item=>item.id!==saved.id);
    try {

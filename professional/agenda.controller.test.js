@@ -111,3 +111,5 @@ run().catch(error => {
   console.error("Falha nos testes do controlador da Agenda:", error);
   process.exitCode = 1;
 });
+
+const modalState=makeState();await handleAgendaClick({state:modalState,event:makeEvent({"[data-appointment]":{dataset:{appointment:"appointment-1",reschedule:"true"}}}),loadAppointments:async()=>{},render:()=>{}});assert.equal(modalState.appointmentModalMode,"reschedule");

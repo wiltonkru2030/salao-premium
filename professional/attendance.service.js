@@ -18,7 +18,7 @@ export function renderAttendanceActions(state,appointment,enabled){
  const actions=attendanceActions(state,appointment);
  if(!actions.length)return "";
  const labels={start:"Iniciar atendimento",order:"Abrir comanda",finish:"Finalizar atendimento"};
- return '<div class="professional-card-actions">'+actions.map(action=>'<button type="button" class="btn '+(action==="order"?"secondary":"primary")+'" data-attendance-action="'+action+'">'+labels[action]+'</button>').join("")+'</div>';
+ return '<div class="professional-card-actions">'+actions.map(action=>'<button type="button" class="btn '+(action==="order"?"secondary":"primary")+'" data-attendance-action="'+action+'" data-appointment-id="'+String(appointment.id).replace(/[^a-zA-Z0-9_-]/g,"")+'">'+labels[action]+'</button>').join("")+'</div>';
 }
 
 /** Solicita transição atômica e valida o retorno antes de modificar estado local. */

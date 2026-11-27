@@ -8,6 +8,8 @@ import {renderProfessionalServices} from "../../professional/views/services.view
 import {ordersView,commissionsView,profileView,settingsView} from "../../professional/views/workspace.views.js";
 import {renderNotificationsView} from "../../professional/views/notifications.views.js";
 import {installGlobalMasks} from "../../src/utils/input-masks.js";
+import {syncAppointmentDialog} from "../../professional/appointment-dialog.js";
+import {handleAgendaClick} from "../../professional/agenda.controller.js";
 import {bindProfessionalBookingSearch} from "../../professional/booking-search.js";
 import {updatePixField} from "../../professional/utils/pix-fields.js";
 const root=document.querySelector("#professional-app");
@@ -30,13 +32,14 @@ const renderers={Agenda:agendaView,Clientes:()=>renderProfessionalCustomers({...
 /** Monta o cenário solicitado, utilizando exatamente os renderizadores de produção. */
 function show(scenario,theme){
  document.documentElement.dataset.theme=theme;
- state.selectedAppointment=scenario==="Atendimento"?appointment:null;
+ state.selectedAppointment=scenario==="Atendimento"?appointment:null;state.appointmentModalMode="details";
  state.selectedOrder=scenario==="Itens da comanda"?order:null;
  state.customerEditor=scenario==="Cadastro de cliente"?{}:null;
  state.serviceEditor=scenario==="Cadastro de serviço"?{}:null;
  const parent={"Novo agendamento":"Agenda","Cadastro rápido":"Agenda",Atendimento:"Agenda","Itens da comanda":"Comandas","Cadastro de cliente":"Clientes","Cadastro de serviço":"Serviços"}[scenario]||scenario;
  state.page=parent;
  root.innerHTML=parent==="Login"?renderProfessionalLoginView("",theme):renderProfessionalShell({state,pages,content:renderers[parent]()});
+ if(scenario==="Atendimento")syncAppointmentDialog(root,state,()=>show("Agenda",theme));
  if(["Novo agendamento","Cadastro rápido"].includes(scenario)){
   const dialog=root.querySelector("dialog");dialog.showModal();
   if(scenario==="Novo agendamento"){
@@ -46,7 +49,9 @@ function show(scenario,theme){
   if(scenario==="Cadastro rápido"){root.querySelector("#professional-new-appointment").hidden=true;root.querySelector("#professional-booking-quick-customer").hidden=false;}
  }
 }
-root.addEventListener("click",event=>{const action=event.target.closest("[data-action]")?.dataset.action;if(action==="open-professional-menu"||action==="close-professional-menu")setProfessionalMenuOpen(root,action==="open-professional-menu");});
+root.addEventListener("click",async event=>{const action=event.target.closest("[data-action]")?.dataset.action;if(action==="open-professional-menu"||action==="close-professional-menu"){setProfessionalMenuOpen(root,action==="open-professional-menu");return;}
+ if(state.page==="Agenda")await handleAgendaClick({event,state,loadAppointments:async()=>{},render:()=>{const theme=document.documentElement.dataset.theme;root.innerHTML=renderProfessionalShell({state,pages,content:agendaView()});syncAppointmentDialog(root,state,()=>show("Agenda",theme));}});
+});
 root.addEventListener("change",event=>{if(event.target.matches("[name=pixType]"))updatePixField(event.target.form);});
 installGlobalMasks();
 window.professionalVisualFixture={show};

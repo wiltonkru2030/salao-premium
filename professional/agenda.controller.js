@@ -54,6 +54,7 @@ export async function handleAgendaClick({ event, state, loadAppointments, render
     const changedMonth = nextDate.getMonth() !== state.month.getMonth()
       || nextDate.getFullYear() !== state.month.getFullYear();
     state.selectedDate = nextDate;
+    state.selectedAppointment=null;state.appointmentModalMode=null;
 
     if (changedMonth) {
       state.month = new Date(nextDate.getFullYear(), nextDate.getMonth(), 1);
@@ -67,6 +68,7 @@ export async function handleAgendaClick({ event, state, loadAppointments, render
   if (appointmentControl) {
     const appointmentId = String(appointmentControl.dataset.appointment || "");
     state.selectedAppointment = state.appointments.find(item => item.id === appointmentId) || null;
+    state.appointmentModalMode=appointmentControl.dataset.reschedule==="true"?"reschedule":"details";
     render();
     return true;
   }
@@ -76,13 +78,14 @@ export async function handleAgendaClick({ event, state, loadAppointments, render
     const offset = action === "next-month" ? 1 : -1;
     state.month = new Date(state.month.getFullYear(), state.month.getMonth() + offset, 1);
     state.selectedDate = new Date(state.month.getFullYear(), state.month.getMonth(), 1);
+    state.selectedAppointment=null;state.appointmentModalMode=null;
     await loadAppointments();
     render();
     return true;
   }
 
   if (action === "close-appointment") {
-    state.selectedAppointment = null;
+    state.selectedAppointment = null;state.appointmentModalMode=null;
     render();
     return true;
   }

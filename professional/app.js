@@ -29,6 +29,7 @@ import { renderProfessionalServices } from "./views/services.views.js";
 import {bindProfessionalBookingSearch} from "./booking-search.js";
 import {createAttendanceController} from "./controllers/attendance.controller.js";
 import {createAgendaWorkspaceViews} from "./views/agenda-workspace.views.js";
+import {syncAppointmentDialog} from "./appointment-dialog.js";
 import { handleAgendaClick } from "./agenda.controller.js";
 import {fetchProfessionalAppointments} from "./appointments.service.js";
 import {allowedProfessionalPages} from "./access.rules.js";
@@ -98,6 +99,7 @@ function render(){
  clearAutocomplete();
  const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state,{managementEnabled:orderManagementEnabled}):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services,{manage:canManageServices(),catalog:state.serviceCatalog,editor:state.serviceEditor,status:state.serviceCatalogStatus}):state.page==="Clientes"?renderProfessionalCustomers({...state,canManageCustomers:customerRegistrationEnabled&&canUseSelectedUnit(state)}):state.page==="Notificações"?renderNotificationsView(state):state.page==="Perfil"?profileView(state,{preferencesEnabled:profilePreferencesEnabled}):settingsView(state, appearance.preference,{preferencesEnabled:profilePreferencesEnabled,pushConfigured:push.configured,workingHoursEnabled});
  shell(content);
+ if(state.page==="Agenda")syncAppointmentDialog(root,state,render);
  if(state.page==="Comandas"&&state.selectedOrder&&state.role==="professional"&&state.professional)bindAutocomplete();
 }
 // Carrega somente agendamentos permitidos pelo escopo profissional.
@@ -241,10 +243,10 @@ root.addEventListener("click",async event=>{
   const attendanceControl=event.target.closest("[data-attendance-action]");
   if(attendanceControl&&state.page==="Agenda"){
    if(attendanceControl.dataset.attendanceAction==="order"){
-    const epoch=sessionEpoch,appointmentId=state.selectedAppointment?.id;
+    const epoch=sessionEpoch,appointmentId=attendanceControl.dataset.appointmentId;
     if(attendanceControl.disabled)return;attendanceControl.disabled=true;
     try{await loadServices();}catch{if(epoch===sessionEpoch)showNotice("Não foi possível carregar os serviços. Tente novamente.");return;}finally{if(attendanceControl.isConnected)attendanceControl.disabled=false;}
-    if(epoch===sessionEpoch&&state.page==="Agenda"&&state.selectedAppointment?.id===appointmentId)await openAttendanceOrder();
+    if(epoch===sessionEpoch&&state.page==="Agenda")await openAttendanceOrder(appointmentId);
    }else await applyAttendance(attendanceControl);return;
   }
   const statusControl=event.target.closest("[data-own-appointment-status]");

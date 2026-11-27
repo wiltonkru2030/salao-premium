@@ -55,7 +55,18 @@ try{
        assert.equal(await suggestions.inputValue(),"");
       }
      }
+     if(scenario==="Atendimento"){
+      const modal=page.locator("#professional-appointment-dialog");assert.equal(await modal.evaluate(d=>d.open),true);
+      assert.equal(await modal.getByRole("heading",{name:"Detalhes do agendamento"}).count(),1);
+      await modal.getByRole("button",{name:"Fechar detalhes"}).click();assert.equal(await page.locator("#professional-appointment-dialog[open]").count(),0);
+     }
      if(scenario==="Agenda"){
+      const card=page.locator("article.appointment").first();assert.equal(await card.getByRole("button",{name:"Iniciar atendimento"}).getAttribute("data-appointment-id"),"a");
+      assert.equal(await card.locator("button button").count(),0);
+      await card.locator(".professional-appointment-details-button").click();assert.equal(await page.locator("#professional-appointment-dialog[open]").count(),1);
+      await page.keyboard.press("Escape");assert.equal(await page.locator("#professional-appointment-dialog[open]").count(),0);
+      await page.getByRole("button",{name:"Reagendar",exact:true}).click();assert.equal(await page.locator("#professional-appointment-dialog[open] #professional-reschedule").count(),1);
+      await page.locator("#professional-appointment-dialog").getByRole("button",{name:"Fechar detalhes"}).click();
       const layout=await page.locator(".professional-agenda-layout").evaluate(el=>({calendar:el.children[0].getBoundingClientRect().toJSON(),day:el.children[1].getBoundingClientRect().toJSON()}));
       if(viewport.width>=1180){assert.ok(layout.day.left>layout.calendar.right,"Agenda desktop deve separar calendário e atendimentos");}
       else assert.ok(layout.day.top>=layout.calendar.bottom,"Agenda móvel deve manter fluxo vertical");

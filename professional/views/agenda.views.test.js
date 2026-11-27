@@ -39,3 +39,6 @@ console.log("Testes da view de agenda do App Profissional concluídos.");
 
 assert.match(html,/professional-agenda-calendar-column/);
 assert.match(html,/professional-agenda-day-column/);
+
+const modal=renderAgendaView({state,monthLabel:()=>"Novembro",dateLabel:()=>"Dia",appointmentCard:()=>"",appointmentDetails:()=>'<dialog id="detail-modal"></dialog>'});
+assert.match(modal,/<\/section><\/div><dialog id="detail-modal">/);

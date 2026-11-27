@@ -121,3 +121,19 @@
  #professional-app .professional-agenda-layout{grid-template-columns:minmax(360px,1.05fr) minmax(320px,1fr);gap:24px}
  #professional-app .professional-agenda-calendar-column{position:sticky;top:24px}
 }
+
+/* Cartões da agenda: detalhes e ações são controles irmãos, sem botões aninhados. */
+#professional-app .professional-agenda-layout article.appointment{cursor:default}
+#professional-app .professional-appointment-details-button{display:block;width:100%;padding:0;min-height:0;border:0;background:transparent;color:inherit;text-align:left;box-shadow:none;border-radius:var(--sp-radius)}
+#professional-app .professional-appointment-details-button:hover{background:transparent}
+#professional-app .professional-appointment-detail-hint{display:flex;justify-content:space-between;align-items:center;margin-block-start:12px;color:var(--sp-text-muted,var(--muted));font-size:12px;font-weight:600}
+#professional-app .professional-appointment-details-button .tag{white-space:normal}
+#professional-app .professional-agenda-layout .appointment .professional-card-actions{margin-block-start:8px}
+#professional-app .professional-agenda-layout .appointment .professional-card-actions > button{flex:1 1 130px;min-height:44px;white-space:normal}
+#professional-app dialog.professional-appointment-dialog .sp-modal-shell{max-block-size:90dvh;display:flex;flex-direction:column}
+#professional-app dialog.professional-appointment-dialog .sp-modal-body{display:block;overflow-y:auto;min-block-size:0;padding:16px 20px;overscroll-behavior:contain}
+#professional-app dialog.professional-appointment-dialog .sp-modal-body .detail-row{font-size:var(--sp-text-size);align-items:baseline}
+#professional-app dialog.professional-appointment-dialog .detail-row b{max-width:65%;text-align:right;overflow-wrap:anywhere}
+#professional-app dialog.professional-appointment-dialog .sp-modal-foot{flex:none}
+#professional-app dialog.professional-appointment-dialog .sp-modal-foot > button{width:100%}
+#professional-app dialog.professional-appointment-dialog #professional-reschedule{margin-block-start:16px;display:grid;gap:12px}
