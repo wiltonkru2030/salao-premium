@@ -5,6 +5,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2.119.0";
 import {createRemoteJWKSet,jwtVerify} from "npm:jose@6.2.18";
 import {allowedDispatchClaims} from "./auth-claims.js";
+import {validateFirebaseTransport} from "./validate-transport.js";
 const jwks=createRemoteJWKSet(new URL("https://token.actions.githubusercontent.com/.well-known/jwks"),{timeoutDuration:5000});
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
 const bytes=(text:string)=>new TextEncoder().encode(text);
@@ -39,7 +40,16 @@ Deno.serve(async(req:Request)=>{
  let account;
  try{account=JSON.parse(accountJSON||"{}");}catch{account={};}
  const configured=!!(serviceKey&&account.project_id===projectId&&typeof account.client_email==="string"&&typeof account.private_key==="string"&&/^[a-z0-9-]{4,64}$/.test(projectId));
- if(mode==="check")return json({authenticated:true,transportConfigured:configured});
+ // O modo check nunca reserva a fila nem entrega uma mensagem. Verifica OAuth e FCM reais.
+ if(mode==="check"){
+  if(!configured)return json({authenticated:true,transportConfigured:false,oauthValidated:false,fcmValidated:false});
+  let bearer:string;
+  try{bearer=await accessToken(account);}catch{return json({authenticated:true,transportConfigured:true,oauthValidated:false,fcmValidated:false});}
+  try{
+   const probe=await validateFirebaseTransport({projectId,bearer});
+   return json({authenticated:true,transportConfigured:true,oauthValidated:true,fcmValidated:probe.validated,fcmHttpStatus:probe.httpStatus});
+  }catch{return json({authenticated:true,transportConfigured:true,oauthValidated:true,fcmValidated:false});}
+ }
  if(!configured||!serviceKey)return json({error:"Transporte não configurado."},503);
  try{
   // Confirma credencial antes de reservar qualquer entrega.
