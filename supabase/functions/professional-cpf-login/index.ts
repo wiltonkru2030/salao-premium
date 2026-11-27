@@ -37,7 +37,7 @@ Deno.serve(async(req:Request)=>{
   const identity=Array.isArray(resolved.data)?resolved.data[0]:resolved.data;
   if(resolved.error||!identity?.auth_user_id)return json({error:"CPF ou senha inválidos."},401);
   const {data:authUser,error:userError}=await admin.auth.admin.getUserById(identity.auth_user_id);
-  if(userError||!authUser.user?.email||authUser.user.banned_until)return json({error:"CPF ou senha inválidos."},401);
+  if(userError||!authUser.user?.email||(authUser.user.banned_until&&Date.parse(authUser.user.banned_until)>Date.now()))return json({error:"CPF ou senha inválidos."},401);
   const client=createClient(url,anonKey,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data:session,error:signInError}=await client.auth.signInWithPassword({email:authUser.user.email,password});
   if(signInError||!session.session)return json({error:"CPF ou senha inválidos."},401);

@@ -14,3 +14,6 @@ A função complete-professional-password foi implantada em QA com JWT obrigató
 - https://firebase.google.com/docs/cloud-messaging/web/get-started
 - https://firebase.google.com/docs/cloud-messaging/web/receive-messages
 - https://firebase.google.com/docs/cloud-messaging/send/v1-api
+
+### Serialização de operações de senha
+Migration `20261127031423_serialize_professional_auth_operations.sql` instalada em QA. Travas privadas por profissional/conta, apenas service_role pode adquirir e liberar com identificador do detentor. Teste SQL `docs/sql/professional-auth-lock-qa.sql` aprovado. Provisionamento e conclusão compartilham a trava da conta e a conclusão confere a geração após aquisição; provisionamento usa a mesma origem de pepper do login. Trava não expira automaticamente: após falha do processo, suporte deve conferir que não existe execução em curso antes de remover somente a trava específica. Teste real Auth e corrida real de duas chamadas continuam pendentes. Produção inalterada.

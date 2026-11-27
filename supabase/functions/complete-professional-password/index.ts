@@ -6,15 +6,36 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.119.0";
 const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,"Content-Type":"application/json"}});
+/** Coordena o mesmo usuário nas duas Edge Functions. Se houver interrupção, a trava permanece
+ * até revisão de suporte; não libera outra operação enquanto alteração Auth pode estar em curso.
+ */
+function operationLocks(admin:ReturnType<typeof createClient>){
+ const holder=crypto.randomUUID(),keys:string[]=[];
+ return {
+  async acquire(key:string){
+   const {data,error}=await admin.rpc("acquire_professional_auth_lock",{operation_key:key,operation_holder:holder});
+   if(error||data!==true)return false;
+   keys.push(key);return true;
+  },
+  async release(){
+   for(const key of keys.reverse()){
+    try{await admin.rpc("release_professional_auth_lock",{operation_key:key,operation_holder:holder});}catch{/* revisão manual, não libera outra operação */}
+   }
+  }
+ };
+}
+
 Deno.serve(async(req:Request)=>{
  if(req.method==="OPTIONS")return new Response("ok",{headers:cors});
  if(req.method!=="POST")return json({error:"Método não permitido."},405);
  const url=Deno.env.get("SUPABASE_URL"),serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),anonKey=Deno.env.get("SUPABASE_ANON_KEY");
  if(!url||!serviceKey||!anonKey)return json({error:"Serviço indisponível."},503);
+ let locks:ReturnType<typeof operationLocks>|null=null;
  try{
   const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"");
   if(!token)return json({error:"Sessão obrigatória."},401);
   const admin=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
+  locks=operationLocks(admin);
   const client=createClient(url,anonKey,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data,error}=await client.auth.getUser(token);
   const user=data.user;
@@ -25,6 +46,9 @@ Deno.serve(async(req:Request)=>{
   const {data:members,error:membershipError}=await admin.from("org_memberships").select("org_id,role,status").eq("user_id",user.id);
   const {data:profiles,error:profileError}=await admin.from("professionals").select("org_id,active,access_enabled").eq("profile_id",user.id);
   if(membershipError||profileError||!members?.some(m=>m.role==="professional"&&m.status==="active"&&profiles?.some(p=>p.org_id===m.org_id&&p.active&&p.access_enabled))||members?.some(m=>m.role!=="professional"))return json({error:"Vínculo profissional indisponível."},403);
+  if(!await locks.acquire("user:"+user.id))return json({error:"Outra alteração de senha está em andamento. Tente novamente."},409);
+  const before=await admin.auth.admin.getUserById(user.id);
+  if(before.error||before.data.user?.app_metadata?.professional_password_required!==true||before.data.user?.app_metadata?.professional_password_generation!==user.app_metadata.professional_password_generation)return json({error:"A senha foi redefinida. Entre novamente."},409);
   // Auth valida a senha atual e aplica seu limite de tentativas.
   const {data:verified,error:verifyError}=await client.auth.signInWithPassword({email:user.email,password:current});
   if(verifyError||verified.user?.id!==user.id||!verified.session)return json({error:"Senha temporária inválida."},401);
@@ -43,4 +67,5 @@ Deno.serve(async(req:Request)=>{
   if(updateError)return json({error:"Não foi possível atualizar a senha."},400);
   return json({success:true});
  }catch{return json({error:"Não foi possível concluir a troca de senha."},500);}
+ finally{await locks?.release();}
 });
