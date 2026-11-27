@@ -50,3 +50,6 @@ Máscaras Pix variáveis por tipo (CPF/CNPJ numéricos, telefone nacional, e-mai
 
 ### Homologação visual automatizada
 Revisão responsiva das telas: conteúdo centralizado, textos longos, filtros de comissão, detalhes da comanda, botões SVG de menu e telefones da Agenda. Workflow `Professional visual browser` usa Chromium e as views/CSS reais com dados sintéticos, sem conexão ao Supabase. 15 cenários × 3 larguras (320, 390, 1440 px) × 2 temas, 90 renderizações previstas; testa largura, erros JavaScript, formulários ocultos, menu móvel e máscara Pix; captura imagens e relatório JSON como artefato. Fontes externas bloqueadas no teste, com fallback local; não é aprovação estética manual nem teste autenticado. CI anterior `e70b8e9` passou Agenda e suíte geral. O novo workflow precisa ser executado e conferido; produção não alterada.
+
+### Preparação da publicação — 26/11/2026
+Agenda e validação geral aprovadas em `595349f`; teste visual falhou na instalação do Chromium (Ubuntu 26.04 incompatível). Runner fixado em Ubuntu 24.04. Inventário somente leitura identificou 9 migrations recentes só em QA, além de divergências de versões e definições. Consulte [critérios de publicação](PUBLICACAO-APP-PROFISSIONAL.md). Sem alteração de produção.

@@ -33,6 +33,14 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          # Novos contratos permanecem desativados até reconciliar o banco e homologar.
+          VITE_PROFESSIONAL_CUSTOMER_REGISTRATION: 'false'
+          VITE_PROFESSIONAL_NOTIFICATIONS: 'false'
+          VITE_PROFESSIONAL_PROFILE_PREFERENCES: 'false'
+          VITE_PROFESSIONAL_ORDER_MANAGEMENT: 'false'
+          VITE_PROFESSIONAL_ATTENDANCE: 'false'
+          VITE_PROFESSIONAL_SERVICE_MANAGEMENT: 'false'
+          VITE_PROFESSIONAL_UNIT_BOOKING: 'false'
         run: npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:

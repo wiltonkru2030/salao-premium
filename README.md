@@ -327,3 +327,5 @@ Build, testes agregados e Agenda aprovados no GitHub para `d6f0e80`. Smoke integ
 Homologação financeira complementar: teste SQL integrado aprovado em QA, incluindo correção de arredondamento de comissão por parcelas. Ver [relatório](docs/HOMOLOGACAO-APP-PROFISSIONAL.md) e [script](docs/sql/professional-financial-qa.sql). Ainda não autoriza publicação em produção.
 
 Revisão de sessão: verificação ao retornar ao app, mensagens seguras e troca de salão com limpeza de contexto. Ver [documentação profissional](professional/README.md) para os bloqueios de autenticação e filial ainda pendentes.
+
+Preparação da publicação: [inventário e critérios de liberação do App Profissional](docs/PUBLICACAO-APP-PROFISSIONAL.md). A validação visual e a reconciliação de migrations são pendências; não executar publicação com funcionalidades novas sem suas dependências homologadas.

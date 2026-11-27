@@ -1,0 +1,734 @@
+{
+  "date": "2026-11-26",
+  "timezone": "America/Campo_Grande",
+  "base_commit": "595349f4cce14d6b2439322d9d68b82d985e55e7",
+  "scope": "Metadados somente leitura; não equivale a comparação de todo o schema.",
+  "qa_recent": [
+    {
+      "version": "20261124045516",
+      "name": "initial_salao_premium_schema",
+      "hash": "f6b5559ade2c4d964ddea8e84702a698"
+    },
+    {
+      "version": "20261124045525",
+      "name": "replay_20261112161333_refine_role_based_access_and_indexes",
+      "hash": "9d5f997ccb019e257b9dbb2a0d9c68fb"
+    },
+    {
+      "version": "20261124045526",
+      "name": "replay_20261112162027_professional_app_and_service_orders",
+      "hash": "844f9d20c2830b3a3dd9a55ae6c9f13e"
+    },
+    {
+      "version": "20261124045527",
+      "name": "replay_20261112162105_secure_professional_cpf_auth",
+      "hash": "e328e0b4a0bd021842a3fb989481eec1"
+    },
+    {
+      "version": "20261124045528",
+      "name": "replay_20261112162115_professional_login_provisioning_rpc",
+      "hash": "6c460f2b3a358ef58d993fdd28b6b24f"
+    },
+    {
+      "version": "20261124045529",
+      "name": "replay_20261112162202_service_order_total_recalculation",
+      "hash": "9579d7a05d4089f02a9ad89c0e768386"
+    },
+    {
+      "version": "20261124045530",
+      "name": "replay_20261112162406_fix_service_order_totals_trigger",
+      "hash": "41437c6ca92fc474f07a849cb6d40cb4"
+    },
+    {
+      "version": "20261124045531",
+      "name": "replay_20261112162610_tighten_professional_data_access",
+      "hash": "e60483b8e61f4a164e4145a5e8f3caf3"
+    },
+    {
+      "version": "20261124045532",
+      "name": "replay_20261112162757_restrict_professional_module_permissions",
+      "hash": "68c8e62f6e09de7140a817c475f5687e"
+    },
+    {
+      "version": "20261124045533",
+      "name": "replay_20261112162841_enforce_professional_comanda_limits",
+      "hash": "5257814e750967d49ac9b7cfc1735fa6"
+    },
+    {
+      "version": "20261124045534",
+      "name": "replay_20261112163107_vault_professional_cpf_pepper_access",
+      "hash": "59eef3cd4f9d2c8ecd388625b0e44956"
+    },
+    {
+      "version": "20261124045535",
+      "name": "replay_20261112163653_allow_professional_read_own_order_items",
+      "hash": "27088a098afd4bf1d3f555171b67c124"
+    },
+    {
+      "version": "20261124045536",
+      "name": "replay_20261112165404_audit_history_and_recovery_bin",
+      "hash": "1f7a97ae2bce41b0fe7f8d751fe27a3d"
+    },
+    {
+      "version": "20261124045538",
+      "name": "replay_20261112165526_professional_app_access_and_comanda_workflow",
+      "hash": "9299ed2f3d1e0bd4901ba11b967a43ad"
+    },
+    {
+      "version": "20261124045539",
+      "name": "replay_20261112170155_appointment_checkin_payment_and_commission_workflow",
+      "hash": "3c05f044ee3a89b9e853e1932c22bd5d"
+    },
+    {
+      "version": "20261124045540",
+      "name": "replay_20261112170218_secure_professional_cpf_pepper_lookup",
+      "hash": "c1b98f12d15874f0ed29b48d473fb1c5"
+    },
+    {
+      "version": "20261124045541",
+      "name": "replay_20261112170347_recycle_bin_retention_and_documentation",
+      "hash": "badf6a64addc098acbd4ab638cb2043e"
+    },
+    {
+      "version": "20261124045543",
+      "name": "replay_20261112170907_appointment_creator_snapshot",
+      "hash": "2f434e8289705842e30d1f1432af783e"
+    },
+    {
+      "version": "20261124045545",
+      "name": "replay_20261112171759_app_scope_reception_and_audit_completion",
+      "hash": "c51ed385142ea2d4d9e4dab292ee4477"
+    },
+    {
+      "version": "20261124045546",
+      "name": "replay_20261112171813_reception_calendar_all_rls",
+      "hash": "e4daeb845da6693caf3ec9376fab845b"
+    },
+    {
+      "version": "20261124045547",
+      "name": "replay_20261112171935_reception_command_operational_access",
+      "hash": "118a611d10dcda33ca49e69f822c91d9"
+    },
+    {
+      "version": "20261124045548",
+      "name": "replay_20261112172256_professional_access_revocation_and_comanda_strategy",
+      "hash": "937cf9b851fffb0317297cdde379599a"
+    },
+    {
+      "version": "20261124045549",
+      "name": "replay_20261112172630_fix_comanda_sale_status_on_payment",
+      "hash": "5b74db04e0cc66b3e103749a75171e8e"
+    },
+    {
+      "version": "20261124045550",
+      "name": "replay_20261112173203_payment_safe_cancellation_and_security_cleanup",
+      "hash": "c2257711668f371ad52f86061c0035b1"
+    },
+    {
+      "version": "20261124045551",
+      "name": "replay_20261112173311_commission_payout_schema_and_history",
+      "hash": "e078ade0c9d48c98f6c4b88fd1415ec6"
+    },
+    {
+      "version": "20261124045552",
+      "name": "replay_20261112173328_commission_payout_rpc_and_sales_cash_link",
+      "hash": "b2a23e0f01a31c4132f36087d9b067e2"
+    },
+    {
+      "version": "20261124045603",
+      "name": "replay_20261112173534_professional_auth_bootstrap_without_tenant_creation",
+      "hash": "9a3d5ecfd888e93d1cbbb355ea6db4dd"
+    },
+    {
+      "version": "20261124045605",
+      "name": "replay_20261112182318_professional_app_scope_hardening",
+      "hash": "472449bfe6371072358dd4191284f09c"
+    },
+    {
+      "version": "20261124045607",
+      "name": "replay_20261112182427_professional_app_scope_role_guard",
+      "hash": "5b8ee2a24b1caa3e89f0c68d53065d50"
+    },
+    {
+      "version": "20261124045609",
+      "name": "replay_20261112182626_professional_order_rls_no_recursion",
+      "hash": "312be3f400522e78c1b6c7412eaf6816"
+    },
+    {
+      "version": "20261124045611",
+      "name": "replay_20261112182739_professional_app_owner_and_reception_access",
+      "hash": "da2aaef0ca7046a02a0ffe87a92d3b84"
+    },
+    {
+      "version": "20261124045613",
+      "name": "replay_20261112182809_reception_app_scope_safe_until_separate_identity",
+      "hash": "378f32edd586ec58aa671e82f19ac98d"
+    },
+    {
+      "version": "20261124045615",
+      "name": "replay_20261112202823_professional_fiscal_profile_and_service_assignments",
+      "hash": "300fcf8ea9157f218d117c41202fecff"
+    },
+    {
+      "version": "20261124045617",
+      "name": "replay_20261112202951_enforce_professional_service_assignments",
+      "hash": "9603d0557ac29c3b15da21349fb0a78f"
+    },
+    {
+      "version": "20261124045620",
+      "name": "replay_20261112203122_professional_services_policy_optimization",
+      "hash": "2d274098e9320b1c13ba290cdadcf726"
+    },
+    {
+      "version": "20261124045622",
+      "name": "replay_20261112203202_preserve_legacy_appointments_service_links",
+      "hash": "06eb42a959cc7e3ba08884e060f54fa9"
+    },
+    {
+      "version": "20261124045624",
+      "name": "replay_20261113002700_product_commission_rules_and_payment_flow",
+      "hash": "e2136f0eac0550fb3992e87056c4c42a"
+    },
+    {
+      "version": "20261124045625",
+      "name": "replay_20261113002910_index_product_commission_rule_foreign_key",
+      "hash": "7297a0441d31e8d1bc6075a4bd4309d5"
+    },
+    {
+      "version": "20261124045627",
+      "name": "replay_20261113003842_quotes_and_grouped_appointments",
+      "hash": "b2118642a412d707c5e80e0abf29b1da"
+    },
+    {
+      "version": "20261124045630",
+      "name": "replay_20261113004028_enforce_quote_discount_rules_and_totals",
+      "hash": "4c37531dd37797d5394cd93437b542e0"
+    },
+    {
+      "version": "20261124045632",
+      "name": "replay_20261113004223_support_fixed_value_quote_discounts",
+      "hash": "b117f083caa724e4db45feb4c38facfc"
+    },
+    {
+      "version": "20261124045634",
+      "name": "replay_20261113004247_index_quote_group_foreign_keys_and_lock_discount_settings",
+      "hash": "2944010605649fa4f6dab2b5a7ec0fd8"
+    },
+    {
+      "version": "20261124045636",
+      "name": "replay_20261113004409_atomic_quote_appointment_group_booking",
+      "hash": "19510525a5b5464420b1240c5b85e207"
+    },
+    {
+      "version": "20261124045638",
+      "name": "replay_20261113004419_atomic_grouped_quote_scheduling_and_quote_item_lifecycle",
+      "hash": "0dc89760ed81d8a0b1d996b21434ab2c"
+    },
+    {
+      "version": "20261124045640",
+      "name": "replay_20261113004537_split_quote_rls_read_and_write_policies",
+      "hash": "bd9d1361b8c06ed6223c364e529759e4"
+    },
+    {
+      "version": "20261124045642",
+      "name": "replay_20261113004807_quote_quantity_aware_appointment_duration",
+      "hash": "04efd0372c06b21b160f0c57f3eba22a"
+    },
+    {
+      "version": "20261124045644",
+      "name": "replay_20261113010050_integrate_partial_commissions_cash_and_grouped_comandas",
+      "hash": "48e2248684fa28233be7112ba58394df"
+    },
+    {
+      "version": "20261124045646",
+      "name": "replay_20261113010144_require_open_cash_for_payments_and_refunds",
+      "hash": "7b8532a43d033f40c6d8e539af8ceae1"
+    },
+    {
+      "version": "20261124045648",
+      "name": "replay_20261113010244_serialize_cash_register_movements",
+      "hash": "424ecfe55125a438c74c81a9b0b0ab9e"
+    },
+    {
+      "version": "20261124045650",
+      "name": "replay_20261113010311_fix_grouped_order_existing_uuid_lookup",
+      "hash": "0734e71471cde42de53bb357c1126779"
+    },
+    {
+      "version": "20261124045653",
+      "name": "replay_20261113010319_index_financial_refund_foreign_keys",
+      "hash": "d27bdfefe9925fd851057540f17d0325"
+    },
+    {
+      "version": "20261124045654",
+      "name": "replay_20261113010559_document_financial_and_agenda_database_contracts",
+      "hash": "32180b78fc3768672bfd720363d34ac4"
+    },
+    {
+      "version": "20261124045656",
+      "name": "replay_20261113010702_use_default_cash_register_for_branch_transactions",
+      "hash": "7605bbe90b096bdfbaee405208bb84a2"
+    },
+    {
+      "version": "20261124045659",
+      "name": "replay_20261113010729_enforce_unique_professional_service_commission_rules",
+      "hash": "262cb54aee748d92ae6e8a09801970b1"
+    },
+    {
+      "version": "20261124045701",
+      "name": "replay_20261113011533_create_quotes_atomically_with_tenant_validation",
+      "hash": "ba159d4d8ecdab777eac58d0c19613a3"
+    },
+    {
+      "version": "20261124045703",
+      "name": "replay_20261113011612_save_quote_discount_settings_atomically",
+      "hash": "63ab989e2f5ff080b582e0e07c7ab648"
+    },
+    {
+      "version": "20261124045705",
+      "name": "replay_20261113011915_scope_professional_app_access_to_explicit_tenant",
+      "hash": "6f227a8b907fe2a582e39119bf98ce8a"
+    },
+    {
+      "version": "20261124045707",
+      "name": "replay_20261113012733_enforce_professional_service_on_quote_scheduling",
+      "hash": "9b3c10bdeb0d86b425b6b47bd2bd919c"
+    },
+    {
+      "version": "20261124045709",
+      "name": "replay_20261113034347_dbd6acb8_12c0_4a49_9e33_93a41fb61d2e",
+      "hash": "27018036e242bce6bd85516a79c63327"
+    },
+    {
+      "version": "20261124045711",
+      "name": "replay_20261113034736_f0d60118_12f4_43ef_9e1c_ee2d42dd82cf",
+      "hash": "c2eb40eca2824c88409be68eaa05fbcc"
+    },
+    {
+      "version": "20261124045713",
+      "name": "replay_20261113121938_fix_expense_payment_branch_cash_register",
+      "hash": "f19606b3b675e27cc0f1645e6466f1ee"
+    },
+    {
+      "version": "20261124045715",
+      "name": "replay_20261120041015_customer_global_identity",
+      "hash": "08f354d27542629e99523a1502e59666"
+    },
+    {
+      "version": "20261124045717",
+      "name": "replay_20261120041034_customer_identity_link_hardening",
+      "hash": "9f25e45d07966461ee0e70ada4342c7b"
+    },
+    {
+      "version": "20261124045719",
+      "name": "replay_20261120041443_customer_appointment_holds",
+      "hash": "4ada2ba92640bd5eb8d19853e7cb197f"
+    },
+    {
+      "version": "20261124045721",
+      "name": "replay_20261120041450_customer_appointment_holds_rpc_security",
+      "hash": "b1915e4caea7a762b4133accd11aa329"
+    },
+    {
+      "version": "20261124045722",
+      "name": "replay_20261120041537_customer_appointment_hold_cancellation",
+      "hash": "bcbe95cc1642c7f5bd6864bb9f3d714e"
+    },
+    {
+      "version": "20261124045724",
+      "name": "replay_20261120041630_customer_appointment_holds_private_rpc",
+      "hash": "97da0feeed26a55059b1b5310254b4c1"
+    },
+    {
+      "version": "20261124045726",
+      "name": "replay_20261120041928_customer_booking_business_and_professional_availability",
+      "hash": "137b1508e07859a8f530c13734194723"
+    },
+    {
+      "version": "20261124045728",
+      "name": "replay_20261120063615_enforce_availability_on_admin_appointments",
+      "hash": "5fe374dd2139f84b2da1a9d81e32ff45"
+    },
+    {
+      "version": "20261124045730",
+      "name": "replay_20261120064407_20261120070000_public_salon_directory_and_availability",
+      "hash": "ee8a1debad0c710506a8d6821bcca7f7"
+    },
+    {
+      "version": "20261124045733",
+      "name": "replay_20261120064553_20261120071000_align_public_profiles_with_settings",
+      "hash": "592cad37a347a8dea82a03c3cccc8d16"
+    },
+    {
+      "version": "20261124045735",
+      "name": "replay_20261120064639_20261120072000_restrict_private_schema_public_api",
+      "hash": "56b565945faa8211dc87762adc3a60d5"
+    },
+    {
+      "version": "20261124045737",
+      "name": "replay_20261120064758_20261120073000_allow_members_read_public_profile_settings",
+      "hash": "e11ed16017215fc7488f220fa1fe9fdd"
+    },
+    {
+      "version": "20261124045739",
+      "name": "replay_20261120065524_20261120065000_customer_coupons_transactional",
+      "hash": "5464d936c0ca92ddec4f1a2affd19315"
+    },
+    {
+      "version": "20261124045741",
+      "name": "replay_20261120065604_20261120065600_restrict_legacy_hold_private_entrypoints",
+      "hash": "2045d7c75e5c7ebc12fb446ad8e676cb"
+    },
+    {
+      "version": "20261124045743",
+      "name": "replay_20261120070111_20261120065700_coupon_fk_indexes_and_public_profile_policy_cleanup",
+      "hash": "c1263f50256be0026afcac8484a8f6b6"
+    },
+    {
+      "version": "20261124045746",
+      "name": "replay_20261120070234_20261120070200_audit_public_salon_profiles",
+      "hash": "da595cfe335c9d4f25ad15151a2ce249"
+    },
+    {
+      "version": "20261124045748",
+      "name": "replay_20261120072329_consolidate_agenda_availability_rls_policies",
+      "hash": "70ed457f2092c1035cc0c2e4d8fc86dc"
+    },
+    {
+      "version": "20261124045750",
+      "name": "replay_20261120072618_move_privileged_financial_and_workflow_rpcs_private",
+      "hash": "28174f8f9a09484064d48183043f9b6d"
+    },
+    {
+      "version": "20261124045752",
+      "name": "replay_20261120073222_complete_branch_cash_register_and_cash_summary",
+      "hash": "4b3912a01405258f21ea013c32b84391"
+    },
+    {
+      "version": "20261124045753",
+      "name": "replay_20261120160212_enforce_enabled_professional_identity",
+      "hash": "2dbb6114f2f075e45dd62f8bfb821849"
+    },
+    {
+      "version": "20261124045755",
+      "name": "replay_20261120160728_deny_null_appointment_start_authorization",
+      "hash": "7691e62fd1c6ac5bb376b2de288e6f39"
+    },
+    {
+      "version": "20261124045758",
+      "name": "replay_20261120160853_professional_scope_explicit_denial",
+      "hash": "9ba9d247b3719e085137800212cc443d"
+    },
+    {
+      "version": "20261124045800",
+      "name": "replay_20261120163051_customer_appointment_history",
+      "hash": "79814d1e89ad4584c3da41358fcc5f6e"
+    },
+    {
+      "version": "20261124045802",
+      "name": "replay_20261120163441_customer_coupon_confirmation_idempotent",
+      "hash": "5a47355e839b9e05dfcecded77f1b993"
+    },
+    {
+      "version": "20261124045804",
+      "name": "replay_20261120163536_customer_favorites_and_preferences",
+      "hash": "a5ee3f0567bd9abe33d3d84a1f545452"
+    },
+    {
+      "version": "20261124045807",
+      "name": "replay_20261120164053_customer_private_appointment_notifications",
+      "hash": "64e96f53f831266c080e96ca04a2538a"
+    },
+    {
+      "version": "20261124045809",
+      "name": "replay_20261120165637_branch_catalog_rpc_alignment",
+      "hash": "90d9232e2c8c27767621a4921e8e75e9"
+    },
+    {
+      "version": "20261124045811",
+      "name": "replay_20261120165822_branch_main_integrity_and_professional_read",
+      "hash": "62daa997fa29a4d6892d5fc76bca8ea3"
+    },
+    {
+      "version": "20261124045813",
+      "name": "replay_20261120205923_prioritize_agenda_cash_query_indexes",
+      "hash": "4a2726da69e3eda70961bb17d501a381"
+    },
+    {
+      "version": "20261124045815",
+      "name": "replay_20261120211409_enforce_exact_centavo_service_order_payment",
+      "hash": "4d4ae6a264ebf183c88ec03f0e395d9b"
+    },
+    {
+      "version": "20261124045817",
+      "name": "replay_20261120212042_service_packages_and_appointment_waitlist",
+      "hash": "75a95bab98d189dacf0f1d88c0d1d46c"
+    },
+    {
+      "version": "20261124045819",
+      "name": "replay_20261120212247_fix_customer_available_slots_date_arithmetic",
+      "hash": "e441be211ff42a14f7c97c82c951f263"
+    },
+    {
+      "version": "20261124045821",
+      "name": "replay_20261120212306_service_packages_waitlist_secure_rpcs",
+      "hash": "8f8f81597a94f13f01461da1eff9c5fa"
+    },
+    {
+      "version": "20261124045823",
+      "name": "replay_20261120212554_atomic_waitlist_booking_and_cancel_release",
+      "hash": "192691cbc86a2335fd4cdb75bc663323"
+    },
+    {
+      "version": "20261124045825",
+      "name": "replay_20261120213452_private_customer_loyalty_overview",
+      "hash": "5771a866e1bd6ed83718dfc6934169bd"
+    },
+    {
+      "version": "20261124045826",
+      "name": "replay_20261120213713_waitlist_avoid_cross_midnight_openings",
+      "hash": "28ec5a277007dad82b17d2725fbb4474"
+    },
+    {
+      "version": "20261124121336",
+      "name": "scope_staff_to_assigned_branches",
+      "hash": "f57b5d4df76700c8b3dada8b1685cfe0"
+    },
+    {
+      "version": "20261124121740",
+      "name": "enforce_unit_scope_for_staff",
+      "hash": "4a9771ff924ee5b4a6821f62bdad4adb"
+    },
+    {
+      "version": "20261124121952",
+      "name": "constrain_linked_financial_staff_operations",
+      "hash": "23e1bd0c46c6e2a759e82bb201179182"
+    },
+    {
+      "version": "20261124122107",
+      "name": "scope_agenda_workflows_to_assigned_units",
+      "hash": "0a183f0a2f527a4545e42e1b57f45a45"
+    },
+    {
+      "version": "20261124122310",
+      "name": "scope_service_package_management",
+      "hash": "e8c83a3992743b5950cfa2ee4eccc692"
+    },
+    {
+      "version": "20261124125215",
+      "name": "support_alphanumeric_cnpj",
+      "hash": "588acc4a36cc08d096bd3eb4f09b61f4"
+    },
+    {
+      "version": "20261124214852",
+      "name": "scope_expense_cancellation_to_assigned_units",
+      "hash": "0bf88ab514bdb8d6bac30fdaa12f04bc"
+    },
+    {
+      "version": "20261126223517",
+      "name": "professional_own_appointment_status",
+      "hash": "d424e757dbe6ee215c2190be376a7f69"
+    },
+    {
+      "version": "20261126224857",
+      "name": "professional_reschedule_own_appointment",
+      "hash": "0679845beebf60075151bed53f2c9672"
+    },
+    {
+      "version": "20261126225113",
+      "name": "professional_create_own_appointment",
+      "hash": "38951140521091a7cadb4c2c1966a00b"
+    },
+    {
+      "version": "20261126234649",
+      "name": "professional_booking_reference_unit_fallback",
+      "hash": "0246a589be717715e44047ac266ae46b"
+    },
+    {
+      "version": "20261127012615",
+      "name": "professional_workspace",
+      "hash": "25ccdaae338cc625f0b0be1cecf1e621"
+    },
+    {
+      "version": "20261127013218",
+      "name": "professional_workspace_unit_and_finance",
+      "hash": "54ec2afb8158eb9a92117e8d61426710"
+    },
+    {
+      "version": "20261127013332",
+      "name": "professional_workspace_group_booking",
+      "hash": "f7cc9b128794165d59d419bbc0829408"
+    },
+    {
+      "version": "20261127013334",
+      "name": "professional_visit_actions",
+      "hash": "f613eb6194a4045f5abc8dd62484e728"
+    },
+    {
+      "version": "20261127013512",
+      "name": "professional_order_permissions",
+      "hash": "65a7679d4681ff4bba7c1e4fc2282b6e"
+    },
+    {
+      "version": "20261127014207",
+      "name": "professional_unit_customer_registration",
+      "hash": "b066da4478ec69dd2db930e730ce4c4f"
+    },
+    {
+      "version": "20261127014343",
+      "name": "professional_unit_direct_booking",
+      "hash": "a36a3863ffeefba21e414c4f7574846f"
+    },
+    {
+      "version": "20261127014921",
+      "name": "professional_unit_service_management",
+      "hash": "875253444b66ae50fb1d9404a8577d95"
+    },
+    {
+      "version": "20261127015204",
+      "name": "professional_individual_attendance",
+      "hash": "863b0d02d620dbd515136c85109c113e"
+    },
+    {
+      "version": "20261127020319",
+      "name": "professional_order_item_management_guard",
+      "hash": "6527b79537ea93756c38327d10a3d762"
+    },
+    {
+      "version": "20261127020921",
+      "name": "professional_app_private_preferences",
+      "hash": "799b586ba41dd0d9d52f1cbb97705a5a"
+    },
+    {
+      "version": "20261127021133",
+      "name": "professional_notifications_inbox",
+      "hash": "a206ac7c94ef4e133129a1d8ae1e1b1d"
+    },
+    {
+      "version": "20261127021953",
+      "name": "cumulative_partial_commission_rounding",
+      "hash": "945c4a66f171e2d539d0731ee271b5d0"
+    },
+    {
+      "version": "20261127022502",
+      "name": "professional_password_server_gate",
+      "hash": "035778b0f4ae80ace8799fcd3e4f4ad6"
+    }
+  ],
+  "production_recent": [
+    {
+      "version": "20261126234009",
+      "name": "release_professional_appointment_actions",
+      "hash": "f0e8560ff2bc4f0d39c91a5b348b4e8e"
+    },
+    {
+      "version": "20261126234713",
+      "name": "professional_booking_reference_unit_fallback",
+      "hash": "0246a589be717715e44047ac266ae46b"
+    },
+    {
+      "version": "20261127013639",
+      "name": "professional_workspace",
+      "hash": "f7cc9b128794165d59d419bbc0829408"
+    },
+    {
+      "version": "20261127013640",
+      "name": "professional_visit_actions",
+      "hash": "f613eb6194a4045f5abc8dd62484e728"
+    },
+    {
+      "version": "20261127013645",
+      "name": "professional_order_permissions",
+      "hash": "65a7679d4681ff4bba7c1e4fc2282b6e"
+    }
+  ],
+  "latest_qa_only": [
+    {
+      "version": "20261127014207",
+      "name": "professional_unit_customer_registration"
+    },
+    {
+      "version": "20261127014343",
+      "name": "professional_unit_direct_booking"
+    },
+    {
+      "version": "20261127014921",
+      "name": "professional_unit_service_management"
+    },
+    {
+      "version": "20261127015204",
+      "name": "professional_individual_attendance"
+    },
+    {
+      "version": "20261127020319",
+      "name": "professional_order_item_management_guard"
+    },
+    {
+      "version": "20261127020921",
+      "name": "professional_app_private_preferences"
+    },
+    {
+      "version": "20261127021133",
+      "name": "professional_notifications_inbox"
+    },
+    {
+      "version": "20261127021953",
+      "name": "cumulative_partial_commission_rounding"
+    },
+    {
+      "version": "20261127022502",
+      "name": "professional_password_server_gate"
+    }
+  ],
+  "function_comparison": {
+    "qa": 65,
+    "production": 32,
+    "missing_in_production": [
+      "private.create_professional_unit_appointment(target_org uuid, target_customer uuid, target_service uuid, local_start timestamp without time zone)",
+      "private.create_professional_with_services(p_org_id uuid, p_branch_id uuid, p_name text, p_phone text, p_email text, p_commission_rate numeric, p_tax_regime text, p_cnpj text, p_legal_name text, p_trade_name text, p_specialty text, p_service_ids uuid[])",
+      "private.emit_professional_notification(target_org uuid, target_professional uuid, event_kind text, event_title text, event_body text, event_appointment uuid, event_payout uuid, event_key text)",
+      "private.get_professional_app_preferences(target_org uuid)",
+      "private.get_professional_cpf_login_pepper()",
+      "private.get_professional_notifications(target_org uuid, only_unread boolean)",
+      "private.incremental_commission_amount(target_org uuid, target_item uuid, applied_rate numeric, new_base numeric)",
+      "private.list_professional_unit_customers(target_org uuid, page_offset integer)",
+      "private.list_professional_unit_services(target_org uuid, page_offset integer)",
+      "private.mark_professional_notifications_read(target_org uuid, target_notification uuid)",
+      "private.normalize_professional_cnpj(value text)",
+      "private.notify_professional_appointment_changes()",
+      "private.notify_professional_commission_payout()",
+      "private.professional_attendance_action(target_org uuid, target_appointment uuid, operation text)",
+      "private.professional_customer_branch(target_org uuid)",
+      "private.professional_password_ready()",
+      "private.save_professional_app_preferences(target_org uuid, contact_email text, new_pix_type text, new_pix_key text, new_photo_url text, agenda_enabled boolean, commissions_enabled boolean)",
+      "private.save_professional_unit_customer(target_org uuid, target_customer uuid, customer_name text, customer_phone text)",
+      "private.save_professional_unit_service(target_org uuid, target_service uuid, service_name text, service_category text, service_minutes integer, service_price numeric)",
+      "private.set_professional_unit_service_link(target_org uuid, target_service uuid, link_enabled boolean)",
+      "private.valid_professional_cnpj(value text)",
+      "public.create_professional_unit_appointment(target_org uuid, target_customer uuid, target_service uuid, local_start timestamp without time zone)",
+      "public.create_professional_with_services(p_org_id uuid, p_branch_id uuid, p_name text, p_phone text, p_email text, p_commission_rate numeric, p_tax_regime text, p_cnpj text, p_legal_name text, p_trade_name text, p_specialty text, p_service_ids uuid[])",
+      "public.get_professional_app_preferences(target_org uuid)",
+      "public.get_professional_notifications(target_org uuid, only_unread boolean)",
+      "public.list_professional_unit_customers(target_org uuid, page_offset integer)",
+      "public.list_professional_unit_services(target_org uuid, page_offset integer)",
+      "public.mark_professional_notifications_read(target_org uuid, target_notification uuid)",
+      "public.professional_attendance_action(target_org uuid, target_appointment uuid, operation text)",
+      "public.save_professional_app_preferences(target_org uuid, contact_email text, new_pix_type text, new_pix_key text, new_photo_url text, agenda_enabled boolean, commissions_enabled boolean)",
+      "public.save_professional_unit_customer(target_org uuid, target_customer uuid, customer_name text, customer_phone text)",
+      "public.save_professional_unit_service(target_org uuid, target_service uuid, service_name text, service_category text, service_minutes integer, service_price numeric)",
+      "public.set_professional_unit_service_link(target_org uuid, target_service uuid, link_enabled boolean)"
+    ],
+    "different_definitions": [
+      "private.accrue_partial_service_order_commissions(p_order_id uuid, p_payment_id uuid, p_amount numeric)",
+      "private.current_professional_id(target_org uuid)",
+      "private.enforce_professional_service_order_item()",
+      "private.has_org_role(target_org uuid, allowed_roles text[])",
+      "private.professional_app_profile_id(target_org uuid)",
+      "private.professional_app_scope(target_org uuid)",
+      "private.professional_order_action(target_org uuid, unit uuid, order_key uuid, operation text, payload jsonb)",
+      "private.refund_service_order(p_order_id uuid, p_return_stock boolean, p_reason text)",
+      "private.register_service_order_payment(p_order_id uuid, p_amount numeric, p_payment_method text)"
+    ]
+  },
+  "production_release": "blocked"
+}
