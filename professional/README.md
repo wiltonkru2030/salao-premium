@@ -151,3 +151,5 @@ Reconciliação da primeira onda: comparação de colunas, constraints e gatilho
 Segurança da primeira onda: teste integrado de três profissionais em duas unidades aprovado em QA, com rollback. Carteira da mesma unidade compartilhada; agenda, comandas, autoria e notificações individuais protegidas. Há três políticas de escopo de funcionários ausentes em produção; ver [relatório de publicação](../docs/PUBLICACAO-APP-PROFISSIONAL.md). Corrigido seletor ambíguo do menu móvel no teste Chromium; execução pendente.
 
 Escopo de funcionários: teste de gerente/recepção/proprietário aprovado em QA; 17 políticas e tabela de atribuições ausentes em produção. Ver [roteiro de reconciliação](../docs/PUBLICACAO-APP-PROFISSIONAL.md).
+
+Homologação: Chromium aprovado nos 90 cenários com dados fictícios, e teste integrado de Caixa, despesas, pacotes e espera aprovado em QA (rollback). [Evidências e limites](../docs/PUBLICACAO-APP-PROFISSIONAL.md). Ainda falta avaliação estética individual e teste real autenticado.

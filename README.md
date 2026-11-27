@@ -333,3 +333,5 @@ Preparação da publicação: [inventário e critérios de liberação do App Pr
 Reconciliação da primeira onda (clientes, serviços e agenda): pré-verificação somente leitura executada em QA e produção. Consulte [relatório](docs/PUBLICACAO-APP-PROFISSIONAL.md) e [SQL](docs/sql/professional-wave1-preflight.sql). Publicação segue bloqueada.
 
 Segurança de unidades: homologado cenário de gerente, recepção e proprietário em QA. Identificado pacote de 17 políticas de escopo ausentes em produção. Consulte [roteiro de reconciliação](docs/PUBLICACAO-APP-PROFISSIONAL.md) antes de atualizar o banco.
+
+Validação atual: Chromium aprovado em 90 cenários, e operações por unidade de Caixa, despesas, pacotes e espera aprovadas em QA. [Relatório](docs/PUBLICACAO-APP-PROFISSIONAL.md). Publicação permanece bloqueada.
