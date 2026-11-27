@@ -8,6 +8,18 @@ import {listUnitCustomers,saveUnitCustomer} from "./customers.service.js";
 import {formatMoney} from "./utils/formatters.js";
 import {matchesSearch,matchesPhone,searchCatalog} from "./utils/search.js";
 
+/** Atualiza controles de horário depois da resposta do servidor.
+ * Aceita somente HH:mm válidos, sem duplicatas; não deixa o texto de carregamento
+ * depois de uma consulta concluída. O servidor revalida na gravação.
+ */
+export function applyBookingSlots({hour,submit,slotStatus,result}){
+ const times=[...new Set((result.slots||[]).filter(time=>typeof time==="string"&&/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)))].sort();
+ const option=(label,value)=>{const node=hour.ownerDocument.createElement("option");node.textContent=label;node.value=value;return node;};
+ hour.replaceChildren(option(times.length?"Selecione o horário":"Nenhum horário disponível",""),...times.map(time=>option(time,time)));
+ hour.disabled=times.length===0;submit.disabled=hour.disabled;
+ hour.value=times[0]||"";
+ slotStatus.textContent=times.length?slotMessages.available:(result.reason==="available"?"Não foi possível interpretar os horários. Selecione o serviço novamente.":slotMessages[result.reason]||slotMessages.no_slots);
+}
 const bindings=new WeakMap();
 /** Filtra clientes por nome ou telefone e evita exibir o histórico como rótulo. */
 export function searchBookingClients(clients,term){
@@ -35,11 +47,8 @@ export function bindProfessionalBookingSearch(form,state,{client,isCurrent=()=>t
   try{
    const result=await listOwnBookingSlots(client,{org:organizationId,unit:state.branchId||state.professional.branch_id,service:service.id,day:toDateKey(state.selectedDate)});
    if(!current()||seq!==request)return;
-   slotStatus.textContent=slotMessages[result.reason]||"Selecione um horário.";
-   for(const time of result.slots){if(/^\\d{2}:\\d{2}$/.test(time))hour.add(new Option(time,time));}
-   hour.disabled=hour.options.length<=1;submit.disabled=hour.disabled;
-   if(!hour.disabled)hour.value=hour.options[1].value;
-  }catch(error){if(current()&&seq===request)slotStatus.textContent=error.message+" Selecione o serviço novamente para tentar." ;}
+   applyBookingSlots({hour,submit,slotStatus,result});
+  }catch(error){if(current()&&seq===request){hour.replaceChildren();const option=hour.ownerDocument.createElement("option");option.value="";option.textContent="Falha ao consultar horários";hour.add(option);hour.disabled=true;submit.disabled=true;slotStatus.textContent=error.message+" Selecione o serviço novamente para tentar.";}}
  }
  if(slotsEnabled)submit.disabled=true;
  const disposeService=mountAutocomplete(form.querySelector("[data-booking-service]"),{

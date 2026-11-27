@@ -186,3 +186,6 @@ Workflow `Professional QA package`: canal temporário `professional-qa`, deploy 
 
 ### Expediente e horários disponíveis (QA)
 Perfil → Configurações → Meu expediente permite adicionar, editar e excluir somente os próprios intervalos semanais. Cadastre dois intervalos para almoço. O painel permite editar expediente da unidade e da equipe. A Agenda consulta slots futuros de 5 minutos no servidor, respeitando duração, unidade, expediente, reservas, bloqueios e folgas; o banco revalida na gravação. Se faltar expediente da unidade, o administrador deve cadastrá-lo. A configuração QA tinha zero horários de unidade e profissional em 27/11/2026; não foram definidos horários automaticamente. Flag VITE_PROFESSIONAL_WORKING_HOURS habilitada somente no QA até homologação de produção.
+
+### Correção da seleção de horários
+Corrigido filtro de HH:mm que descartava slots válidos retornados pelo servidor e mantinha o campo em `Consultando horários…`. A renderização substitui o placeholder, habilita a seleção e o botão somente se houver slots válidos, e apresenta estado de erro/ausência de horários. Teste de regressão em `booking-search.test.js` simula resposta e verifica controles. Nenhuma alteração nos dados do salão.
