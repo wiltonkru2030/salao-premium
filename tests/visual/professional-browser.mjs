@@ -43,7 +43,9 @@ try{
    return route.continue();
   });
   await page.goto(base+"/professional/visual-fixture.html");
-  await page.waitForFunction(()=>!!window.professionalVisualFixture);
+  // Se a inicialização falhar, informa a causa do módulo em vez de um timeout sem contexto.
+  try{await page.waitForFunction(()=>!!window.professionalVisualFixture);}
+  catch(error){const diagnostic={label:String(viewport.width)+"-boot",error:String(error),pageErrors:errors};failures.push(diagnostic);throw new Error(JSON.stringify(diagnostic));}
   for(const theme of ["light","dark"]){
    for(const scenario of scenarios){
     const label=viewport.width+"-"+theme+"-"+scenario.normalize("NFD").replace(/\p{M}/gu,"").toLowerCase().replaceAll(" ","-");

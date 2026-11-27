@@ -349,3 +349,6 @@ Pacote QA e Auth real: ver [entrega final](docs/ENTREGA-APP-PROFISSIONAL.md). Bu
 
 ### Tema no cabeçalho das três entradas
 Painel administrativo, App Profissional e Área da Cliente usam `renderPlatformThemeToggle` em suas top bars, com SVG sol/lua, tokens e foco acessível compartilhados. Não há seletor nas telas de login, recuperação, seleção de salão, perfil ou configurações. A preferência existente continua local por entrada (Área da Cliente preserva o escopo por conta e sincronização remota). O atalho alterna o tema efetivo sem recarregar a página. Testes de contrato verificam as três entradas e o navegador verifica alternância e ausência de controles duplicados. Não altera autenticação ou banco de dados.
+
+### Atualização de 27/11/2026 — notificações profissionais
+A central, preferências, dispositivos e fila foram instalados em produção pela migration remota 20261127214214. QA já aprovou 12 eventos e isolamento. A validação no navegador detectou um import obsoleto após a unificação de tema; foi removido e adicionada regressão de importação. O transporte push em produção permanece bloqueado até credencial exclusiva, validação FCM e recebimento real em aparelho. Consulte [a documentação de push](docs/APP-PROFISSIONAL-PUSH-AUTH.md) antes de ativar. Não executar novamente as quatro migrations consolidadas no banco de produção.

@@ -19,7 +19,7 @@ const appearance=createPlatformAppearance("professional-visual-fixture");
 const pages=["Agenda","Clientes","Serviços","Comandas","Comissões","Notificações","Perfil","Configurações"];
 const service={id:"s",name:"Hidratação capilar e finalização",category:"Tratamento",price:120,duration_minutes:60,linked:true,editable:true};
 const customer={id:"c",name:"Cliente Fictícia de Nome Comprido para Teste",phone:"67999991234",branch_id:"b"};
-const appointment={id:"a",professional_id:"p",branch_id:"b",customer_id:"c",customer_name:customer.name,customer_phone:customer.phone,professional_name:"Profissional QA",service_name:service.name,starts_at:"2026-11-26T14:00:00Z",ends_at:"2026-11-26T15:00:00Z",status:"confirmed",booking_source:"salon",price:120};
+const appointment={id:"a",professional_id:"p",branch_id:"b",customer_id:"c",customer_name:customer.name,customer_phone:customer.phone,professional_name:"Profissional QA",service_name:service.name,starts_at:"2026-11-26T14:00:00Z",ends_at:"2026-11-26T15:00:00Z",status:"confirmed",booking_source:"salon",created_by_name:"Recepção QA",created_at:"2026-11-25T15:30:00Z",price:120};
 const order={id:"o",branch_id:"b",assigned_professional_id:"p",order_number:"QA-0001",status:"open",total:120};
 const state=Object.assign(createProfessionalState(new Date(2026,10,26,12)),{
  user:{id:"u"},orgId:"org",role:"professional",scope:"self",branchId:"b",branches:[{id:"b",name:"Matriz"}],organization:{name:"Salão de demonstração",timezone:"America/Campo_Grande"},professional:{id:"p",name:"Profissional QA",branch_id:"b",can_edit_own_orders:true},
@@ -27,7 +27,7 @@ const state=Object.assign(createProfessionalState(new Date(2026,10,26,12)),{
  services:[service],serviceCatalog:[service],serviceCatalogStatus:"ready",orders:[order],ordersStatus:"ready",orderItemsStatus:"ready",
  orderItems:[{id:"item",professional_id:"p",item_type:"service",description:service.name,quantity:1,unit_price:120,discount:0,total:120}],
  commissionStatus:"ready",commissions:[{id:"com",amount:60,base_amount:120,rate:50,status:"pending",item_type:"service",created_at:appointment.starts_at,service_order_items:{description:service.name}}],
- commissionPayouts:[],notificationsStatus:"ready",notificationsUnread:1,notifications:[{id:"n",title:"Novo agendamento",body:"Consulte sua Agenda para verificar os detalhes.",created_at:appointment.starts_at,read_at:null}],
+ commissionPayouts:[],notificationsStatus:"ready",notificationsUnread:1,notifications:[{id:"n",title:"Cliente agendou",body:"Consulte sua Agenda para verificar os detalhes.",appointment_id:"a",created_at:appointment.starts_at,read_at:null}],
  workingHoursStatus:"ready",workingHours:[{id:"hours",weekday:1,starts_at:"08:00",ends_at:"12:00",active:true}],pushStatus:"idle",profilePreferencesStatus:"ready",profilePreferences:{email:"qa@example.invalid",pix_type:"cpf",pix_key:"52998224725",notify_agenda:true,notify_commissions:false}
 });
 const {agendaView}=createAgendaWorkspaceViews({state,attendanceEnabled:true,appointmentStatusEnabled:true,rescheduleEnabled:true,bookingEnabled:true,unitBookingEnabled:true,customerRegistrationEnabled:true,workingHoursEnabled:true});

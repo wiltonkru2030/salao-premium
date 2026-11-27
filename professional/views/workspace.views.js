@@ -1,5 +1,4 @@
 /** Views do aplicativo profissional: comandas, comissões e configurações. Recebem estado e retornam HTML sem efeitos colaterais. */
-import { renderPlatformAppearance } from "../../src/components/platform-appearance.js";
 import {escapeHtml as esc,formatMoney as money,formatStatus as statusLabel,formatDateTime as dateTimeLabel} from "../utils/formatters.js";
 import {canRegisterProfessionalService} from "../access.rules.js";
 export {commissionsView} from "./commissions.views.js";
