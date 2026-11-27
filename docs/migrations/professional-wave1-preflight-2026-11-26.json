@@ -1,0 +1,421 @@
+{
+  "base": "25f7147d900ccd2d936befa040dd4c92d7584641",
+  "scope": "Primeira onda: clientes, serviços, agendamento; metadados, sem dados pessoais.",
+  "columns": {
+    "qa": 98,
+    "production": 98,
+    "differences": []
+  },
+  "constraints": {
+    "qa": 42,
+    "production": 42,
+    "differences": [
+      "professionals.professionals_mei_cnpj_check"
+    ]
+  },
+  "triggers": {
+    "qa": 18,
+    "production": 17,
+    "only_qa": [
+      "appointments.professional_appointment_notification_trigger"
+    ],
+    "different": []
+  },
+  "preflight": {
+    "qa": [
+      {
+        "category": "chave única",
+        "item": "professionals(org_id,id)",
+        "present": true
+      },
+      {
+        "category": "chave única",
+        "item": "services(org_id,id)",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.booking_source",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.branch_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.created_by",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.customer_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.ends_at",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.org_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.price",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.professional_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.service_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.starts_at",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "branches.active",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "branches.org_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "customers.active",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "customers.branch_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "customers.org_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "customers.phone",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "organizations.timezone",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "professional_services.org_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "professional_services.professional_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "professional_services.service_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "professionals.access_enabled",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "professionals.branch_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "professionals.profile_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "services.active",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "services.archived_at",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "services.branch_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "services.duration_minutes",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "services.org_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "services.price",
+        "present": true
+      },
+      {
+        "category": "função",
+        "item": "private.current_professional_id(uuid)",
+        "present": true
+      },
+      {
+        "category": "gatilho",
+        "item": "appointments: validação de disponibilidade",
+        "present": true
+      },
+      {
+        "category": "RLS",
+        "item": "appointments",
+        "present": true
+      },
+      {
+        "category": "RLS",
+        "item": "branches",
+        "present": true
+      },
+      {
+        "category": "RLS",
+        "item": "customers",
+        "present": true
+      },
+      {
+        "category": "RLS",
+        "item": "professional_services",
+        "present": true
+      },
+      {
+        "category": "RLS",
+        "item": "professionals",
+        "present": true
+      },
+      {
+        "category": "RLS",
+        "item": "services",
+        "present": true
+      }
+    ],
+    "production": [
+      {
+        "category": "chave única",
+        "item": "professionals(org_id,id)",
+        "present": true
+      },
+      {
+        "category": "chave única",
+        "item": "services(org_id,id)",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.booking_source",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.branch_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.created_by",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.customer_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.ends_at",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.org_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.price",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.professional_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.service_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "appointments.starts_at",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "branches.active",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "branches.org_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "customers.active",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "customers.branch_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "customers.org_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "customers.phone",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "organizations.timezone",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "professional_services.org_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "professional_services.professional_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "professional_services.service_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "professionals.access_enabled",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "professionals.branch_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "professionals.profile_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "services.active",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "services.archived_at",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "services.branch_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "services.duration_minutes",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "services.org_id",
+        "present": true
+      },
+      {
+        "category": "coluna",
+        "item": "services.price",
+        "present": true
+      },
+      {
+        "category": "função",
+        "item": "private.current_professional_id(uuid)",
+        "present": true
+      },
+      {
+        "category": "gatilho",
+        "item": "appointments: validação de disponibilidade",
+        "present": true
+      },
+      {
+        "category": "RLS",
+        "item": "appointments",
+        "present": true
+      },
+      {
+        "category": "RLS",
+        "item": "branches",
+        "present": true
+      },
+      {
+        "category": "RLS",
+        "item": "customers",
+        "present": true
+      },
+      {
+        "category": "RLS",
+        "item": "professional_services",
+        "present": true
+      },
+      {
+        "category": "RLS",
+        "item": "professionals",
+        "present": true
+      },
+      {
+        "category": "RLS",
+        "item": "services",
+        "present": true
+      }
+    ]
+  },
+  "release": "blocked"
+}

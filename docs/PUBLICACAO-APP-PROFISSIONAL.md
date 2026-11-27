@@ -36,3 +36,9 @@ Também há diferenças anteriores: escopo de unidades de 24/11, workspace e age
 7. Testar fluxo real com conta de teste autorizada e preparar rollback da versão web e das alterações de schema. Autorizar publicação após evidências, não apenas build.
 
 **Decisão desta revisão: nenhuma migration, função, credencial, flag ou deploy de produção foi alterado.**
+
+## Reconciliação — primeira onda
+
+Comparação das sete tabelas `customers`, `services`, `professional_services`, `professionals`, `branches`, `organizations`, `appointments`: 98 colunas em cada ambiente, sem diferenças nos tipos, nulabilidade e defaults do recorte; 42 constraints em cada ambiente, diferença na definição de `professionals_mei_cnpj_check`; 18 gatilhos QA e 17 em produção no recorte consultado, único adicional QA é notificação de agendamento. Os gatilhos comuns têm definições e hashes de funções coincidentes. Isso não prova equivalência de RLS, privilégios, índices ou funções chamadas indiretamente.
+
+Pré-verificação somente leitura [SQL](sql/professional-wave1-preflight.sql) e [evidência JSON](migrations/professional-wave1-preflight-2026-11-26.json) executadas nos dois ambientes: QA: 39/39 condições presentes; produção: 39/39 condições presentes. Não aplica nenhuma migration. A ordem recomendada para ensaio é cadastro de clientes, catálogo de serviços, agendamento direto. A validação estrutural não autoriza produção: antes é necessário conferir políticas/grants e funções auxiliares, resolver o histórico divergente e executar um ensaio numa cópia fiel de produção com testes de isolamento e concorrência. Não copiar o histórico QA sobre produção. Nenhum dado real ou schema de produção foi modificado.

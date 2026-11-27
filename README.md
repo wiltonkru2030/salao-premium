@@ -329,3 +329,5 @@ Homologação financeira complementar: teste SQL integrado aprovado em QA, inclu
 Revisão de sessão: verificação ao retornar ao app, mensagens seguras e troca de salão com limpeza de contexto. Ver [documentação profissional](professional/README.md) para os bloqueios de autenticação e filial ainda pendentes.
 
 Preparação da publicação: [inventário e critérios de liberação do App Profissional](docs/PUBLICACAO-APP-PROFISSIONAL.md). A validação visual e a reconciliação de migrations são pendências; não executar publicação com funcionalidades novas sem suas dependências homologadas.
+
+Reconciliação da primeira onda (clientes, serviços e agenda): pré-verificação somente leitura executada em QA e produção. Consulte [relatório](docs/PUBLICACAO-APP-PROFISSIONAL.md) e [SQL](docs/sql/professional-wave1-preflight.sql). Publicação segue bloqueada.
