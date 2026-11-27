@@ -55,7 +55,9 @@ const {agendaView,appointmentStatusActions}=createAgendaWorkspaceViews({state,at
 // Controladores recebem a geração da sessão por função, nunca como valor congelado.
 const {loadCustomers,openCustomer,submitProfessionalCustomer}=createCustomersController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError,customerRegistrationEnabled});
 const {loadServices,canManageServices,loadServiceCatalog,changeServiceLink,submitProfessionalService}=createServicesController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError,showNotice,serviceManagementEnabled});
-const {loadNotifications,readNotifications}=createNotificationsController({state,supabase,getEpoch:()=>sessionEpoch,render,showNotice,notificationsEnabled});
+const {loadNotifications,readNotifications}=createNotificationsController({state,supabase,getEpoch:()=>sessionEpoch,render,showNotice,notificationsEnabled,updateUnread:count=>{
+ const badge=root.querySelector("[data-professional-unread-count]");if(badge){badge.hidden=count===0;badge.textContent=count>99?"99+":String(count);}
+}});
 const {loadProfilePreferences,submitProfilePreferences}=createProfileController({state,supabase,getEpoch:()=>sessionEpoch,render,showNotice,profilePreferencesEnabled});
 const {loadOrders,loadCommissions,chooseOrder}=createFinancialController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError});
 const {applyAppointmentStatus,applyAttendance,openAttendanceOrder,applyAppointmentReschedule,applyNewAppointment}=createAttendanceController({state,supabase,getEpoch:()=>sessionEpoch,showNotice,loadAppointments,loadOrders,chooseOrder,appointmentStatusActions,appointmentStatusEnabled,attendanceEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled});
@@ -93,17 +95,20 @@ function render(){
 // Carrega somente agendamentos permitidos pelo escopo profissional.
 async function loadAppointments(){
  const epoch=sessionEpoch,month=state.month;
- state.agendaStatus="loading";state.appointments=[];state.selectedAppointment=null;
+ state.agendaStatus="loading";state.appointments=[];
  if(state.page==="Agenda")render();
  try{
   const appointments=await fetchProfessionalAppointments({
    client:supabase,organizationId:state.orgId,month,branchId:state.branchId,
    timezone:salonTimezone(state.organization?.timezone),professionalId:state.scope==='self'?state.professional?.id:null
   });
-  if(epoch===sessionEpoch&&month===state.month){state.appointments=appointments;state.agendaStatus="ready";}
+  if(epoch===sessionEpoch&&month===state.month){
+   state.appointments=appointments;state.agendaStatus="ready";
+   if(state.selectedAppointment)state.selectedAppointment=appointments.find(row=>row.id===state.selectedAppointment.id)||null;
+  }
  }catch(error){
   if(epoch!==sessionEpoch||month!==state.month)return;
-  state.agendaStatus="error";reportError(error,{context:"App Profissional > Agenda"});
+  state.agendaStatus="error";state.selectedAppointment=null;reportError(error,{context:"App Profissional > Agenda"});
   // O erro aparece na Agenda sem encerrar uma sessão válida.
  }
 }
@@ -221,7 +226,14 @@ root.addEventListener("click",async event=>{
   if(orgControl&&state.user){orgControl.disabled=true;try{await loadBase(orgControl.dataset.contextOrg);}catch(error){await endSession("Não foi possível acessar este salão.");}return;}
   if(!state.user||!state.orgId)return;
   const attendanceControl=event.target.closest("[data-attendance-action]");
-  if(attendanceControl&&state.page==="Agenda"){if(attendanceControl.dataset.attendanceAction==="order")await openAttendanceOrder();else await applyAttendance(attendanceControl);return;}
+  if(attendanceControl&&state.page==="Agenda"){
+   if(attendanceControl.dataset.attendanceAction==="order"){
+    const epoch=sessionEpoch,appointmentId=state.selectedAppointment?.id;
+    if(attendanceControl.disabled)return;attendanceControl.disabled=true;
+    try{await loadServices();}catch{if(epoch===sessionEpoch)showNotice("Não foi possível carregar os serviços. Tente novamente.");return;}finally{if(attendanceControl.isConnected)attendanceControl.disabled=false;}
+    if(epoch===sessionEpoch&&state.page==="Agenda"&&state.selectedAppointment?.id===appointmentId)await openAttendanceOrder();
+   }else await applyAttendance(attendanceControl);return;
+  }
   const statusControl=event.target.closest("[data-own-appointment-status]");
   if(statusControl&&state.page==="Agenda"){await applyAppointmentStatus(statusControl);return;}
   const epoch=sessionEpoch;

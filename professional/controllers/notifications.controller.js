@@ -2,7 +2,7 @@
 import {fetchProfessionalNotifications,markProfessionalNotificationsRead} from "../notifications.service.js";
 
 /** Recebe dependências e retorna operações do módulo. Respostas antigas são descartadas por geração de sessão. */
-export function createNotificationsController({state,supabase,getEpoch,render,showNotice,notificationsEnabled}) {
+export function createNotificationsController({state,supabase,getEpoch,render,showNotice,notificationsEnabled,updateUnread=()=>{}}) {
  /** Consulta a central e o contador; respostas de sessões anteriores são ignoradas. */
  async function loadNotifications(){
   if(!notificationsEnabled||state.role!=="professional"||state.notificationsStatus==="loading")return;
@@ -12,7 +12,7 @@ export function createNotificationsController({state,supabase,getEpoch,render,sh
   try{
    const result=await fetchProfessionalNotifications({client:supabase,organizationId:state.orgId,onlyUnread});
    if(epoch!==getEpoch())return;
-   state.notifications=result.items;state.notificationsUnread=result.unreadCount;state.notificationsStatus="ready";
+   state.notifications=result.items;state.notificationsUnread=result.unreadCount;state.notificationsStatus="ready";updateUnread(result.unreadCount);
   }catch{
    if(epoch!==getEpoch())return;
    state.notifications=[];state.notificationsStatus="error";

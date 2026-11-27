@@ -40,6 +40,6 @@ export function renderAgendaView(context) {
     '<ul class="calendar-status-legend" aria-label="Legenda dos agendamentos">' +
       marks.map(([status,name])=>'<li>'+renderStatusMark(status)+name+'</li>').join("")+'</ul></section>' +
     (unavailable?"":booking) +
-    '<div class="section-title section-title--tight-spaced"><h2>' + escapeHtml(dateLabel(state.selectedDate)) + '</h2><span class="muted">' + selectedAppointments.length + ' agendamento(s)</span></div>' +
-    (state.agendaStatus==="loading"?'<p role="status">Carregando agenda...</p>':state.agendaStatus==="error"?'<p role="alert">Não foi possível consultar a Agenda.</p><button class="btn secondary" data-action="retry-professional-agenda">Tentar novamente</button>':selectedAppointments.length ? selectedAppointments.map(appointmentCard).join("") : '<div class="empty sp-content-surface sp-content-surface--empty">Nenhum agendamento neste dia.</div>') + appointmentDetails();
+    '<div class="section-title section-title--tight-spaced"><h2>' + escapeHtml(dateLabel(state.selectedDate)) + '</h2><span class="muted">' + (unavailable?"":selectedAppointments.length+' agendamento(s)') + '</span></div>' +
+    (state.agendaStatus==="loading"?'<p role="status">Carregando agenda...</p>':state.agendaStatus==="error"?'<p role="alert">Não foi possível consultar a Agenda.</p><button class="btn secondary" data-action="retry-professional-agenda">Tentar novamente</button>':selectedAppointments.length ? selectedAppointments.map(appointmentCard).join("") : '<div class="empty sp-content-surface sp-content-surface--empty">Nenhum agendamento neste dia.</div>') + (unavailable?"":appointmentDetails());
 }

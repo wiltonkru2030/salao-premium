@@ -5,7 +5,8 @@ export function createNavigationController({state,root,getEpoch,render,showNotic
  async function refreshOrders(){
   const epoch=getEpoch();
   try{
-   await Promise.all([loadOrders(),...(state.role==="professional"?[loadServices()]:[])]);
+   const results=await Promise.allSettled([loadOrders(),...(state.role==="professional"?[loadServices()]:[])]);
+   if(results.some(result=>result.status==="rejected"))throw new Error("Consulta incompleta.");
   }catch{
    if(epoch===getEpoch()&&state.page==="Comandas")showNotice("Não foi possível carregar todas as informações. Atualize as comandas para tentar novamente.");
   }

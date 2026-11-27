@@ -9,7 +9,7 @@ import {escapeHtml as esc} from "../utils/formatters.js";
 import {renderPlatformMark} from "../../src/components/platform-mark.js";
 /** Coordena acesso com geração injetada e expõe somente operações do ciclo de sessão. */
 export function createSessionController({state,root,supabase,getEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled}){
- let recheckingSession=false,endingSession=false;
+ let recheckingSession=false,endingSession=false,loginPending=false;
  /** Limpa a interface imediatamente; encerra apenas a sessão profissional local. */
  async function endSession(notice=""){
   if(endingSession)return;
@@ -101,7 +101,7 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
  }
  /** Inicializa sessão persistida sem confundir falhas de rede com credenciais inválidas. */
  async function boot(){
-  if(recheckingSession||endingSession)return;
+  if(recheckingSession||endingSession||loginPending)return;
   recheckingSession=true;const epoch=getEpoch();
   try{
    if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"}).catch(()=>{});
@@ -144,9 +144,9 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
    if(userError||!userData?.user){if(userError)reportError(userError,{context:"App Profissional > confirmar sessão após troca de senha"});state.notice="Entre novamente para continuar.";await supabase.auth.signOut();loginView();return;}
    state.user=userData.user;await loadBase();return;
   }
-  if(!event.target.matches("#professional-login")||endingSession)return;
-  event.preventDefault();const values=new FormData(event.target),login=String(values.get("login")||"").trim(),password=String(values.get("password")||"");
-  const epoch=getEpoch(),button=event.target.querySelector("button[type=submit]");if(button.disabled)return;button.disabled=true;button.textContent="Validando…";
+  if(!event.target.matches("#professional-login"))return;
+  event.preventDefault();if(endingSession||recheckingSession)return;const values=new FormData(event.target),login=String(values.get("login")||"").trim(),password=String(values.get("password")||"");
+  const epoch=getEpoch(),button=event.target.querySelector("button[type=submit]");if(button.disabled||loginPending)return;loginPending=true;button.disabled=true;button.textContent="Validando…";
   try{
    const user=await authenticateProfessional({client:supabase,login,password});
    if(epoch!==getEpoch())return;
@@ -158,7 +158,7 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
    const message=error instanceof ProfessionalSessionError?error.message:"Não foi possível entrar. Confira suas credenciais e permissões.";
    if(state.user)await endSession(message);else{state.notice=message;loginView();}
   }
-  finally{if(button){button.disabled=false;button.textContent="Entrar";}}
+  finally{loginPending=false;if(button){button.disabled=false;button.textContent="Entrar";}}
   }catch(error){reportError(error,{context:"App Profissional > envio de formulário"});}
  }
  /** Instala eventos externos de sessão uma única vez, fora do callback do SDK. */

@@ -13,7 +13,7 @@ export function renderProfessionalShell({state, content, pages}) {
     const profileIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg>';
     return '<button type="button" class="nav-item'+(active?' active':'')+'" data-page="'+escapeHtml(page)+'"'+
       (active?' aria-current="page"':'')+'>'+(page==="Notificações"?bell:(page==="Perfil"?profileIcon:(icon?'<img src="'+escapeHtml(icon)+'" alt="" width="18" height="18">':"")))+'<span>'+
-      escapeHtml(page)+'</span>'+(page==="Notificações"&&state.notificationsUnread>0?'<span class="tag" aria-label="Não lidas">'+(state.notificationsUnread>99?"99+":state.notificationsUnread)+'</span>':"")+'</button>';
+      escapeHtml(page)+'</span>'+(page==="Notificações"?'<span class="tag" data-professional-unread-count aria-label="Não lidas"'+(state.notificationsUnread>0?"":" hidden")+'>'+(state.notificationsUnread>99?"99+":state.notificationsUnread)+'</span>':"")+'</button>';
   }).join("");
   return `<div class="app-shell">
     <aside class="professional-sidebar" id="professional-sidebar">

@@ -134,3 +134,5 @@ Controladores de Clientes, Serviços, Notificações, Perfil, Financeiro e Atend
 
 ### Refatoração e carregamento sob demanda
 Controladores de sessão e navegação separados. `app.js` agora tem 289 linhas. Entrada consulta Agenda; notificações em consulta separada após renderizar; Comandas, extrato, clientes e serviços são carregados ao abrir a página, ou catálogo ao abrir agendamento. Falhas de Agenda não encerram sessão válida e possuem recuperação; Comandas têm estado de carregamento/erro. Nenhum SQL/flag ou ambiente de produção alterado. Testes CI e medição real de desempenho no navegador pendentes.
+
+Complemento: contador de notificações atualiza apenas o indicador no menu (sem reconstruir o modal aberto). Abertura da comanda diretamente pelo atendimento também carrega o catálogo. Detalhe selecionado na Agenda é conciliado com a resposta atual e ocultado durante falha ou carregamento. Testes de navegador continuam pendentes.
