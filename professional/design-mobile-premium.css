@@ -1,37 +1,184 @@
-/* SALÃO PREMIUM — App Profissional, módulo 09.
- * Contrato de leitura e interação mobile; preserva as permissões e serviços.
- */
-#professional-app{font-family:var(--sp-font-ui,'Poppins',sans-serif);font-size:14px;line-height:1.55}
-#professional-app .brand{font-size:12px}
-#professional-app .brand small{font-size:10px}
-#professional-app .top h1{font-family:var(--sp-font-heading,'Poppins',sans-serif);font-size:24px;line-height:1.2}
-#professional-app .muted,#professional-app .login p{font-size:13px;line-height:1.65}
-#professional-app .field{font-size:12px;line-height:1.55}
-#professional-app .field input{min-height:46px;font-size:14px}
-#professional-app :is(.primary,.secondary,.icon-button,.calendar-head button){min-height:44px}
-#professional-app .primary{font-size:13px}
-#professional-app .secondary{font-size:12px}
-#professional-app .icon-button{width:44px;height:44px}
-#professional-app :is(button,input,select,textarea):focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-#professional-app .section-title{gap:10px;flex-wrap:wrap}
-#professional-app .section-title h2{font-size:18px}
-#professional-app .calendar-head strong{font-size:14px}
-#professional-app .calendar-head button{font-size:12px}
-#professional-app .weekday{font-size:11px}
-#professional-app .day{font-size:13px;min-height:58px}
-#professional-app .appointment,#professional-app .order,#professional-app .service,#professional-app .commission{min-width:0}
-#professional-app .appointment strong,#professional-app .order strong,#professional-app .service strong,#professional-app .commission strong{font-size:14px;line-height:1.45}
-#professional-app .appointment .meta,#professional-app .order .meta,#professional-app .service .meta,#professional-app .commission .meta{font-size:12px;line-height:1.65;overflow-wrap:anywhere}
-#professional-app .tag{font-size:11px}
-#professional-app .detail-row{font-size:13px;line-height:1.55;flex-wrap:wrap}
-#professional-app .detail-row b{overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
-#professional-app .empty{font-size:13px}
-#professional-app .suggestions button{min-height:44px;font-size:13px}
-@media(max-width:600px){
- #professional-app .content{padding-block:21px calc(24px + env(safe-area-inset-bottom))}
- #professional-app .top{padding:16px 17px}
- #professional-app .login{padding:26px 20px}
- #professional-app .day{min-height:52px}
- #professional-app .appointment,#professional-app .order,#professional-app .service,#professional-app .commission{padding:15px}
+/* Composição das telas profissionais. Controles, superfícies, foco e paleta
+   vêm do design system importado em styles.css, inclusive nos dois temas. */
+#professional-app {
+  font-size: var(--sp-text-size);
+  line-height: 1.55;
 }
-@media(prefers-reduced-motion:reduce){#professional-app *,#professional-app *::before,#professional-app *::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+.professional-workspace .content {
+  max-inline-size: 960px;
+  padding-block: clamp(20px, 4vw, 40px) calc(24px + env(safe-area-inset-bottom));
+}
+
+.professional-workspace .top {
+  min-block-size: 64px;
+  padding: 10px clamp(16px, 3vw, 28px);
+}
+
+.professional-top-brand {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.professional-top-brand small { margin-block-start: 2px; }
+
+.professional-top-brand .sp-platform-mark {
+  inline-size: 34px;
+  block-size: 34px;
+}
+
+.professional-sidebar nav {
+  display: grid;
+  gap: 5px;
+}
+
+.professional-sidebar .nav-item {
+  min-block-size: var(--sp-control-height);
+  border-radius: var(--sp-control-radius);
+  color: var(--sp-ink);
+}
+
+.professional-sidebar .nav-item:hover { background: var(--sp-soft); }
+
+.professional-sidebar .nav-item.active {
+  background: var(--sp-gold-soft);
+  color: var(--sp-gold-text);
+  font-weight: 600;
+}
+
+.professional-workspace .section-title {
+  align-items: baseline;
+  gap: 4px 16px;
+  flex-wrap: wrap;
+  margin: 0 0 14px;
+}
+
+.professional-workspace .section-title h2 {
+  font-family: var(--sp-font-heading);
+  font-size: clamp(20px, 4.8vw, 28px);
+  font-weight: 600;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.professional-workspace :is(.detail, .empty, .commission) + .section-title {
+  margin-block-start: 24px;
+}
+
+.professional-calendar .calendar-head { margin-block: 0 8px; }
+.professional-calendar .calendar-head strong { text-transform: capitalize; }
+.professional-calendar .calendar { gap: clamp(2px, 1vw, 8px); }
+
+.professional-calendar .day {
+  display: grid;
+  grid-template-rows: 1fr 4px 1fr;
+  place-items: center;
+  min-block-size: clamp(40px, 10vw, 56px);
+  padding: 3px 0 0;
+  border: 1px solid transparent;
+  border-radius: var(--sp-control-radius);
+  background: var(--sp-paper);
+  color: var(--sp-ink);
+}
+
+.professional-calendar .day:hover { background: var(--sp-soft); }
+.professional-calendar .day.outside { color: var(--sp-muted); }
+.professional-calendar .day.today .calendar-day-number { color: var(--sp-gold-text); }
+.professional-calendar .day.selected {
+  border-color: var(--sp-gold);
+  background: var(--sp-gold-soft);
+}
+.professional-calendar .calendar-day-number { align-self: end; }
+.professional-calendar .calendar-status-marks { align-self: end; }
+
+.professional-calendar .calendar-status-legend {
+  border-block-start: 1px solid var(--sp-line);
+  padding-block-start: 10px;
+}
+
+.professional-booking-action { margin-block: 14px 22px; }
+
+.professional-workspace :is(.professional-record-heading, .professional-appointment-heading, .professional-order-heading) {
+  display: flex;
+  align-items: center;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+}
+
+.professional-initials,
+.professional-appointment-heading time {
+  display: inline-grid;
+  place-items: center;
+  min-block-size: 34px;
+  min-inline-size: 34px;
+  padding-inline: 8px;
+  border-radius: var(--sp-control-radius);
+  background: var(--sp-gold-soft);
+  color: var(--sp-gold-text);
+  font-weight: 600;
+}
+
+.professional-customer-record .meta {
+  margin: 2px 0 0;
+  color: var(--sp-muted);
+}
+
+.professional-customer-record .professional-card-actions { margin-block-start: 12px; }
+
+.professional-customer-record a.btn {
+  display: inline-grid;
+  place-items: center;
+  text-decoration: none;
+}
+
+.professional-workspace .order {
+  display: block;
+  inline-size: 100%;
+  text-align: start;
+}
+
+.professional-order-heading { justify-content: space-between; }
+.professional-order-heading .tag { margin: 0; }
+.professional-workspace .order .detail-row {
+  margin-block-start: 10px;
+  padding-block-end: 0;
+  border-block-start: 1px solid var(--sp-line);
+}
+
+.professional-service-price { color: var(--sp-gold-text); }
+.professional-balance {
+  display: grid;
+  gap: 4px;
+  margin-block-end: 10px;
+  padding: 12px;
+  border-radius: var(--sp-radius);
+  background: var(--sp-gold-soft);
+  color: var(--sp-gold-text);
+}
+
+.professional-balance strong {
+  font-size: clamp(22px, 6vw, 32px);
+  font-variant-numeric: tabular-nums;
+}
+
+.professional-settings-card h3 { margin: 0 0 8px; }
+
+.professional-booking-sheet .sp-modal-foot > button {
+  flex: 1;
+  width: auto;
+}
+
+@media (max-width: 400px) {
+  .professional-top-brand .sp-platform-mark { inline-size: 28px; block-size: 28px; }
+  .professional-calendar { padding-inline: 10px; }
+}
+
+/* A entrada móvel centraliza marca e título e mantém o formulário do painel. */
+@media (max-width: 760px) {
+  #professional-app .professional-auth .auth-brand {
+    justify-content: center;
+    margin-block-end: 24px;
+  }
+
+  #professional-app .professional-auth .auth-heading { text-align: center; }
+}

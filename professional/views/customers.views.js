@@ -15,9 +15,11 @@ export function renderProfessionalCustomers(appointments, professionalId, monthL
     .map(customer => {
       const phone = String(customer.customer_phone || "");
       const digits = phone.replace(/\D/g,"");
-      return '<article class="detail sp-content-surface" data-professional-search-text="'+escapeHtml(customer.customer_name||"")+
-        '" data-professional-phone="'+digits+'"><strong>'+escapeHtml(customer.customer_name||"Cliente")+
-        '</strong><p class="meta">'+escapeHtml(formatSavedPhone(phone)||"Telefone não informado")+'</p>'+
+      const name = customer.customer_name || "Cliente";
+      const initials = name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(word => word[0]).join("").toLocaleUpperCase("pt-BR");
+      return '<article class="detail sp-content-surface professional-customer-record" data-professional-search-text="'+escapeHtml(customer.customer_name||"")+
+        '" data-professional-phone="'+digits+'"><div class="professional-record-heading"><span class="professional-initials" aria-hidden="true">'+escapeHtml(initials)+'</span><div class="record-main"><strong>'+escapeHtml(name)+
+        '</strong><p class="meta">'+escapeHtml(formatSavedPhone(phone)||"Telefone não informado")+'</p></div></div>'+
         '<div class="professional-card-actions"><button class="btn secondary" type="button" data-customer-visit="'+
         escapeHtml(customer.id)+'">Ver atendimento</button>'+
         (digits.length>=10&&digits.length<=15?'<a class="btn secondary" href="tel:'+(phone.trim().startsWith("+")?"+":"")+digits+'">Ligar</a>':'')+

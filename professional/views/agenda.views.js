@@ -28,16 +28,16 @@ export function renderAgendaView(context) {
     const classes = [cell.inMonth ? "" : "outside", cell.selected ? "selected" : "", cell.today ? "today" : ""].filter(Boolean).join(" ");
     const statuses = marks.filter(([status])=>cell.statuses.has(status));
     const label = dateLabel(cell.date) + (statuses.length ? " · "+statuses.map(([,name])=>name).join(", ") : "");
-    return '<button class="day ' + classes + '" data-date="' + cell.key + '" aria-label="'+escapeHtml(label)+'">' + '<span class="calendar-day-number">' + cell.day + '</span>' +
+    return '<button class="day ' + classes + '" data-date="' + cell.key + '" aria-pressed="'+cell.selected+'" aria-label="'+escapeHtml(label)+'">' + '<span class="calendar-day-number">' + cell.day + '</span>' +
       (statuses.length ? '<span class="calendar-status-marks">'+statuses.map(([status])=>renderStatusMark(status)).join("")+'</span>' : '') + '</button>';
   }).join("");
   const weekdays = ["D", "S", "T", "Q", "Q", "S", "S"].map(day => '<div class="weekday">' + day + '</div>').join("");
   const scopeLabel = state.scope === "calendar_all" || state.scope === "all" ? "Agenda completa autorizada" : "Somente sua agenda";
   return '<div class="section-title"><h2>Agenda mensal</h2><span class="muted">' + scopeLabel + '</span></div>' +
-    '<div class="calendar-head"><button data-action="prev-month">‹</button><strong>' + escapeHtml(monthLabel(state.month)) + '</strong><button data-action="next-month">›</button></div>' +
+    '<section class="professional-calendar sp-content-surface" aria-label="Calendário mensal"><div class="calendar-head"><button class="icon-button" aria-label="Mês anterior" data-action="prev-month">‹</button><strong>' + escapeHtml(monthLabel(state.month)) + '</strong><button class="icon-button" aria-label="Próximo mês" data-action="next-month">›</button></div>' +
     '<div class="calendar">' + weekdays + calendarCells + '</div>' +
     '<ul class="calendar-status-legend" aria-label="Legenda dos agendamentos">' +
-      marks.map(([status,name])=>'<li>'+renderStatusMark(status)+name+'</li>').join("")+'</ul>' +
+      marks.map(([status,name])=>'<li>'+renderStatusMark(status)+name+'</li>').join("")+'</ul></section>' +
     booking +
     '<div class="section-title section-title--tight-spaced"><h2>' + escapeHtml(dateLabel(state.selectedDate)) + '</h2><span class="muted">' + selectedAppointments.length + ' agendamento(s)</span></div>' +
     (selectedAppointments.length ? selectedAppointments.map(appointmentCard).join("") : '<div class="empty sp-content-surface sp-content-surface--empty">Nenhum agendamento neste dia.</div>') + appointmentDetails();

@@ -3,7 +3,7 @@
 /** Monta o botão e o diálogo com campos de pesquisa e hora. */
 export function renderProfessionalBooking() {
   return `<div class="professional-booking-action">
-    <button class="btn primary" type="button" data-action="open-professional-booking">Novo agendamento</button>
+    <button class="btn primary" type="button" data-action="open-professional-booking">+ Novo agendamento</button>
   </div>
   <dialog id="professional-booking-dialog" class="sp-modal professional-booking-sheet" aria-labelledby="professional-booking-title">
     <div class="sp-modal-shell">

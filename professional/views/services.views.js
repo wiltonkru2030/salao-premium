@@ -3,7 +3,7 @@ import {escapeHtml, formatMoney} from "../utils/formatters.js";
 
 /** Renderiza os serviços já filtrados pelo vínculo, com duração e preço. */
 export function renderProfessionalServices(services) {
-  const rows = services.map(service => '<article class="detail sp-content-surface professional-service-record"><div><strong>' +
+  const rows = services.map(service => '<article class="detail sp-content-surface professional-service-record"><div class="record-main"><strong>' +
     escapeHtml(service.name) + '</strong><p class="meta">' +
     escapeHtml(service.category || "Serviço") + ' · ' +
     escapeHtml(service.duration_minutes) + ' min</p></div><b class="professional-service-price">' +

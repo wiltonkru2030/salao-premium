@@ -12,7 +12,7 @@ import { escapeHtml } from "../utils/formatters.js";
  * Recebe campos definidos pela própria view e escapa mensagens dinâmicas.
  */
 function renderProfessionalAuth({title, description, notice, form, footer = ""}) {
-  return `<main class="auth-shell">
+  return `<main class="auth-shell professional-auth">
     <section class="auth-panel">
       <div class="auth-brand">${renderPlatformMark()}<span><b>SALÃO PREMIUM</b><small>APP PROFISSIONAL</small></span></div>
       <div class="auth-heading"><h1>${escapeHtml(title)}</h1><p>${escapeHtml(description)}</p></div>

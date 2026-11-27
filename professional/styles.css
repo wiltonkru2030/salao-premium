@@ -10,17 +10,13 @@ html{background:var(--sp-canvas)}
 body{margin:0;min-width:320px;background:var(--sp-canvas);color:var(--ink);font-size:13px;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit}button{cursor:pointer}
 .boot{padding:32px;color:var(--muted)}
-.app-shell{display:grid;grid-template-columns:230px minmax(0,1fr);min-height:100dvh;background:var(--sp-paper)}
+.app-shell{display:grid;grid-template-columns:230px minmax(0,1fr);min-height:100dvh;background:var(--sp-soft)}
 .top{min-height:76px;padding:17px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:var(--sp-paper)}
 .brand{font-size:11px;letter-spacing:.16em;font-weight:700;color:var(--sp-ink)}
 .brand small{display:block;color:var(--sp-muted);font-size:8px;letter-spacing:.18em;margin-top:5px}
-.top h1{font-size:21px;margin:6px 0 0;font-weight:500;letter-spacing:-.4px}
 .icon-button{border:1px solid var(--line);background:var(--sp-paper);border-radius:7px;width:38px;height:38px;color:var(--sp-ink)}
 .content{padding-block:25px 36px}
 .muted{color:var(--muted);font-size:11px;line-height:1.6}
-.login{max-width:430px;margin:9vh auto;padding:34px 30px;border:1px solid var(--line);border-radius:10px}
-.login h1{font-size:26px;font-weight:500;letter-spacing:-.6px;margin:0 0 8px}
-.login p{color:var(--muted);font-size:12px;line-height:1.7}
 .field{display:block;margin:18px 0;color:var(--sp-muted);font-size:11px}
 .field input{display:block;width:100%;margin-top:7px;border:1px solid var(--sp-line-strong);border-radius:7px;padding:12px 13px;background:var(--sp-paper);color:var(--sp-ink);outline:none;font-size:12px}
 .field input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--sp-gold-soft)}
@@ -31,15 +27,12 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 .section-title h2{font-size:17px;font-weight:500;letter-spacing:-.2px;margin:0}
 .calendar-head{display:flex;justify-content:space-between;align-items:center;margin:12px 0}
 .calendar-head strong{font-size:13px;font-weight:600}
-.calendar-head button{border:1px solid var(--line);background:var(--sp-paper);border-radius:6px;padding:8px 12px;color:var(--sp-ink);font-size:11px}
 .calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
 .weekday{text-align:center;color:var(--sp-muted);font-size:9px;padding:8px 0;letter-spacing:.04em}
-.day{min-height:57px;border:1px solid var(--sp-line);border-radius:6px;background:var(--sp-paper);color:var(--sp-ink);font-size:12px;position:relative}
 .day.outside{color:var(--sp-muted);background:var(--sp-soft);border-color:transparent}
 .day.selected{border-color:var(--sp-gold);background:var(--sp-gold-soft)}
 .day.today{font-weight:700}
 /* Riscos por status no calendário mensal, com cores do tema compartilhado. */
-.day{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
 .calendar-status-marks{display:flex;justify-content:center;gap:2px;max-inline-size:100%}
 .calendar-day-number{line-height:1}
 .calendar-status-mark{display:block;flex:none;inline-size:6px;block-size:3px;border-radius:2px;background:var(--calendar-mark)}
@@ -68,8 +61,6 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 .detail{margin-block:12px}
 .detail-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--sp-line);font-size:11px}
 .detail-row:last-child{border:0}
-@media(min-width:700px){.content{padding-block:28px 40px}.day{min-height:76px;font-size:13px}}
-@media(max-width:600px){.top{padding:15px 17px;min-height:68px}.content{padding-block:20px 32px}.login{margin:7vh 15px;padding:27px 20px}.section-title h2{font-size:16px}.day{min-height:48px}}
 
 /* Posicionamento do menu nativo de perfil. Controles usam a paleta compartilhada. */
 .professional-profile-menu {position:relative;flex:none}
@@ -105,20 +96,19 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 :root[data-theme="dark"] .professional-sidebar .nav-item img{filter:brightness(0) invert(.94)}
 .professional-workspace{min-inline-size:0}
 .professional-workspace .top{gap:12px}
-.professional-workspace .top h1{flex:1;min-width:0;overflow-wrap:anywhere}
 .professional-menu-toggle,.professional-menu-close,.professional-menu-scrim{display:none}
 @media(max-width:760px){
  .app-shell{display:block}
  .professional-menu-toggle,.professional-menu-close{display:inline-grid;place-items:center}
  .professional-sidebar{position:fixed;inset:0 auto 0 0;width:min(300px,86vw);z-index:21;visibility:hidden;transform:translateX(-100%)}
  .is-menu-open .professional-sidebar{visibility:visible;transform:none;box-shadow:var(--sp-shadow)}
- .is-menu-open .professional-menu-scrim{display:block;position:fixed;inset:0;z-index:20;border:0;background:#0008}
+ .is-menu-open .professional-menu-scrim{display:block;position:fixed;inset:0;z-index:20;border:0;background:color-mix(in srgb, var(--sp-canvas) 55%, transparent);backdrop-filter:brightness(.55)}
 }
 
 /* O formulário usa o diálogo e os botões do painel; só o posicionamento móvel é local. */
 .professional-booking-action{margin-block:14px}
 #professional-app [data-professional-list] [hidden]{display:none}
-.professional-list-tools{display:flex;align-items:end;gap:10px;flex-wrap:wrap}
+.professional-list-tools{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin-block-end:16px}
 @media(max-width:760px){
  dialog.professional-booking-sheet{position:fixed;inset:auto 0 0;width:100%;max-width:none;margin:0;border-radius:18px 18px 0 0}
  dialog.professional-booking-sheet .sp-modal-foot{padding-bottom:max(14px,env(safe-area-inset-bottom))}
@@ -136,7 +126,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 
 /* Espaçamento local para os controles globais e resumos do profissional. */
 .professional-list-tools .sp-labeled-field{flex:1 1 180px}
-.professional-workspace :is(.detail,.professional-booking-sheet) .sp-labeled-field{margin-block:10px}
+.professional-workspace .detail .sp-labeled-field{margin-block:12px}
 .professional-card-actions{display:flex;flex-wrap:wrap;gap:8px}
 .professional-service-record{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .professional-service-record .meta{margin:3px 0 0;color:var(--sp-muted)}

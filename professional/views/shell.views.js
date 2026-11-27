@@ -23,8 +23,8 @@ export function renderProfessionalShell({state, content, pages}) {
     <div class="professional-workspace">
       <header class="top">
         <button type="button" class="icon-button professional-menu-toggle" data-action="open-professional-menu" aria-label="Abrir menu" aria-controls="professional-sidebar" aria-expanded="false">☰</button>
-        <h1>Olá, ${escapeHtml(greeting)}</h1>
-        <details class="professional-profile-menu"><summary class="secondary">Perfil</summary><div class="detail">
+        <div class="brand sp-professional-brand professional-top-brand">${renderPlatformMark()}<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div>
+        <details class="professional-profile-menu"><summary class="secondary" aria-label="Perfil de ${escapeHtml(greeting)}">Perfil</summary><div class="detail sp-content-surface">
           <button type="button" class="secondary" data-page="Configurações">Configurações</button>
           <button type="button" class="secondary" data-action="logout">Sair</button>
         </div></details>
