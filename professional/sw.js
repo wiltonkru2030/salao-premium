@@ -1,14 +1,10 @@
-/** Service worker do App Profissional: instala, atualiza e remove o cache do shell PWA. */
-// Versão nova invalida o app.js antigo, que compartilhava a sessão do painel.
-const CACHE = "salao-profissional-shell-v3-auth-isolation";
-const SHELL = ["./", "./index.html", "./styles.css?v=professional-pwa-20261112", "./app.js?v=professional-auth-isolation-20261121", "./manifest.webmanifest", "./icon.svg"];
-self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL))));
-self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))));
-self.addEventListener("fetch", event => {
-  const url = new URL(event.request.url);
-  if (event.request.method !== "GET" || url.pathname.includes("/rest/") || url.pathname.includes("/auth/") || url.pathname.includes("/functions/")) return;
-  event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
-    if (response.ok && url.origin === self.location.origin) { const copy = response.clone(); caches.open(CACHE).then(cache => cache.put(event.request, copy)); }
-    return response;
-  })));
-});
+/** Worker do App Profissional: migração segura para assets versionados pelo Vite.
+ * Não intercepta rede ou cacheia dados privados. Acesso offline não é oferecido.
+ */
+self.addEventListener("install",event=>event.waitUntil(self.skipWaiting()));
+self.addEventListener("activate",event=>event.waitUntil((async()=>{
+ // Remove exclusivamente caches legados deste aplicativo, nunca os do painel ou cliente.
+ const keys=await caches.keys();
+ await Promise.all(keys.filter(key=>key.startsWith("salao-profissional-shell-")).map(key=>caches.delete(key)));
+ await self.clients.claim();
+})()));

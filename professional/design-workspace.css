@@ -1,0 +1,71 @@
+/* Acabamento visual do App Profissional. Usa exclusivamente tokens da plataforma. */
+/* O conteúdo mantém espaçamento e leitura consistentes em qualquer página. */
+#professional-app .professional-workspace .content {
+ display:flex;flex-direction:column;gap:12px;
+ max-inline-size:800px;min-inline-size:0;
+}
+#professional-app .professional-workspace .content > :is(.detail,.commission,.order,.service,.appointment,.empty,.section-title){margin:0}
+#professional-app .professional-workspace .content > .section-title:not(:first-child){margin-block-start:12px}
+#professional-app .professional-workspace .content > section[data-professional-list]{display:grid;gap:12px}
+#professional-app .professional-workspace [data-professional-list] > :is(.detail,.order,.service,.empty,.section-title,.professional-list-tools){margin:0}
+#professional-app .professional-workspace .section-title h2{font-size:clamp(20px,4.2vw,26px);font-weight:600}
+#professional-app .professional-workspace :is(.detail,.commission,.service,.order,.appointment,.professional-calendar){border-radius:var(--sp-radius);min-inline-size:0}
+#professional-app .professional-workspace :is(.detail,.commission,.service) h3{font-size:15px;font-weight:600;margin:0 0 12px}
+#professional-app .professional-workspace .detail-row{align-items:baseline;gap:12px;font-size:var(--sp-text-size);line-height:1.5}
+#professional-app .professional-workspace .detail-row span:first-child{color:var(--sp-muted);flex:1 1 40%}
+#professional-app .professional-workspace .detail-row b{min-inline-size:0;text-align:end;overflow-wrap:anywhere;font-weight:500}
+#professional-app .professional-workspace .meta{font-size:var(--sp-caption-size);line-height:1.65;color:var(--sp-muted)}
+#professional-app .professional-workspace .tag{font-size:var(--sp-caption-size);margin:0;border-radius:var(--sp-control-radius);line-height:1.5;white-space:normal}
+#professional-app .professional-workspace .tag.success{color:var(--sp-green);background:var(--sp-green-soft)}
+#professional-app .professional-workspace .professional-record-heading{justify-content:space-between}
+#professional-app .professional-workspace .record-main{flex:1;min-inline-size:0}
+#professional-app .professional-workspace .professional-customer-record{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#professional-app .professional-workspace .professional-customer-record .professional-record-heading{flex:1 1 180px;justify-content:flex-start}
+#professional-app .professional-workspace img.professional-initials{padding:0;object-fit:cover;width:48px;height:48px}
+#professional-app .professional-workspace .professional-list-tools{align-items:end;gap:10px}
+#professional-app .professional-workspace .professional-card-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-block-start:12px}
+#professional-app .professional-workspace .professional-card-actions > button{flex:1 1 140px;inline-size:auto}
+#professional-app .professional-workspace .btn.secondary,#professional-app .professional-workspace .secondary{border-color:var(--sp-line-strong)}
+#professional-app .professional-workspace .primary{background:var(--sp-action);color:var(--sp-on-action)}
+#professional-app .professional-workspace .primary:hover{background:var(--sp-action-hover)}
+#professional-app .professional-workspace form:not(.auth-form){display:grid;gap:12px}
+#professional-app .professional-workspace .detail .sp-labeled-field{margin:0}
+#professional-app .professional-workspace .sp-labeled-field{font-weight:500}
+#professional-app .professional-workspace .sp-labeled-field > :is(input,select),#professional-app .professional-workspace .sp-labeled-field > div > input{font-size:var(--sp-text-size)}
+#professional-app .professional-workspace .sp-labeled-field :is(input,select):focus{border-color:var(--sp-gold);box-shadow:var(--sp-focus)}
+#professional-app .professional-workspace [role=alert]:not([hidden]){padding:12px;border-radius:var(--sp-control-radius);color:var(--sp-red);background:var(--sp-error-soft);overflow-wrap:anywhere}
+#professional-app .professional-workspace .notice{margin:0;font-size:var(--sp-caption-size)}
+#professional-app .professional-workspace .autocomplete-menu{max-block-size:200px}
+#professional-app .professional-workspace .autocomplete-option{min-block-size:var(--sp-control-height);font-size:var(--sp-text-size)}
+/* O atributo hidden deve vencer os layouts flex/grid dos formulários e cards. */
+#professional-app [hidden]{display:none!important}
+#professional-app dialog.professional-booking-sheet{inline-size:min(480px,calc(100vw - 24px));max-block-size:90dvh}
+#professional-app dialog.professional-booking-sheet .sp-modal-shell{max-block-size:90dvh}
+#professional-app dialog.professional-booking-sheet .sp-modal-shell > form{display:flex;gap:0}
+#professional-app dialog.professional-booking-sheet .sp-modal-body{grid-template-columns:minmax(0,1fr);gap:14px;padding:20px}
+#professional-app dialog.professional-booking-sheet .sp-modal-body > *{grid-column:1/-1}
+#professional-app dialog.professional-booking-sheet .sp-modal-head{align-items:center;padding:16px 20px}
+#professional-app dialog.professional-booking-sheet .sp-modal-foot{display:grid;grid-template-columns:1fr 1fr;padding:14px 20px}
+#professional-app dialog.professional-booking-sheet .sp-modal-foot > button{inline-size:100%}
+#professional-app dialog.professional-booking-sheet [data-booking-quick-open]{justify-self:start;inline-size:auto}
+#professional-app dialog.professional-booking-sheet .autocomplete-menu{position:static;max-block-size:160px;box-shadow:none}
+#professional-app .professional-calendar .day{min-block-size:44px}
+#professional-app .professional-calendar .day.selected{box-shadow:inset 0 0 0 1px var(--sp-gold)}
+#professional-app .professional-workspace .appointment .meta{margin-block:8px}
+#professional-app .professional-workspace .appointment > small.meta{display:block;margin-block-end:0}
+#professional-app .professional-sidebar .nav-item svg{flex:none}
+#professional-app .professional-sidebar .nav-item .tag{margin:0;margin-inline-start:auto}
+@media(max-width:760px){
+ #professional-app .professional-workspace .content{padding-inline:16px;gap:12px}
+ #professional-app .professional-workspace .top{position:sticky;top:0;z-index:9}
+ #professional-app .professional-workspace .professional-card-actions > button{flex-basis:120px}
+ #professional-app .professional-workspace .sp-labeled-field :is(input,select){font-size:16px}
+ #professional-app dialog.professional-booking-sheet{inline-size:100%;max-block-size:92dvh;border-radius:18px 18px 0 0}
+ #professional-app dialog.professional-booking-sheet .sp-modal-shell{max-block-size:92dvh}
+ #professional-app dialog.professional-booking-sheet .sp-modal-foot{padding-block-end:max(14px,env(safe-area-inset-bottom))}
+}
+@media(max-width:360px){
+ #professional-app .professional-workspace .content{padding-inline:10px}
+ #professional-app .professional-calendar .day{min-block-size:40px}
+ #professional-app .professional-workspace .professional-top-brand{letter-spacing:.05em}
+}

@@ -16,7 +16,7 @@ export function renderProfessionalBooking({unitBooking=false}={}) {
           <div class="sp-span sp-labeled-field"><label for="professional-booking-client">Cliente</label><div><input id="professional-booking-client" type="search" data-booking-client placeholder="Buscar por nome ou telefone" autocomplete="off" required></div></div>
           ${unitBooking?'<button class="btn secondary" type="button" data-booking-quick-open>+ Cadastrar cliente</button>':""}
           <div class="sp-span sp-labeled-field"><label for="professional-booking-service">Serviço</label><div><input id="professional-booking-service" type="search" data-booking-service placeholder="Buscar serviço" autocomplete="off" required></div></div>
-          <label class="sp-span">Hora<input name="start" type="time" required></label>
+          <label class="sp-span sp-labeled-field">Hora<input name="start" type="time" required></label>
           <p class="sp-span" data-booking-error role="alert" hidden></p>
         </div>
         <footer class="sp-modal-foot">

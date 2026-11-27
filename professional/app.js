@@ -11,7 +11,7 @@ import {fetchProfilePreferences,saveProfilePreferences} from "./profile-preferen
 import {fetchProfessionalNotifications,markProfessionalNotificationsRead} from "./notifications.service.js";
 import {renderNotificationsView} from "./views/notifications.views.js";
 import { installGlobalErrorHandlers, reportError } from "../src/utils/errors.js";
-import { installGlobalMasks } from "../src/utils/input-masks.js";
+import { installGlobalMasks, formatCpf } from "../src/utils/input-masks.js";
 import {
   escapeHtml as esc,
   formatMoney as money,
@@ -372,6 +372,8 @@ root.addEventListener("keydown", event => {
 });
 // Filtra a lista em memória sem enviar buscas ao banco ou perder o foco.
 root.addEventListener("input", event => {
+ // CPF ou e-mail: formata apenas entradas numéricas e preserva o login por e-mail.
+ if(event.target.matches("#professional-login [name=login]")&&!event.isComposing&&/^[0-9.\\-\\s]+$/.test(event.target.value)){event.target.value=formatCpf(event.target.value);return;}
  const control=event.target.closest("[data-professional-list-search]");
  if(!control)return;
  const normalize=value=>value.normalize("NFD").replace(/\p{M}/gu,"").toLocaleLowerCase("pt-BR").trim();
@@ -703,7 +705,7 @@ root.addEventListener("submit",async event=>{
 });
 // Inicialização do PWA: sessão existente ou tela de login.
 async function boot(){
- if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
+ if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"}).catch(()=>{});
  const {data,error}=await supabase.auth.getUser();
  if(error){reportError(error,{context:"App Profissional > recuperar sessão"});state.notice="Não foi possível recuperar sua sessão.";loginView();return;}
  if(data.user){
