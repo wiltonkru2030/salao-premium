@@ -64,6 +64,7 @@
     "test:commission-payout-summary": "node src/modules/commissions/commission-payout-summary.test.js",
     "test:sql-commission-reversals-v2": "node docs/sql/commission-refund-reversals-v2.draft.test.mjs",
     "test:sql-agenda-order-link": "node docs/sql/agenda-order-branch-idempotency.draft.test.mjs",
+    "test:professional-attendance-service": "node professional/attendance.service.test.js",
     "test:professional-services-service": "node professional/services.service.test.js",
     "test:professional-booking-search": "node professional/booking-search.test.js",
     "test:professional-customers-service": "node professional/customers.service.test.js",

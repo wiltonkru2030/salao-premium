@@ -26,6 +26,7 @@ import { renderProfessionalCustomers } from "./views/customers.views.js";
 import {fetchProfessionalCustomers,fetchProfessionalCustomerHistory,listUnitCustomers,saveUnitCustomer} from "./customers.service.js";
 import { renderProfessionalServices } from "./views/services.views.js";
 import {bindProfessionalBookingSearch} from "./booking-search.js";
+import {attendanceActions,renderAttendanceActions,performAttendanceAction} from "./attendance.service.js";
 import { renderProfessionalBooking } from "./views/booking.views.js";
 import { renderAgendaView } from "./views/agenda.views.js";
 import { handleAgendaClick } from "./agenda.controller.js";
@@ -55,6 +56,7 @@ let appointmentStatusPending = false;
 // Ative após aplicar a migration de reagendamento no ambiente correspondente.
 const bookingEnabled = import.meta.env.VITE_PROFESSIONAL_BOOKING === "true";
 const customerRegistrationEnabled = import.meta.env.VITE_PROFESSIONAL_CUSTOMER_REGISTRATION === "true";
+const attendanceEnabled = import.meta.env.VITE_PROFESSIONAL_ATTENDANCE === "true";
 const serviceManagementEnabled = import.meta.env.VITE_PROFESSIONAL_SERVICE_MANAGEMENT === "true";
 const unitBookingEnabled = import.meta.env.VITE_PROFESSIONAL_UNIT_BOOKING === "true";
 const rescheduleEnabled = import.meta.env.VITE_PROFESSIONAL_RESCHEDULE === "true";
@@ -83,7 +85,7 @@ function appointmentCard(a){
  const duration=Math.max(0,Math.round((new Date(a.ends_at)-new Date(a.starts_at))/60000));
  return '<button type="button" class="appointment sp-content-surface '+appointmentClass(a)+'" data-appointment="'+esc(a.id)+'"><span class="professional-appointment-heading"><time datetime="'+esc(a.starts_at)+'">'+timeLabel(a.starts_at,salonTimezone(state.organization?.timezone))+'</time><strong>'+esc(a.customer_name)+'</strong></span>'+
  '<div class="meta">'+esc(a.service_name)+' · '+timeLabel(a.ends_at,salonTimezone(state.organization?.timezone))+'<br>'+esc(a.customer_phone||"Telefone não informado")+' · '+money(a.price)+'<br>'+esc(a.professional_name||state.professional?.name||"Profissional")+' · '+duration+' min</div>'+
- '<span class="tag">'+esc(statusLabel(a.status))+' · Agendado por: '+esc(sourceLabel(a.booking_source))+'</span>'+(appointmentStatusActions(a)?'<small class="meta">Toque para ver as ações</small>':'')+'</button>';
+ '<span class="tag">'+esc(statusLabel(a.status))+' · Agendado por: '+esc(sourceLabel(a.booking_source))+'</span>'+((appointmentStatusActions(a)||renderAttendanceActions(state,a,attendanceEnabled))?'<small class="meta">Toque para ver as ações</small>':'')+'</button>';
 }
 /** Exibe ações de status somente para o agendamento individual elegível. */
 function appointmentStatusActions(appointment) {
@@ -115,7 +117,7 @@ function appointmentDetails(){
  '<div class="detail-row"><span>Status</span><b>'+esc(statusLabel(a.status))+'</b></div>'+
  '<div class="detail-row"><span>Origem</span><b>'+esc(sourceLabel(a.booking_source))+'</b></div>'+
  '<div class="detail-row"><span>Quem criou</span><b>'+esc(a.created_by_name||sourceLabel(a.booking_source))+'</b></div>'+
- '<div class="detail-row"><span>Observações</span><b>'+esc(a.notes||"—")+'</b></div>'+appointmentStatusActions(a)+'</section>';
+ '<div class="detail-row"><span>Observações</span><b>'+esc(a.notes||"—")+'</b></div>'+appointmentStatusActions(a)+renderAttendanceActions(state,a,attendanceEnabled)+'</section>';
 }
 // Apresenta calendário mensal e lista de agendamentos do profissional.
 // Delega a composição visual da agenda para uma view sem efeitos colaterais.
@@ -334,6 +336,37 @@ async function applyAppointmentStatus(control) {
  }
 }
 
+/** Atualiza Agenda e Comandas após confirmação do servidor, sem registrar pagamentos. */
+async function applyAttendance(control){
+ const appointment=state.selectedAppointment,operation=control.dataset.attendanceAction;
+ if(!attendanceEnabled||state.page!=="Agenda"||appointmentStatusPending||!attendanceActions(state,appointment).includes(operation))return;
+ if(operation==="finish"&&!window.confirm("Finalizar o atendimento e encaminhar a comanda ao Caixa?"))return;
+ const epoch=sessionEpoch;
+ appointmentStatusPending=true;control.disabled=true;
+ try{
+  const saved=await performAttendanceAction({client:supabase,organizationId:state.orgId,appointmentId:appointment.id,operation});
+  if(epoch!==sessionEpoch)return;
+  const patch={status:saved.status,service_order_id:saved.order_id};
+  state.appointments=state.appointments.map(item=>item.id===appointment.id?{...item,...patch}:item);
+  if(state.selectedAppointment?.id===appointment.id)state.selectedAppointment={...state.selectedAppointment,...patch};
+  const message=operation==="start"?"Atendimento iniciado. Abra a comanda para registrar outros serviços.":"Atendimento concluído. Comanda encaminhada ao Caixa.";
+  try{await loadOrders();if(epoch===sessionEpoch)showNotice(message);}
+  catch(error){if(epoch===sessionEpoch)showNotice(message+" Atualize Comandas para consultar os itens.");}
+ }catch(error){if(epoch===sessionEpoch)showNotice(error.message);}
+ finally{appointmentStatusPending=false;if(control.isConnected)control.disabled=false;}
+}
+/** Abre a comanda vinculada somente se estiver visível no contexto autorizado. */
+async function openAttendanceOrder(){
+ const appointment=state.selectedAppointment,epoch=sessionEpoch;
+ if(!attendanceEnabled||!appointment?.service_order_id||state.page!=="Agenda"||!attendanceActions(state,appointment).includes("order"))return;
+ try{
+  await loadOrders();
+  if(epoch!==sessionEpoch||state.page!=="Agenda"||state.selectedAppointment?.id!==appointment.id)return;
+  if(!state.orders.some(order=>order.id===appointment.service_order_id)){showNotice("Comanda não encontrada na lista recente. Consulte a recepção.");return;}
+  state.page="Comandas";state.selectedAppointment=null;state.notice="";
+  await chooseOrder(appointment.service_order_id);
+ }catch(error){if(epoch===sessionEpoch)showNotice("Não foi possível carregar a comanda. Tente novamente.");}
+}
 root.addEventListener("click",async event=>{
  try{
   const action=event.target.closest("[data-action]")?.dataset.action;
@@ -380,6 +413,8 @@ root.addEventListener("click",async event=>{
   const orgControl=event.target.closest("[data-context-org]");
   if(orgControl&&state.user){orgControl.disabled=true;try{await loadBase(orgControl.dataset.contextOrg);}catch(error){await endSession("Não foi possível acessar este salão.");}return;}
   if(!state.user||!state.orgId)return;
+  const attendanceControl=event.target.closest("[data-attendance-action]");
+  if(attendanceControl&&state.page==="Agenda"){if(attendanceControl.dataset.attendanceAction==="order")await openAttendanceOrder();else await applyAttendance(attendanceControl);return;}
   const statusControl=event.target.closest("[data-own-appointment-status]");
   if(statusControl&&state.page==="Agenda"){await applyAppointmentStatus(statusControl);return;}
   const epoch=sessionEpoch;

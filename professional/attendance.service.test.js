@@ -1,0 +1,21 @@
+/** Testes de elegibilidade, UI e contrato com Supabase simulado. */
+import assert from "node:assert/strict";
+import {attendanceActions,renderAttendanceActions,performAttendanceAction} from "./attendance.service.js";
+const state={role:"professional",professional:{id:"p",branch_id:"b"}};
+const a={id:"a",professional_id:"p",branch_id:"b",status:"confirmed"};
+assert.deepEqual(attendanceActions(state,a),["start"]);
+assert.deepEqual(attendanceActions(state,{...a,branch_id:"other"}),[]);
+assert.deepEqual(attendanceActions(state,{...a,appointment_group_id:"g"}),[]);
+assert.deepEqual(attendanceActions(state,{...a,professional_id:"other"}),[]);
+assert.deepEqual(attendanceActions(state,{...a,status:"in_progress",service_order_id:"o"}),["order","finish"]);
+assert.deepEqual(attendanceActions(state,{...a,status:"completed",service_order_id:"o"}),["order"]);
+assert.equal(renderAttendanceActions(state,a,false),"");
+assert.match(renderAttendanceActions(state,a,true),/Iniciar atendimento/);
+let args;
+const client={rpc:async(name,payload)=>{args={name,payload};return {data:{id:"a",status:"completed",order_id:"o",order_status:"awaiting_payment"}};}};
+const options={client,organizationId:"org",appointmentId:"a",operation:"finish"};
+await performAttendanceAction(options);
+assert.equal(args.name,"professional_attendance_action");
+assert.equal(args.payload.operation,"finish");
+await assert.rejects(()=>performAttendanceAction({...options,client:{rpc:async()=>({error:{code:"42501"}})}}),/autorizados/);
+console.log("Atendimento individual: OK");
