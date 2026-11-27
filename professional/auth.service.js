@@ -28,5 +28,13 @@ export async function authenticateProfessional({client,login,password}){
   if(error instanceof ProfessionalSessionError)throw error;
   throw loginFailure(error,fallback);
  }
- return verifyProfessionalSession(client);
+ try{return await verifyProfessionalSession(client);}
+ catch(error){
+  // A autenticação pode ter persistido tokens antes de getUser falhar.
+  // Não liberar acesso nem deixar uma sessão parcialmente confirmada como login bem-sucedido.
+  if(error instanceof ProfessionalSessionError&&["EXPIRED","MISSING"].includes(error.code)){
+   try{await client.auth.signOut({scope:"local"});}catch{/* a próxima inicialização revalida o servidor */}
+  }
+  throw error;
+ }
 }

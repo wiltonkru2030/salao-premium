@@ -9,7 +9,7 @@ import {escapeHtml as esc} from "../utils/formatters.js";
 import {renderPlatformMark} from "../../src/components/platform-mark.js";
 /** Coordena acesso com geração injetada e expõe somente operações do ciclo de sessão. */
 export function createSessionController({state,root,supabase,getEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled}){
- let recheckingSession=false,endingSession=false,loginPending=false;
+ let recheckingSession=false,endingSession=false,loginPending=false,contextPending=false;
  /** Limpa a interface imediatamente; encerra apenas a sessão profissional local. */
  async function endSession(notice=""){
   if(endingSession)return;
@@ -27,6 +27,7 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
   const user=state.user;clearPrivateState();state.user=user;
   const loadEpoch=getEpoch();
   root.innerHTML='<div class="boot" role="status">Carregando acesso ao salão…</div>';
+  try{
   let contexts=await fetchProfessionalContexts(supabase,userId);
   if(loadEpoch!==getEpoch())return;
   const names=await supabase.from("organizations").select("id,name,timezone,currency").in("id",contexts.map(c=>c.orgId));
@@ -64,8 +65,25 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
   state.notice="";render();
   // Contador de avisos é independente da primeira renderização; não bloqueia Agenda.
   if(allowedProfessionalPages(state).includes("Notificações"))void loadNotifications();
+  }catch(error){
+   // O carregamento criou sua própria geração: só ela pode alterar a interface.
+   if(loadEpoch!==getEpoch())return;
+   await handleAccessFailure(error,"Não foi possível carregar seu acesso. Confira a conexão e tente novamente.");
+  }
  }
  
+ /** Trata indisponibilidade sem confundir falha de conexão com revogação. */
+ async function handleAccessFailure(error,fallback){
+  if(error instanceof ProfessionalSessionError&&["EXPIRED","MISSING","DISABLED","NO_CONTEXT"].includes(error.code))await endSession(error.message);
+  else sessionRetryView(error instanceof ProfessionalSessionError?error.message:fallback);
+ }
+ /** Troca de contexto com proteção contra cliques concorrentes e sessão obsoleta. */
+ async function switchContext(orgId=null,branchId=null){
+  if(contextPending||endingSession||recheckingSession||loginPending||!state.user)return;
+  contextPending=true;
+  try{await loadBase(orgId,branchId);}
+  finally{contextPending=false;}
+ }
  /** Oculta dados quando não é possível verificar a conta; permite retomar sessão válida. */
  function sessionRetryView(message){
   clearPrivateState();
@@ -73,7 +91,7 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
  }
  /** Revalida ao retornar ao app, preservando a página quando as permissões não mudaram. */
  async function recheckSession(){
-  if(!state.user||!state.orgId||recheckingSession||endingSession)return;
+  if(!state.user||!state.orgId||recheckingSession||endingSession||loginPending||contextPending)return;
   const epoch=getEpoch(),previous={orgId:state.orgId,role:state.role,scope:state.scope,professional:state.professional};
   recheckingSession=true;
   try{
@@ -85,7 +103,7 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
    if(epoch!==getEpoch())return;
    const next=contexts.find(context=>context.orgId===previous.orgId);
    if(!next){await endSession("Seu acesso ao salão foi alterado. Entre novamente.");return;}
-   if(!sameProfessionalScope(previous,next)){state.user=user;await loadBase(previous.orgId);return;}
+   if(!sameProfessionalScope(previous,next)){state.user=user;await loadBase(previous.orgId,state.branchId);return;}
    if(state.role==="professional"){
     const branches=await fetchProfessionalBranches({client:supabase,organizationId:previous.orgId,professional:next.professional});
     if(epoch!==getEpoch())return;
@@ -95,13 +113,13 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
    state.user=user;state.contextCount=contexts.length;
   }catch(error){
    if(epoch!==getEpoch())return;
-   if(error instanceof ProfessionalSessionError&&["EXPIRED","DISABLED","NO_CONTEXT"].includes(error.code))await endSession(error.message);
+   if(error instanceof ProfessionalSessionError&&["EXPIRED","MISSING","DISABLED","NO_CONTEXT"].includes(error.code))await endSession(error.message);
    else sessionRetryView("Não foi possível verificar seu acesso. Confira a conexão e tente novamente.");
   }finally{recheckingSession=false;}
  }
  /** Inicializa sessão persistida sem confundir falhas de rede com credenciais inválidas. */
  async function boot(){
-  if(recheckingSession||endingSession||loginPending)return;
+  if(recheckingSession||endingSession||loginPending||contextPending)return;
   recheckingSession=true;const epoch=getEpoch();
   try{
    if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"}).catch(()=>{});
@@ -111,7 +129,8 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
    if(requiresProfessionalPasswordChange(user)){changePasswordView();return;}
    await loadBase();
   }catch(error){
-   if(error instanceof ProfessionalSessionError&&error.code==="EXPIRED"){clearPrivateState();state.notice="";loginView();}
+   if(epoch!==getEpoch())return;
+   if(error instanceof ProfessionalSessionError&&["EXPIRED","MISSING"].includes(error.code)){clearPrivateState();state.notice=error.code==="EXPIRED"?error.message:"";loginView();}
    else if(error instanceof ProfessionalSessionError&&["DISABLED","NO_CONTEXT"].includes(error.code))await endSession(error.message);
    else sessionRetryView("Não foi possível recuperar seu acesso. Confira a conexão e tente novamente.");
   }finally{recheckingSession=false;}
@@ -154,7 +173,7 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
    if(requiresProfessionalPasswordChange(state.user)){changePasswordView();return;}
    await loadBase();
   }catch(error){
-   if(epoch!==getEpoch()&&!state.user)return;
+   if(epoch!==getEpoch())return;
    const message=error instanceof ProfessionalSessionError?error.message:"Não foi possível entrar. Confira suas credenciais e permissões.";
    if(state.user)await endSession(message);else{state.notice=message;loginView();}
   }
@@ -169,5 +188,5 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")void recheckSession();});
   return boot();
  }
- return {loadBase,endSession,boot,submitAuth,start};
+ return {loadBase,switchContext,endSession,boot,submitAuth,start,recheckSession};
 }

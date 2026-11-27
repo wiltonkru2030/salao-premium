@@ -10,7 +10,8 @@ export async function verifyProfessionalSession(client){
  try{result=await client.auth.getUser();}catch{throw new ProfessionalSessionError("CONNECTION","Não foi possível verificar sua sessão. Confira a conexão.");}
  const {data,error}=result;
  if(error){
-  if(error.name==="AuthSessionMissingError"||[401,403].includes(error.status)||["session_not_found","refresh_token_not_found","bad_jwt","user_not_found"].includes(error.code))throw new ProfessionalSessionError("EXPIRED","Sua sessão terminou. Entre novamente.");
+  if(error.name==="AuthSessionMissingError")throw new ProfessionalSessionError("MISSING","Entre para acessar sua conta profissional.");
+  if([401,403].includes(error.status)||["session_not_found","refresh_token_not_found","bad_jwt","user_not_found"].includes(error.code))throw new ProfessionalSessionError("EXPIRED","Sua sessão terminou. Entre novamente.");
   throw new ProfessionalSessionError("CONNECTION","Não foi possível verificar sua sessão. Confira a conexão.");
  }
  if(!data?.user)throw new ProfessionalSessionError("EXPIRED","Sua sessão terminou. Entre novamente.");

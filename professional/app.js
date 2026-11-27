@@ -10,7 +10,6 @@ import { createPlatformAppearance } from "../src/components/platform-appearance.
 import {renderProfessionalShell, setProfessionalMenuOpen} from "./views/shell.views.js";
 import {createSessionController} from "./controllers/session.controller.js";
 import {createNavigationController} from "./controllers/navigation.controller.js";
-import {ProfessionalSessionError} from "./session.service.js";
 import { supabase } from "./supabase.client.js";
 import {bindOrderService} from "./order-service.controller.js";
 import {bindOrderManagement} from "./order-management.controller.js";
@@ -64,7 +63,7 @@ const {loadProfilePreferences,submitProfilePreferences}=createProfileController(
 const {loadOrders,loadCommissions,chooseOrder}=createFinancialController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError});
 const {applyAppointmentStatus,applyAttendance,openAttendanceOrder,applyAppointmentReschedule,applyNewAppointment}=createAttendanceController({state,supabase,getEpoch:()=>sessionEpoch,showNotice,loadAppointments,loadOrders,chooseOrder,appointmentStatusActions,appointmentStatusEnabled,attendanceEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled});
 const session=createSessionController({state,root,supabase,getEpoch:()=>sessionEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled});
-const {loadBase,endSession,boot}=session;
+const {switchContext,endSession,boot}=session;
 const {navigate,refreshOrders}=createNavigationController({state,root,getEpoch:()=>sessionEpoch,render,showNotice,loadOrders,loadServices,loadServiceCatalog,canManageServices,loadCustomers,loadCommissions,loadNotifications,loadProfilePreferences,profilePreferencesEnabled});
 
 
@@ -211,18 +210,18 @@ root.addEventListener("click",async event=>{
   if(action==="logout"){await endSession();return;}
   if(action==="retry-professional-session"){await boot();return;}
   if(action==="choose-professional-context"&&state.user&&state.contextCount>1){
-   try{await loadBase();}catch(error){await endSession(error instanceof ProfessionalSessionError?error.message:"Não foi possível consultar os salões.");}return;
+   await switchContext();return;
   }
   const branchControl=event.target.closest("[data-context-branch]");
   if(branchControl&&state.user&&state.orgId&&state.branches.some(row=>row.id===branchControl.dataset.contextBranch)){
    branchControl.disabled=true;
-   try{await loadBase(state.orgId,branchControl.dataset.contextBranch);}catch(error){await endSession("Não foi possível acessar esta unidade. Consulte o salão.");}return;
+   await switchContext(state.orgId,branchControl.dataset.contextBranch);return;
   }
   if(action==="choose-professional-branch"&&state.user&&state.orgId&&state.branches.length>1){
-   try{await loadBase(state.orgId);}catch{await endSession("Não foi possível consultar suas unidades.");}return;
+   await switchContext(state.orgId);return;
   }
   const orgControl=event.target.closest("[data-context-org]");
-  if(orgControl&&state.user){orgControl.disabled=true;try{await loadBase(orgControl.dataset.contextOrg);}catch(error){await endSession("Não foi possível acessar este salão.");}return;}
+  if(orgControl&&state.user){orgControl.disabled=true;await switchContext(orgControl.dataset.contextOrg);return;}
   if(!state.user||!state.orgId)return;
   const attendanceControl=event.target.closest("[data-attendance-action]");
   if(attendanceControl&&state.page==="Agenda"){

@@ -84,7 +84,7 @@
     "test:sql-appointment-offers": "node docs/sql/appointment-offers-applied.test.mjs",
     "test:agenda-offers-session": "node src/agenda/controllers/agenda-offers-session.test.mjs",
     "test:professional-visual-contract": "node professional/visual-contract.test.js",
-    "test:professional-session": "node professional/session.service.test.js",
+    "test:professional-session": "node professional/session.service.test.js && node professional/controllers/session.controller.test.js",
     "test:professional-password-branches": "node professional/password-branches.test.js",
     "test:professional-workspace-state": "node professional/workspace-state.test.js",
     "test:professional-navigation": "node professional/controllers/navigation.controller.test.js",

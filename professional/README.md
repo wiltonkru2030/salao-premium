@@ -157,3 +157,6 @@ Homologação: Chromium aprovado nos 90 cenários com dados fictícios, e teste 
 Integridade financeira: proteção de repasse de gerente por unidade e bloqueio coordenado de devolução/repasse implementados em QA; teste sequencial aprovado. Ver [relatório](../docs/PUBLICACAO-APP-PROFISSIONAL.md) para limites e pendências de concorrência.
 
 Recebimentos: novo contrato opt-in no painel em QA; integração de UI e concorrência real pendentes. Ver [relatório](../docs/PUBLICACAO-APP-PROFISSIONAL.md).
+
+### Correções finais de sessão profissional
+Troca de salão/unidade passa pelo controlador com bloqueio de concorrência; falha de rede mostra recuperação sem expor dados anteriores e sem sair de sessão válida. O próprio carregamento trata erros da sua geração; retorno de consulta obsoleta não modifica tela. Sessão ausente e expirada são diferenciadas; unidade sem vínculo ativo não é confundida com indisponibilidade. Testes de controlador adicionados; Auth real e suporte multiunidade das RPCs ainda precisam homologação. Escopo desta etapa exclusivamente App Profissional; nenhuma mudança em produção.
