@@ -16,6 +16,10 @@ on:
         description: Verificar transporte de produção, sem enviar mensagens
         type: boolean
         default: false
+      production_send:
+        description: Processar fila real de produção (somente dispositivos inscritos)
+        type: boolean
+        default: false
   schedule:
     - cron: '3/5 * * * *'
 permissions:
@@ -59,7 +63,7 @@ jobs:
 
   production-dispatch:
     # Ativação separada; push de código nunca envia em produção.
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.production_check) || (github.event_name == 'schedule' && vars.PROFESSIONAL_PUSH_PRODUCTION_ENABLED == 'true'))
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.production_check || inputs.production_send)) || (github.event_name == 'schedule' && vars.PROFESSIONAL_PUSH_PRODUCTION_ENABLED == 'true'))
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     concurrency:
@@ -67,7 +71,7 @@ jobs:
       cancel-in-progress: false
     env:
       ENDPOINT: https://vlifbvzlyzoncefvfgol.supabase.co/functions/v1/dispatch-professional-push
-      DISPATCH_MODE: ${{ github.event_name == 'schedule' && 'send' || 'check' }}
+      DISPATCH_MODE: ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.production_send && !inputs.production_check)) && 'send' || 'check' }}
     steps:
       - name: Validar OIDC e transporte de produção
         run: |

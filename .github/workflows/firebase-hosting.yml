@@ -34,11 +34,18 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           test -n "$FIREBASE_PROJECT_ID" || { echo 'Configure FIREBASE_PROJECT_ID nas variables do repositório.'; exit 1; }
-          test -n "$VITE_SUPABASE_URL" || { echo 'Configure VITE_SUPABASE_URL nas variables do repositório.'; exit 1; }
-          test -n "$VITE_SUPABASE_PUBLISHABLE_KEY" || { echo 'Configure VITE_SUPABASE_PUBLISHABLE_KEY nas variables do repositório.'; exit 1; }
           test -n "$FIREBASE_SERVICE_ACCOUNT" || { echo 'Configure FIREBASE_SERVICE_ACCOUNT nos secrets do repositório.'; exit 1; }
-          test "$VITE_SUPABASE_URL" = 'https://vlifbvzlyzoncefvfgol.supabase.co' || { echo 'Publicação live exige Supabase de produção.'; exit 1; }
           node --input-type=module <<'NODE'
+          // Variáveis opcionais; sem elas, usa o par público de produção já versionado.
+          const {appendFileSync,readFileSync}=await import("node:fs");
+          const source=readFileSync("src/supabase/config.js","utf8");
+          let url=process.env.VITE_SUPABASE_URL?.trim(),key=process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+          if(!url&&!key){
+            url=source.match(/const defaultUrl = '([^']+)'/)?.[1];
+            key=source.match(/const defaultPublishableKey = '([^']+)'/)?.[1];
+          }
+          if(url!=="https://vlifbvzlyzoncefvfgol.supabase.co"||!/^sb_publishable_[A-Za-z0-9_-]+$/.test(key||""))throw Error("Par público de produção ausente ou inválido.");
+          appendFileSync(process.env.GITHUB_ENV,"VITE_SUPABASE_URL="+url+"\nVITE_SUPABASE_PUBLISHABLE_KEY="+key+"\n");
           const a=JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
           if(a.type!=="service_account"||a.project_id!=="salao-premium"||!a.client_email||!a.private_key)throw Error("Credencial de Hosting inválida ou de outro projeto.");
           NODE
@@ -58,8 +65,7 @@ jobs:
           npm run test:professional-browser
       - name: Gerar as três aplicações
         env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          # Par público validado e exportado pelo preflight (GITHUB_ENV).
           # Notificações internas e preferências têm contratos instalados na onda de produção 20261127214214.
           # Outros contratos continuam desativados até reconciliar o banco e homologar.
           VITE_PROFESSIONAL_CUSTOMER_REGISTRATION: 'false'
@@ -70,7 +76,8 @@ jobs:
           VITE_PROFESSIONAL_SERVICE_MANAGEMENT: 'false'
           VITE_PROFESSIONAL_UNIT_BOOKING: 'false'
           VITE_PROFESSIONAL_EXPLICIT_BRANCH: 'false'
-          VITE_PROFESSIONAL_PUSH: 'false'
+          # Transporte FCM validado em produção; inscrição explícita habilitada, envio ainda separado.
+          VITE_PROFESSIONAL_PUSH: 'true'
           VITE_COMANDA_PAYMENT_IDEMPOTENCY: 'false'
         run: npm run build
       - name: Conferir pacote e branch antes da publicação

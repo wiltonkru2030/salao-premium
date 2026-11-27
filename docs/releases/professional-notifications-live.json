@@ -5,8 +5,8 @@
   "features": {
     "notifications": true,
     "profilePreferences": true,
-    "push": false
+    "push": true
   },
-  "sourceCommit": "c0dbc50327767f0e54b30be15c9cd47e96c29285",
-  "notes": "Promoção da central interna; sem alteração de dados existentes, sem ativar transporte externo."
+  "sourceCommit": "f45763e275ff8d865ebd72e77ea9972b156d981d",
+  "notes": "Credencial FCM de produção validada por OIDC/OAuth e FCM validate_only na execução 46072275323. Habilita inscrição voluntária; envio automático continua bloqueado. Corrige preflight do Hosting para usar o par público versionado se as variáveis estiverem ausentes."
 }

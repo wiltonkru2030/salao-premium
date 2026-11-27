@@ -21,3 +21,6 @@ O Hosting distribui os arquivos do build. Ele não transfere banco, migrations, 
 
 ## Promoção explícita da central de notificações (27/11/2026)
 A atualização do manifesto `docs/releases/professional-notifications-live.json` dispara uma publicação live somente na main. Commits comuns continuam sem publicar. O workflow exige URL de produção, conta de serviço do Firebase correto, testes agregados, regressão visual e verificação do SHA atual. O build mantém FCM desabilitado e ativa somente os contratos de central/preferências já instalados. Após o deploy, compara bytes das três entradas e do worker com o build. O disparo manual permanece disponível. Não considerar publicada até o workflow concluir e o smoke confirmar.
+
+### Validação FCM e configuração pública do build
+A credencial de produção foi validada na execução 46072275323 (OIDC, OAuth, FCM validate_only aprovados). O build habilita inscrição voluntária de dispositivos; o disparo automático continua desabilitado até homologação. A publicação anterior falhou antes do build por ausência de VITE_SUPABASE_URL. Agora o preflight aceita o par de configuração pública já versionado somente se ambas as variáveis estiverem ausentes; rejeita par incompleto ou URL de QA. Não imprime a chave de configuração.
