@@ -1,6 +1,4 @@
 /** Formulário móvel de agendamento. A Agenda fornece o dia selecionado. */
-import {escapeHtml, formatDateTime} from "../utils/formatters.js";
-import {salonTimezone} from "../utils/salon-time.js";
 
 /** Monta o botão e o diálogo com campos de pesquisa e hora. */
 export function renderProfessionalBooking() {
@@ -30,15 +28,14 @@ export function renderProfessionalBooking() {
 }
 
 /** Reúne as referências autorizadas, mantendo uma opção por cliente e unidade. */
-export function getProfessionalBookingClients({appointments, professional, timezone}) {
+export function getProfessionalBookingClients({appointments, professional}) {
   const references = new Map();
   for (const appointment of appointments) {
     const branch = appointment.branch_id || professional.branch_id;
     if (appointment.professional_id !== professional.id || !appointment.customer_id || !branch) continue;
-    const date = formatDateTime(appointment.starts_at,salonTimezone(timezone));
     references.set(appointment.customer_id + ":" + branch, {
       id:appointment.id, name:appointment.customer_name, phone:appointment.customer_phone,
-      label:appointment.customer_name + " · " + date
+      label:appointment.customer_name
     });
   }
   return [...references.values()];
