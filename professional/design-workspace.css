@@ -109,3 +109,15 @@
  #professional-app dialog.professional-booking-sheet .sp-modal-body{padding:14px}
  #professional-app dialog.professional-booking-sheet .sp-modal-foot{padding-inline:14px}
 }
+
+/* Agenda: calendário e lista do dia lado a lado em telas amplas; fluxo único no celular. */
+#professional-app .professional-agenda-layout{display:grid;gap:20px;min-inline-size:0;align-items:start}
+#professional-app .professional-agenda-layout > section{min-inline-size:0;display:flex;flex-direction:column;gap:12px}
+#professional-app .professional-agenda-layout .section-title,#professional-app .professional-agenda-layout .appointment,#professional-app .professional-agenda-layout .detail,#professional-app .professional-agenda-layout .professional-booking-action{margin:0}
+#professional-app .professional-agenda-layout .professional-booking-action button{min-block-size:var(--sp-control-height)}
+#professional-app .professional-agenda-day-column .section-title h2{font-size:clamp(19px,2vw,23px)}
+@media(min-width:1180px){
+ #professional-app .professional-workspace .content:has(.professional-agenda-layout){max-inline-size:1240px}
+ #professional-app .professional-agenda-layout{grid-template-columns:minmax(360px,1.05fr) minmax(320px,1fr);gap:24px}
+ #professional-app .professional-agenda-calendar-column{position:sticky;top:24px}
+}

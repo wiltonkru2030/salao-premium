@@ -13,5 +13,5 @@ export function renderNotificationsView(state){
  return heading+'<section class="detail sp-content-surface"><p><strong>'+esc(state.notificationsUnread)+'</strong> não lidas</p><div class="professional-card-actions"><button class="btn '+(!state.notificationsFilter?"primary":"secondary")+'" type="button" data-notification-filter="all" aria-pressed="'+String(!state.notificationsFilter)+'">Todas</button><button class="btn '+(state.notificationsFilter?"primary":"secondary")+'" type="button" data-notification-filter="unread" aria-pressed="'+String(state.notificationsFilter)+'">Não lidas</button></div>'+
  (state.notificationsUnread>0?'<button class="btn secondary" data-action="read-all-professional-notifications" type="button">Marcar todas como lidas</button>':"")+'</section>'+
  (rows||'<p class="empty sp-content-surface sp-content-surface--empty">Nenhuma notificação disponível neste filtro.</p>')+
- '<p class="muted">Exibindo até 100 avisos recentes. Os lembretes são verificados ao atualizar a central. Avisos no celular com o aplicativo fechado ainda não estão disponíveis.</p>';
+ '<p class="muted">Exibindo até 100 avisos recentes. Os lembretes são verificados ao atualizar a central. Para receber avisos no celular, consulte as opções de notificações no Perfil → Configurações.</p>';
 }

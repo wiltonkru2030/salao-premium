@@ -36,3 +36,6 @@ assert.doesNotMatch(unsafeHtml, /<script>/);
 assert.match(unsafeHtml, /&lt;script&gt;/);
 
 console.log("Testes da view de agenda do App Profissional concluídos.");
+
+assert.match(html,/professional-agenda-calendar-column/);
+assert.match(html,/professional-agenda-day-column/);

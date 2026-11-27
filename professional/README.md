@@ -169,3 +169,6 @@ Migration `20261127031208_professional_fcm_device_delivery_queue.sql` em QA: dis
 
 ### Serialização de operações de senha
 Migration `20261127031423_serialize_professional_auth_operations.sql` instalada em QA. Travas privadas por profissional/conta, apenas service_role pode adquirir e liberar com identificador do detentor. Teste SQL `docs/sql/professional-auth-lock-qa.sql` aprovado. Provisionamento e conclusão compartilham a trava da conta e a conclusão confere a geração após aquisição; provisionamento usa a mesma origem de pepper do login. Trava não expira automaticamente: após falha do processo, suporte deve conferir que não existe execução em curso antes de remover somente a trava específica. Teste real Auth e corrida real de duas chamadas continuam pendentes. Produção inalterada.
+
+### Inspeção visual e preparação final
+Capturas reais do workflow `45933048492` (90 cenários aprovados) baixadas e revisadas em montagem de telas 320/390 px e desktop. Ajuste de Agenda em desktop para calendário e atendimentos lado a lado, com fluxo vertical móvel e tokens globais; teste de geometria incluído. Corrigido texto da central de notificações. A aprovação da nova geometria depende da nova execução do Chromium. Nenhuma alteração de produção.

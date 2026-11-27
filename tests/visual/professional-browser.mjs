@@ -39,6 +39,11 @@ try{
       assert.equal(visible,1,"Formulários sobrepostos");
       if(scenario==="Novo agendamento"){assert.equal(await page.locator("dialog input[type=date]").count(),0);assert.equal(await page.locator("dialog input[type=time]").count(),1);}
      }
+     if(scenario==="Agenda"){
+      const layout=await page.locator(".professional-agenda-layout").evaluate(el=>({calendar:el.children[0].getBoundingClientRect().toJSON(),day:el.children[1].getBoundingClientRect().toJSON()}));
+      if(viewport.width>=1180){assert.ok(layout.day.left>layout.calendar.right,"Agenda desktop deve separar calendário e atendimentos");}
+      else assert.ok(layout.day.top>=layout.calendar.bottom,"Agenda móvel deve manter fluxo vertical");
+     }
      if(scenario==="Agenda"&&viewport.width<761){
       await page.getByRole("button",{name:"Abrir menu"}).click();
       assert.equal(await page.locator(".professional-workspace").evaluate(el=>el.inert),true);

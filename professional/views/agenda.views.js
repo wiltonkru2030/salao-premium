@@ -34,12 +34,12 @@ export function renderAgendaView(context) {
   }).join("");
   const weekdays = ["D", "S", "T", "Q", "Q", "S", "S"].map(day => '<div class="weekday">' + day + '</div>').join("");
   const scopeLabel = state.scope === "calendar_all" || state.scope === "all" ? "Agenda completa autorizada" : "Somente sua agenda";
-  return '<div class="section-title"><h2>Agenda mensal</h2><span class="muted">' + scopeLabel + '</span></div>' +
+  return '<div class="professional-agenda-layout"><section class="professional-agenda-calendar-column" aria-label="Agenda mensal"><div class="section-title"><h2>Agenda mensal</h2><span class="muted">' + scopeLabel + '</span></div>' +
     '<section class="professional-calendar sp-content-surface" aria-label="Calendário mensal"><div class="calendar-head"><button class="icon-button" aria-label="Mês anterior" data-action="prev-month">‹</button><strong>' + escapeHtml(monthLabel(state.month)) + '</strong><button class="icon-button" aria-label="Próximo mês" data-action="next-month">›</button></div>' +
     '<div class="calendar">' + weekdays + calendarCells + '</div>' +
     '<ul class="calendar-status-legend" aria-label="Legenda dos agendamentos">' +
       marks.map(([status,name])=>'<li>'+renderStatusMark(status)+name+'</li>').join("")+'</ul></section>' +
-    (unavailable?"":booking) +
+    (unavailable?"":booking) + '</section><section class="professional-agenda-day-column" aria-label="Atendimentos do dia">' +
     '<div class="section-title section-title--tight-spaced"><h2>' + escapeHtml(dateLabel(state.selectedDate)) + '</h2><span class="muted">' + (unavailable?"":selectedAppointments.length+' agendamento(s)') + '</span></div>' +
-    (state.agendaStatus==="loading"?'<p role="status">Carregando agenda...</p>':state.agendaStatus==="error"?'<p role="alert">Não foi possível consultar a Agenda.</p><button class="btn secondary" data-action="retry-professional-agenda">Tentar novamente</button>':selectedAppointments.length ? selectedAppointments.map(appointmentCard).join("") : '<div class="empty sp-content-surface sp-content-surface--empty">Nenhum agendamento neste dia.</div>') + (unavailable?"":appointmentDetails());
+    (state.agendaStatus==="loading"?'<p role="status">Carregando agenda...</p>':state.agendaStatus==="error"?'<p role="alert">Não foi possível consultar a Agenda.</p><button class="btn secondary" data-action="retry-professional-agenda">Tentar novamente</button>':selectedAppointments.length ? selectedAppointments.map(appointmentCard).join("") : '<div class="empty sp-content-surface sp-content-surface--empty">Nenhum agendamento neste dia.</div>') + (unavailable?"":appointmentDetails()) + '</section></div>';
 }

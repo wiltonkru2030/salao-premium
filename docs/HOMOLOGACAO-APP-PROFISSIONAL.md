@@ -92,3 +92,6 @@ Migration `20261127030720_professional_explicit_branch_operations.sql` instalada
 
 ### Notificações no dispositivo (FCM)
 Migration `20261127031208_professional_fcm_device_delivery_queue.sql` em QA: dispositivos privados, fila por aviso/dispositivo, lease e limite de tentativas, seleção server-side com vínculo ativo e preferências. Teste SQL `docs/sql/professional-fcm-qa.sql` aprovado com rollback. SDK web versionado e ativação explícita em Configurações, worker com mensagem genérica, remoção local ao sair ou trocar salão quando possível. Requer configuração Firebase; flag `VITE_PROFESSIONAL_PUSH` falsa em produção. Nenhum envio real confirmado. Função complete-professional-password implantada em QA com verificação JWT; login real ainda não realizado devido à falta de acesso HTTP direto. Nenhuma produção alterada.
+
+### Inspeção visual e preparação final
+Capturas reais do workflow `45933048492` (90 cenários aprovados) baixadas e revisadas em montagem de telas 320/390 px e desktop. Ajuste de Agenda em desktop para calendário e atendimentos lado a lado, com fluxo vertical móvel e tokens globais; teste de geometria incluído. Corrigido texto da central de notificações. A aprovação da nova geometria depende da nova execução do Chromium. Nenhuma alteração de produção.
