@@ -9,9 +9,10 @@ export function renderProfessionalShell({state, content, pages}) {
   const navigation = pages.filter(page=>page!=="Configurações").map(page=>{
     const active = state.page===page;
     const icon = navigationIcon(page==="Comandas"?"Comanda":page);
+    const bell = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>';
     return '<button type="button" class="nav-item'+(active?' active':'')+'" data-page="'+escapeHtml(page)+'"'+
-      (active?' aria-current="page"':'')+'><img src="'+escapeHtml(icon)+'" alt="" width="18" height="18"><span>'+
-      escapeHtml(page)+'</span></button>';
+      (active?' aria-current="page"':'')+'>'+(page==="Notificações"?bell:(icon?'<img src="'+escapeHtml(icon)+'" alt="" width="18" height="18">':""))+'<span>'+
+      escapeHtml(page)+'</span>'+(page==="Notificações"&&state.notificationsUnread>0?'<span class="tag" aria-label="Não lidas">'+(state.notificationsUnread>99?"99+":state.notificationsUnread)+'</span>':"")+'</button>';
   }).join("");
   return `<div class="app-shell">
     <aside class="professional-sidebar" id="professional-sidebar">
