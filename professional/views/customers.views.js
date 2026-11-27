@@ -6,8 +6,7 @@ import {salonTimezone} from "../utils/salon-time.js";
 /** Renderiza contato seguro para discagem, sem colocar dados brutos no HTML. */
 function contact(customer){
  const phone=String(customer.phone||""),digits=phone.replace(/\D/g,"");
- return '<p class="meta">'+esc(formatSavedPhone(phone)||"Telefone não informado")+'</p>'+
- (digits.length>=10&&digits.length<=15?'<a class="btn secondary" href="tel:'+(phone.trim().startsWith("+")?"+":"")+digits+'">Ligar</a>':"");
+ return digits.length>=10&&digits.length<=15?'<a class="btn secondary" href="tel:'+(phone.trim().startsWith("+")?"+":"")+digits+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3H4a1 1 0 0 0-1 1c0 9.4 7.6 17 17 17a1 1 0 0 0 1-1v-3l-5-2-2 2a13 13 0 0 1-7-7l2-2z"/></svg>Ligar</a>':"";
 }
 /** Mostra o histórico próprio com estados de carregamento, erro e ausência de registros. */
 function history(state){
@@ -26,7 +25,8 @@ export function renderProfessionalCustomers(state){
  }
  if(state.selectedCustomer){
   const customer=state.selectedCustomer;
-  return '<button type="button" class="btn secondary" data-action="back-professional-customers">← Voltar aos clientes</button><section class="detail sp-content-surface"><h2>'+esc(customer.name)+'</h2>'+contact(customer)+(state.canManageCustomers&&customer.branch_id===(state.branchId||state.professional?.branch_id)?'<button class="btn secondary" type="button" data-action="edit-professional-customer">Editar cadastro</button>':"")+'</section><div class="section-title"><h2>Histórico de atendimentos</h2></div><p class="muted">Até 50 atendimentos próprios na unidade selecionada.</p>'+history(state);
+  const actions=contact(customer)+(state.canManageCustomers&&customer.branch_id===(state.branchId||state.professional?.branch_id)?'<button class="btn secondary" type="button" data-action="edit-professional-customer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 5 5 5M4 20l5-1 11-11a2 2 0 0 0-5-5L4 14z"/></svg>Editar cadastro</button>':"");
+  return '<button type="button" class="btn secondary" data-action="back-professional-customers">← Voltar aos clientes</button><section class="detail sp-content-surface professional-customer-detail"><h2>'+esc(customer.name)+'</h2><p class="meta">'+esc(formatSavedPhone(customer.phone)||"Telefone não informado")+'</p>'+(actions?'<div class="professional-card-actions professional-customer-actions">'+actions+'</div>':"")+'</section><div class="section-title"><h2>Histórico de atendimentos</h2></div><p class="muted">Até 50 atendimentos próprios na unidade selecionada.</p>'+history(state);
  }
  const title='<div class="section-title"><h2 id="professional-customers-heading">Clientes</h2></div>';
  if(state.customersStatus==="loading"||state.customersStatus==="idle")return title+'<p role="status" class="muted">Carregando clientes...</p>';

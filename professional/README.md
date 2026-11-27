@@ -198,3 +198,6 @@ Os cartões da lista diária exibem ações individuais (iniciar/finalizar atend
 
 ### Pesquisa de cliente e serviço
 Autocomplete rico opt-in no componente compartilhado: lupa SVG, nome e detalhe em duas linhas, telefone formatado, valor e duração do serviço, lista integrada ao modal com CSS global. O cadastro rápido aparece somente após busca bem-sucedida sem resultados, aproveita o nome ou telefone pesquisado e retorna o cliente selecionado ao agendamento. Não aparece durante consulta nem em falha de rede. Testes Chromium cobrem cliente encontrado, ausência de cadastro, abertura e retorno do cadastro rápido com dados fictícios.
+
+### Cabeçalho e ficha da cliente
+Cabeçalho compartilhado: marca, saudação conforme fuso do salão (manhã antes de 12h, tarde até 17h59, noite a partir de 18h), nome completo do profissional e ícone SVG sol/lua. Alternância usa preferência global, persiste neste aparelho e não desmonta formulários. Perfil, troca de unidade/salão e saída ficam no menu lateral. Ficha de cliente apresenta Ligar e Editar cadastro em grupo responsivo com espaçamento e ícones SVG. Testes de limites da saudação, alternância, menu e geometria dos botões.

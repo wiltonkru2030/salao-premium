@@ -1,11 +1,13 @@
 /** Cabeçalho, navegação lateral e controles de perfil do App Profissional. */
 import {navigationIcon} from "../../src/components/navigation-icons.js";
 import {renderPlatformMark} from "../../src/components/platform-mark.js";
+import {professionalGreeting} from "../utils/header-preferences.js";
 import {escapeHtml} from "../utils/formatters.js";
 
 /** Renderiza a navegação a partir das páginas autorizadas pelo controlador. */
 export function renderProfessionalShell({state, content, pages}) {
-  const greeting = (state.professional?.name || state.profile?.full_name || "Equipe").split(" ")[0];
+  const name = String(state.professional?.name || state.profile?.full_name || "Profissional").trim()||"Profissional";
+  const greeting = professionalGreeting(new Date(),state.organization?.timezone);
   const navigation = pages.filter(page=>page!=="Configurações").map(page=>{
     const active = state.page===page||(page==="Perfil"&&state.page==="Configurações");
     const icon = navigationIcon(page==="Comandas"?"Comanda":page);
@@ -20,18 +22,23 @@ export function renderProfessionalShell({state, content, pages}) {
       <div class="professional-sidebar-brand"><div class="brand sp-professional-brand">${renderPlatformMark()}<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div>
       <button type="button" class="icon-button professional-menu-close" data-action="close-professional-menu" aria-label="Fechar menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
       <nav aria-label="Navegação do App Profissional">${navigation}</nav>
+      <div class="professional-sidebar-account">
+        ${state.branches?.length>1?'<button type="button" class="nav-item" data-action="choose-professional-branch"><span>Trocar unidade</span></button>':""}
+        ${state.contextCount>1?'<button type="button" class="nav-item" data-action="choose-professional-context"><span>Trocar salão</span></button>':""}
+        <button type="button" class="nav-item" data-action="logout"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 17l5-5-5-5m5 5H3m10-8h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/></svg><span>Sair da conta</span></button>
+      </div>
     </aside>
     <button class="professional-menu-scrim" type="button" data-action="close-professional-menu" tabindex="-1" aria-label="Fechar menu"></button>
     <div class="professional-workspace">
       <header class="top">
         <button type="button" class="icon-button professional-menu-toggle" data-action="open-professional-menu" aria-label="Abrir menu" aria-controls="professional-sidebar" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-        <div class="brand sp-professional-brand professional-top-brand">${renderPlatformMark()}<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div>
-        <details class="professional-profile-menu"><summary class="secondary" aria-label="Perfil de ${escapeHtml(greeting)}">Perfil</summary><div class="detail sp-content-surface">
-          <button type="button" class="secondary" data-page="Perfil">Meu perfil</button>
-          ${state.branches?.length>1?'<button type="button" class="secondary" data-action="choose-professional-branch">Trocar unidade</button>':""}
-          ${state.contextCount>1?'<button type="button" class="secondary" data-action="choose-professional-context">Trocar salão</button>':""}
-          <button type="button" class="secondary" data-action="logout">Sair</button>
-        </div></details>
+        <div class="professional-top-brand professional-header-identity">
+          ${renderPlatformMark()}<div class="professional-header-copy"><span class="professional-header-brand">SALÃO PREMIUM</span><span class="professional-header-greeting" data-professional-greeting>${escapeHtml(greeting)}</span><strong class="professional-header-name">${escapeHtml(name)}</strong></div>
+        </div>
+        <button type="button" class="icon-button professional-theme-toggle" data-action="toggle-professional-theme" aria-label="Alternar tema" aria-pressed="false">
+          <svg class="professional-theme-moon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 14.2A8.8 8.8 0 0 1 9.8 3.2 8.8 8.8 0 1 0 20.8 14.2Z"/></svg>
+          <svg class="professional-theme-sun" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
+        </button>
       </header>
       <main class="content sp-page-flow">${state.branchId?'<p class="meta">Unidade operacional: '+escapeHtml(state.branches.find(row=>row.id===state.branchId)?.name||"Unidade")+'</p>':""}${state.notice?'<div class="notice" role="status">'+escapeHtml(state.notice)+'</div>':''}${content}</main>
     </div>

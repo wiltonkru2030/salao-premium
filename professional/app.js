@@ -10,6 +10,7 @@ import {createProfileController} from "./controllers/profile.controller.js";
 import {createFinancialController} from "./controllers/financial.controller.js";
 import {salonTimezone} from "./utils/salon-time.js";
 import { createPlatformAppearance } from "../src/components/platform-appearance.js";
+import {syncProfessionalHeader,toggleProfessionalTheme} from "./utils/header-preferences.js";
 import {renderProfessionalShell, setProfessionalMenuOpen} from "./views/shell.views.js";
 import {createSessionController} from "./controllers/session.controller.js";
 import {createNavigationController} from "./controllers/navigation.controller.js";
@@ -41,6 +42,11 @@ installGlobalMasks();
 const appearance = createPlatformAppearance("salao-premium:professional-appearance");
 const root=document.querySelector("#professional-app");
 const state=createProfessionalState();
+// Atualiza a saudação sem rerenderizar formulários.
+const refreshHeader=()=>syncProfessionalHeader(root,state);
+setInterval(refreshHeader,60000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshHeader();});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",refreshHeader);
 let disposeAutocomplete=null;
 let sessionEpoch=0;
 // Ative a interface no build após instalar a migration correspondente no Supabase.
@@ -91,6 +97,7 @@ function changePasswordView(){
 /** Atualiza a moldura do app com as páginas autorizadas para esta sessão. */
 function shell(content) {
  root.innerHTML=renderProfessionalShell({state,content,pages:allowedProfessionalPages(state)});
+ syncProfessionalHeader(root,state);
 }
 
 function render(){
@@ -151,13 +158,14 @@ root.addEventListener("input", event => {
  const empty=list.querySelector("[data-professional-search-empty]");if(empty)empty.hidden=visible>0||!term;
 });
 root.addEventListener("change", event => {
- if (event.target.matches("[data-platform-appearance]")) appearance.set(event.target.value);
+ if (event.target.matches("[data-platform-appearance]")) {appearance.set(event.target.value);syncProfessionalHeader(root,state);}
  if(event.target.matches("#professional-profile-preferences [name=pixType]"))updatePixField(event.target.form);
 });
 /** Persiste a mudança e atualiza o cartão apenas se a sessão ainda for a mesma. */
 root.addEventListener("click",async event=>{
  try{
   const action=event.target.closest("[data-action]")?.dataset.action;
+   if(action==="toggle-professional-theme"){toggleProfessionalTheme(root,state,appearance);return;}
   if(action==="open-professional-menu"||action==="close-professional-menu"){
    setProfessionalMenuOpen(root,action==="open-professional-menu");
    return;

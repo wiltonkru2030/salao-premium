@@ -1,4 +1,6 @@
 /** Dados totalmente fictícios para validar a apresentação real das views; sem Auth ou banco. */
+import {syncProfessionalHeader,toggleProfessionalTheme} from "../../professional/utils/header-preferences.js";
+import {createPlatformAppearance} from "../../src/components/platform-appearance.js";
 import {createProfessionalState} from "../../professional/workspace-state.js";
 import {createAgendaWorkspaceViews} from "../../professional/views/agenda-workspace.views.js";
 import {renderProfessionalLoginView} from "../../professional/views/auth.views.js";
@@ -13,6 +15,7 @@ import {handleAgendaClick} from "../../professional/agenda.controller.js";
 import {bindProfessionalBookingSearch} from "../../professional/booking-search.js";
 import {updatePixField} from "../../professional/utils/pix-fields.js";
 const root=document.querySelector("#professional-app");
+const appearance=createPlatformAppearance("professional-visual-fixture");
 const pages=["Agenda","Clientes","Serviços","Comandas","Comissões","Notificações","Perfil","Configurações"];
 const service={id:"s",name:"Hidratação capilar e finalização",category:"Tratamento",price:120,duration_minutes:60,linked:true,editable:true};
 const customer={id:"c",name:"Cliente Fictícia de Nome Comprido para Teste",phone:"67999991234",branch_id:"b"};
@@ -31,14 +34,16 @@ const {agendaView}=createAgendaWorkspaceViews({state,attendanceEnabled:true,appo
 const renderers={Agenda:agendaView,Clientes:()=>renderProfessionalCustomers({...state,canManageCustomers:true}),"Serviços":()=>renderProfessionalServices(state.services,{manage:true,catalog:state.serviceCatalog,editor:state.serviceEditor,status:"ready"}),Comandas:()=>ordersView(state,{managementEnabled:true}),"Comissões":()=>commissionsView(state),"Notificações":()=>renderNotificationsView(state),Perfil:()=>profileView(state,{preferencesEnabled:true}),"Configurações":()=>settingsView(state,document.documentElement.dataset.theme,{preferencesEnabled:true})};
 /** Monta o cenário solicitado, utilizando exatamente os renderizadores de produção. */
 function show(scenario,theme){
- document.documentElement.dataset.theme=theme;
+ appearance.set(theme);
+ state.selectedCustomer=scenario==="Ficha do cliente"?customer:null;
  state.selectedAppointment=scenario==="Atendimento"?appointment:null;state.appointmentModalMode="details";
  state.selectedOrder=scenario==="Itens da comanda"?order:null;
  state.customerEditor=scenario==="Cadastro de cliente"?{}:null;
  state.serviceEditor=scenario==="Cadastro de serviço"?{}:null;
- const parent={"Novo agendamento":"Agenda","Cadastro rápido":"Agenda",Atendimento:"Agenda","Itens da comanda":"Comandas","Cadastro de cliente":"Clientes","Cadastro de serviço":"Serviços"}[scenario]||scenario;
+ const parent={"Novo agendamento":"Agenda","Cadastro rápido":"Agenda",Atendimento:"Agenda","Itens da comanda":"Comandas","Cadastro de cliente":"Clientes","Ficha do cliente":"Clientes","Cadastro de serviço":"Serviços"}[scenario]||scenario;
  state.page=parent;
  root.innerHTML=parent==="Login"?renderProfessionalLoginView("",theme):renderProfessionalShell({state,pages,content:renderers[parent]()});
+ syncProfessionalHeader(root,state);
  if(scenario==="Atendimento")syncAppointmentDialog(root,state,()=>show("Agenda",theme));
  if(["Novo agendamento","Cadastro rápido"].includes(scenario)){
   const dialog=root.querySelector("dialog");dialog.showModal();
@@ -49,8 +54,8 @@ function show(scenario,theme){
   if(scenario==="Cadastro rápido"){root.querySelector("#professional-new-appointment").hidden=true;root.querySelector("#professional-booking-quick-customer").hidden=false;}
  }
 }
-root.addEventListener("click",async event=>{const action=event.target.closest("[data-action]")?.dataset.action;if(action==="open-professional-menu"||action==="close-professional-menu"){setProfessionalMenuOpen(root,action==="open-professional-menu");return;}
- if(state.page==="Agenda")await handleAgendaClick({event,state,loadAppointments:async()=>{},render:()=>{const theme=document.documentElement.dataset.theme;root.innerHTML=renderProfessionalShell({state,pages,content:agendaView()});syncAppointmentDialog(root,state,()=>show("Agenda",theme));}});
+root.addEventListener("click",async event=>{const action=event.target.closest("[data-action]")?.dataset.action;if(action==="toggle-professional-theme"){toggleProfessionalTheme(root,state,appearance);return;}if(action==="open-professional-menu"||action==="close-professional-menu"){setProfessionalMenuOpen(root,action==="open-professional-menu");return;}
+ if(state.page==="Agenda")await handleAgendaClick({event,state,loadAppointments:async()=>{},render:()=>{const theme=document.documentElement.dataset.theme;root.innerHTML=renderProfessionalShell({state,pages,content:agendaView()});syncProfessionalHeader(root,state);syncAppointmentDialog(root,state,()=>show("Agenda",theme));}});
 });
 root.addEventListener("change",event=>{if(event.target.matches("[name=pixType]"))updatePixField(event.target.form);});
 installGlobalMasks();

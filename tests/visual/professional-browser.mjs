@@ -6,7 +6,7 @@ import {mkdir,writeFile} from "node:fs/promises";
 import {chromium} from "playwright";
 const base=process.env.VISUAL_BASE_URL||"http://127.0.0.1:4173";
 const folder="artifacts/professional-visual";
-const scenarios=["Login","Agenda","Novo agendamento","Cadastro rápido","Atendimento","Clientes","Cadastro de cliente","Serviços","Cadastro de serviço","Comandas","Itens da comanda","Comissões","Notificações","Perfil","Configurações"];
+const scenarios=["Login","Agenda","Novo agendamento","Cadastro rápido","Atendimento","Clientes","Ficha do cliente","Cadastro de cliente","Serviços","Cadastro de serviço","Comandas","Itens da comanda","Comissões","Notificações","Perfil","Configurações"];
 await mkdir(folder,{recursive:true});
 const browser=await chromium.launch({headless:true});
 const failures=[],results=[];
@@ -69,6 +69,20 @@ try{
        assert.equal(await page.locator("#professional-new-appointment button[type=submit]").isEnabled(),true);
        assert.equal(await suggestions.inputValue(),"");
       }
+     }
+     if(scenario==="Ficha do cliente"){
+      const actions=page.locator(".professional-customer-actions"),call=actions.getByRole("link",{name:"Ligar"}),edit=actions.getByRole("button",{name:"Editar cadastro"});
+      const a=await call.boundingBox(),b=await edit.boundingBox();assert.ok(b.x>=a.x+a.width+8,"Botões sem espaçamento");
+     }
+     if(scenario==="Agenda"){
+      const toggle=page.locator("[data-action=toggle-professional-theme]");
+      assert.match(await page.locator(".professional-header-name").textContent(),/Profissional QA/);
+      assert.match(await page.locator("[data-professional-greeting]").textContent(),/^(Bom dia|Boa tarde|Boa noite)$/);
+      assert.equal(await page.locator(".top .professional-profile-menu").count(),0);
+      assert.equal(await page.locator(".professional-sidebar [data-page=Perfil]").count(),1);
+      await toggle.click();assert.equal(await page.locator("html").getAttribute("data-theme"),theme==="light"?"dark":"light");
+      assert.equal(await toggle.getAttribute("aria-label"),theme==="light"?"Ativar modo claro":"Ativar modo escuro");
+      await toggle.click();assert.equal(await page.locator("html").getAttribute("data-theme"),theme);
      }
      if(scenario==="Atendimento"){
       const modal=page.locator("#professional-appointment-dialog");assert.equal(await modal.evaluate(d=>d.open),true);
