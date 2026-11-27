@@ -6,6 +6,7 @@ import { renderPlatformMark } from "../src/components/platform-mark.js";
 import {authenticateProfessional} from "./auth.service.js";
 import { supabase } from "./supabase.client.js";
 import {bindOrderService} from "./order-service.controller.js";
+import {bindOrderManagement} from "./order-management.controller.js";
 import { installGlobalErrorHandlers, reportError } from "../src/utils/errors.js";
 import { installGlobalMasks } from "../src/utils/input-masks.js";
 import {
@@ -56,6 +57,7 @@ let appointmentStatusPending = false;
 // Ative após aplicar a migration de reagendamento no ambiente correspondente.
 const bookingEnabled = import.meta.env.VITE_PROFESSIONAL_BOOKING === "true";
 const customerRegistrationEnabled = import.meta.env.VITE_PROFESSIONAL_CUSTOMER_REGISTRATION === "true";
+const orderManagementEnabled = import.meta.env.VITE_PROFESSIONAL_ORDER_MANAGEMENT === "true";
 const attendanceEnabled = import.meta.env.VITE_PROFESSIONAL_ATTENDANCE === "true";
 const serviceManagementEnabled = import.meta.env.VITE_PROFESSIONAL_SERVICE_MANAGEMENT === "true";
 const unitBookingEnabled = import.meta.env.VITE_PROFESSIONAL_UNIT_BOOKING === "true";
@@ -131,7 +133,7 @@ function render(){
  if(!state.user||!state.orgId)return;
  if(!allowedProfessionalPages(state).includes(state.page))state.page="Agenda";
  clearAutocomplete();
- const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services,{manage:canManageServices(),catalog:state.serviceCatalog,editor:state.serviceEditor,status:state.serviceCatalogStatus}):state.page==="Clientes"?renderProfessionalCustomers({...state,canManageCustomers:customerRegistrationEnabled&&state.role==="professional"&&!!state.professional?.branch_id}):state.page==="Perfil"?profileView(state):settingsView(state, appearance.preference);
+ const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state,{managementEnabled:orderManagementEnabled}):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services,{manage:canManageServices(),catalog:state.serviceCatalog,editor:state.serviceEditor,status:state.serviceCatalogStatus}):state.page==="Clientes"?renderProfessionalCustomers({...state,canManageCustomers:customerRegistrationEnabled&&state.role==="professional"&&!!state.professional?.branch_id}):state.page==="Perfil"?profileView(state):settingsView(state, appearance.preference);
  shell(content);
  if(state.page==="Comandas"&&state.selectedOrder&&state.role==="professional"&&state.professional)bindAutocomplete();
 }
@@ -141,7 +143,7 @@ async function loadBase(selectedOrgId=null){
  if(!userId)throw new Error("Sua sessão expirou.");
  const [members,profiles]=await Promise.all([
   supabase.from("org_memberships").select("org_id,role,status,professional_app_enabled,professional_app_scope").eq("user_id",userId).eq("status","active"),
-  supabase.from("professionals").select("id,name,profile_id,org_id,branch_id,active,access_enabled").eq("profile_id",userId).eq("active",true).eq("access_enabled",true)
+  supabase.from("professionals").select("id,name,profile_id,org_id,branch_id,active,access_enabled,can_edit_own_orders").eq("profile_id",userId).eq("active",true).eq("access_enabled",true)
  ]);
  if(epoch!==sessionEpoch)return;
  if(members.error||profiles.error)throw new Error("Não foi possível consultar as permissões da conta.");
@@ -275,15 +277,17 @@ async function loadOrderItems(){
   client:supabase,organizationId:state.orgId,orderId
  });
  if(epoch!==sessionEpoch||state.selectedOrder?.id!==orderId)return;
- state.orderItems=items;render();
+ state.orderItems=items;state.orderItemsStatus="ready";render();
 }
 async function chooseOrder(id){
- state.selectedOrder=state.orders.find(o=>o.id===id)||null;state.orderItems=[];render();await loadOrderItems();
+ state.selectedOrder=state.orders.find(o=>o.id===id)||null;state.orderItems=[];state.orderItemsStatus="loading";render();
+ const epoch=sessionEpoch;
+ try{await loadOrderItems();}catch(error){if(epoch===sessionEpoch&&state.selectedOrder?.id===id){state.orderItemsStatus="error";render();reportError(error,{context:"App Profissional > itens da comanda"});}}
 }
 /** Monta o controlador de serviços da comanda atual. */
 function bindAutocomplete(){
  disposeAutocomplete?.();
- disposeAutocomplete=bindOrderService({root,state,client:supabase,getEpoch:()=>sessionEpoch,lock:serviceLock,loadOrders,chooseOrder,showNotice,reportError});
+ disposeAutocomplete=orderManagementEnabled?bindOrderManagement({root,state,client:supabase,getEpoch:()=>sessionEpoch,lock:serviceLock,loadOrders,loadAppointments,chooseOrder,showNotice,reportError}):bindOrderService({root,state,client:supabase,getEpoch:()=>sessionEpoch,lock:serviceLock,loadOrders,chooseOrder,showNotice,reportError});
 }
 // Libera o conteúdo caso o aparelho passe para o layout de menu fixo.
 matchMedia("(max-width:760px)").addEventListener("change", event=>{
@@ -404,6 +408,7 @@ root.addEventListener("click",async event=>{
    if(action==="refresh-professional-customers"){state.selectedCustomer=null;await loadCustomers();return;}
    if(action==="retry-professional-customer-history"&&state.selectedCustomer){await openCustomer(state.selectedCustomer.id);return;}
   }
+  if(action==="retry-professional-order-items"&&state.page==="Comandas"&&state.selectedOrder){await chooseOrder(state.selectedOrder.id);return;}
   if(action==="refresh-professional-orders"&&state.page==="Comandas"){
    await loadOrders();
    if(state.page==="Comandas")render();

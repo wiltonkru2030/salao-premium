@@ -2,8 +2,10 @@
 import { renderPlatformAppearance } from "../../src/components/platform-appearance.js";
 import {escapeHtml as esc,formatMoney as money,formatStatus as statusLabel,formatDateTime as dateTimeLabel} from "../utils/formatters.js";
 import {canRegisterProfessionalService,summarizeProfessionalCommissions} from "../access.rules.js";
+import {renderManagedOrder} from "./order-management.views.js";
 // Apresenta comandas autorizadas e seus detalhes.
-export function ordersView(state){
+export function ordersView(state,{managementEnabled=false}={}){
+ if(state.selectedOrder&&managementEnabled&&state.role==="professional")return renderManagedOrder(state);
  if(state.selectedOrder){
   const order=state.selectedOrder,canRegister=canRegisterProfessionalService(state,order);
   const rows=state.orderItems.length?state.orderItems.map(i=>'<article class="service sp-content-surface"><strong>'+esc(i.description)+'</strong><div class="meta">'+Number(i.quantity)+' × '+money(i.unit_price)+' · '+money(i.total)+'</div><span class="tag">'+(i.item_type==="service"?"Serviço":"Produto")+'</span></article>').join(""):'<div class="empty sp-content-surface sp-content-surface--empty">Nenhum item visível nesta comanda.</div>';

@@ -62,7 +62,7 @@ export async function fetchProfessionalOrders({ client, organizationId }) {
   validateContext(client, organizationId);
   return readRows(
     client.from("service_orders")
-      .select("id,order_number,status,total,assigned_professional_id,customer_id")
+      .select("id,order_number,status,total,assigned_professional_id,customer_id,branch_id")
       .eq("org_id", organizationId)
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
@@ -91,7 +91,7 @@ export async function fetchProfessionalOrderItems({ client, organizationId, orde
   }
   return readRows(
     client.from("service_order_items")
-      .select("id,item_type,description,quantity,unit_price,total,professional_id,performed_at")
+      .select("id,item_type,description,quantity,unit_price,discount,total,professional_id,performed_at,source_appointment_id")
       .eq("org_id", organizationId)
       .eq("order_id", orderId)
       .order("created_at")
