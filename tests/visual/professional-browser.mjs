@@ -42,7 +42,8 @@ try{
      if(scenario==="Agenda"&&viewport.width<761){
       await page.getByRole("button",{name:"Abrir menu"}).click();
       assert.equal(await page.locator(".professional-workspace").evaluate(el=>el.inert),true);
-      await page.getByRole("button",{name:"Fechar menu",exact:true}).first().click();
+      // O botão da barra lateral e a sobreposição têm o mesmo rótulo; testar o controle visível dentro do menu.
+      await page.locator("#professional-sidebar").getByRole("button",{name:"Fechar menu",exact:true}).click();
       assert.equal(await page.locator(".professional-workspace").evaluate(el=>el.inert),false);
      }
      if(scenario==="Configurações"){

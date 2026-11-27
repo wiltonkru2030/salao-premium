@@ -147,3 +147,5 @@ Revisão responsiva das telas: conteúdo centralizado, textos longos, filtros de
 Agenda e validação geral aprovadas em `595349f`; teste visual falhou na instalação do Chromium (Ubuntu 26.04 incompatível). Runner fixado em Ubuntu 24.04. Inventário somente leitura identificou 9 migrations recentes só em QA, além de divergências de versões e definições. Consulte [critérios de publicação](../docs/PUBLICACAO-APP-PROFISSIONAL.md). Sem alteração de produção.
 
 Reconciliação da primeira onda: comparação de colunas, constraints e gatilhos, e pré-verificação SQL em ambos os ambientes. Ver [documentação de publicação](../docs/PUBLICACAO-APP-PROFISSIONAL.md); nenhuma mudança em produção.
+
+Segurança da primeira onda: teste integrado de três profissionais em duas unidades aprovado em QA, com rollback. Carteira da mesma unidade compartilhada; agenda, comandas, autoria e notificações individuais protegidas. Há três políticas de escopo de funcionários ausentes em produção; ver [relatório de publicação](../docs/PUBLICACAO-APP-PROFISSIONAL.md). Corrigido seletor ambíguo do menu móvel no teste Chromium; execução pendente.
