@@ -335,3 +335,5 @@ Reconciliação da primeira onda (clientes, serviços e agenda): pré-verificaç
 Segurança de unidades: homologado cenário de gerente, recepção e proprietário em QA. Identificado pacote de 17 políticas de escopo ausentes em produção. Consulte [roteiro de reconciliação](docs/PUBLICACAO-APP-PROFISSIONAL.md) antes de atualizar o banco.
 
 Validação atual: Chromium aprovado em 90 cenários, e operações por unidade de Caixa, despesas, pacotes e espera aprovadas em QA. [Relatório](docs/PUBLICACAO-APP-PROFISSIONAL.md). Publicação permanece bloqueada.
+
+Integridade financeira: nova migration QA protege repasse por unidade e bloqueia comissões antes da devolução. Teste integrado aprovado com rollback; [relatório](docs/PUBLICACAO-APP-PROFISSIONAL.md). Produção permanece inalterada.
