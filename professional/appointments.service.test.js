@@ -43,6 +43,8 @@ async function run() {
 
   assert.deepEqual(result, rows);
   assert.equal(mock.calls.table, "appointments");
+  assert.ok(mock.calls.selection.split(',').includes('created_at'));
+  assert.ok(mock.calls.selection.split(',').includes('created_by_name'));
   assert.ok(mock.calls.filters.some(([kind, field, value]) =>
     kind === "eq" && field === "org_id" && value === "org-1"));
   assert.ok(mock.calls.filters.some(([kind, field, value]) =>

@@ -2,7 +2,7 @@
 import {canUseSelectedUnit} from "../unit-context.js";
 import {salonTimezone} from "../utils/salon-time.js";
 import {formatSavedPhone} from "../../src/utils/input-masks.js";
-import {escapeHtml as esc,formatMoney as money,toDateKey as dateKey,formatMonthLabel as monthLabel,formatDateLabel as dateLabel,formatTime as timeLabel,formatBookingSource as sourceLabel,formatStatus as statusLabel,getAppointmentClass as appointmentClass} from "../utils/formatters.js";
+import {escapeHtml as esc,formatMoney as money,toDateKey as dateKey,formatMonthLabel as monthLabel,formatDateLabel as dateLabel,formatTime as timeLabel,formatBookingSource as sourceLabel,formatAppointmentCreator,formatAppointmentCreation,formatStatus as statusLabel,getAppointmentClass as appointmentClass} from "../utils/formatters.js";
 import {renderAttendanceActions} from "../attendance.service.js";
 import {renderProfessionalBooking} from "./booking.views.js";
 import {renderAgendaView} from "./agenda.views.js";
@@ -12,7 +12,7 @@ export function createAgendaWorkspaceViews({state,attendanceEnabled,appointmentS
   const duration=Math.max(0,Math.round((new Date(a.ends_at)-new Date(a.starts_at))/60000));
   return '<article class="appointment sp-content-surface '+appointmentClass(a)+'"><button type="button" class="professional-appointment-details-button" data-appointment="'+esc(a.id)+'" aria-haspopup="dialog"><span class="professional-appointment-heading"><time datetime="'+esc(a.starts_at)+'">'+timeLabel(a.starts_at,salonTimezone(state.organization?.timezone))+'</time><strong>'+esc(a.customer_name)+'</strong></span>'+
   '<div class="meta">'+esc(a.service_name)+' · '+timeLabel(a.ends_at,salonTimezone(state.organization?.timezone))+'<br>'+esc(formatSavedPhone(a.customer_phone)||"Telefone não informado")+' · '+money(a.price)+'<br>'+esc(a.professional_name||state.professional?.name||"Profissional")+' · '+duration+' min</div>'+
-  '<span class="tag">'+esc(statusLabel(a.status))+' · Agendado por: '+esc(sourceLabel(a.booking_source))+'</span>'+'<span class="professional-appointment-detail-hint">Ver detalhes <span aria-hidden="true">›</span></span></button>'+renderAttendanceActions(state,a,attendanceEnabled)+appointmentStatusActions(a)+'</article>';
+  '<span class="tag">'+esc(statusLabel(a.status))+' · Agendado por: '+esc(formatAppointmentCreator(a,state.organization?.name))+'</span><span class="meta">Criado em '+esc(formatAppointmentCreation(a.created_at,salonTimezone(state.organization?.timezone)))+'</span>'+'<span class="professional-appointment-detail-hint">Ver detalhes <span aria-hidden="true">›</span></span></button>'+renderAttendanceActions(state,a,attendanceEnabled)+appointmentStatusActions(a)+'</article>';
  }
  /** Exibe ações de status somente para o agendamento individual elegível. */
  function appointmentStatusActions(appointment) {
@@ -43,7 +43,8 @@ export function createAgendaWorkspaceViews({state,attendanceEnabled,appointmentS
   '<div class="detail-row"><span>Valor previsto</span><b>'+money(a.price)+'</b></div>'+
   '<div class="detail-row"><span>Status</span><b>'+esc(statusLabel(a.status))+'</b></div>'+
   '<div class="detail-row"><span>Origem</span><b>'+esc(sourceLabel(a.booking_source))+'</b></div>'+
-  '<div class="detail-row"><span>Quem criou</span><b>'+esc(a.created_by_name||sourceLabel(a.booking_source))+'</b></div>'+
+  '<div class="detail-row"><span>Quem criou</span><b>'+esc(formatAppointmentCreator(a,state.organization?.name))+'</b></div>'+
+  '<div class="detail-row"><span>Criado em</span><b>'+esc(formatAppointmentCreation(a.created_at,salonTimezone(state.organization?.timezone)))+'</b></div>'+
   '<div class="detail-row"><span>Observações</span><b>'+esc(a.notes||"—")+'</b></div>'+(state.appointmentModalMode==="reschedule"&&rescheduleEnabled&&a.branch_id&&appointmentStatusActions(a)?'<form id="professional-reschedule"><label class="sp-labeled-field">Novo horário · '+esc(state.organization?.timezone||"Fuso do salão")+'<input name="local_start" type="datetime-local" required autofocus></label><button type="submit" class="btn primary">Salvar novo horário</button></form>':"")+'</div><footer class="sp-modal-foot"><button type="button" class="btn secondary" data-action="close-appointment">Fechar</button></footer></div></dialog>';
  }
  // Apresenta calendário mensal e lista de agendamentos do profissional.

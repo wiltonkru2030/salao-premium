@@ -131,3 +131,17 @@ export function getAppointmentClass(appointment) {
   if (appointment?.status === "cancelled" || appointment?.status === "no_show") return "released";
   return "scheduled";
 }
+
+/** Identifica a origem de criação, sem confundir cliente, salão e profissional. */
+export function formatAppointmentCreator(appointment, salonName) {
+  const source=appointment?.booking_source;
+  const name=value=>typeof value==="string"?value.trim():"";
+  if(source==="customer")return name(appointment.created_by_name)||name(appointment.customer_name)||"Cliente";
+  if(source==="salon")return name(salonName)||"Salão";
+  if(source==="professional")return name(appointment.created_by_name)||"Profissional não identificado";
+  return "Origem não identificada";
+}
+/** Data de criação real; registros sem data não recebem uma data inventada. */
+export function formatAppointmentCreation(value,timeZone){
+  return value==null||value===""?"Data de criação indisponível":formatDateTime(value,timeZone);
+}

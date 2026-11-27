@@ -14,7 +14,9 @@ import {
   formatDateTime,
   formatBookingSource,
   formatStatus,
-  getAppointmentClass
+  getAppointmentClass,
+  formatAppointmentCreator,
+  formatAppointmentCreation
 } from "./formatters.js";
 
 assert.equal(escapeHtml(`<script>"&'</script>`), "&lt;script&gt;&quot;&amp;&#39;&lt;/script&gt;");
@@ -42,3 +44,12 @@ assert.equal(getAppointmentClass({ status: "no_show" }), "released");
 assert.equal(getAppointmentClass({ status: "scheduled" }), "scheduled");
 
 console.log("Testes dos formatadores do App Profissional concluídos.");
+
+// A data da reserva não é a data do atendimento; o autor não é o profissional atribuído por padrão.
+assert.equal(formatAppointmentCreator({booking_source:"customer",customer_name:"Cliente Exemplo"},"Salão Exemplo"),"Cliente Exemplo");
+assert.equal(formatAppointmentCreator({booking_source:"salon",created_by_name:"Recepção"},"Salão Exemplo"),"Salão Exemplo");
+assert.equal(formatAppointmentCreator({booking_source:"professional",created_by_name:"Ana"},"Salão Exemplo"),"Ana");
+assert.equal(formatAppointmentCreator({booking_source:"professional",professional_name:"Outra pessoa"}),"Profissional não identificado");
+assert.equal(formatAppointmentCreator({booking_source:"unknown"}),"Origem não identificada");
+assert.equal(formatAppointmentCreation(null,"America/Campo_Grande"),"Data de criação indisponível");
+assert.match(formatAppointmentCreation("2026-11-27T20:30:00Z","America/Campo_Grande"),/27\/11\/2026.*16:30/);
