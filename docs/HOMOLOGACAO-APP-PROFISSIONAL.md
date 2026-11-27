@@ -31,3 +31,5 @@ Em QA, com contas fictícias de proprietário e profissional e rollback: comanda
 
 ### Revisão de sessão e autenticação
 Serviço de sessão separado do controlador: verificação de identidade, consulta de vínculos, classificação de acesso desativado/sem vínculo após autenticação, falha de conexão e limite de tentativas; erro de credencial continua genérico para evitar enumeração de CPF. Revalidação ao retornar ao aplicativo; logout externo limpa dados; mudança de salão remove estado anterior antes da consulta. Recuperação orienta administrador. A troca de salão não equivale a trocar filial: RPCs de escrita ainda restritos à unidade fixa. Troca inicial por `user_metadata` é apenas fluxo de interface, não garantia de segurança; migração para controle obrigatório do servidor e integração Auth real são bloqueios de publicação. Testes unitários adicionados; execução CI e navegador pendentes. Produção não alterada.
+
+Teste QA adicional aprovado com JWT simulado mantido: revogação de acesso bloqueia leitura de agenda e serviços, RPCs de clientes/notificações; perda de vínculo bloqueia agenda e perfil. Transação revertida; não é teste de login real.
