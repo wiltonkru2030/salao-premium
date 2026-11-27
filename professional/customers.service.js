@@ -39,3 +39,26 @@ export async function fetchProfessionalCustomerHistory({client,organizationId,pr
  if(error)throw new Error("Não foi possível carregar o histórico. Tente novamente.");
  return data||[];
 }
+
+/** Consulta a carteira da unidade atribuída pelo servidor, sem ampliar políticas RLS. */
+export async function listUnitCustomers({client,organizationId}){
+ const rows=[];
+ for(let offset=0;;offset+=PAGE_SIZE){
+  const {data,error}=await client.rpc("list_professional_unit_customers",{target_org:organizationId,page_offset:offset});
+  if(error||!Array.isArray(data))throw new Error("Não foi possível consultar a carteira da unidade.");
+  rows.push(...data);
+  if(data.length<PAGE_SIZE)return rows;
+ }
+}
+
+/** Valida nome e WhatsApp; o servidor verifica unidade, vínculo e duplicidade. */
+export async function saveUnitCustomer({client,organizationId,customerId=null,name,phone}){
+ const cleanName=String(name||"").trim(),cleanPhone=String(phone||"").replace(/\D/g,"");
+ if(cleanName.length<2||cleanName.length>120)throw new Error("Informe o nome entre 2 e 120 caracteres.");
+ if(!/^\d{10,11}$/.test(cleanPhone))throw new Error("Informe o telefone com DDD.");
+ const {data,error}=await client.rpc("save_professional_unit_customer",{target_org:organizationId,target_customer:customerId,customer_name:cleanName,customer_phone:cleanPhone});
+ if(error?.code==="23505")throw new Error("Já existe um cadastro com este telefone. Consulte o salão.");
+ if(error?.code==="42501")throw new Error("Você não tem autorização para este cadastro.");
+ if(error||!data?.id)throw new Error("Não foi possível salvar o cadastro. Tente novamente.");
+ return data;
+}

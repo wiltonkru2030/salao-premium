@@ -90,3 +90,6 @@ Perfil disponível na navegação, com Configurações acessíveis por ele. Para
 
 ### Carteira profissional — consulta
 A página Clientes usa a tabela de clientes sob RLS, restringida às unidades ativas acessíveis, e não mais o mês da Agenda. A ficha exibe até 50 atendimentos próprios nas unidades autorizadas. Cadastro, edição, inativação e seleção de cliente sem atendimento anterior na Agenda ainda exigem contratos seguros no servidor; não foram liberados por esta alteração. Teste: `npm run test:professional-customers-service`.
+
+### Cadastro profissional — QA
+Migration `20261127014207_professional_unit_customer_registration.sql` instalada em QA. RPCs privadas verificam usuário, profissional ativo e unidade principal ativa. Cadastro e edição de nome/telefone são restritos a essa unidade; não alteram identidade global nem RLS da carteira administrativa. Telefone duplicado bloqueado dentro do contrato (não é restrição única global). Interface habilitada somente com `VITE_PROFESSIONAL_CUSTOMER_REGISTRATION=true` após homologação. Teste negativo sem vínculo passou e acesso anônimo revogado; QA não possui profissional ativo, faltam testes positivos, de duplicidade e isolamento com contas reais/sintéticas. Produção não alterada. Inativação, unidades adicionais e integração direta com agendamento ficam pendentes.
