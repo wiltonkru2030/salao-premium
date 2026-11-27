@@ -3,6 +3,7 @@
  */
 import assert from "node:assert/strict";
 import {appendFileSync,readFileSync} from "node:fs";
+import {setTimeout as delay} from "node:timers/promises";
 const origin=new URL(process.env.QA_PREVIEW_URL||"");
 assert.equal(origin.protocol,"https:");
 assert.match(origin.hostname,/^salao-premium--professional-qa-[a-z0-9-]+\.web\.app$/,"Destino não é o canal QA previsto.");
@@ -14,13 +15,24 @@ async function get(path){
  assert.ok(response.ok,"Hosting QA: "+path+" HTTP "+response.status);
  return response;
 }
-const page=await get("/professional/index.html");
-assert.match(page.headers.get("content-type")||"",/text\/html/);
-const html=await page.text();
-assert.equal(html,readFileSync("dist/professional/index.html","utf8"),"HTML publicado não corresponde ao pacote atual");
-const entry=await get("/professional/");
-assert.match(entry.headers.get("cache-control")||"",/no-store/,"Entrada PWA deve impedir cache antigo");
-assert.equal(await entry.text(),html,"Entrada PWA diferente do HTML publicado");
+/** Firebase/CDN pode responder a versão anterior imediatamente após o deploy.
+ * Repetição limitada, sem aceitar HTML antigo nem relaxar a comparação de bytes.
+ */
+const expected=readFileSync("dist/professional/index.html","utf8");
+let html,verified=false,lastError;
+for(let attempt=0;attempt<8;attempt++){
+ try{
+  const page=await get("/professional/index.html");
+  assert.match(page.headers.get("content-type")||"",/text\/html/);
+  html=await page.text();
+  assert.ok(html===expected,"HTML publicado não corresponde ao pacote atual");
+  const entry=await get("/professional/");
+  assert.match(entry.headers.get("cache-control")||"",/no-store/,"Entrada PWA deve impedir cache antigo");
+  assert.ok(await entry.text()===expected,"Entrada PWA diferente do pacote atual");
+  verified=true;break;
+ }catch(error){lastError=error;console.log("Conferência da versão publicada: tentativa "+(attempt+1)+"/8");if(attempt<7)await delay(5000);}
+}
+if(!verified)throw lastError;
 assert.match(html,/SALÃO PREMIUM/);
 const script=html.match(/<script\b[^>]*\bsrc=["']([^"']+\.js)["']/i)?.[1];
 assert.ok(script,"Entrada JS não encontrada.");

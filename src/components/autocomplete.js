@@ -45,7 +45,7 @@ export function mountAutocomplete(input, {
   status.className = "autocomplete-empty";
   status.setAttribute("role", "status");
   status.hidden = true;
-  menu.append(list, status);
+  if(rich)menu.append(status,list);else menu.append(list,status);
   parent.append(menu);
   input.setAttribute("role", "combobox");
   input.setAttribute("aria-controls", list.id);

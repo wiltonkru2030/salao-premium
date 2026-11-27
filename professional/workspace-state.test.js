@@ -20,8 +20,11 @@ let calls=0;const resolves=[];
 const appointment={id:"a",status:"scheduled"};
 Object.assign(state,{orgId:"new",page:"Agenda",selectedAppointment:appointment,appointments:[appointment]});
 const attendance=createAttendanceController({state,supabase:{rpc:()=>{calls++;return new Promise(r=>resolves.push(r));}},getEpoch:()=>epoch,showNotice:()=>{},appointmentStatusActions:()=>true,appointmentStatusEnabled:true});
-const button=()=>({dataset:{ownAppointmentStatus:"confirmed"},disabled:false,isConnected:true});
+const button=()=>({dataset:{ownAppointmentStatus:"confirmed",appointmentId:"a"},disabled:false,isConnected:true});
+// A ação deve funcionar sem abrir detalhes e não pode depender de seleção anterior.
+state.selectedAppointment=null;
 const first=attendance.applyAppointmentStatus(button());
+assert.equal(calls,1);
 epoch++;const second=attendance.applyAppointmentStatus(button());
 resolves[0]({data:{id:"a",status:"confirmed"}});await first;
 await attendance.applyAppointmentStatus(button());assert.equal(calls,2);
