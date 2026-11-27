@@ -58,13 +58,12 @@ async function readRows(request, message) {
  * @returns {Promise<Array<object>>} Comandas ordenadas da mais recente para a mais antiga.
  * @throws {TypeError|Error} Em parâmetros inválidos ou falha de leitura.
  */
-export async function fetchProfessionalOrders({ client, organizationId }) {
+export async function fetchProfessionalOrders({ client, organizationId, branchId = null }) {
   validateContext(client, organizationId);
+  let query=client.from("service_orders").select("id,order_number,status,total,assigned_professional_id,customer_id,branch_id").eq("org_id", organizationId);
+  if(branchId)query=query.eq("branch_id",branchId);
   return readRows(
-    client.from("service_orders")
-      .select("id,order_number,status,total,assigned_professional_id,customer_id,branch_id")
-      .eq("org_id", organizationId)
-      .order("created_at", { ascending: false })
+    query.order("created_at", { ascending: false })
       .order("id", { ascending: false })
       .limit(100),
     "Não foi possível carregar as comandas. Verifique sua conexão e tente novamente."

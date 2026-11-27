@@ -5,6 +5,8 @@ import {renderProfessionalShell, setProfessionalMenuOpen} from "./views/shell.vi
 import { renderPlatformMark } from "../src/components/platform-mark.js";
 import {authenticateProfessional} from "./auth.service.js";
 import {fetchProfessionalContexts,verifyProfessionalSession,sameProfessionalScope,ProfessionalSessionError} from "./session.service.js";
+import {requiresProfessionalPasswordChange,completeProfessionalPasswordChange} from "./password.service.js";
+import {fetchProfessionalBranches,selectProfessionalBranch} from "./branches.service.js";
 import { supabase } from "./supabase.client.js";
 import {bindOrderService} from "./order-service.controller.js";
 import {bindOrderManagement} from "./order-management.controller.js";
@@ -48,7 +50,7 @@ installGlobalMasks();
 const appearance = createPlatformAppearance("salao-premium:professional-appearance");
 const root=document.querySelector("#professional-app");
 const state={
- user:null,contextCount:0,orgId:null,role:null,scope:"none",professional:null,profile:null,profilePreferences:null,profilePreferencesStatus:"idle",notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,organization:null,
+ user:null,contextCount:0,branches:[],branchId:null,orgId:null,role:null,scope:"none",professional:null,profile:null,profilePreferences:null,profilePreferencesStatus:"idle",notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,organization:null,
  page:"Agenda",month:new Date(new Date().getFullYear(),new Date().getMonth(),1),
  selectedDate:new Date(),selectedAppointment:null,appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",
  commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedOrder:null,orderItems:[],notice:""
@@ -72,7 +74,7 @@ const unitBookingEnabled = import.meta.env.VITE_PROFESSIONAL_UNIT_BOOKING === "t
 const rescheduleEnabled = import.meta.env.VITE_PROFESSIONAL_RESCHEDULE === "true";
 const serviceLock={active:false,operation:null};
 /** Limpa dados privados antes de exibir a tela de acesso. */
-function clearPrivateState(){sessionEpoch++;appointmentStatusPending=false;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();Object.assign(state,{user:null,contextCount:0,orgId:null,role:null,scope:"none",professional:null,profile:null,profilePreferences:null,profilePreferencesStatus:"idle",notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,organization:null,page:"Agenda",appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedAppointment:null,selectedOrder:null,orderItems:[]});}
+function clearPrivateState(){sessionEpoch++;appointmentStatusPending=false;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();Object.assign(state,{user:null,contextCount:0,branches:[],branchId:null,orgId:null,role:null,scope:"none",professional:null,profile:null,profilePreferences:null,profilePreferencesStatus:"idle",notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,organization:null,page:"Agenda",appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedAppointment:null,selectedOrder:null,orderItems:[]});}
 /** Limpa a interface imediatamente; encerra apenas a sessão profissional local. */
 async function endSession(notice=""){
  if(endingSession)return;
@@ -91,7 +93,7 @@ function loginView(){
  root.innerHTML=renderProfessionalLoginView(state.notice, appearance.preference);
 }
 function changePasswordView(){
- root.innerHTML=renderProfessionalPasswordChangeView(state.notice);
+ root.innerHTML=renderProfessionalPasswordChangeView(state.notice,{managed:state.user?.app_metadata?.professional_password_required===true});
 }
 /** Atualiza a moldura do app com as páginas autorizadas para esta sessão. */
 function shell(content) {
@@ -153,7 +155,7 @@ function render(){
  if(state.page==="Comandas"&&state.selectedOrder&&state.role==="professional"&&state.professional)bindAutocomplete();
 }
 // Resolve vínculo, escopo e permissões antes de liberar os módulos.
-async function loadBase(selectedOrgId=null){
+async function loadBase(selectedOrgId=null,selectedBranchId=null){
  const userId=state.user?.id;
  if(!userId)throw new Error("Sua sessão expirou.");
  // Retira dados do contexto anterior antes de consultar novas permissões.
@@ -177,6 +179,16 @@ async function loadBase(selectedOrgId=null){
   return;
  }
  Object.assign(state,context,{organization:orgs.get(context.orgId),notificationsEnabled,profilePreferences:null,profilePreferencesStatus:"idle",notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,page:"Agenda",selectedAppointment:null,selectedOrder:null,orderItems:[],appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null});
+ if(state.role==="professional"){
+  const branches=await fetchProfessionalBranches({client:supabase,organizationId:state.orgId,professional:state.professional});
+  if(loadEpoch!==sessionEpoch)return;
+  state.branches=branches;const branch=selectProfessionalBranch(branches,selectedBranchId);
+  if(!branch){
+   root.innerHTML='<main class="login"><div class="brand sp-professional-brand">'+renderPlatformMark()+'<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Escolha a unidade</h1><p>Agenda e comandas serão filtradas pela unidade.</p>'+branches.map(row=>'<button type="button" class="primary" data-context-branch="'+esc(row.id)+'">'+esc(row.name)+'</button>').join("")+'<button class="secondary" data-action="logout">Sair</button></main>';
+   return;
+  }
+  state.branchId=branch.id;
+ }
  state.selectedDate=salonCalendarDate(new Date(),state.organization?.timezone);
  state.month=new Date(state.selectedDate.getFullYear(),state.selectedDate.getMonth(),1);
  const profileResult=await supabase.from("profiles").select("full_name,phone").eq("id",userId).maybeSingle();
@@ -194,7 +206,7 @@ async function loadAppointments(){
  const appointments=await fetchProfessionalAppointments({
   client:supabase,
   organizationId:state.orgId,
-  month,timezone:salonTimezone(state.organization?.timezone),professionalId:state.scope==='self'?state.professional?.id:null
+  month,branchId:state.branchId,timezone:salonTimezone(state.organization?.timezone),professionalId:state.scope==='self'?state.professional?.id:null
  });
  if(epoch===sessionEpoch&&month===state.month)state.appointments=appointments;
 }
@@ -232,7 +244,7 @@ async function openCustomer(id){
 // Carrega comandas visíveis ao usuário autenticado.
 async function loadOrders(){
  const epoch=sessionEpoch;
- const rows=await fetchProfessionalOrders({client:supabase,organizationId:state.orgId});
+ const rows=await fetchProfessionalOrders({client:supabase,organizationId:state.orgId,branchId:state.branchId});
  if(epoch===sessionEpoch)state.orders=rows;
 }
 /** Carrega o catálogo apenas para o contexto profissional atual. */
@@ -519,6 +531,14 @@ root.addEventListener("click",async event=>{
   if(action==="choose-professional-context"&&state.user&&state.contextCount>1){
    try{await loadBase();}catch(error){await endSession(error instanceof ProfessionalSessionError?error.message:"Não foi possível consultar os salões.");}return;
   }
+  const branchControl=event.target.closest("[data-context-branch]");
+  if(branchControl&&state.user&&state.orgId&&state.branches.some(row=>row.id===branchControl.dataset.contextBranch)){
+   branchControl.disabled=true;
+   try{await loadBase(state.orgId,branchControl.dataset.contextBranch);}catch(error){await endSession("Não foi possível acessar esta unidade. Consulte o salão.");}return;
+  }
+  if(action==="choose-professional-branch"&&state.user&&state.orgId&&state.branches.length>1){
+   try{await loadBase(state.orgId);}catch{await endSession("Não foi possível consultar suas unidades.");}return;
+  }
   const orgControl=event.target.closest("[data-context-org]");
   if(orgControl&&state.user){orgControl.disabled=true;try{await loadBase(orgControl.dataset.contextOrg);}catch(error){await endSession("Não foi possível acessar este salão.");}return;}
   if(!state.user||!state.orgId)return;
@@ -696,6 +716,14 @@ root.addEventListener("submit",async event=>{
   event.preventDefault();const values=new FormData(event.target),password=String(values.get("password")||""),confirm=String(values.get("confirm")||"");
   if(password.length<10||password!==confirm){state.notice="As senhas devem ser iguais e ter pelo menos 10 caracteres.";changePasswordView();return;}
   const button=event.target.querySelector("button[type=submit]");button.disabled=true;button.textContent="Salvando…";
+  if(state.user?.app_metadata?.professional_password_required===true){
+   try{
+    await completeProfessionalPasswordChange({client:supabase,currentPassword:String(values.get("currentPassword")||""),password,confirm});
+    await endSession("Senha atualizada. Entre novamente com a nova senha.");
+   }catch(error){state.notice=error.message;changePasswordView();}
+   finally{button.disabled=false;}
+   return;
+  }
   const {error}=await supabase.auth.updateUser({password});
   if(error){reportError(error,{context:"App Profissional > troca obrigatória de senha"});state.notice="Não foi possível alterar a senha. Confira os requisitos e tente novamente.";changePasswordView();return;}
   const {error:metaError}=await supabase.auth.updateUser({data:{must_change_password:false}});
@@ -710,7 +738,7 @@ root.addEventListener("submit",async event=>{
  try{
   const user=await authenticateProfessional({client:supabase,login,password});
   state.user=user;state.notice="";
-  if(state.user.user_metadata?.must_change_password){changePasswordView();return;}
+  if(requiresProfessionalPasswordChange(state.user)){changePasswordView();return;}
   await loadBase();
  }catch(error){
   const message=error instanceof ProfessionalSessionError?error.message:"Não foi possível entrar. Confira suas credenciais e permissões.";
@@ -733,12 +761,18 @@ async function recheckSession(){
   const user=await verifyProfessionalSession(supabase);
   if(epoch!==sessionEpoch)return;
   if(user.id!==state.user.id){await endSession("A conta foi alterada. Entre novamente.");return;}
-  if(user.user_metadata?.must_change_password){clearPrivateState();state.user=user;changePasswordView();return;}
+  if(requiresProfessionalPasswordChange(user)){clearPrivateState();state.user=user;changePasswordView();return;}
   const contexts=await fetchProfessionalContexts(supabase,user.id);
   if(epoch!==sessionEpoch)return;
   const next=contexts.find(context=>context.orgId===previous.orgId);
   if(!next){await endSession("Seu acesso ao salão foi alterado. Entre novamente.");return;}
   if(!sameProfessionalScope(previous,next)){state.user=user;await loadBase(previous.orgId);return;}
+  if(state.role==="professional"){
+   const branches=await fetchProfessionalBranches({client:supabase,organizationId:previous.orgId,professional:next.professional});
+   if(epoch!==sessionEpoch)return;
+   if(!branches.some(row=>row.id===state.branchId)){await loadBase(previous.orgId);return;}
+   state.branches=branches;
+  }
   state.user=user;state.contextCount=contexts.length;
  }catch(error){
   if(epoch!==sessionEpoch)return;
@@ -755,7 +789,7 @@ async function boot(){
   const user=await verifyProfessionalSession(supabase);
   if(epoch!==sessionEpoch)return;
   state.user=user;
-  if(user.user_metadata?.must_change_password){changePasswordView();return;}
+  if(requiresProfessionalPasswordChange(user)){changePasswordView();return;}
   await loadBase();
  }catch(error){
   if(error instanceof ProfessionalSessionError&&error.code==="EXPIRED"){clearPrivateState();state.notice="";loginView();}

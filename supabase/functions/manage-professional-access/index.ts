@@ -1,3 +1,4 @@
+/** Provisionamento administrativo; nunca entrega credenciais de serviço ao navegador. */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.119.0";
 
@@ -59,9 +60,12 @@ Deno.serve(async (req: Request) => {
 
       // Reuse only a profile already dedicated to this professional; never change an owner's or receptionist's login.
       if (linkedMembership?.role === "professional" && !linkedProfessional) {
+        const {data:otherLinks,error:otherError}=await admin.from("org_memberships").select("org_id,role").eq("user_id",professional.profile_id).neq("org_id",orgId);
+        if(otherError||otherLinks?.length)return json({error:"Conta vinculada a outro salão. Solicite suporte para redefinição global."},409);
         authUserId = professional.profile_id;
         const { error } = await admin.auth.admin.updateUserById(authUserId, {
           email, password, email_confirm: true,
+          app_metadata: { professional_password_required: true, professional_password_generation: crypto.randomUUID() },
           user_metadata: { full_name: professional.name, account_type: "professional", must_change_password: true }
         });
         if (error) return json({ error: "Não foi possível atualizar o acesso deste profissional." }, 400);
@@ -70,7 +74,8 @@ Deno.serve(async (req: Request) => {
     if (!authUserId) {
       const { data, error } = await admin.auth.admin.createUser({
         email, password, email_confirm: true,
-        user_metadata: { full_name: professional.name, account_type: "professional", must_change_password: true }
+        app_metadata: { professional_password_required: true, professional_password_generation: crypto.randomUUID() },
+          user_metadata: { full_name: professional.name, account_type: "professional", must_change_password: true }
       });
       if (error || !data.user) return json({ error: "Não foi possível criar a conta profissional." }, 400);
       authUserId = data.user.id;

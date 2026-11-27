@@ -33,6 +33,7 @@ export async function fetchProfessionalAppointments({
   organizationId,
   month,
   professionalId = null,
+  branchId = null,
   timezone = null,
   limit = 1000
 }) {
@@ -61,6 +62,7 @@ export async function fetchProfessionalAppointments({
       .lt("starts_at", end.toISOString());
     // O escopo individual não depende apenas das permissões amplas de uma conta administrativa.
     if (professionalId) query = query.eq("professional_id", professionalId);
+    if (branchId) query = query.eq("branch_id", branchId);
     const { data, error } = await query.order("starts_at")
       .limit(limit);
 

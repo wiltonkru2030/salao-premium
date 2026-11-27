@@ -1,0 +1,22 @@
+/** Testes dos fluxos de senha e unidade, sem Auth real. */
+import assert from "node:assert/strict";
+import {requiresProfessionalPasswordChange,completeProfessionalPasswordChange} from "./password.service.js";
+import {fetchProfessionalBranches,selectProfessionalBranch} from "./branches.service.js";
+assert.equal(requiresProfessionalPasswordChange({app_metadata:{professional_password_generation:"new",professional_password_required:true},user_metadata:{must_change_password:false}}),true);
+assert.equal(requiresProfessionalPasswordChange({app_metadata:{professional_password_generation:"new",professional_password_required:false},user_metadata:{must_change_password:true}}),false);
+assert.equal(requiresProfessionalPasswordChange({user_metadata:{must_change_password:true}}),true);
+let call;
+const client={functions:{invoke:async(name,payload)=>{call={name,payload};return {data:{success:true}};}}};
+await completeProfessionalPasswordChange({client,currentPassword:"temporary-password",password:"different-password",confirm:"different-password"});
+assert.equal(call.name,"complete-professional-password");
+await assert.rejects(()=>completeProfessionalPasswordChange({client,currentPassword:"same-password",password:"same-password",confirm:"same-password"}),/diferente/);
+const units=[{id:"b",name:"Matriz"},{id:"c",name:"Filial"}];
+assert.equal(selectProfessionalBranch(units),null);
+assert.equal(selectProfessionalBranch(units,"c").id,"c");
+assert.equal(selectProfessionalBranch(units,"other"),null);
+assert.equal(selectProfessionalBranch([units[0]]).id,"b");
+const filters=[];
+const mock={from:()=>({select(){return this;},eq(key,value){filters.push([key,value]);return this;},order(){return this;},then(resolve){return Promise.resolve({data:[units[0]]}).then(resolve);}})};
+await fetchProfessionalBranches({client:mock,organizationId:"o",professional:{id:"p",org_id:"o",branch_id:"b"}});
+assert.deepEqual(filters,[["org_id","o"],["active",true],["id","b"]]);
+console.log("Senha provisória e seleção de unidades: OK");

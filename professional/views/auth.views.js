@@ -44,15 +44,16 @@ export function renderProfessionalLoginView(notice = "", appearance) {
 }
 
 /** Renderiza o formulário obrigatório de troca da senha temporária. */
-export function renderProfessionalPasswordChangeView(notice = "") {
+export function renderProfessionalPasswordChangeView(notice = "", {managed=false}={}) {
   return renderProfessionalAuth({
     title: "Crie sua nova senha",
     description: "Altere a senha temporária para proteger seu acesso.",
     notice,
     form: `<form id="professional-password-change" class="auth-form">
+      ${managed?'<label>Senha temporária atual<input name="currentPassword" type="password" autocomplete="current-password" required></label>':""}
       <label>Nova senha<input name="password" type="password" minlength="10" autocomplete="new-password" required></label>
       <label>Confirmar senha<input name="confirm" type="password" minlength="10" autocomplete="new-password" required></label>
       <button class="auth-submit" type="submit">Salvar nova senha</button>
-    </form>`
+    </form>`,footer:'<button type="button" class="secondary" data-action="logout">Sair</button>'
   });
 }
