@@ -1,7 +1,8 @@
 /** Formulário móvel de agendamento. A Agenda fornece o dia selecionado. */
 
+import {escapeHtml as esc} from "../utils/formatters.js";
 /** Monta o botão e o diálogo com campos de pesquisa e hora. */
-export function renderProfessionalBooking({unitBooking=false}={}) {
+export function renderProfessionalBooking({unitBooking=false,availableSlots=false,selectedDateLabel=""}={}) {
   return `<div class="professional-booking-action">
     <button class="btn primary" type="button" data-action="open-professional-booking">+ Novo agendamento</button>
   </div>
@@ -11,12 +12,13 @@ export function renderProfessionalBooking({unitBooking=false}={}) {
         <h2 id="professional-booking-title">Novo agendamento</h2>
         <button type="button" class="sp-modal-close" data-action="close-professional-booking" aria-label="Fechar">×</button>
       </header>
-      <form id="professional-new-appointment" data-unit-booking="${unitBooking}">
+      <form id="professional-new-appointment" data-unit-booking="${unitBooking}" data-available-slots="${availableSlots}">
         <div class="sp-modal-body">
+          ${selectedDateLabel?'<p class="muted">Dia selecionado: '+esc(selectedDateLabel)+'</p>':""}
           <div class="sp-span sp-labeled-field"><label for="professional-booking-client">Cliente</label><div><input id="professional-booking-client" type="search" data-booking-client placeholder="Buscar por nome ou telefone" autocomplete="off" required></div></div>
           ${unitBooking?'<button class="btn secondary" type="button" data-booking-quick-open>+ Cadastrar cliente</button>':""}
           <div class="sp-span sp-labeled-field"><label for="professional-booking-service">Serviço</label><div><input id="professional-booking-service" type="search" data-booking-service placeholder="Buscar serviço" autocomplete="off" required></div></div>
-          <label class="sp-span sp-labeled-field">Hora<input name="start" type="time" required></label>
+          <label class="sp-span sp-labeled-field">Hora${availableSlots?'<select name="start" required disabled><option value="">Selecione um serviço primeiro</option></select>':'<input name="start" type="time" required>'}</label><p class="muted" data-booking-slot-status role="status" ${availableSlots?"":"hidden"}></p>
           <p class="sp-span" data-booking-error role="alert" hidden></p>
         </div>
         <footer class="sp-modal-foot">

@@ -183,3 +183,6 @@ Projeto `salao-premium` e chave VAPID pública integrados em `professional/fireb
 
 ### Hospedagem de homologação
 Workflow `Professional QA package`: canal temporário `professional-qa`, deploy apenas com secret de Hosting separado, pós-verificação HTTPS da PWA. Nenhuma publicação em live. OAuth Google/FCM validate_only já aprovados, falta confirmar dispositivo real. Ver [entrega QA](../docs/ENTREGA-APP-PROFISSIONAL.md).
+
+### Expediente e horários disponíveis (QA)
+Perfil → Configurações → Meu expediente permite adicionar, editar e excluir somente os próprios intervalos semanais. Cadastre dois intervalos para almoço. O painel permite editar expediente da unidade e da equipe. A Agenda consulta slots futuros de 5 minutos no servidor, respeitando duração, unidade, expediente, reservas, bloqueios e folgas; o banco revalida na gravação. Se faltar expediente da unidade, o administrador deve cadastrá-lo. A configuração QA tinha zero horários de unidade e profissional em 27/11/2026; não foram definidos horários automaticamente. Flag VITE_PROFESSIONAL_WORKING_HOURS habilitada somente no QA até homologação de produção.

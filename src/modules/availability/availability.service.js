@@ -110,3 +110,15 @@ export async function removeAvailabilityEntry(table,id,orgId){
  if(!data) throw new Error("Registro não encontrado ou sem permissão para excluir.");
  return true;
 }
+
+/** Edita uma linha de expediente existente, sem trocar organização ou unidade/profissional. */
+export async function updateWeeklyAvailability(table,id,orgId,input,scopeId){
+ await requireManager();
+ const professional=table==="professional_working_hours";
+ if(!professional&&table!=="branch_business_hours")throw new TypeError("Tipo de expediente inválido.");
+ const row=validateWeeklyInterval(input,{professional});
+ const {data,error}=await supabase.from(table).update({...row,updated_at:new Date().toISOString()}).eq("id",requireUuid(id,"Registro")).eq("org_id",requireUuid(orgId,"Organização")).eq(professional?"professional_id":"branch_id",requireUuid(scopeId,"Vínculo")).select("id").maybeSingle();
+ if(error)throw error;
+ if(!data)throw new Error("Horário não localizado ou sem permissão.");
+ return data.id;
+}

@@ -46,6 +46,7 @@ jobs:
       VITE_PROFESSIONAL_UNIT_BOOKING: 'true'
       VITE_PROFESSIONAL_EXPLICIT_BRANCH: 'true'
       VITE_PROFESSIONAL_PUSH: 'true'
+      VITE_PROFESSIONAL_WORKING_HOURS: 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

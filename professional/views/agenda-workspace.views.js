@@ -7,7 +7,7 @@ import {renderAttendanceActions} from "../attendance.service.js";
 import {renderProfessionalBooking} from "./booking.views.js";
 import {renderAgendaView} from "./agenda.views.js";
 /** Cria renderizadores da Agenda com estado e flags injetados. */
-export function createAgendaWorkspaceViews({state,attendanceEnabled,appointmentStatusEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled}){
+export function createAgendaWorkspaceViews({state,attendanceEnabled,appointmentStatusEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled,workingHoursEnabled=false}){
  function appointmentCard(a){
   const duration=Math.max(0,Math.round((new Date(a.ends_at)-new Date(a.starts_at))/60000));
   return '<button type="button" class="appointment sp-content-surface '+appointmentClass(a)+'" data-appointment="'+esc(a.id)+'"><span class="professional-appointment-heading"><time datetime="'+esc(a.starts_at)+'">'+timeLabel(a.starts_at,salonTimezone(state.organization?.timezone))+'</time><strong>'+esc(a.customer_name)+'</strong></span>'+
@@ -50,7 +50,7 @@ export function createAgendaWorkspaceViews({state,attendanceEnabled,appointmentS
  // Delega a composição visual da agenda para uma view sem efeitos colaterais.
  function agendaView(){
   const booking=bookingEnabled&&state.role==="professional"&&state.professional
-   ?renderProfessionalBooking({unitBooking:unitBookingEnabled&&customerRegistrationEnabled&&canUseSelectedUnit(state)})
+   ?renderProfessionalBooking({unitBooking:unitBookingEnabled&&customerRegistrationEnabled&&canUseSelectedUnit(state),availableSlots:workingHoursEnabled&&canUseSelectedUnit(state),selectedDateLabel:dateLabel(state.selectedDate)})
    :"";
   return renderAgendaView({state,dateKey,monthLabel,dateLabel,appointmentCard,appointmentDetails,booking});
  }

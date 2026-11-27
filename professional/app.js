@@ -5,6 +5,7 @@ import {canUseSelectedUnit} from "./unit-context.js";
 import {createCustomersController} from "./controllers/customers.controller.js";
 import {createServicesController} from "./controllers/services.controller.js";
 import {createNotificationsController} from "./controllers/notifications.controller.js";
+import {createWorkingHoursController} from "./controllers/working-hours.controller.js";
 import {createProfileController} from "./controllers/profile.controller.js";
 import {createFinancialController} from "./controllers/financial.controller.js";
 import {salonTimezone} from "./utils/salon-time.js";
@@ -54,8 +55,10 @@ const serviceManagementEnabled = import.meta.env.VITE_PROFESSIONAL_SERVICE_MANAG
 const unitBookingEnabled = import.meta.env.VITE_PROFESSIONAL_UNIT_BOOKING === "true";
 const explicitBranchEnabled = import.meta.env.VITE_PROFESSIONAL_EXPLICIT_BRANCH === "true";
 const rescheduleEnabled = import.meta.env.VITE_PROFESSIONAL_RESCHEDULE === "true";
+const workingHoursEnabled=import.meta.env.VITE_PROFESSIONAL_WORKING_HOURS==="true";
+const hours=createWorkingHoursController({state,client:supabase,getEpoch:()=>sessionEpoch,render,showNotice,enabled:workingHoursEnabled});
 const serviceLock={active:false,operation:null};
-const {agendaView,appointmentStatusActions}=createAgendaWorkspaceViews({state,attendanceEnabled,appointmentStatusEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled});
+const {agendaView,appointmentStatusActions}=createAgendaWorkspaceViews({state,attendanceEnabled,appointmentStatusEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled,workingHoursEnabled});
 // Controladores recebem a geração da sessão por função, nunca como valor congelado.
 const {loadCustomers,openCustomer,submitProfessionalCustomer}=createCustomersController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError,customerRegistrationEnabled});
 const {loadServices,canManageServices,loadServiceCatalog,changeServiceLink,submitProfessionalService}=createServicesController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError,showNotice,serviceManagementEnabled});
@@ -93,7 +96,7 @@ function render(){
  if(!state.user||!state.orgId||(state.role==="professional"&&!state.branchId))return;
  if(!allowedProfessionalPages(state).includes(state.page))state.page="Agenda";
  clearAutocomplete();
- const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state,{managementEnabled:orderManagementEnabled}):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services,{manage:canManageServices(),catalog:state.serviceCatalog,editor:state.serviceEditor,status:state.serviceCatalogStatus}):state.page==="Clientes"?renderProfessionalCustomers({...state,canManageCustomers:customerRegistrationEnabled&&canUseSelectedUnit(state)}):state.page==="Notificações"?renderNotificationsView(state):state.page==="Perfil"?profileView(state,{preferencesEnabled:profilePreferencesEnabled}):settingsView(state, appearance.preference,{preferencesEnabled:profilePreferencesEnabled,pushConfigured:push.configured});
+ const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state,{managementEnabled:orderManagementEnabled}):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services,{manage:canManageServices(),catalog:state.serviceCatalog,editor:state.serviceEditor,status:state.serviceCatalogStatus}):state.page==="Clientes"?renderProfessionalCustomers({...state,canManageCustomers:customerRegistrationEnabled&&canUseSelectedUnit(state)}):state.page==="Notificações"?renderNotificationsView(state):state.page==="Perfil"?profileView(state,{preferencesEnabled:profilePreferencesEnabled}):settingsView(state, appearance.preference,{preferencesEnabled:profilePreferencesEnabled,pushConfigured:push.configured,workingHoursEnabled});
  shell(content);
  if(state.page==="Comandas"&&state.selectedOrder&&state.role==="professional"&&state.professional)bindAutocomplete();
 }
@@ -157,6 +160,8 @@ root.addEventListener("click",async event=>{
    setProfessionalMenuOpen(root,action==="open-professional-menu");
    return;
   }
+  if(action==="load-own-hours"){await hours.load();return;}
+  const removeHours=event.target.closest("[data-remove-own-hours]");if(removeHours){await hours.save(removeHours.closest("form"),true);return;}
   if(action==="open-professional-booking"||action==="close-professional-booking"){
    const dialog=root.querySelector("#professional-booking-dialog");
    if(action==="open-professional-booking"&&dialog&&!dialog.open){
@@ -250,7 +255,7 @@ root.addEventListener("click",async event=>{
   if(state.page==="Agenda"&&await handleAgendaClick({event,state,loadAppointments,render:()=>{if(epoch===sessionEpoch&&state.page==="Agenda")render();}}))return;
   if(epoch!==sessionEpoch)return;
   const page=event.target.closest("[data-page]");
- if(page){await navigate(page.dataset.page);return;}
+ if(page){await navigate(page.dataset.page);if(state.page==="Configurações")await hours.load();return;}
  const order=event.target.closest("[data-order]");
  if(order&&allowedProfessionalPages(state).includes("Comandas")){await chooseOrder(order.dataset.order);return;}
  if(action==="back-orders"){state.selectedOrder=null;state.orderItems=[];render();}
@@ -279,6 +284,7 @@ root.addEventListener("click",async event=>{
 });
 /** Salva a remarcação e mantém o calendário consistente com o horário retornado. */
 root.addEventListener("submit",async event=>{
+ if(event.target.matches("[data-own-hours-form]")){event.preventDefault();await hours.save(event.target);return;}
  if(event.target.matches("#professional-profile-preferences")){event.preventDefault();await submitProfilePreferences(event.target);return;}
  if(event.target.matches("#professional-commission-filter")){
   event.preventDefault();
