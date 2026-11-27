@@ -1,0 +1,12 @@
+{
+  "date": "2026-11-27",
+  "scope": "professional-notification-inbox",
+  "databaseMigration": "20261127214214",
+  "features": {
+    "notifications": true,
+    "profilePreferences": true,
+    "push": false
+  },
+  "sourceCommit": "c0dbc50327767f0e54b30be15c9cd47e96c29285",
+  "notes": "Promoção da central interna; sem alteração de dados existentes, sem ativar transporte externo."
+}

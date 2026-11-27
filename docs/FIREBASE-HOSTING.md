@@ -18,3 +18,6 @@ Crie ou vincule o projeto no Firebase Console, ative o Hosting e conceda à cont
 Antes de publicar a Área da Cliente com Google OAuth, cadastre o domínio `web.app` ou domínio personalizado e os redirects necessários no Supabase Auth e no provedor Google. Confira também links de redefinição de senha e resposta a orçamento no endereço publicado.
 
 O Hosting distribui os arquivos do build. Ele não transfere banco, migrations, usuários, Edge Functions ou configurações do Supabase. A liberação comercial depende dos critérios de homologação em [STATUS-2026-11-24.md](STATUS-2026-11-24.md).
+
+## Promoção explícita da central de notificações (27/11/2026)
+A atualização do manifesto `docs/releases/professional-notifications-live.json` dispara uma publicação live somente na main. Commits comuns continuam sem publicar. O workflow exige URL de produção, conta de serviço do Firebase correto, testes agregados, regressão visual e verificação do SHA atual. O build mantém FCM desabilitado e ativa somente os contratos de central/preferências já instalados. Após o deploy, compara bytes das três entradas e do worker com o build. O disparo manual permanece disponível. Não considerar publicada até o workflow concluir e o smoke confirmar.

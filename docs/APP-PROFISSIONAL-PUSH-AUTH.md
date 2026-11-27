@@ -37,3 +37,5 @@ No projeto de produção, a migration remota 20261127214214 (professional_notifi
 
 ### Continuidade de push no dispositivo
 A inscrição previamente autorizada é restaurada somente na mesma conta/salão e se a permissão do navegador e inscrição do worker ainda existirem. A preferência local guarda identificadores de contexto, nunca o token FCM. Logout/desativação removem a preferência. Ao receber push com o app em primeiro plano, o contador é atualizado e o worker apresenta aviso com título de lista segura e identificador opaco; clique usa a mesma rota autenticada. Abrir o agendamento marca o aviso como lido após sucesso; falha de leitura não bloqueia o modal. São testes locais de contrato, não prova de entrega física.
+
+A promoção explícita da central interna está versionada em docs/releases/professional-notifications-live.json. O workflow live exige testes, validação visual, destino de produção e conferência dos assets. O transporte externo continua desativado no build e o agendamento de produção depende da variável PROFESSIONAL_PUSH_PRODUCTION_ENABLED, não configurada por esta promoção.

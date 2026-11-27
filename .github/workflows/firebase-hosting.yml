@@ -1,16 +1,26 @@
 # Publica as três entradas Vite no Firebase Hosting após validação.
-# O disparo manual evita publicação antes de configurar e conferir o projeto de destino.
+# Publicação manual ou promoção explícita pelo manifesto de release; alterações comuns não publicam.
 name: Firebase Hosting
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/releases/professional-notifications-live.json'
+
+concurrency:
+  group: firebase-hosting-live
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,8 +37,25 @@ jobs:
           test -n "$VITE_SUPABASE_URL" || { echo 'Configure VITE_SUPABASE_URL nas variables do repositório.'; exit 1; }
           test -n "$VITE_SUPABASE_PUBLISHABLE_KEY" || { echo 'Configure VITE_SUPABASE_PUBLISHABLE_KEY nas variables do repositório.'; exit 1; }
           test -n "$FIREBASE_SERVICE_ACCOUNT" || { echo 'Configure FIREBASE_SERVICE_ACCOUNT nos secrets do repositório.'; exit 1; }
+          test "$VITE_SUPABASE_URL" = 'https://vlifbvzlyzoncefvfgol.supabase.co' || { echo 'Publicação live exige Supabase de produção.'; exit 1; }
+          node --input-type=module <<'NODE'
+          const a=JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+          if(a.type!=="service_account"||a.project_id!=="salao-premium"||!a.client_email||!a.private_key)throw Error("Credencial de Hosting inválida ou de outro projeto.");
+          NODE
       - name: Executar testes
         run: npm run test:all
+      - name: Validar navegador antes de publicar
+        run: |
+          npm install --no-save --package-lock=false playwright@1.55.0
+          npx playwright install --with-deps chromium
+          npx --yes vite@6 --host 127.0.0.1 --port 4173 --strictPort > /tmp/professional-vite.log 2>&1 &
+          PID=$!
+          trap 'kill "$PID" || true' EXIT
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:4173/professional/ >/dev/null; then break; fi
+            sleep 1
+          done
+          npm run test:professional-browser
       - name: Gerar as três aplicações
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
@@ -46,9 +73,24 @@ jobs:
           VITE_PROFESSIONAL_PUSH: 'false'
           VITE_COMANDA_PAYMENT_IDEMPOTENCY: 'false'
         run: npm run build
+      - name: Conferir pacote e branch antes da publicação
+        run: |
+          grep -r -q 'vlifbvzlyzoncefvfgol.supabase.co' dist/assets
+          if grep -r -q 'eaiutjqvyesboldcznyr.supabase.co' dist/assets; then
+            echo 'Publicação bloqueada: referência QA no pacote live.'; exit 1
+          fi
+          test -f dist/index.html && test -f dist/cliente/index.html && test -f dist/professional/index.html && test -f dist/professional/sw.js
+          git fetch origin main --depth=1
+          test "$(git rev-parse FETCH_HEAD)" = "$GITHUB_SHA" || { echo 'main avançou; promova somente a revisão atual.'; exit 1; }
       - uses: FirebaseExtended/action-hosting-deploy@v0
+        id: deploy
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: salao-premium
           channelId: live
+
+      - name: Verificar bytes publicados nas três aplicações
+        env:
+          LIVE_URL: https://salao-premium.web.app
+        run: node tests/integration/production-hosting-smoke.mjs
