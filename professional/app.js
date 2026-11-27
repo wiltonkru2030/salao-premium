@@ -1,4 +1,5 @@
 /** App Profissional (PWA): autenticação, sessão individual, Agenda, Comandas, Comissões e configurações do próprio perfil. */
+import {createProfessionalState,resetProfessionalState} from "./workspace-state.js";
 import {createCustomersController} from "./controllers/customers.controller.js";
 import {createServicesController} from "./controllers/services.controller.js";
 import {createNotificationsController} from "./controllers/notifications.controller.js";
@@ -18,28 +19,17 @@ import {bindOrderManagement} from "./order-management.controller.js";
 import {renderNotificationsView} from "./views/notifications.views.js";
 import { installGlobalErrorHandlers, reportError } from "../src/utils/errors.js";
 import { installGlobalMasks, formatCpf } from "../src/utils/input-masks.js";
-import {
-  escapeHtml as esc,
-  formatMoney as money,
-  toDateKey as dateKey,
-  formatMonthLabel as monthLabel,
-  formatDateLabel as dateLabel,
-  formatTime as timeLabel,
-  formatDateTime as dateTimeLabel,
-  formatBookingSource as sourceLabel,
-  formatStatus as statusLabel,
-  getAppointmentClass as appointmentClass
-} from "./utils/formatters.js";
+import {escapeHtml as esc} from "./utils/formatters.js";
 import { renderProfessionalPasswordChangeView, renderProfessionalLoginView } from "./views/auth.views.js";
 import {ordersView,commissionsView,profileView,settingsView} from "./views/workspace.views.js";
 import { renderProfessionalCustomers } from "./views/customers.views.js";
 import { renderProfessionalServices } from "./views/services.views.js";
 import {bindProfessionalBookingSearch} from "./booking-search.js";
-import {attendanceActions,performAttendanceAction} from "./attendance.service.js";
+import {createAttendanceController} from "./controllers/attendance.controller.js";
 import {createAgendaWorkspaceViews} from "./views/agenda-workspace.views.js";
 import { handleAgendaClick } from "./agenda.controller.js";
-import { fetchProfessionalAppointments, updateOwnAppointmentStatus, rescheduleOwnAppointment, createOwnAppointment, createUnitAppointment } from "./appointments.service.js";
-import { resolveProfessionalContexts, allowedProfessionalPages, canRegisterProfessionalService, summarizeProfessionalCommissions } from "./access.rules.js";
+import {fetchProfessionalAppointments} from "./appointments.service.js";
+import {allowedProfessionalPages} from "./access.rules.js";
 
 // Aplicação PWA do profissional: autenticação, navegação, Agenda, Comandas e Comissões.
 installGlobalErrorHandlers();
@@ -47,19 +37,13 @@ installGlobalMasks();
 
 const appearance = createPlatformAppearance("salao-premium:professional-appearance");
 const root=document.querySelector("#professional-app");
-const state={
- user:null,contextCount:0,branches:[],branchId:null,orgId:null,role:null,scope:"none",professional:null,profile:null,profilePreferences:null,profilePreferencesStatus:"idle",notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,organization:null,
- page:"Agenda",month:new Date(new Date().getFullYear(),new Date().getMonth(),1),
- selectedDate:new Date(),selectedAppointment:null,appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",
- commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedOrder:null,orderItems:[],notice:""
-};
+const state=createProfessionalState();
 let disposeAutocomplete=null;
 let sessionEpoch=0;
 let recheckingSession=false;
 let endingSession=false;
 // Ative a interface no build após instalar a migration correspondente no Supabase.
 const appointmentStatusEnabled = import.meta.env.VITE_PROFESSIONAL_APPOINTMENT_STATUS === "true";
-let appointmentStatusPending = false;
 // Ative após aplicar a migration de reagendamento no ambiente correspondente.
 const bookingEnabled = import.meta.env.VITE_PROFESSIONAL_BOOKING === "true";
 const customerRegistrationEnabled = import.meta.env.VITE_PROFESSIONAL_CUSTOMER_REGISTRATION === "true";
@@ -77,10 +61,11 @@ const {loadCustomers,openCustomer,submitProfessionalCustomer}=createCustomersCon
 const {loadServices,canManageServices,loadServiceCatalog,changeServiceLink,submitProfessionalService}=createServicesController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError,showNotice,serviceManagementEnabled});
 const {loadNotifications,readNotifications}=createNotificationsController({state,supabase,getEpoch:()=>sessionEpoch,render,showNotice,notificationsEnabled});
 const {loadProfilePreferences,submitProfilePreferences}=createProfileController({state,supabase,getEpoch:()=>sessionEpoch,render,showNotice,profilePreferencesEnabled});
-const {loadOrders,loadCommissions,loadOrderItems,chooseOrder}=createFinancialController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError});
+const {loadOrders,loadCommissions,chooseOrder}=createFinancialController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError});
+const {applyAppointmentStatus,applyAttendance,openAttendanceOrder,applyAppointmentReschedule,applyNewAppointment}=createAttendanceController({state,supabase,getEpoch:()=>sessionEpoch,showNotice,loadAppointments,loadOrders,chooseOrder,appointmentStatusActions,appointmentStatusEnabled,attendanceEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled});
 
 /** Limpa dados privados antes de exibir a tela de acesso. */
-function clearPrivateState(){sessionEpoch++;appointmentStatusPending=false;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();Object.assign(state,{user:null,contextCount:0,branches:[],branchId:null,orgId:null,role:null,scope:"none",professional:null,profile:null,profilePreferences:null,profilePreferencesStatus:"idle",notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,organization:null,page:"Agenda",appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedAppointment:null,selectedOrder:null,orderItems:[]});}
+function clearPrivateState(){sessionEpoch++;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();resetProfessionalState(state);}
 /** Limpa a interface imediatamente; encerra apenas a sessão profissional local. */
 async function endSession(notice=""){
  if(endingSession)return;
@@ -107,7 +92,7 @@ function shell(content) {
 }
 
 function render(){
- if(!state.user||!state.orgId)return;
+ if(!state.user||!state.orgId||(state.role==="professional"&&!state.branchId))return;
  if(!allowedProfessionalPages(state).includes(state.page))state.page="Agenda";
  clearAutocomplete();
  const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state,{managementEnabled:orderManagementEnabled}):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services,{manage:canManageServices(),catalog:state.serviceCatalog,editor:state.serviceEditor,status:state.serviceCatalogStatus}):state.page==="Clientes"?renderProfessionalCustomers({...state,canManageCustomers:customerRegistrationEnabled&&state.role==="professional"&&!!state.professional?.branch_id}):state.page==="Notificações"?renderNotificationsView(state):state.page==="Perfil"?profileView(state,{preferencesEnabled:profilePreferencesEnabled}):settingsView(state, appearance.preference,{preferencesEnabled:profilePreferencesEnabled});
@@ -133,12 +118,11 @@ async function loadBase(selectedOrgId=null,selectedBranchId=null){
  state.contextCount=contexts.length;
  const context=selectedOrgId?contexts.find(c=>c.orgId===selectedOrgId):contexts.length===1?contexts[0]:null;
  if(!context){
-  Object.assign(state,{orgId:null,role:null,scope:"none",professional:null,organization:null,profile:null,profilePreferences:null,profilePreferencesStatus:"idle",notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedAppointment:null,selectedOrder:null,orderItems:[]});
   clearAutocomplete();
   root.innerHTML='<main class="login"><div class="brand sp-professional-brand">' + renderPlatformMark() + '<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Escolha o salão</h1><p>Seus dados ficam separados por estabelecimento.</p>'+contexts.map(c=>'<button type="button" class="primary" data-context-org="'+esc(c.orgId)+'">'+esc(orgs.get(c.orgId)?.name||"Salão")+'</button>').join("")+'<button class="secondary" data-action="logout">Sair</button></main>';
   return;
  }
- Object.assign(state,context,{organization:orgs.get(context.orgId),notificationsEnabled,profilePreferences:null,profilePreferencesStatus:"idle",notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,page:"Agenda",selectedAppointment:null,selectedOrder:null,orderItems:[],appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null});
+ Object.assign(state,context,{organization:orgs.get(context.orgId),notificationsEnabled});
  if(state.role==="professional"){
   const branches=await fetchProfessionalBranches({client:supabase,organizationId:state.orgId,professional:state.professional});
   if(loadEpoch!==sessionEpoch)return;
@@ -206,59 +190,6 @@ root.addEventListener("change", event => {
  if (event.target.matches("[data-platform-appearance]")) appearance.set(event.target.value);
 });
 /** Persiste a mudança e atualiza o cartão apenas se a sessão ainda for a mesma. */
-async function applyAppointmentStatus(control) {
- const appointment=state.selectedAppointment;
- if(!appointmentStatusEnabled || !appointment || appointmentStatusPending || !appointmentStatusActions(appointment))return;
- const status=control.dataset.ownAppointmentStatus;
- if(status==="cancelled"&&!window.confirm("Cancelar este agendamento?"))return;
- const epoch=sessionEpoch;
- appointmentStatusPending=true;
- control.disabled=true;
- try {
-  const saved=await updateOwnAppointmentStatus({client:supabase,organizationId:state.orgId,appointmentId:appointment.id,status});
-  if(epoch!==sessionEpoch)return;
-  state.appointments=state.appointments.map(item=>item.id===saved.id?{...item,...saved}:item);
-  if(state.selectedAppointment?.id===saved.id)state.selectedAppointment={...appointment,...saved};
-  showNotice(status==="confirmed"?"Agendamento confirmado.":"Agendamento cancelado.");
- } catch(error) {
-  if(epoch===sessionEpoch)showNotice(error.message);
- } finally {
-  appointmentStatusPending=false;
-  if(control.isConnected)control.disabled=false;
- }
-}
-
-/** Atualiza Agenda e Comandas após confirmação do servidor, sem registrar pagamentos. */
-async function applyAttendance(control){
- const appointment=state.selectedAppointment,operation=control.dataset.attendanceAction;
- if(!attendanceEnabled||state.page!=="Agenda"||appointmentStatusPending||!attendanceActions(state,appointment).includes(operation))return;
- if(operation==="finish"&&!window.confirm("Finalizar o atendimento e encaminhar a comanda ao Caixa?"))return;
- const epoch=sessionEpoch;
- appointmentStatusPending=true;control.disabled=true;
- try{
-  const saved=await performAttendanceAction({client:supabase,organizationId:state.orgId,appointmentId:appointment.id,operation});
-  if(epoch!==sessionEpoch)return;
-  const patch={status:saved.status,service_order_id:saved.order_id};
-  state.appointments=state.appointments.map(item=>item.id===appointment.id?{...item,...patch}:item);
-  if(state.selectedAppointment?.id===appointment.id)state.selectedAppointment={...state.selectedAppointment,...patch};
-  const message=operation==="start"?"Atendimento iniciado. Abra a comanda para registrar outros serviços.":"Atendimento concluído. Comanda encaminhada ao Caixa.";
-  try{await loadOrders();if(epoch===sessionEpoch)showNotice(message);}
-  catch(error){if(epoch===sessionEpoch)showNotice(message+" Atualize Comandas para consultar os itens.");}
- }catch(error){if(epoch===sessionEpoch)showNotice(error.message);}
- finally{appointmentStatusPending=false;if(control.isConnected)control.disabled=false;}
-}
-/** Abre a comanda vinculada somente se estiver visível no contexto autorizado. */
-async function openAttendanceOrder(){
- const appointment=state.selectedAppointment,epoch=sessionEpoch;
- if(!attendanceEnabled||!appointment?.service_order_id||state.page!=="Agenda"||!attendanceActions(state,appointment).includes("order"))return;
- try{
-  await loadOrders();
-  if(epoch!==sessionEpoch||state.page!=="Agenda"||state.selectedAppointment?.id!==appointment.id)return;
-  if(!state.orders.some(order=>order.id===appointment.service_order_id)){showNotice("Comanda não encontrada na lista recente. Consulte a recepção.");return;}
-  state.page="Comandas";state.selectedAppointment=null;state.notice="";
-  await chooseOrder(appointment.service_order_id);
- }catch(error){if(epoch===sessionEpoch)showNotice("Não foi possível carregar a comanda. Tente novamente.");}
-}
 root.addEventListener("click",async event=>{
  try{
   const action=event.target.closest("[data-action]")?.dataset.action;
@@ -371,83 +302,6 @@ root.addEventListener("click",async event=>{
  }catch(error){reportError(error,{context:"App Profissional > ação de tela"});}
 });
 /** Salva a remarcação e mantém o calendário consistente com o horário retornado. */
-async function applyAppointmentReschedule(form) {
- const appointment=state.selectedAppointment;
- if(!rescheduleEnabled||!appointment?.branch_id||appointmentStatusPending||!appointmentStatusActions(appointment))return;
- const localStart=new FormData(form).get("local_start");
- const button=form.querySelector("button[type=submit]");
- const epoch=sessionEpoch;
- appointmentStatusPending=true;
- button.disabled=true;
- try {
-  const saved=await rescheduleOwnAppointment({client:supabase,organizationId:state.orgId,appointment,localStart});
-  if(epoch!==sessionEpoch)return;
-  const newDate=salonCalendarDate(saved.starts_at,state.organization?.timezone);
-  if(state.page==="Agenda"&&state.selectedAppointment?.id===saved.id) {
-   state.selectedDate=newDate;
-   state.month=new Date(newDate.getFullYear(),newDate.getMonth(),1);
-   state.selectedAppointment={...appointment,...saved};
-  }
-  state.appointments=state.appointments.filter(item=>item.id!==saved.id);
-  try {
-   await loadAppointments();
-   if(epoch===sessionEpoch)showNotice("Agendamento reagendado.");
-  } catch {
-   if(epoch===sessionEpoch)showNotice("Agendamento reagendado. Atualize a Agenda para recarregar os horários.");
-  }
- } catch(error) {
-  if(epoch===sessionEpoch)showNotice(error.message);
- } finally {
-  appointmentStatusPending=false;
-  if(button.isConnected)button.disabled=false;
- }
-}
-
-/** Salva o novo horário e recarrega a agenda do mês em que ele foi criado. */
-async function applyNewAppointment(form) {
- if(!bookingEnabled||state.role!=="professional"||state.page!=="Agenda"||appointmentStatusPending)return;
- const reference=form.querySelector("[data-booking-client]").dataset.selectedId;
- const service=form.querySelector("[data-booking-service]").dataset.selectedId;
- const hour=new FormData(form).get("start");
- const feedback=form.querySelector("[data-booking-error]");
- if(!reference||!service||!/^\d{2}:\d{2}$/.test(hour||"")){
-  feedback.textContent=!reference?"Toque no nome da cliente na lista de sugestões.":!service?"Toque no serviço na lista de sugestões.":"Informe a hora do atendimento.";
-  feedback.hidden=false;
-  return;
- }
- feedback.hidden=true;
- const epoch=sessionEpoch,button=form.querySelector("button[type=submit]");
- const localStart=dateKey(state.selectedDate)+"T"+hour;
- appointmentStatusPending=true;
- button.disabled=true;
- try {
-  const unitBooking=unitBookingEnabled&&customerRegistrationEnabled&&!!state.professional?.branch_id&&form.dataset.unitBooking==="true";
-  const options={client:supabase,organizationId:state.orgId,reference,service,localStart};
-  const saved=await (unitBooking?createUnitAppointment({...options,customerId:reference}):createOwnAppointment(options));
-  if(epoch!==sessionEpoch)return;
-  if(state.page==="Agenda") {
-   const date=salonCalendarDate(saved.starts_at,state.organization?.timezone);
-   state.selectedDate=date;
-   state.month=new Date(date.getFullYear(),date.getMonth(),1);
-   state.selectedAppointment=null;
-  }
-  try {
-   await loadAppointments();
-   if(epoch===sessionEpoch)showNotice("Agendamento criado.");
-  } catch {
-   if(epoch===sessionEpoch)showNotice("Agendamento criado. Atualize a Agenda para ver o horário.");
-  }
- } catch(error) {
-  if(epoch===sessionEpoch&&form.isConnected){
-   feedback.textContent=error.message;
-   feedback.hidden=false;
-  }
- } finally {
-  appointmentStatusPending=false;
-  if(button.isConnected)button.disabled=false;
- }
-}
-
 root.addEventListener("submit",async event=>{
  if(event.target.matches("#professional-profile-preferences")){event.preventDefault();await submitProfilePreferences(event.target);return;}
  if(event.target.matches("#professional-commission-filter")){
