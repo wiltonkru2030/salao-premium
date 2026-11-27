@@ -1,0 +1,75 @@
+# Compila uma versão isolada, com todos os módulos profissionais habilitados.
+# O arquivo ZIP não é implantado automaticamente e aponta somente para QA.
+name: Professional QA package
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'professional/**'
+      - 'src/**'
+      - 'supabase/**'
+      - 'tests/integration/professional-auth-qa.mjs'
+      - '.github/workflows/professional-qa.yml'
+      - 'package.json'
+      - 'vite.config.js'
+  workflow_dispatch:
+    inputs:
+      run_auth:
+        description: Executar Auth real com contas fictícias em QA
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  build-qa:
+    runs-on: ubuntu-24.04
+    env:
+      VITE_SUPABASE_URL: https://eaiutjqvyesboldcznyr.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_wewwCre-CzGgHXLsQtK8fg_qsUpXJmr
+      VITE_PROFESSIONAL_APPOINTMENT_STATUS: 'true'
+      VITE_PROFESSIONAL_RESCHEDULE: 'true'
+      VITE_PROFESSIONAL_BOOKING: 'true'
+      VITE_PROFESSIONAL_CUSTOMER_REGISTRATION: 'true'
+      VITE_PROFESSIONAL_NOTIFICATIONS: 'true'
+      VITE_PROFESSIONAL_PROFILE_PREFERENCES: 'true'
+      VITE_PROFESSIONAL_ORDER_MANAGEMENT: 'true'
+      VITE_PROFESSIONAL_ATTENDANCE: 'true'
+      VITE_PROFESSIONAL_SERVICE_MANAGEMENT: 'true'
+      VITE_PROFESSIONAL_UNIT_BOOKING: 'true'
+      VITE_PROFESSIONAL_EXPLICIT_BRANCH: 'true'
+      VITE_PROFESSIONAL_PUSH: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run build
+      - name: Conferir destino QA e assets da PWA
+        run: |
+          grep -r -q 'eaiutjqvyesboldcznyr.supabase.co' dist/assets
+          test -f dist/professional/index.html
+          test -f dist/professional/sw.js
+          test -f dist/professional/manifest.webmanifest
+      - uses: actions/upload-artifact@v4
+        with:
+          name: salao-premium-qa
+          path: dist/
+          retention-days: 7
+  auth-qa:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_auth
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      SUPABASE_TEST_ENV: isolated
+      SUPABASE_URL: https://eaiutjqvyesboldcznyr.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_wewwCre-CzGgHXLsQtK8fg_qsUpXJmr
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_QA_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Testar Auth real somente em QA
+        run: |
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo 'Secret SUPABASE_QA_SERVICE_ROLE_KEY não configurado.'; exit 1; }
+          node tests/integration/professional-auth-qa.mjs

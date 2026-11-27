@@ -1,0 +1,10 @@
+# Entrega final de homologação — App Profissional
+
+## Pacote QA
+O workflow Professional QA package gera um artefato Vite, não publica automaticamente. Aponta exclusivamente para o Supabase QA e habilita os módulos profissionais (agenda/status/reagendamento, clientes, serviços, atendimento, comandas, perfil, notificações internas e unidade explícita). Push fica desabilitado porque o Firebase ainda depende de configuração de transporte. O pacote contém as três entradas Vite por compartilharem o mesmo build; o foco da homologação é /professional/. Não substituir dist de produção por este pacote.
+
+## Auth real
+O novo teste cria um salão fictício e um profissional, provisiona via função administrativa, testa CPF e senha provisória, gate antes/depois da troca, token e senha antigos, reset e segunda troca. O teste é opt-in no workflow manual, requer somente o secret SUPABASE_QA_SERVICE_ROLE_KEY (chave exclusivamente de QA, nunca de produção). A chave pública de QA está no workflow, a chave privilegiada nunca vai ao bundle. A limpeza confere IDs e nome do salão antes de excluir. Caso haja falha após criar usuário mas antes de vincular perfil, revisar conta órfã em QA; não executar em produção. Teste não executado neste ambiente: o host HTTP não resolve e o conector não permite disparar workflow manual ou configurar secrets. Atualização da função professional-cpf-login foi bloqueada pelo conector; QA mantém a anterior. Não declarar Auth homologado até teste aprovado.
+
+## Liberação
+A main de 603b9b3 passou CI geral, Agenda e 90 cenários visuais. Capturas reais analisadas e Agenda desktop aprimorada. A nova execução valida a geometria. Produção permanece com contratos anteriores; não alterar banco sem backup verificável, comparação do histórico real, ensaio e publicação coordenada das funções e flags. Credenciais Firebase/FCM, agendamento e entrega real em aparelho ainda precisam configuração. Este documento substitui estados antigos de pendência de inspeção visual: a inspeção das capturas sintéticas ocorreu; falta a inspeção das novas capturas, navegador autenticado e aceite do usuário.

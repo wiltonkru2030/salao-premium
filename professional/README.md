@@ -172,3 +172,5 @@ Migration `20261127031423_serialize_professional_auth_operations.sql` instalada 
 
 ### Inspeção visual e preparação final
 Capturas reais do workflow `45933048492` (90 cenários aprovados) baixadas e revisadas em montagem de telas 320/390 px e desktop. Ajuste de Agenda em desktop para calendário e atendimentos lado a lado, com fluxo vertical móvel e tokens globais; teste de geometria incluído. Corrigido texto da central de notificações. A aprovação da nova geometria depende da nova execução do Chromium. Nenhuma alteração de produção.
+
+Pacote QA e Auth real: ver [entrega final](../docs/ENTREGA-APP-PROFISSIONAL.md). Build QA separado, teste Auth real manual e limites de publicação documentados.
