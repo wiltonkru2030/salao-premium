@@ -1,16 +1,15 @@
-/** Entrega FCM v1 de avisos genéricos. Requer chave de agendamento e conta de serviço em secrets.
+/** Entrega FCM v1 de avisos genéricos. Autentica o workflow por OIDC e usa conta de serviço em secret.
  * Não recebe token de dispositivo nem conteúdo do cliente; a fila SQL é a única fonte.
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2.119.0";
+import {createRemoteJWKSet,jwtVerify} from "npm:jose@6.2.18";
+import {allowedDispatchClaims} from "./auth-claims.js";
+const jwks=createRemoteJWKSet(new URL("https://token.actions.githubusercontent.com/.well-known/jwks"),{timeoutDuration:5000});
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
 const bytes=(text:string)=>new TextEncoder().encode(text);
 function base64url(input:Uint8Array){return btoa(String.fromCharCode(...input)).replaceAll("+","-").replaceAll("/","_").replace(/=+$/,"");}
 function encode(value:unknown){return base64url(bytes(JSON.stringify(value)));}
-async function safeEqual(left:string,right:string){
- const a=new Uint8Array(await crypto.subtle.digest("SHA-256",bytes(left))),b=new Uint8Array(await crypto.subtle.digest("SHA-256",bytes(right)));
- let diff=0;for(let i=0;i<a.length;i++)diff|=a[i]^b[i];return diff===0;
-}
 /** OAuth de curta duração, assinado com chave PKCS#8 exclusivamente no servidor. */
 async function accessToken(account:{client_email:string,private_key:string}){
  const pem=account.private_key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g,"");
@@ -24,13 +23,25 @@ async function accessToken(account:{client_email:string,private_key:string}){
 }
 Deno.serve(async(req:Request)=>{
  if(req.method!=="POST")return json({error:"Método não permitido."},405);
- const scheduleKey=Deno.env.get("PROFESSIONAL_PUSH_DISPATCH_SECRET"),provided=req.headers.get("x-dispatch-secret")||"";
- if(!scheduleKey||scheduleKey.length<32||!provided||!await safeEqual(provided,scheduleKey))return json({error:"Acesso não autorizado."},401);
- const url=Deno.env.get("SUPABASE_URL"),serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),accountJSON=Deno.env.get("PROFESSIONAL_FCM_SERVICE_ACCOUNT"),projectId=Deno.env.get("PROFESSIONAL_FCM_PROJECT_ID");
- if(!url||!serviceKey||!accountJSON||!projectId||! /^[a-z0-9-]{4,64}$/.test(projectId))return json({error:"Transporte não configurado."},503);
+ const url=Deno.env.get("SUPABASE_URL"),serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),accountJSON=Deno.env.get("PROFESSIONAL_FCM_SERVICE_ACCOUNT"),projectId=Deno.env.get("PROFESSIONAL_FCM_PROJECT_ID")||"salao-premium";
+ if(!url)return json({error:"Serviço indisponível."},503);
+ // JWT externo: gateway não valida tokens do GitHub; a verificação é feita aqui,
+ // com assinatura, emissor, audiência exclusiva do projeto e escopo exato do workflow.
+ let mode:string;
  try{
-  const account=JSON.parse(accountJSON);
-  if(typeof account.client_email!=="string"||typeof account.private_key!=="string")return json({error:"Transporte não configurado."},503);
+  const body=await req.json();mode=body?.mode;
+  if(!["check","send"].includes(mode))return json({error:"Modo inválido."},400);
+  const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"");
+  if(!token||token.length>8192)return json({error:"Acesso não autorizado."},401);
+  const {payload}=await jwtVerify(token,jwks,{issuer:"https://token.actions.githubusercontent.com",audience:url.replace(/\/$/,"")+"/functions/v1/dispatch-professional-push",algorithms:["RS256"],requiredClaims:["exp","iat","sub"],maxTokenAge:"5m"});
+  if(!allowedDispatchClaims(payload,mode))return json({error:"Acesso não autorizado."},403);
+ }catch{return json({error:"Acesso não autorizado."},401);}
+ let account;
+ try{account=JSON.parse(accountJSON||"{}");}catch{account={};}
+ const configured=!!(serviceKey&&account.project_id===projectId&&typeof account.client_email==="string"&&typeof account.private_key==="string"&&/^[a-z0-9-]{4,64}$/.test(projectId));
+ if(mode==="check")return json({authenticated:true,transportConfigured:configured});
+ if(!configured||!serviceKey)return json({error:"Transporte não configurado."},503);
+ try{
   // Confirma credencial antes de reservar qualquer entrega.
   const bearer=await accessToken(account);
   const admin=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});

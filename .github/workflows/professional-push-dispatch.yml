@@ -1,0 +1,51 @@
+# Envio QA por OIDC, sem chave de agendamento nem service_role no GitHub.
+name: Professional push dispatch
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/professional-push-dispatch.yml'
+      - 'supabase/functions/dispatch-professional-push/**'
+  workflow_dispatch:
+    inputs:
+      send:
+        description: Processar fila real de QA (desmarcado apenas verifica configuração)
+        type: boolean
+        default: false
+  schedule:
+    - cron: '3/5 * * * *'
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: professional-push-dispatch-qa
+  cancel-in-progress: false
+jobs:
+  dispatch:
+    if: github.ref == 'refs/heads/main' && (github.event_name != 'schedule' || vars.PROFESSIONAL_PUSH_QA_ENABLED == 'true')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    env:
+      ENDPOINT: https://eaiutjqvyesboldcznyr.supabase.co/functions/v1/dispatch-professional-push
+      DISPATCH_MODE: ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.send)) && 'send' || 'check' }}
+    steps:
+      - name: Autenticar workflow e consultar dispatcher
+        run: |
+          node --input-type=module <<'NODE'
+          const endpoint=process.env.ENDPOINT;
+          const url=new URL(process.env.ACTIONS_ID_TOKEN_REQUEST_URL);
+          url.searchParams.set("audience",endpoint);
+          const tokenResponse=await fetch(url,{headers:{Authorization:"Bearer "+process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN},signal:AbortSignal.timeout(15000)});
+          if(!tokenResponse.ok)throw Error("Falha OIDC: HTTP "+tokenResponse.status);
+          const {value:token}=await tokenResponse.json();
+          const response=await fetch(endpoint,{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({mode:process.env.DISPATCH_MODE}),signal:AbortSignal.timeout(100000)});
+          if(!response.ok)throw Error("Dispatcher: HTTP "+response.status);
+          const result=await response.json();
+          if(process.env.DISPATCH_MODE==="check"){
+           if(result.authenticated!==true)throw Error("Autorização não confirmada");
+           console.log("OIDC autenticado. Transporte FCM configurado:",result.transportConfigured===true);
+          }else{
+           console.log("Envios confirmados:",Number(result.sent||0),"reenvios:",Number(result.retry||0),"inválidos:",Number(result.invalid||0),"sem confirmação:",Number(result.unconfirmed||0));
+           if(result.unconfirmed>0)process.exitCode=1;
+          }
+          NODE
