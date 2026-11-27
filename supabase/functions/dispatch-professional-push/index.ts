@@ -35,7 +35,8 @@ Deno.serve(async(req:Request)=>{
   const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"");
   if(!token||token.length>8192)return json({error:"Acesso não autorizado."},401);
   const {payload}=await jwtVerify(token,jwks,{issuer:"https://token.actions.githubusercontent.com",audience:url.replace(/\/$/,"")+"/functions/v1/dispatch-professional-push",algorithms:["RS256"],requiredClaims:["exp","iat","sub"],maxTokenAge:"5m"});
-  if(!allowedDispatchClaims(payload,mode))return json({error:"Acesso não autorizado."},403);
+  // Push de código pode drenar apenas a fila de QA; produção continua exigindo disparo manual ou agendado.
+  if(!allowedDispatchClaims(payload,mode,{qa:url.replace(/\/$/,"")==="https://eaiutjqvyesboldcznyr.supabase.co"}))return json({error:"Acesso não autorizado."},403);
  }catch{return json({error:"Acesso não autorizado."},401);}
  let account;
  try{account=JSON.parse(accountJSON||"{}");}catch{account={};}

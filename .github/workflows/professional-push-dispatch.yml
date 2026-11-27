@@ -30,12 +30,13 @@ concurrency:
   cancel-in-progress: false
 jobs:
   dispatch:
-    if: github.ref == 'refs/heads/main' && (github.event_name != 'schedule' || vars.PROFESSIONAL_PUSH_QA_ENABLED == 'true')
+    if: github.ref == 'refs/heads/main' && (github.event_name != 'schedule' || vars.PROFESSIONAL_PUSH_QA_ENABLED != 'false')
     runs-on: ubuntu-24.04
     timeout-minutes: 3
+    # QA: fila de dispositivos opt-in; variável false desliga o agendamento.
     env:
       ENDPOINT: https://eaiutjqvyesboldcznyr.supabase.co/functions/v1/dispatch-professional-push
-      DISPATCH_MODE: ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.send)) && 'send' || 'check' }}
+      DISPATCH_MODE: ${{ (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.send)) && 'send' || 'check' }}
     steps:
       - name: Autenticar workflow e consultar dispatcher
         run: |

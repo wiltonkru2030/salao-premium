@@ -42,3 +42,6 @@ A promoção explícita da central interna está versionada em docs/releases/pro
 
 ### Transporte de produção validado
 Em 27/11/2026 a execução 46072275323 (nova tentativa) retornou autenticado=true, credencial=true, OAuth=true, FCM=true. Nenhum dispositivo registrado ou entrega enfileirada no momento do teste. O manifesto de publicação foi atualizado para habilitar inscrição voluntária, ainda sem disparo automático. O próximo aceite é registrar aparelho, testar recebimento e abertura de agendamento.
+
+### Ativação do despacho QA — 27/11/2026
+Diagnóstico: dois avisos recentes (Profissional agendou e Profissional confirmou) foram persistidos no QA após a inscrição do dispositivo; fila vazia porque o despacho agendado não estava habilitado. QA passa a processar a fila no workflow de push específico e no cron de cinco minutos, com opt-out PROFESSIONAL_PUSH_QA_ENABLED=false. OIDC aceita evento push para send exclusivamente na URL QA, sem aceitar destinatário informado externamente. Produção mantém envio automático separado; não se trata de garantia de latência, e o recebimento físico deve ser confirmado.
