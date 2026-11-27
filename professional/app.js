@@ -29,7 +29,7 @@ import {bindProfessionalBookingSearch} from "./booking-search.js";
 import { renderProfessionalBooking } from "./views/booking.views.js";
 import { renderAgendaView } from "./views/agenda.views.js";
 import { handleAgendaClick } from "./agenda.controller.js";
-import { fetchProfessionalAppointments, updateOwnAppointmentStatus, rescheduleOwnAppointment, createOwnAppointment } from "./appointments.service.js";
+import { fetchProfessionalAppointments, updateOwnAppointmentStatus, rescheduleOwnAppointment, createOwnAppointment, createUnitAppointment } from "./appointments.service.js";
 import {fetchProfessionalServices} from "./services.service.js";
 import { fetchProfessionalOrders, fetchProfessionalOrderItems } from "./orders.service.js";
 import { fetchProfessionalCommissions } from "./commissions.service.js";
@@ -55,6 +55,7 @@ let appointmentStatusPending = false;
 // Ative após aplicar a migration de reagendamento no ambiente correspondente.
 const bookingEnabled = import.meta.env.VITE_PROFESSIONAL_BOOKING === "true";
 const customerRegistrationEnabled = import.meta.env.VITE_PROFESSIONAL_CUSTOMER_REGISTRATION === "true";
+const unitBookingEnabled = import.meta.env.VITE_PROFESSIONAL_UNIT_BOOKING === "true";
 const rescheduleEnabled = import.meta.env.VITE_PROFESSIONAL_RESCHEDULE === "true";
 const serviceLock={active:false,operation:null};
 /** Limpa dados privados antes de exibir a tela de acesso. */
@@ -119,7 +120,7 @@ function appointmentDetails(){
 // Delega a composição visual da agenda para uma view sem efeitos colaterais.
 function agendaView(){
  const booking=bookingEnabled&&state.role==="professional"&&state.professional
-  ?renderProfessionalBooking()
+  ?renderProfessionalBooking({unitBooking:unitBookingEnabled&&customerRegistrationEnabled&&!!state.professional.branch_id})
   :"";
  return renderAgendaView({state,dateKey,monthLabel,dateLabel,appointmentCard,appointmentDetails,booking});
 }
@@ -310,7 +311,8 @@ root.addEventListener("click",async event=>{
   if(action==="open-professional-booking"||action==="close-professional-booking"){
    const dialog=root.querySelector("#professional-booking-dialog");
    if(action==="open-professional-booking"&&dialog&&!dialog.open){
-    bindProfessionalBookingSearch(dialog.querySelector("form"),state);
+    const epoch=sessionEpoch;
+    bindProfessionalBookingSearch(dialog.querySelector("#professional-new-appointment"),state,{client:supabase,isCurrent:()=>epoch===sessionEpoch&&state.page==="Agenda"});
     dialog.showModal();
    }
    if(action==="close-professional-booking")dialog?.close();
@@ -419,7 +421,9 @@ async function applyNewAppointment(form) {
  appointmentStatusPending=true;
  button.disabled=true;
  try {
-  const saved=await createOwnAppointment({client:supabase,organizationId:state.orgId,reference,service,localStart});
+  const unitBooking=unitBookingEnabled&&customerRegistrationEnabled&&!!state.professional?.branch_id&&form.dataset.unitBooking==="true";
+  const options={client:supabase,organizationId:state.orgId,reference,service,localStart};
+  const saved=await (unitBooking?createUnitAppointment({...options,customerId:reference}):createOwnAppointment(options));
   if(epoch!==sessionEpoch)return;
   if(state.page==="Agenda") {
    const date=salonCalendarDate(saved.starts_at,state.organization?.timezone);

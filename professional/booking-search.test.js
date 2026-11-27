@@ -1,0 +1,20 @@
+/** Testes puros de pesquisa, formulário e contrato de agendamento, sem conexão real. */
+import assert from "node:assert/strict";
+import {searchBookingClients} from "./booking-search.js";
+import {renderProfessionalBooking} from "./views/booking.views.js";
+import {createUnitAppointment} from "./appointments.service.js";
+const clients=[{id:"1",name:"Júlia",phone:"(67) 99999-1234"},{id:"2",name:"Ana",phone:"67988888888"}];
+assert.deepEqual(searchBookingClients(clients,"julia").map(c=>c.id),["1"]);
+assert.deepEqual(searchBookingClients(clients,"1234").map(c=>c.id),["1"]);
+assert.match(renderProfessionalBooking({unitBooking:true}),/professional-booking-quick-customer/);
+assert.doesNotMatch(renderProfessionalBooking(),/professional-booking-quick-customer/);
+assert.doesNotMatch(renderProfessionalBooking({unitBooking:true}),/type="date"/);
+let call;
+const client={rpc:async(name,args)=>{call={name,args};return {data:{id:"a",starts_at:"2026-12-01T12:00:00Z"}};}};
+const opts={client,organizationId:"org",customerId:"1",service:"s",localStart:"2026-12-01T09:00"};
+await createUnitAppointment(opts);
+assert.equal(call.name,"create_professional_unit_appointment");
+assert.equal(call.args.target_customer,"1");
+assert.equal(call.args.local_start,opts.localStart);
+await assert.rejects(()=>createUnitAppointment({...opts,client:{rpc:async()=>({error:{code:"23P01"}})}}),/ocupado/);
+console.log("Busca e agendamento por cliente: OK");

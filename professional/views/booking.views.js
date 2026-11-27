@@ -1,7 +1,7 @@
 /** Formulário móvel de agendamento. A Agenda fornece o dia selecionado. */
 
 /** Monta o botão e o diálogo com campos de pesquisa e hora. */
-export function renderProfessionalBooking() {
+export function renderProfessionalBooking({unitBooking=false}={}) {
   return `<div class="professional-booking-action">
     <button class="btn primary" type="button" data-action="open-professional-booking">+ Novo agendamento</button>
   </div>
@@ -11,9 +11,10 @@ export function renderProfessionalBooking() {
         <h2 id="professional-booking-title">Novo agendamento</h2>
         <button type="button" class="sp-modal-close" data-action="close-professional-booking" aria-label="Fechar">×</button>
       </header>
-      <form id="professional-new-appointment">
+      <form id="professional-new-appointment" data-unit-booking="${unitBooking}">
         <div class="sp-modal-body">
           <div class="sp-span sp-labeled-field"><label for="professional-booking-client">Cliente</label><div><input id="professional-booking-client" type="search" data-booking-client placeholder="Buscar por nome ou telefone" autocomplete="off" required></div></div>
+          ${unitBooking?'<button class="btn secondary" type="button" data-booking-quick-open>+ Cadastrar cliente</button>':""}
           <div class="sp-span sp-labeled-field"><label for="professional-booking-service">Serviço</label><div><input id="professional-booking-service" type="search" data-booking-service placeholder="Buscar serviço" autocomplete="off" required></div></div>
           <label class="sp-span">Hora<input name="start" type="time" required></label>
           <p class="sp-span" data-booking-error role="alert" hidden></p>
@@ -23,6 +24,15 @@ export function renderProfessionalBooking() {
           <button type="submit" class="btn primary">Agendar</button>
         </footer>
       </form>
+      ${unitBooking?`<form id="professional-booking-quick-customer" hidden>
+        <div class="sp-modal-body">
+          <h3>Cadastro rápido de cliente</h3>
+          <label class="sp-labeled-field">Nome<input name="name" required minlength="2" maxlength="120" autocomplete="name"></label>
+          <label class="sp-labeled-field">WhatsApp ou telefone<input name="phone" data-mask="phone" inputmode="tel" autocomplete="tel" required></label>
+          <p role="alert" data-quick-customer-error hidden></p>
+        </div>
+        <footer class="sp-modal-foot"><button type="button" class="btn secondary" data-booking-quick-back>Voltar</button><button type="submit" class="btn primary">Salvar e selecionar</button></footer>
+      </form>`:""}
     </div>
   </dialog>`;
 }
