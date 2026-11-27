@@ -14,6 +14,10 @@ on:
       - 'vite.config.js'
   workflow_dispatch:
     inputs:
+      deploy_preview:
+        description: Publicar pacote QA em canal temporário do Firebase (não live)
+        type: boolean
+        default: false
       run_auth:
         description: Executar Auth real com contas fictícias em QA
         type: boolean
@@ -37,7 +41,7 @@ jobs:
       VITE_PROFESSIONAL_SERVICE_MANAGEMENT: 'true'
       VITE_PROFESSIONAL_UNIT_BOOKING: 'true'
       VITE_PROFESSIONAL_EXPLICIT_BRANCH: 'true'
-      VITE_PROFESSIONAL_PUSH: 'false'
+      VITE_PROFESSIONAL_PUSH: 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -50,11 +54,35 @@ jobs:
           test -f dist/professional/index.html
           test -f dist/professional/sw.js
           test -f dist/professional/manifest.webmanifest
+          grep -r -q '357526985236' dist/assets
       - uses: actions/upload-artifact@v4
         with:
           name: salao-premium-qa
           path: dist/
           retention-days: 7
+  preview-qa:
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_preview
+    needs: build-qa
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: salao-premium-qa
+          path: dist/
+      - name: Conferir credencial de hospedagem
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: test -n "$FIREBASE_SERVICE_ACCOUNT" || { echo 'Configure o secret FIREBASE_SERVICE_ACCOUNT com conta exclusiva de Hosting.'; exit 1; }
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: salao-premium
+          channelId: professional-qa
+          expires: 7d
   auth-qa:
     if: github.event_name == 'workflow_dispatch' && inputs.run_auth
     runs-on: ubuntu-24.04

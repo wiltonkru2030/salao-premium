@@ -1,10 +1,11 @@
 /** FCM opt-in: configuração pública e inscrição explícita; sem credenciais de servidor. */
+import {professionalFirebaseConfig,professionalFirebaseVapidKey} from "./firebase-public.config.js";
 const SDK="https://www.gstatic.com/firebasejs/11.10.0/";
 /** Lê apenas campos públicos de configuração. */
 export function readPushConfig(env=import.meta.env||{}){
  if(env.VITE_PROFESSIONAL_PUSH!=="true")return null;
  try{
-  const config=JSON.parse(env.VITE_PROFESSIONAL_FIREBASE_CONFIG||"{}"),vapidKey=env.VITE_PROFESSIONAL_FIREBASE_VAPID_KEY;
+  const config=env.VITE_PROFESSIONAL_FIREBASE_CONFIG===undefined?professionalFirebaseConfig:JSON.parse(env.VITE_PROFESSIONAL_FIREBASE_CONFIG),vapidKey=env.VITE_PROFESSIONAL_FIREBASE_VAPID_KEY??professionalFirebaseVapidKey;
   const keys=["apiKey","projectId","messagingSenderId","appId"];
   if(!keys.every(key=>typeof config[key]==="string"&&config[key])||typeof vapidKey!=="string"||!vapidKey)return null;
   return {config:Object.fromEntries(keys.map(key=>[key,config[key]])),vapidKey};
@@ -13,9 +14,9 @@ export function readPushConfig(env=import.meta.env||{}){
 /** Mantém um único worker do aplicativo, configurado apenas quando habilitado. */
 export async function registerProfessionalWorker(config=readPushConfig()){
  if(!globalThis.navigator?.serviceWorker)return null;
- const url=new URL("./sw.js",globalThis.location.href);
+ const url=new URL("/professional/sw.js",globalThis.location.origin);
  if(config)url.searchParams.set("fcm",JSON.stringify(config.config));
- return navigator.serviceWorker.register(url,{updateViaCache:"none"});
+ return navigator.serviceWorker.register(url,{scope:"/professional/",updateViaCache:"none"});
 }
 /** Envia token somente à RPC autorizada; não usa armazenamento próprio de credenciais. */
 export async function setPushDevice(client,organizationId,token,enabled){
@@ -65,7 +66,7 @@ export function createProfessionalPush({client,config=readPushConfig(),onMessage
   if(previous){try{await setPushDevice(client,previous.organizationId,previous.token,false);}catch{failed=true;}}
   try{
    if(config&&globalThis.navigator?.serviceWorker){
-    const registration=await navigator.serviceWorker.getRegistration(new URL("./",location.href));
+    const registration=await navigator.serviceWorker.getRegistration(new URL("/professional/",location.origin));
     const subscription=await registration?.pushManager.getSubscription();
     if(subscription){
      const {sdk,messaging}=await getMessaging();
