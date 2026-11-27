@@ -5,9 +5,9 @@ const memberships=[{org_id:"a",role:"professional",status:"active"},{org_id:"b",
 const profiles=[{id:"p1",org_id:"a",active:true,access_enabled:true},{id:"p2",org_id:"b",active:true,access_enabled:false},{id:"p3",org_id:"e",active:true,access_enabled:true}];
 const contexts=resolveProfessionalContexts(memberships,profiles);
 assert.deepEqual(contexts.map(c=>c.orgId),["a","c","d"]);
-assert.deepEqual(allowedProfessionalPages(contexts[0]),["Agenda","Comandas","Comissões","Serviços","Clientes","Configurações"]);
-assert.deepEqual(allowedProfessionalPages(contexts[1]),["Agenda","Configurações"]);
-assert.deepEqual(allowedProfessionalPages(contexts[2]),["Agenda","Comandas","Configurações"]);
+assert.deepEqual(allowedProfessionalPages(contexts[0]),["Agenda","Comandas","Comissões","Serviços","Clientes","Perfil","Configurações"]);
+assert.deepEqual(allowedProfessionalPages(contexts[1]),["Agenda","Perfil","Configurações"]);
+assert.deepEqual(allowedProfessionalPages(contexts[2]),["Agenda","Comandas","Perfil","Configurações"]);
 assert.equal(canRegisterProfessionalService(contexts[0],{status:"partially_paid"}),false);
 assert.equal(canRegisterProfessionalService(contexts[0],{status:"paid"}),false);
 assert.equal(canRegisterProfessionalService(contexts[0],{status:"cancelled"}),false);

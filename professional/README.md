@@ -83,3 +83,7 @@ Abrir /professional/ no endereço Vite. Testar em QA com profissionais de dois t
 ## Situação
 
 Arquivos e contratos localizados no Git, não homologados nesta revisão. Existência de código/testes não garante sucesso operacional. Atualizar este documento sempre que mudar regra, permissão ou integração.
+
+## Retomada da meta aprovada — 26/11/2026
+
+Perfil disponível na navegação, com Configurações acessíveis por ele. Para o papel professional, nome e telefone ficam somente para consulta na interface e o controlador não executa a antiga ação de edição. A proteção definitiva deve ser confirmada no banco. Busca instantânea nos serviços vinculados usa o filtro compartilhado. Ainda pendentes: Pix, e-mail e foto por URL com contratos seguros; CRUD e busca de clientes por unidade; cadastro rápido, histórico, CRUD/vínculos de serviços e homologação do fluxo de atendimento/comanda. Não considerar concluído sem testes e validação no navegador.

@@ -15,7 +15,7 @@ export function allowedProfessionalPages(context) {
  if(context.scope!=="calendar_all")pages.push("Comandas");
  if(context.professional&&context.scope!=="calendar_all")pages.push("Comissões");
  if(context.role==="professional"&&context.professional)pages.push("Serviços","Clientes");
- return [...pages,"Configurações"];
+ return [...pages,"Perfil","Configurações"];
 }
 /** Permite registrar serviço apenas quando o próprio profissional e a comanda estão elegíveis. */
 export function canRegisterProfessionalService(context,order) {

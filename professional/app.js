@@ -21,7 +21,7 @@ import {
   getAppointmentClass as appointmentClass
 } from "./utils/formatters.js";
 import { renderProfessionalPasswordChangeView, renderProfessionalLoginView } from "./views/auth.views.js";
-import {ordersView,commissionsView,settingsView} from "./views/workspace.views.js";
+import {ordersView,commissionsView,profileView,settingsView} from "./views/workspace.views.js";
 import { renderProfessionalCustomers } from "./views/customers.views.js";
 import { renderProfessionalServices } from "./views/services.views.js";
 import {bindProfessionalBookingSearch} from "./booking-search.js";
@@ -125,7 +125,7 @@ function render(){
  if(!state.user||!state.orgId)return;
  if(!allowedProfessionalPages(state).includes(state.page))state.page="Agenda";
  clearAutocomplete();
- const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services):state.page==="Clientes"?renderProfessionalCustomers(state.appointments,state.professional?.id,monthLabel(state.month)):settingsView(state, appearance.preference);
+ const content=state.page==="Agenda"?agendaView():state.page==="Comandas"?ordersView(state):state.page==="Comissões"?commissionsView(state):state.page==="Serviços"?renderProfessionalServices(state.services):state.page==="Clientes"?renderProfessionalCustomers(state.appointments,state.professional?.id,monthLabel(state.month)):state.page==="Perfil"?profileView(state):settingsView(state, appearance.preference);
  shell(content);
  if(state.page==="Comandas"&&state.selectedOrder&&state.role==="professional"&&state.professional)bindAutocomplete();
 }
@@ -315,7 +315,8 @@ root.addEventListener("click",async event=>{
  if(order&&allowedProfessionalPages(state).includes("Comandas")){await chooseOrder(order.dataset.order);return;}
  if(action==="back-orders"){state.selectedOrder=null;state.orderItems=[];render();}
 
- if(action==="save-profile"&&state.page==="Configurações"){
+ // Nome e telefone do profissional são mantidos exclusivamente pelo salão.
+ if(action==="save-profile"&&state.page==="Configurações"&&state.role!=="professional"){
   const name=String(document.querySelector("#profile-name")?.value||"").trim(),phone=String(document.querySelector("#profile-phone")?.value||"").trim();
   if(!name||name.length>120){showNotice("Informe um nome válido de até 120 caracteres.");return;}
   const {error}=await supabase.from("profiles").update({full_name:name,phone}).eq("id",state.user.id);
