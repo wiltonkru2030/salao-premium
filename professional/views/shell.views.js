@@ -7,7 +7,7 @@ import {escapeHtml} from "../utils/formatters.js";
 export function renderProfessionalShell({state, content, pages}) {
   const greeting = (state.professional?.name || state.profile?.full_name || "Equipe").split(" ")[0];
   const navigation = pages.filter(page=>page!=="Configurações").map(page=>{
-    const active = state.page===page;
+    const active = state.page===page||(page==="Perfil"&&state.page==="Configurações");
     const icon = navigationIcon(page==="Comandas"?"Comanda":page);
     const bell = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>';
     const profileIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg>';
@@ -33,7 +33,7 @@ export function renderProfessionalShell({state, content, pages}) {
           <button type="button" class="secondary" data-action="logout">Sair</button>
         </div></details>
       </header>
-      <main class="content sp-page-flow">${state.branchId?'<p class="meta">Unidade da Agenda e Comandas: '+escapeHtml(state.branches.find(row=>row.id===state.branchId)?.name||"Unidade")+'</p>':""}${state.notice?'<div class="notice">'+escapeHtml(state.notice)+'</div>':''}${content}</main>
+      <main class="content sp-page-flow">${state.branchId?'<p class="meta">Unidade da Agenda e Comandas: '+escapeHtml(state.branches.find(row=>row.id===state.branchId)?.name||"Unidade")+'</p>':""}${state.notice?'<div class="notice" role="status">'+escapeHtml(state.notice)+'</div>':''}${content}</main>
     </div>
   </div>`;
 }

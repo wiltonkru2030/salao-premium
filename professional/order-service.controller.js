@@ -1,6 +1,7 @@
 /** Controlador do registro de serviços em comandas profissionais. Protege contexto e submissões simultâneas. */
 import {mountAutocomplete} from "../src/components/autocomplete.js";
 import {formatMoney as money} from "./utils/formatters.js";
+import {searchCatalog} from "./utils/search.js";
 import {canRegisterProfessionalService} from "./access.rules.js";
 import {addProfessionalServiceToOrder} from "./order-items.service.js";
 /** Vincula a busca e o registro de serviço; retorna a limpeza dos eventos e da busca. */
@@ -9,7 +10,7 @@ export function bindOrderService({root,state,client,getEpoch,lock,loadOrders,cho
 
  let selected=null;
  const dispose=mountAutocomplete(input,{
-  search:async term=>state.services.filter(s=>s.name.toLocaleLowerCase("pt-BR").includes(term.toLocaleLowerCase("pt-BR"))).slice(0,8),
+  search:term=>searchCatalog(state.services,term),
   getLabel:item=>item.name+" · "+money(item.price),
   onSelect:item=>{selected=item;button.disabled=!item;}
  });

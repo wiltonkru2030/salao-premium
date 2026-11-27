@@ -3,16 +3,12 @@ import {mountAutocomplete} from "../src/components/autocomplete.js";
 import {getProfessionalBookingClients} from "./views/booking.views.js";
 import {listUnitCustomers,saveUnitCustomer} from "./customers.service.js";
 import {formatMoney} from "./utils/formatters.js";
+import {matchesSearch,matchesPhone,searchCatalog} from "./utils/search.js";
 
 const bindings=new WeakMap();
-/** Normaliza acentos, espaços e caixa para buscas em português. */
-function normalized(value){
- return String(value??"").normalize("NFD").replace(/\p{M}/gu,"").toLocaleLowerCase("pt-BR").trim();
-}
 /** Filtra clientes por nome ou telefone e evita exibir o histórico como rótulo. */
 export function searchBookingClients(clients,term){
- const name=normalized(term),digits=/^[+()\d\s-]+$/.test(term)?term.replace(/\D/g,""):"";
- return clients.filter(customer=>normalized(customer.name).includes(name)||(digits.length>=2&&String(customer.phone||"").replace(/\D/g,"").includes(digits))).slice(0,8);
+ return clients.filter(customer=>matchesSearch(customer.name,term)||matchesPhone(customer.phone,term)).slice(0,8);
 }
 /** Monta buscas e cadastro rápido por abertura do modal; libera listeners antigos. */
 export function bindProfessionalBookingSearch(form,state,{client,isCurrent=()=>true}={}){
@@ -28,7 +24,7 @@ export function bindProfessionalBookingSearch(form,state,{client,isCurrent=()=>t
  const label=customer=>customer.name+(customer.phone?" · "+customer.phone:"");
  const disposeClient=mountAutocomplete(input,{search:async term=>searchBookingClients(await getCustomers(),term),getLabel:label,placeholder:"Nenhum cliente encontrado",onSelect(){}});
  const disposeService=mountAutocomplete(form.querySelector("[data-booking-service]"),{
-  search:term=>state.services.filter(service=>normalized([service.name,service.category,formatMoney(service.price),service.duration_minutes+" min"].join(" ")).includes(normalized(term))).slice(0,8),
+  search:term=>searchCatalog(state.services,term),
   getLabel:service=>service.name+" · "+service.duration_minutes+" min · "+formatMoney(service.price),
   placeholder:"Nenhum serviço vinculado encontrado",onSelect(){}
  });

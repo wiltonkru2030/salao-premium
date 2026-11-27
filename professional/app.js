@@ -18,6 +18,8 @@ import {renderNotificationsView} from "./views/notifications.views.js";
 import { installGlobalErrorHandlers, reportError } from "../src/utils/errors.js";
 import { installGlobalMasks, formatCpf } from "../src/utils/input-masks.js";
 import {escapeHtml as esc} from "./utils/formatters.js";
+import {matchesSearch,matchesPhone} from "./utils/search.js";
+import {updatePixField} from "./utils/pix-fields.js";
 import { renderProfessionalPasswordChangeView, renderProfessionalLoginView } from "./views/auth.views.js";
 import {ordersView,commissionsView,profileView,settingsView} from "./views/workspace.views.js";
 import { renderProfessionalCustomers } from "./views/customers.views.js";
@@ -128,24 +130,21 @@ root.addEventListener("keydown", event => {
 // Filtra a lista em memória sem enviar buscas ao banco ou perder o foco.
 root.addEventListener("input", event => {
  // CPF ou e-mail: formata apenas entradas numéricas e preserva o login por e-mail.
- if(event.target.matches("#professional-login [name=login]")&&!event.isComposing&&/^[0-9.\\-\\s]+$/.test(event.target.value)){event.target.value=formatCpf(event.target.value);return;}
+ if(event.target.matches("#professional-login [name=login]")&&!event.isComposing&&/^[0-9.\s-]+$/.test(event.target.value)){event.target.value=formatCpf(event.target.value);return;}
  const control=event.target.closest("[data-professional-list-search]");
  if(!control)return;
- const normalize=value=>value.normalize("NFD").replace(/\p{M}/gu,"").toLocaleLowerCase("pt-BR").trim();
- const term=normalize(control.value);
- const list=control.closest("[data-professional-list]");
+ const term=control.value.trim(),list=control.closest("[data-professional-list]");
+ if(!list)return;
  let visible=0;
  for(const item of list.querySelectorAll("[data-professional-search-text]")){
-  const text=normalize(item.dataset.professionalSearchText);
-  const digits=term.replace(/\D/g,"");
-  const phoneMatch=digits&&/^[+()\d\s-]+$/.test(term)&&item.dataset.professionalPhone?.includes(digits);
-  item.hidden=!text.includes(term)&&!phoneMatch;
+  item.hidden=!matchesSearch(item.dataset.professionalSearchText,term)&&!matchesPhone(item.dataset.professionalPhone,term);
   if(!item.hidden)visible++;
  }
- list.querySelector("[data-professional-search-empty]").hidden=visible>0||!term;
+ const empty=list.querySelector("[data-professional-search-empty]");if(empty)empty.hidden=visible>0||!term;
 });
 root.addEventListener("change", event => {
  if (event.target.matches("[data-platform-appearance]")) appearance.set(event.target.value);
+ if(event.target.matches("#professional-profile-preferences [name=pixType]"))updatePixField(event.target.form);
 });
 /** Persiste a mudança e atualiza o cartão apenas se a sessão ainda for a mesma. */
 root.addEventListener("click",async event=>{

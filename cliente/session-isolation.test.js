@@ -37,7 +37,7 @@ assert.match(customerClient, /passkey:\s*true/);
 
 // Sair de um aplicativo não deve revogar sessões dos outros no mesmo projeto.
 for (const authSource of [read("../src/auth/auth.js"), read("./services/authService.js"),
-  read("../professional/app.js")]) {
+  read("../professional/controllers/session.controller.js")]) {
   assert.match(authSource, /supabase\.auth\.signOut\(\{\s*scope:\s*["']local["']/,
     "Cada aplicativo deve encerrar apenas a própria sessão.");
 }

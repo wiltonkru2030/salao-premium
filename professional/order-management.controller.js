@@ -1,9 +1,8 @@
 /** Controla mutações da comanda e busca compartilhada, com isolamento de sessão. */
 import {mountAutocomplete} from "../src/components/autocomplete.js";
 import {formatMoney} from "./utils/formatters.js";
+import {searchCatalog} from "./utils/search.js";
 import {canManageOrder,orderItemEditPayload,professionalOrderAction} from "./order-management.service.js";
-/** Normaliza acentos para pesquisa no catálogo. */
-const normalize=value=>String(value??"").normalize("NFD").replace(/\p{M}/gu,"").toLocaleLowerCase("pt-BR").trim();
 /** Monta os controles da comanda e retorna a rotina de limpeza dos listeners. */
 export function bindOrderManagement({root,state,client,getEpoch,lock,loadOrders,loadAppointments,chooseOrder,showNotice,reportError}){
  const panel=root.querySelector("[data-managed-order]");
@@ -13,7 +12,7 @@ export function bindOrderManagement({root,state,client,getEpoch,lock,loadOrders,
  const rpc=(operation,payload)=>professionalOrderAction({client,organizationId,order,operation,payload});
  const errorBox=panel.querySelector("[data-managed-order-error]"),selected={service:null,product:null},disposers=[];
  let products=null;
- const filter=(rows,term)=>rows.filter(item=>normalize(item.name+" "+formatMoney(item.price)).includes(normalize(term))).slice(0,8);
+ const filter=(rows,term)=>searchCatalog(rows,term);
  for(const type of ["service","product"]){
   const input=panel.querySelector("[data-managed-"+type+"]"),button=panel.querySelector('[data-managed-add="'+type+'"]');
   disposers.push(mountAutocomplete(input,{

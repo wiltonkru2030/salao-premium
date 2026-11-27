@@ -69,3 +69,10 @@
  #professional-app .professional-calendar .day{min-block-size:40px}
  #professional-app .professional-workspace .professional-top-brand{letter-spacing:.05em}
 }
+
+/* Acessibilidade dos campos e navegação: foco visível sem depender apenas de cor. */
+#professional-app :is(button,a,input,select,summary):focus-visible{outline:2px solid var(--sp-gold);outline-offset:3px}
+#professional-app .professional-workspace input[type=checkbox]{inline-size:20px;block-size:20px;flex:none;accent-color:var(--sp-action)}
+#professional-app #professional-profile-preferences label:has(input[type=checkbox]){display:flex;align-items:center;gap:10px;min-block-size:44px}
+#professional-app .professional-workspace :is(button,input,select):disabled{cursor:not-allowed}
+@media(prefers-reduced-motion:reduce){#professional-app *,#professional-app *::before,#professional-app *::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}

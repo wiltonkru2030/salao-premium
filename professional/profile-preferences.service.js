@@ -5,7 +5,11 @@ export function normalizeProfilePreferences({email,pixType,pixKey,photoUrl,notif
  if(contact&&!emailValid(contact))throw new Error("Informe um e-mail de contato válido.");
  if(Boolean(type)!==Boolean(key))throw new Error("Informe o tipo e a chave Pix ou deixe ambos vazios.");
  let normalized=key;
- if(["cpf","cnpj","phone"].includes(type))normalized=key.replace(/\D/g,"");
+ if(["cpf","cnpj","phone"].includes(type)){
+  if(!/^[0-9.()\s+/-]+$/.test(key))throw new Error("Confira o formato da chave Pix.");
+  normalized=key.replace(/\D/g,"");
+ }
+ if(type==="phone"&&key.startsWith("+")&&!/^55\d{10,11}$/.test(normalized))throw new Error("Informe uma chave Pix de telefone brasileiro com DDD.");
  if(type==="phone"&&/^\d{10,11}$/.test(normalized))normalized="55"+normalized;
  const valid={cpf:/^\d{11}$/,cnpj:/^\d{14}$/,phone:/^55\d{10,11}$/,random:/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i};
  if(type&&!(type==="email"?emailValid(normalized):valid[type]?.test(normalized)))throw new Error("Confira o formato da chave Pix.");

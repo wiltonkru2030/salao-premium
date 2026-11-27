@@ -141,7 +141,7 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
    if(metaError){reportError(metaError,{context:"App Profissional > concluir troca obrigatória de senha"});state.notice="Senha alterada, mas não foi possível concluir a atualização do acesso. Entre novamente.";changePasswordView();return;}
    const {data:userData,error:userError}=await supabase.auth.getUser();
    if(epoch!==getEpoch())return;
-   if(userError||!userData?.user){if(userError)reportError(userError,{context:"App Profissional > confirmar sessão após troca de senha"});state.notice="Entre novamente para continuar.";await supabase.auth.signOut();loginView();return;}
+   if(userError||!userData?.user){if(userError)reportError(userError,{context:"App Profissional > confirmar sessão após troca de senha"});state.notice="Entre novamente para continuar.";await endSession("Entre novamente para continuar.");return;}
    state.user=userData.user;await loadBase();return;
   }
   if(!event.target.matches("#professional-login"))return;

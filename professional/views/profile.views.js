@@ -2,6 +2,7 @@
 import {renderPlatformAppearance} from "../../src/components/platform-appearance.js";
 import {formatSavedPhone} from "../../src/utils/input-masks.js";
 import {escapeHtml as esc} from "../utils/formatters.js";
+import {pixFieldConfig,displayPixKey} from "../utils/pix-fields.js";
 const detail=(label,value)=>'<div class="detail-row"><span>'+esc(label)+'</span><b>'+esc(value||"Não informado")+'</b></div>';
 /** Exibe dados do cadastro administrativo, sem mostrar a chave Pix na página inicial. */
 export function profileView(state,{preferencesEnabled=false}={}){
@@ -19,13 +20,13 @@ export function profileView(state,{preferencesEnabled=false}={}){
 function preferencesView(state){
  if(state.profilePreferencesStatus==="error")return '<section class="detail sp-content-surface"><p role="alert">Não foi possível carregar suas preferências.</p><button class="btn secondary" data-action="refresh-professional-profile">Tentar novamente</button></section>';
  if(state.profilePreferencesStatus!=="ready")return '<p role="status">Carregando preferências...</p>';
- const p=state.profilePreferences;
+ const p=state.profilePreferences,field=pixFieldConfig(p.pix_type);
  const types=[["","Sem chave"],["cpf","CPF"],["cnpj","CNPJ"],["phone","Telefone com DDD"],["email","E-mail"],["random","Chave aleatória"]];
  return '<section class="detail sp-content-surface professional-settings-card"><h3>Dados de contato e preferências</h3><form id="professional-profile-preferences">'+
  '<label class="sp-labeled-field">E-mail de contato<input name="email" type="email" maxlength="254" autocomplete="email" value="'+esc(p.email||"")+'"></label><p class="muted">Não altera o login por CPF.</p>'+
  '<label class="sp-labeled-field">Endereço da foto (HTTPS)<input name="photoUrl" type="url" maxlength="2048" value="'+esc(p.photo_url||"")+'"></label>'+
  '<label class="sp-labeled-field">Tipo de chave Pix<select name="pixType">'+types.map(([value,label])=>'<option value="'+value+'"'+((p.pix_type||"")===value?' selected':'')+'>'+label+'</option>').join("")+'</select></label>'+
- '<label class="sp-labeled-field">Chave Pix<input name="pixKey" maxlength="254" autocomplete="off" value="'+esc(p.pix_key||"")+'"></label><p class="muted">Chave declarada, não verificada. Não autoriza transferências. Para remover, selecione Sem chave e apague o campo.</p>'+
+ '<label class="sp-labeled-field">Chave Pix<input name="pixKey" data-mask="'+field.mask+'" inputmode="'+field.inputMode+'" placeholder="'+esc(field.placeholder)+'" maxlength="'+field.maxLength+'" autocomplete="off" '+(p.pix_type?"required ":"disabled ")+'value="'+esc(displayPixKey(p.pix_type,p.pix_key))+'"></label><p class="muted">Chave declarada, não verificada. Não autoriza transferências. Para remover, selecione Sem chave e salve.</p>'+
  '<h3>Preferências de notificações</h3><label><input type="checkbox" name="notifyAgenda"'+(p.notify_agenda?' checked':'')+'> Agenda e atendimentos</label><label><input type="checkbox" name="notifyCommissions"'+(p.notify_commissions?' checked':'')+'> Comissões e repasses</label><p class="muted">Preferências salvas. Envio de notificações depende da configuração do serviço.</p>'+
  '<p role="alert" data-profile-preferences-error hidden></p><button class="btn primary" type="submit">Salvar preferências</button></form></section>';
 }
