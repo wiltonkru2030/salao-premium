@@ -38,7 +38,7 @@ export function renderProfessionalLoginView(notice = "", appearance) {
       <label>Senha<input name="password" type="password" autocomplete="current-password" placeholder="Sua senha" required></label>
       <button class="auth-submit" type="submit">Entrar no sistema</button>
     </form>`,
-    footer: '<p class="auth-legal">Profissionais usam CPF. A recuperação de senha é feita pelo administrador do salão.</p>' +
+    footer: '<details class="auth-legal"><summary>Esqueci minha senha</summary><p>Solicite uma senha temporária ao administrador do salão. Não enviamos senha por SMS ou e-mail.</p></details>' +
       renderPlatformAppearance(appearance)
   });
 }

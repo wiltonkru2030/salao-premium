@@ -4,6 +4,7 @@ import { createPlatformAppearance } from "../src/components/platform-appearance.
 import {renderProfessionalShell, setProfessionalMenuOpen} from "./views/shell.views.js";
 import { renderPlatformMark } from "../src/components/platform-mark.js";
 import {authenticateProfessional} from "./auth.service.js";
+import {fetchProfessionalContexts,verifyProfessionalSession,sameProfessionalScope,ProfessionalSessionError} from "./session.service.js";
 import { supabase } from "./supabase.client.js";
 import {bindOrderService} from "./order-service.controller.js";
 import {bindOrderManagement} from "./order-management.controller.js";
@@ -47,13 +48,15 @@ installGlobalMasks();
 const appearance = createPlatformAppearance("salao-premium:professional-appearance");
 const root=document.querySelector("#professional-app");
 const state={
- user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,profilePreferences:null,profilePreferencesStatus:"idle",notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,organization:null,
+ user:null,contextCount:0,orgId:null,role:null,scope:"none",professional:null,profile:null,profilePreferences:null,profilePreferencesStatus:"idle",notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,organization:null,
  page:"Agenda",month:new Date(new Date().getFullYear(),new Date().getMonth(),1),
  selectedDate:new Date(),selectedAppointment:null,appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",
  commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedOrder:null,orderItems:[],notice:""
 };
 let disposeAutocomplete=null;
 let sessionEpoch=0;
+let recheckingSession=false;
+let endingSession=false;
 // Ative a interface no build após instalar a migration correspondente no Supabase.
 const appointmentStatusEnabled = import.meta.env.VITE_PROFESSIONAL_APPOINTMENT_STATUS === "true";
 let appointmentStatusPending = false;
@@ -69,8 +72,15 @@ const unitBookingEnabled = import.meta.env.VITE_PROFESSIONAL_UNIT_BOOKING === "t
 const rescheduleEnabled = import.meta.env.VITE_PROFESSIONAL_RESCHEDULE === "true";
 const serviceLock={active:false,operation:null};
 /** Limpa dados privados antes de exibir a tela de acesso. */
-function clearPrivateState(){sessionEpoch++;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();Object.assign(state,{user:null,orgId:null,role:null,scope:"none",professional:null,profile:null,profilePreferences:null,profilePreferencesStatus:"idle",notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,organization:null,page:"Agenda",appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedAppointment:null,selectedOrder:null,orderItems:[]});}
-async function endSession(notice=""){clearPrivateState();state.notice=notice;loginView();try{const {error}=await supabase.auth.signOut({scope:"local"});if(error)throw error;}catch(error){reportError(error,{context:"App Profissional > encerrar sessão"});}}
+function clearPrivateState(){sessionEpoch++;appointmentStatusPending=false;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();Object.assign(state,{user:null,contextCount:0,orgId:null,role:null,scope:"none",professional:null,profile:null,profilePreferences:null,profilePreferencesStatus:"idle",notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,organization:null,page:"Agenda",appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedAppointment:null,selectedOrder:null,orderItems:[]});}
+/** Limpa a interface imediatamente; encerra apenas a sessão profissional local. */
+async function endSession(notice=""){
+ if(endingSession)return;
+ endingSession=true;clearPrivateState();state.notice=notice;loginView();
+ try{const {error}=await supabase.auth.signOut({scope:"local"});if(error)throw error;}
+ catch{state.notice=notice||"Não foi possível confirmar o encerramento da sessão. Confira a conexão.";loginView();}
+ finally{endingSession=false;}
+}
 
 // Formatadores puros são mantidos em professional/utils/formatters.js.
 function showNotice(message){if(!state.user||!state.orgId)return;state.notice=message;render();}
@@ -144,22 +154,21 @@ function render(){
 }
 // Resolve vínculo, escopo e permissões antes de liberar os módulos.
 async function loadBase(selectedOrgId=null){
- const epoch=++sessionEpoch,userId=state.user?.id;
+ const userId=state.user?.id;
  if(!userId)throw new Error("Sua sessão expirou.");
- const [members,profiles]=await Promise.all([
-  supabase.from("org_memberships").select("org_id,role,status,professional_app_enabled,professional_app_scope").eq("user_id",userId).eq("status","active"),
-  supabase.from("professionals").select("id,name,phone,email,specialty,profile_id,org_id,branch_id,active,access_enabled,can_edit_own_orders").eq("profile_id",userId).eq("active",true).eq("access_enabled",true)
- ]);
- if(epoch!==sessionEpoch)return;
- if(members.error||profiles.error)throw new Error("Não foi possível consultar as permissões da conta.");
- let contexts=resolveProfessionalContexts(members.data||[],profiles.data||[]);
- if(!contexts.length)throw new Error("O acesso ao aplicativo não está habilitado para esta conta.");
+ // Retira dados do contexto anterior antes de consultar novas permissões.
+ const user=state.user;clearPrivateState();state.user=user;
+ const loadEpoch=sessionEpoch;
+ root.innerHTML='<div class="boot" role="status">Carregando acesso ao salão…</div>';
+ let contexts=await fetchProfessionalContexts(supabase,userId);
+ if(loadEpoch!==sessionEpoch)return;
  const names=await supabase.from("organizations").select("id,name,timezone,currency").in("id",contexts.map(c=>c.orgId));
- if(epoch!==sessionEpoch)return;
+ if(loadEpoch!==sessionEpoch)return;
  if(names.error)throw new Error("Não foi possível consultar os salões vinculados.");
  const orgs=new Map((names.data||[]).map(o=>[o.id,o]));
  contexts=contexts.filter(c=>orgs.has(c.orgId));
  if(!contexts.length)throw new Error("Não foi possível identificar um salão autorizado.");
+ state.contextCount=contexts.length;
  const context=selectedOrgId?contexts.find(c=>c.orgId===selectedOrgId):contexts.length===1?contexts[0]:null;
  if(!context){
   Object.assign(state,{orgId:null,role:null,scope:"none",professional:null,organization:null,profile:null,profilePreferences:null,profilePreferencesStatus:"idle",notifications:[],notificationsUnread:0,notificationsStatus:"idle",notificationsFilter:false,appointments:[],customers:[],customerHistory:[],selectedCustomer:null,customerEditor:null,customersStatus:"idle",customerHistoryStatus:"idle",orders:[],services:[],serviceCatalog:[],serviceEditor:null,serviceCatalogStatus:"idle",commissions:[],commissionPayouts:[],commissionStatus:"idle",commissionFilters:{from:"",to:"",status:"all",type:"all"},selectedPayout:null,selectedAppointment:null,selectedOrder:null,orderItems:[]});
@@ -171,12 +180,12 @@ async function loadBase(selectedOrgId=null){
  state.selectedDate=salonCalendarDate(new Date(),state.organization?.timezone);
  state.month=new Date(state.selectedDate.getFullYear(),state.selectedDate.getMonth(),1);
  const profileResult=await supabase.from("profiles").select("full_name,phone").eq("id",userId).maybeSingle();
- if(epoch!==sessionEpoch)return;
+ if(loadEpoch!==sessionEpoch)return;
  if(profileResult.error)throw new Error("Não foi possível carregar seu perfil.");
  state.profile=profileResult.data;
  const pages=allowedProfessionalPages(state);
  await Promise.all([loadAppointments(),...(pages.includes("Comandas")?[loadOrders()]:[]),...(state.role==="professional"?[loadServices()]:[]),...(pages.includes("Comissões")?[loadCommissions()]:[]),...(pages.includes("Notificações")?[loadNotifications()]:[])]);
- if(epoch!==sessionEpoch)return;
+ if(loadEpoch!==sessionEpoch)return;
  state.notice="";render();
 }
 // Carrega somente agendamentos permitidos pelo escopo profissional.
@@ -506,6 +515,10 @@ root.addEventListener("click",async event=>{
    return;
   }
   if(action==="logout"){await endSession();return;}
+  if(action==="retry-professional-session"){if(!recheckingSession){await boot();}return;}
+  if(action==="choose-professional-context"&&state.user&&state.contextCount>1){
+   try{await loadBase();}catch(error){await endSession(error instanceof ProfessionalSessionError?error.message:"Não foi possível consultar os salões.");}return;
+  }
   const orgControl=event.target.closest("[data-context-org]");
   if(orgControl&&state.user){orgControl.disabled=true;try{await loadBase(orgControl.dataset.contextOrg);}catch(error){await endSession("Não foi possível acessar este salão.");}return;}
   if(!state.user||!state.orgId)return;
@@ -691,7 +704,7 @@ root.addEventListener("submit",async event=>{
   if(userError||!userData.user){if(userError)reportError(userError,{context:"App Profissional > confirmar sessão após troca de senha"});state.notice="Entre novamente para continuar.";await supabase.auth.signOut();loginView();return;}
   state.user=userData.user;await loadBase();return;
  }
- if(!event.target.matches("#professional-login"))return;
+ if(!event.target.matches("#professional-login")||endingSession)return;
  event.preventDefault();const values=new FormData(event.target),login=String(values.get("login")||"").trim(),password=String(values.get("password")||"");
  const button=event.target.querySelector("button[type=submit]");button.disabled=true;button.textContent="Validando…";
  try{
@@ -699,19 +712,60 @@ root.addEventListener("submit",async event=>{
   state.user=user;state.notice="";
   if(state.user.user_metadata?.must_change_password){changePasswordView();return;}
   await loadBase();
- }catch(error){reportError(error,{context:"App Profissional > entrar"});await endSession("Não foi possível entrar. Confira suas credenciais e permissões.");}
+ }catch(error){
+  const message=error instanceof ProfessionalSessionError?error.message:"Não foi possível entrar. Confira suas credenciais e permissões.";
+  if(state.user)await endSession(message);else{state.notice=message;loginView();}
+ }
  finally{if(button){button.disabled=false;button.textContent="Entrar";}}
  }catch(error){reportError(error,{context:"App Profissional > envio de formulário"});}
 });
-// Inicialização do PWA: sessão existente ou tela de login.
-async function boot(){
- if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"}).catch(()=>{});
- const {data,error}=await supabase.auth.getUser();
- if(error){reportError(error,{context:"App Profissional > recuperar sessão"});state.notice="Não foi possível recuperar sua sessão.";loginView();return;}
- if(data.user){
-  state.user=data.user;
-  if(state.user.user_metadata?.must_change_password){changePasswordView();return;}
-  try{await loadBase();}catch(error){reportError(error,{context:"App Profissional > inicializar dados da sessão"});state.notice="Não foi possível carregar seus dados. Entre novamente ou contate o administrador.";await endSession("Não foi possível carregar seus dados. Entre novamente ou contate o administrador.");}
- }else loginView();
+/** Oculta dados quando não é possível verificar a conta; permite retomar sessão válida. */
+function sessionRetryView(message){
+ clearPrivateState();
+ root.innerHTML='<main class="auth-shell professional-auth"><section class="auth-panel"><h1>Verificar acesso</h1><p role="alert">'+esc(message)+'</p><button class="primary" data-action="retry-professional-session">Tentar novamente</button><button class="secondary" data-action="logout">Sair</button></section></main>';
 }
+/** Revalida ao retornar ao app, preservando a página quando as permissões não mudaram. */
+async function recheckSession(){
+ if(!state.user||!state.orgId||recheckingSession||endingSession)return;
+ const epoch=sessionEpoch,previous={orgId:state.orgId,role:state.role,scope:state.scope,professional:state.professional};
+ recheckingSession=true;
+ try{
+  const user=await verifyProfessionalSession(supabase);
+  if(epoch!==sessionEpoch)return;
+  if(user.id!==state.user.id){await endSession("A conta foi alterada. Entre novamente.");return;}
+  if(user.user_metadata?.must_change_password){clearPrivateState();state.user=user;changePasswordView();return;}
+  const contexts=await fetchProfessionalContexts(supabase,user.id);
+  if(epoch!==sessionEpoch)return;
+  const next=contexts.find(context=>context.orgId===previous.orgId);
+  if(!next){await endSession("Seu acesso ao salão foi alterado. Entre novamente.");return;}
+  if(!sameProfessionalScope(previous,next)){state.user=user;await loadBase(previous.orgId);return;}
+  state.user=user;state.contextCount=contexts.length;
+ }catch(error){
+  if(epoch!==sessionEpoch)return;
+  if(error instanceof ProfessionalSessionError&&["EXPIRED","DISABLED","NO_CONTEXT"].includes(error.code))await endSession(error.message);
+  else sessionRetryView("Não foi possível verificar seu acesso. Confira a conexão e tente novamente.");
+ }finally{recheckingSession=false;}
+}
+/** Inicializa sessão persistida sem confundir falhas de rede com credenciais inválidas. */
+async function boot(){
+ if(recheckingSession||endingSession)return;
+ recheckingSession=true;const epoch=sessionEpoch;
+ try{
+  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"}).catch(()=>{});
+  const user=await verifyProfessionalSession(supabase);
+  if(epoch!==sessionEpoch)return;
+  state.user=user;
+  if(user.user_metadata?.must_change_password){changePasswordView();return;}
+  await loadBase();
+ }catch(error){
+  if(error instanceof ProfessionalSessionError&&error.code==="EXPIRED"){clearPrivateState();state.notice="";loginView();}
+  else if(error instanceof ProfessionalSessionError&&["DISABLED","NO_CONTEXT"].includes(error.code))await endSession(error.message);
+  else sessionRetryView("Não foi possível recuperar seu acesso. Confira a conexão e tente novamente.");
+ }finally{recheckingSession=false;}
+}
+// Eventos de sessão não chamam Auth dentro do callback, evitando bloqueio do SDK.
+supabase.auth.onAuthStateChange(event=>{
+ if(event==="SIGNED_OUT"&&!endingSession){clearPrivateState();state.notice="Sua sessão terminou. Entre novamente.";loginView();}
+});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")void recheckSession();});
 boot();

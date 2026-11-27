@@ -28,6 +28,7 @@ export function renderProfessionalShell({state, content, pages}) {
         <div class="brand sp-professional-brand professional-top-brand">${renderPlatformMark()}<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div>
         <details class="professional-profile-menu"><summary class="secondary" aria-label="Perfil de ${escapeHtml(greeting)}">Perfil</summary><div class="detail sp-content-surface">
           <button type="button" class="secondary" data-page="Perfil">Meu perfil</button>
+          ${state.contextCount>1?'<button type="button" class="secondary" data-action="choose-professional-context">Trocar salão</button>':""}
           <button type="button" class="secondary" data-action="logout">Sair</button>
         </div></details>
       </header>

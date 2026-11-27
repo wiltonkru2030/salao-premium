@@ -1,0 +1,22 @@
+/** Testes de sessão, revogação e mudança de contexto, sem credenciais reais. */
+import assert from "node:assert/strict";
+import {verifyProfessionalSession,fetchProfessionalContexts,sameProfessionalScope} from "./session.service.js";
+import {loginFailure} from "./auth.service.js";
+const user={id:"u"};
+assert.equal(await verifyProfessionalSession({auth:{getUser:async()=>({data:{user}})}}),user);
+await assert.rejects(()=>verifyProfessionalSession({auth:{getUser:async()=>({error:{status:401}})}}),{code:"EXPIRED"});
+await assert.rejects(()=>verifyProfessionalSession({auth:{getUser:async()=>{throw new Error("offline")}}}),{code:"CONNECTION"});
+const membership={org_id:"o",role:"professional",status:"active"};
+const profile={org_id:"o",id:"p",active:true,access_enabled:true,branch_id:"b",can_edit_own_orders:true};
+const mock=(members,profiles)=>({from:table=>({select(){return this;},eq(){return this;},then(resolve){return Promise.resolve({data:table==="org_memberships"?members:profiles}).then(resolve);}})});
+const [ctx]=await fetchProfessionalContexts(mock([membership],[profile]),"u");
+assert.equal(ctx.orgId,"o");
+await assert.rejects(()=>fetchProfessionalContexts(mock([membership],[{...profile,access_enabled:false}]),"u"),{code:"DISABLED"});
+await assert.rejects(()=>fetchProfessionalContexts(mock([],[]),"u"),{code:"NO_CONTEXT"});
+assert.equal(sameProfessionalScope(ctx,{...ctx,professional:{...profile,branch_id:"other"}}),false);
+assert.equal(sameProfessionalScope(ctx,{...ctx,professional:{...profile,can_edit_own_orders:false}}),false);
+assert.equal(sameProfessionalScope(ctx,ctx),true);
+assert.equal(loginFailure({context:{status:429}},"inválido").code,"RATE_LIMIT");
+assert.equal(loginFailure({name:"FunctionsFetchError"},"inválido").code,"CONNECTION");
+assert.equal(loginFailure({context:{status:401}},"inválido").code,"INVALID_CREDENTIALS");
+console.log("Sessão e escopo profissional: OK");
