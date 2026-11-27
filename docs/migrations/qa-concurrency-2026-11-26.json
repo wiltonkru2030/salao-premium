@@ -1,0 +1,66 @@
+{
+  "base": "885725e693c264f461cc50af2601b82436328ba7",
+  "environment": "QA",
+  "agenda": {
+    "distinct_pids": [
+      337934,
+      337935
+    ],
+    "results": [
+      "ok",
+      "23P01"
+    ],
+    "count": 1,
+    "overlap": false,
+    "times": [
+      [
+        "2026-11-27T03:02:02.316205Z",
+        "2026-11-27T03:02:04.360753Z"
+      ],
+      [
+        "2026-11-27T03:02:06.159634Z",
+        "2026-11-27T03:02:06.171942Z"
+      ]
+    ]
+  },
+  "payment": {
+    "distinct_pids": [
+      337941,
+      337942
+    ],
+    "replayed": [
+      false,
+      true
+    ],
+    "payments": 1,
+    "received": "25.00",
+    "cash_entries": 1,
+    "commissions": "12.50",
+    "overlap": false,
+    "times": [
+      [
+        "2026-11-27T03:02:14.168574Z",
+        "2026-11-27T03:02:16.205623Z"
+      ],
+      [
+        "2026-11-27T03:02:17.789922Z",
+        "2026-11-27T03:02:17.794539Z"
+      ]
+    ]
+  },
+  "cleanup": {
+    "initial_failures": [
+      "appointment has confirmed payment",
+      "organization FK on cascading appointment unlink",
+      "appointment referenced by commission"
+    ],
+    "final": {
+      "orgs": 0,
+      "users": 0,
+      "audit_events": 0,
+      "audit_logs": 0,
+      "recycle_bin": 0
+    }
+  },
+  "concurrency": "inconclusive"
+}

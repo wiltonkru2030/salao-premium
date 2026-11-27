@@ -36,3 +36,6 @@ O teste exige `SUPABASE_TEST_ENV=isolated` e `SUPABASE_QA_PROJECT_URL` igual a `
 `expense-cancellation-scope.sql` verifica, em transação revertida, que o gerente só cancela despesas da unidade atribuída, a recepção não cancela despesas e o proprietário mantém acesso às unidades do seu salão. Execute apenas no projeto de QA depois da migration de escopo correspondente.
 
 `quote-group-audit.sql` verifica em uma transação revertida o orçamento aceito com dois profissionais, a geração dos horários, a abertura da comanda agrupada, duas parcelas e o rateio das comissões. Execute somente no Supabase de homologação.
+
+## Concorrência SQL real
+`SUPABASE_TEST_ENV=isolated QA_DATABASE_URL=<DSN de QA fornecido por variável segura> npm run test:integration:concurrency`. Exige psql e conexão direta ao host QA autorizado; não usar produção. O teste exige sobreposição temporal e PIDs distintos, valida agenda e recebimento idempotente, estorna e remove registros exclusivamente sintéticos. Não executado na conexão direta ainda. O DSN não deve ser escrito no repositório ou impresso. Em falha de limpeza, o teste informa os UUIDs fictícios; revisar somente esses registros.
