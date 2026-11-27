@@ -39,3 +39,6 @@ Migration `20261127022502_professional_password_server_gate.sql` instalada em QA
 
 ### Refatoração estrutural — primeira etapa
 Controladores de Clientes, Serviços, Notificações, Perfil, Financeiro e Atendimento isolados em `professional/controllers/`; composição visual da Agenda em `views/agenda-workspace.views.js`. Estado inicial e limpeza em `workspace-state.js`, incluindo campos dinâmicos, filtros e status. Bloqueio de mutação da Agenda por geração evita que operação antiga libere bloqueio de sessão nova. Teste `npm run test:professional-workspace-state` incluído na suíte. Sem alteração de contratos SQL, produção ou flags. A entrada caiu de 806 para 421 linhas; navegação, autenticação e composição ainda podem ser subdivididas. CI e navegador precisam confirmar regressões.
+
+### Refatoração e carregamento sob demanda
+Controladores de sessão e navegação separados. `app.js` agora tem 289 linhas. Entrada consulta Agenda; notificações em consulta separada após renderizar; Comandas, extrato, clientes e serviços são carregados ao abrir a página, ou catálogo ao abrir agendamento. Falhas de Agenda não encerram sessão válida e possuem recuperação; Comandas têm estado de carregamento/erro. Nenhum SQL/flag ou ambiente de produção alterado. Testes CI e medição real de desempenho no navegador pendentes.

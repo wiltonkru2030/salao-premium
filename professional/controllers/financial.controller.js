@@ -7,8 +7,14 @@ export function createFinancialController({state,supabase,getEpoch,render,report
  // Carrega comandas visíveis ao usuário autenticado.
  async function loadOrders(){
   const epoch=getEpoch();
-  const rows=await fetchProfessionalOrders({client:supabase,organizationId:state.orgId,branchId:state.branchId});
-  if(epoch===getEpoch())state.orders=rows;
+  state.ordersStatus="loading";if(state.page==="Comandas"&&!state.selectedOrder)render();
+  try{
+   const rows=await fetchProfessionalOrders({client:supabase,organizationId:state.orgId,branchId:state.branchId});
+   if(epoch===getEpoch()){state.orders=rows;state.ordersStatus="ready";}
+  }catch(error){
+   if(epoch===getEpoch()){state.ordersStatus="error";reportError(error,{context:"App Profissional > comandas"});}
+   throw error;
+  }
  }
  
  async function loadCommissions(){

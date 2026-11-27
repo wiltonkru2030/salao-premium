@@ -5,14 +5,12 @@ import {createServicesController} from "./controllers/services.controller.js";
 import {createNotificationsController} from "./controllers/notifications.controller.js";
 import {createProfileController} from "./controllers/profile.controller.js";
 import {createFinancialController} from "./controllers/financial.controller.js";
-import {salonCalendarDate, salonTimezone} from "./utils/salon-time.js";
+import {salonTimezone} from "./utils/salon-time.js";
 import { createPlatformAppearance } from "../src/components/platform-appearance.js";
 import {renderProfessionalShell, setProfessionalMenuOpen} from "./views/shell.views.js";
-import { renderPlatformMark } from "../src/components/platform-mark.js";
-import {authenticateProfessional} from "./auth.service.js";
-import {fetchProfessionalContexts,verifyProfessionalSession,sameProfessionalScope,ProfessionalSessionError} from "./session.service.js";
-import {requiresProfessionalPasswordChange,completeProfessionalPasswordChange} from "./password.service.js";
-import {fetchProfessionalBranches,selectProfessionalBranch} from "./branches.service.js";
+import {createSessionController} from "./controllers/session.controller.js";
+import {createNavigationController} from "./controllers/navigation.controller.js";
+import {ProfessionalSessionError} from "./session.service.js";
 import { supabase } from "./supabase.client.js";
 import {bindOrderService} from "./order-service.controller.js";
 import {bindOrderManagement} from "./order-management.controller.js";
@@ -40,8 +38,6 @@ const root=document.querySelector("#professional-app");
 const state=createProfessionalState();
 let disposeAutocomplete=null;
 let sessionEpoch=0;
-let recheckingSession=false;
-let endingSession=false;
 // Ative a interface no build após instalar a migration correspondente no Supabase.
 const appointmentStatusEnabled = import.meta.env.VITE_PROFESSIONAL_APPOINTMENT_STATUS === "true";
 // Ative após aplicar a migration de reagendamento no ambiente correspondente.
@@ -63,18 +59,13 @@ const {loadNotifications,readNotifications}=createNotificationsController({state
 const {loadProfilePreferences,submitProfilePreferences}=createProfileController({state,supabase,getEpoch:()=>sessionEpoch,render,showNotice,profilePreferencesEnabled});
 const {loadOrders,loadCommissions,chooseOrder}=createFinancialController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError});
 const {applyAppointmentStatus,applyAttendance,openAttendanceOrder,applyAppointmentReschedule,applyNewAppointment}=createAttendanceController({state,supabase,getEpoch:()=>sessionEpoch,showNotice,loadAppointments,loadOrders,chooseOrder,appointmentStatusActions,appointmentStatusEnabled,attendanceEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled});
+const session=createSessionController({state,root,supabase,getEpoch:()=>sessionEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled});
+const {loadBase,endSession,boot}=session;
+const {navigate,refreshOrders}=createNavigationController({state,root,getEpoch:()=>sessionEpoch,render,showNotice,loadOrders,loadServices,loadServiceCatalog,canManageServices,loadCustomers,loadCommissions,loadNotifications,loadProfilePreferences,profilePreferencesEnabled});
+
 
 /** Limpa dados privados antes de exibir a tela de acesso. */
 function clearPrivateState(){sessionEpoch++;serviceLock.active=false;serviceLock.operation=null;clearAutocomplete();resetProfessionalState(state);}
-/** Limpa a interface imediatamente; encerra apenas a sessão profissional local. */
-async function endSession(notice=""){
- if(endingSession)return;
- endingSession=true;clearPrivateState();state.notice=notice;loginView();
- try{const {error}=await supabase.auth.signOut({scope:"local"});if(error)throw error;}
- catch{state.notice=notice||"Não foi possível confirmar o encerramento da sessão. Confira a conexão.";loginView();}
- finally{endingSession=false;}
-}
-
 // Formatadores puros são mantidos em professional/utils/formatters.js.
 function showNotice(message){if(!state.user||!state.orgId)return;state.notice=message;render();}
 function clearAutocomplete(){disposeAutocomplete?.();disposeAutocomplete=null;}
@@ -99,60 +90,22 @@ function render(){
  shell(content);
  if(state.page==="Comandas"&&state.selectedOrder&&state.role==="professional"&&state.professional)bindAutocomplete();
 }
-// Resolve vínculo, escopo e permissões antes de liberar os módulos.
-async function loadBase(selectedOrgId=null,selectedBranchId=null){
- const userId=state.user?.id;
- if(!userId)throw new Error("Sua sessão expirou.");
- // Retira dados do contexto anterior antes de consultar novas permissões.
- const user=state.user;clearPrivateState();state.user=user;
- const loadEpoch=sessionEpoch;
- root.innerHTML='<div class="boot" role="status">Carregando acesso ao salão…</div>';
- let contexts=await fetchProfessionalContexts(supabase,userId);
- if(loadEpoch!==sessionEpoch)return;
- const names=await supabase.from("organizations").select("id,name,timezone,currency").in("id",contexts.map(c=>c.orgId));
- if(loadEpoch!==sessionEpoch)return;
- if(names.error)throw new Error("Não foi possível consultar os salões vinculados.");
- const orgs=new Map((names.data||[]).map(o=>[o.id,o]));
- contexts=contexts.filter(c=>orgs.has(c.orgId));
- if(!contexts.length)throw new Error("Não foi possível identificar um salão autorizado.");
- state.contextCount=contexts.length;
- const context=selectedOrgId?contexts.find(c=>c.orgId===selectedOrgId):contexts.length===1?contexts[0]:null;
- if(!context){
-  clearAutocomplete();
-  root.innerHTML='<main class="login"><div class="brand sp-professional-brand">' + renderPlatformMark() + '<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Escolha o salão</h1><p>Seus dados ficam separados por estabelecimento.</p>'+contexts.map(c=>'<button type="button" class="primary" data-context-org="'+esc(c.orgId)+'">'+esc(orgs.get(c.orgId)?.name||"Salão")+'</button>').join("")+'<button class="secondary" data-action="logout">Sair</button></main>';
-  return;
- }
- Object.assign(state,context,{organization:orgs.get(context.orgId),notificationsEnabled});
- if(state.role==="professional"){
-  const branches=await fetchProfessionalBranches({client:supabase,organizationId:state.orgId,professional:state.professional});
-  if(loadEpoch!==sessionEpoch)return;
-  state.branches=branches;const branch=selectProfessionalBranch(branches,selectedBranchId);
-  if(!branch){
-   root.innerHTML='<main class="login"><div class="brand sp-professional-brand">'+renderPlatformMark()+'<span>SALÃO PREMIUM<small>APP PROFISSIONAL</small></span></div><h1>Escolha a unidade</h1><p>Agenda e comandas serão filtradas pela unidade.</p>'+branches.map(row=>'<button type="button" class="primary" data-context-branch="'+esc(row.id)+'">'+esc(row.name)+'</button>').join("")+'<button class="secondary" data-action="logout">Sair</button></main>';
-   return;
-  }
-  state.branchId=branch.id;
- }
- state.selectedDate=salonCalendarDate(new Date(),state.organization?.timezone);
- state.month=new Date(state.selectedDate.getFullYear(),state.selectedDate.getMonth(),1);
- const profileResult=await supabase.from("profiles").select("full_name,phone").eq("id",userId).maybeSingle();
- if(loadEpoch!==sessionEpoch)return;
- if(profileResult.error)throw new Error("Não foi possível carregar seu perfil.");
- state.profile=profileResult.data;
- const pages=allowedProfessionalPages(state);
- await Promise.all([loadAppointments(),...(pages.includes("Comandas")?[loadOrders()]:[]),...(state.role==="professional"?[loadServices()]:[]),...(pages.includes("Comissões")?[loadCommissions()]:[]),...(pages.includes("Notificações")?[loadNotifications()]:[])]);
- if(loadEpoch!==sessionEpoch)return;
- state.notice="";render();
-}
 // Carrega somente agendamentos permitidos pelo escopo profissional.
 async function loadAppointments(){
  const epoch=sessionEpoch,month=state.month;
- const appointments=await fetchProfessionalAppointments({
-  client:supabase,
-  organizationId:state.orgId,
-  month,branchId:state.branchId,timezone:salonTimezone(state.organization?.timezone),professionalId:state.scope==='self'?state.professional?.id:null
- });
- if(epoch===sessionEpoch&&month===state.month)state.appointments=appointments;
+ state.agendaStatus="loading";state.appointments=[];state.selectedAppointment=null;
+ if(state.page==="Agenda")render();
+ try{
+  const appointments=await fetchProfessionalAppointments({
+   client:supabase,organizationId:state.orgId,month,branchId:state.branchId,
+   timezone:salonTimezone(state.organization?.timezone),professionalId:state.scope==='self'?state.professional?.id:null
+  });
+  if(epoch===sessionEpoch&&month===state.month){state.appointments=appointments;state.agendaStatus="ready";}
+ }catch(error){
+  if(epoch!==sessionEpoch||month!==state.month)return;
+  state.agendaStatus="error";reportError(error,{context:"App Profissional > Agenda"});
+  // O erro aparece na Agenda sem encerrar uma sessão válida.
+ }
 }
 /** Monta o controlador de serviços da comanda atual. */
 function bindAutocomplete(){
@@ -200,7 +153,10 @@ root.addEventListener("click",async event=>{
   if(action==="open-professional-booking"||action==="close-professional-booking"){
    const dialog=root.querySelector("#professional-booking-dialog");
    if(action==="open-professional-booking"&&dialog&&!dialog.open){
-    const epoch=sessionEpoch;
+    const epoch=sessionEpoch,control=event.target.closest("[data-action]");
+    if(control.disabled)return;control.disabled=true;
+    try{await loadServices();}catch{if(epoch===sessionEpoch)showNotice("Não foi possível carregar os serviços. Tente novamente.");return;}finally{if(control.isConnected)control.disabled=false;}
+    if(epoch!==sessionEpoch||state.page!=="Agenda"||!dialog.isConnected)return;
     bindProfessionalBookingSearch(dialog.querySelector("#professional-new-appointment"),state,{client:supabase,isCurrent:()=>epoch===sessionEpoch&&state.page==="Agenda"});
     dialog.showModal();
    }
@@ -245,12 +201,11 @@ root.addEventListener("click",async event=>{
   }
   if(action==="retry-professional-order-items"&&state.page==="Comandas"&&state.selectedOrder){await chooseOrder(state.selectedOrder.id);return;}
   if(action==="refresh-professional-orders"&&state.page==="Comandas"){
-   await loadOrders();
-   if(state.page==="Comandas")render();
+   await refreshOrders();
    return;
   }
   if(action==="logout"){await endSession();return;}
-  if(action==="retry-professional-session"){if(!recheckingSession){await boot();}return;}
+  if(action==="retry-professional-session"){await boot();return;}
   if(action==="choose-professional-context"&&state.user&&state.contextCount>1){
    try{await loadBase();}catch(error){await endSession(error instanceof ProfessionalSessionError?error.message:"Não foi possível consultar os salões.");}return;
   }
@@ -271,10 +226,11 @@ root.addEventListener("click",async event=>{
   if(statusControl&&state.page==="Agenda"){await applyAppointmentStatus(statusControl);return;}
   const epoch=sessionEpoch;
   // O controlador especializado consome eventos da Agenda antes das ações gerais.
-  if(await handleAgendaClick({event,state,loadAppointments,render}))return;
+  if(state.page==="Agenda"&&action==="retry-professional-agenda"){await loadAppointments();if(epoch===sessionEpoch)render();return;}
+  if(state.page==="Agenda"&&await handleAgendaClick({event,state,loadAppointments,render:()=>{if(epoch===sessionEpoch&&state.page==="Agenda")render();}}))return;
   if(epoch!==sessionEpoch)return;
   const page=event.target.closest("[data-page]");
- if(page){if(!allowedProfessionalPages(state).includes(page.dataset.page))return;const menuWasOpen=root.querySelector(".app-shell.is-menu-open");state.page=page.dataset.page;state.selectedOrder=null;state.selectedAppointment=null;state.selectedCustomer=null;state.customerEditor=null;state.serviceEditor=null;state.customerHistory=[];state.notice="";render();if(menuWasOpen)root.querySelector("[data-action=open-professional-menu]")?.focus();if(["Perfil","Configurações"].includes(state.page)&&profilePreferencesEnabled&&state.profilePreferencesStatus!=="ready")await loadProfilePreferences();if(state.page==="Notificações")await loadNotifications();if(state.page==="Comissões"){state.selectedPayout=null;await loadCommissions();}if(state.page==="Clientes")await loadCustomers();if(state.page==="Serviços"&&canManageServices())await loadServiceCatalog();return;}
+ if(page){await navigate(page.dataset.page);return;}
  const order=event.target.closest("[data-order]");
  if(order&&allowedProfessionalPages(state).includes("Comandas")){await chooseOrder(order.dataset.order);return;}
  if(action==="back-orders"){state.selectedOrder=null;state.orderItems=[];render();}
@@ -326,95 +282,7 @@ root.addEventListener("submit",async event=>{
   await applyAppointmentReschedule(event.target);
   return;
  }
- try{
- if(event.target.matches("#professional-password-change")){
-  event.preventDefault();const values=new FormData(event.target),password=String(values.get("password")||""),confirm=String(values.get("confirm")||"");
-  if(password.length<10||password!==confirm){state.notice="As senhas devem ser iguais e ter pelo menos 10 caracteres.";changePasswordView();return;}
-  const button=event.target.querySelector("button[type=submit]");button.disabled=true;button.textContent="Salvando…";
-  if(state.user?.app_metadata?.professional_password_required===true){
-   try{
-    await completeProfessionalPasswordChange({client:supabase,currentPassword:String(values.get("currentPassword")||""),password,confirm});
-    await endSession("Senha atualizada. Entre novamente com a nova senha.");
-   }catch(error){state.notice=error.message;changePasswordView();}
-   finally{button.disabled=false;}
-   return;
-  }
-  const {error}=await supabase.auth.updateUser({password});
-  if(error){reportError(error,{context:"App Profissional > troca obrigatória de senha"});state.notice="Não foi possível alterar a senha. Confira os requisitos e tente novamente.";changePasswordView();return;}
-  const {error:metaError}=await supabase.auth.updateUser({data:{must_change_password:false}});
-  if(metaError){reportError(metaError,{context:"App Profissional > concluir troca obrigatória de senha"});state.notice="Senha alterada, mas não foi possível concluir a atualização do acesso. Entre novamente.";changePasswordView();return;}
-  const {data:userData,error:userError}=await supabase.auth.getUser();
-  if(userError||!userData.user){if(userError)reportError(userError,{context:"App Profissional > confirmar sessão após troca de senha"});state.notice="Entre novamente para continuar.";await supabase.auth.signOut();loginView();return;}
-  state.user=userData.user;await loadBase();return;
- }
- if(!event.target.matches("#professional-login")||endingSession)return;
- event.preventDefault();const values=new FormData(event.target),login=String(values.get("login")||"").trim(),password=String(values.get("password")||"");
- const button=event.target.querySelector("button[type=submit]");button.disabled=true;button.textContent="Validando…";
- try{
-  const user=await authenticateProfessional({client:supabase,login,password});
-  state.user=user;state.notice="";
-  if(requiresProfessionalPasswordChange(state.user)){changePasswordView();return;}
-  await loadBase();
- }catch(error){
-  const message=error instanceof ProfessionalSessionError?error.message:"Não foi possível entrar. Confira suas credenciais e permissões.";
-  if(state.user)await endSession(message);else{state.notice=message;loginView();}
- }
- finally{if(button){button.disabled=false;button.textContent="Entrar";}}
- }catch(error){reportError(error,{context:"App Profissional > envio de formulário"});}
+ await session.submitAuth(event);
 });
-/** Oculta dados quando não é possível verificar a conta; permite retomar sessão válida. */
-function sessionRetryView(message){
- clearPrivateState();
- root.innerHTML='<main class="auth-shell professional-auth"><section class="auth-panel"><h1>Verificar acesso</h1><p role="alert">'+esc(message)+'</p><button class="primary" data-action="retry-professional-session">Tentar novamente</button><button class="secondary" data-action="logout">Sair</button></section></main>';
-}
-/** Revalida ao retornar ao app, preservando a página quando as permissões não mudaram. */
-async function recheckSession(){
- if(!state.user||!state.orgId||recheckingSession||endingSession)return;
- const epoch=sessionEpoch,previous={orgId:state.orgId,role:state.role,scope:state.scope,professional:state.professional};
- recheckingSession=true;
- try{
-  const user=await verifyProfessionalSession(supabase);
-  if(epoch!==sessionEpoch)return;
-  if(user.id!==state.user.id){await endSession("A conta foi alterada. Entre novamente.");return;}
-  if(requiresProfessionalPasswordChange(user)){clearPrivateState();state.user=user;changePasswordView();return;}
-  const contexts=await fetchProfessionalContexts(supabase,user.id);
-  if(epoch!==sessionEpoch)return;
-  const next=contexts.find(context=>context.orgId===previous.orgId);
-  if(!next){await endSession("Seu acesso ao salão foi alterado. Entre novamente.");return;}
-  if(!sameProfessionalScope(previous,next)){state.user=user;await loadBase(previous.orgId);return;}
-  if(state.role==="professional"){
-   const branches=await fetchProfessionalBranches({client:supabase,organizationId:previous.orgId,professional:next.professional});
-   if(epoch!==sessionEpoch)return;
-   if(!branches.some(row=>row.id===state.branchId)){await loadBase(previous.orgId);return;}
-   state.branches=branches;
-  }
-  state.user=user;state.contextCount=contexts.length;
- }catch(error){
-  if(epoch!==sessionEpoch)return;
-  if(error instanceof ProfessionalSessionError&&["EXPIRED","DISABLED","NO_CONTEXT"].includes(error.code))await endSession(error.message);
-  else sessionRetryView("Não foi possível verificar seu acesso. Confira a conexão e tente novamente.");
- }finally{recheckingSession=false;}
-}
-/** Inicializa sessão persistida sem confundir falhas de rede com credenciais inválidas. */
-async function boot(){
- if(recheckingSession||endingSession)return;
- recheckingSession=true;const epoch=sessionEpoch;
- try{
-  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"}).catch(()=>{});
-  const user=await verifyProfessionalSession(supabase);
-  if(epoch!==sessionEpoch)return;
-  state.user=user;
-  if(requiresProfessionalPasswordChange(user)){changePasswordView();return;}
-  await loadBase();
- }catch(error){
-  if(error instanceof ProfessionalSessionError&&error.code==="EXPIRED"){clearPrivateState();state.notice="";loginView();}
-  else if(error instanceof ProfessionalSessionError&&["DISABLED","NO_CONTEXT"].includes(error.code))await endSession(error.message);
-  else sessionRetryView("Não foi possível recuperar seu acesso. Confira a conexão e tente novamente.");
- }finally{recheckingSession=false;}
-}
-// Eventos de sessão não chamam Auth dentro do callback, evitando bloqueio do SDK.
-supabase.auth.onAuthStateChange(event=>{
- if(event==="SIGNED_OUT"&&!endingSession){clearPrivateState();state.notice="Sua sessão terminou. Entre novamente.";loginView();}
-});
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")void recheckSession();});
-boot();
+
+session.start();

@@ -21,6 +21,7 @@ function renderStatusMark(status) {
  */
 export function renderAgendaView(context) {
   const { state, monthLabel, dateLabel, appointmentCard, appointmentDetails, booking = "" } = context;
+  const unavailable=state.agendaStatus==="error"||state.agendaStatus==="loading";
   const { cells, selectedAppointments } = buildMonthlyCalendar({
     month: state.month, selectedDate: state.selectedDate, appointments: state.appointments, timezone:state.organization?.timezone || (state.organization ? "America/Sao_Paulo" : null)
   });
@@ -38,7 +39,7 @@ export function renderAgendaView(context) {
     '<div class="calendar">' + weekdays + calendarCells + '</div>' +
     '<ul class="calendar-status-legend" aria-label="Legenda dos agendamentos">' +
       marks.map(([status,name])=>'<li>'+renderStatusMark(status)+name+'</li>').join("")+'</ul></section>' +
-    booking +
+    (unavailable?"":booking) +
     '<div class="section-title section-title--tight-spaced"><h2>' + escapeHtml(dateLabel(state.selectedDate)) + '</h2><span class="muted">' + selectedAppointments.length + ' agendamento(s)</span></div>' +
-    (selectedAppointments.length ? selectedAppointments.map(appointmentCard).join("") : '<div class="empty sp-content-surface sp-content-surface--empty">Nenhum agendamento neste dia.</div>') + appointmentDetails();
+    (state.agendaStatus==="loading"?'<p role="status">Carregando agenda...</p>':state.agendaStatus==="error"?'<p role="alert">Não foi possível consultar a Agenda.</p><button class="btn secondary" data-action="retry-professional-agenda">Tentar novamente</button>':selectedAppointments.length ? selectedAppointments.map(appointmentCard).join("") : '<div class="empty sp-content-surface sp-content-surface--empty">Nenhum agendamento neste dia.</div>') + appointmentDetails();
 }

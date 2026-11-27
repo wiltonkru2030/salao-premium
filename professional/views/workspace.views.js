@@ -6,6 +6,8 @@ export {commissionsView} from "./commissions.views.js";
 import {renderManagedOrder} from "./order-management.views.js";
 /** Apresenta comandas autorizadas e seus detalhes a partir do estado, sem acessar rede. */
 export function ordersView(state,{managementEnabled=false}={}){
+ if(!state.selectedOrder&&["loading","idle"].includes(state.ordersStatus))return '<div class="section-title"><h2>Comandas</h2></div><p role="status">Carregando comandas...</p>';
+ if(!state.selectedOrder&&state.ordersStatus==="error")return '<div class="section-title"><h2>Comandas</h2></div><p role="alert">Não foi possível carregar as comandas.</p><button class="btn secondary" data-action="refresh-professional-orders">Tentar novamente</button>';
  if(state.selectedOrder&&managementEnabled&&state.role==="professional")return renderManagedOrder(state);
  if(state.selectedOrder){
   const order=state.selectedOrder,canRegister=canRegisterProfessionalService(state,order);
