@@ -64,7 +64,7 @@ Deno.serve(async(req:Request)=>{
    try{
     const response=await fetch("https://fcm.googleapis.com/v1/projects/"+projectId+"/messages:send",{
      method:"POST",headers:{Authorization:"Bearer "+bearer,"Content-Type":"application/json"},
-     body:JSON.stringify({message:{token:job.token,data:{kind:"professional_update"},webpush:{headers:{TTL:"300",Urgency:"normal"}}}}),signal:AbortSignal.timeout(8000)
+     body:JSON.stringify({message:{token:job.token,data:{kind:"professional_update",notification_id:job.notification_id},webpush:{headers:{TTL:"300",Urgency:"normal"}}}}),signal:AbortSignal.timeout(8000)
     });
     if(response.ok)outcome="sent";
     else{

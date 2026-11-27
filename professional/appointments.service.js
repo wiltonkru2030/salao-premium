@@ -9,6 +9,7 @@ import {unitRpc} from "./unit-context.js";
  */
 
 import {salonMonthStart} from "./utils/salon-time.js";
+const APPOINTMENT_FIELDS="id,starts_at,ends_at,customer_id,customer_name,customer_phone,service_name,professional_name,status,price,booking_source,created_by_name,created_at,notes,professional_id,appointment_group_id,service_order_id,branch_id";
 
 /**
  * Busca os agendamentos de um mês para a organização autenticada.
@@ -57,7 +58,7 @@ export async function fetchProfessionalAppointments({
   try {
     let query = client
       .from("appointments")
-      .select("id,starts_at,ends_at,customer_id,customer_name,customer_phone,service_name,professional_name,status,price,booking_source,created_by_name,created_at,notes,professional_id,appointment_group_id,service_order_id,branch_id")
+      .select(APPOINTMENT_FIELDS)
       .eq("org_id", organizationId)
       .gte("starts_at", start.toISOString())
       .lt("starts_at", end.toISOString());
@@ -138,4 +139,13 @@ export async function createUnitAppointment({client,organizationId,customerId,se
  if(error?.code==="22023")throw new Error("Escolha um horário futuro válido.");
  if(error||!data?.id||!data.starts_at)throw new Error("Não foi possível agendar. Confira os dados e tente novamente.");
  return data;
+}
+
+/** Consulta o destino do aviso sob RLS e limita explicitamente ao profissional e à unidade ativos. */
+export async function fetchNotificationAppointment({client,organizationId,professionalId,branchId,appointmentId}){
+ if(!client?.from||![organizationId,professionalId,branchId,appointmentId].every(value=>typeof value==="string"&&value))throw new Error("Contexto do agendamento indisponível.");
+ const {data,error}=await client.from("appointments").select(APPOINTMENT_FIELDS)
+  .eq("org_id",organizationId).eq("professional_id",professionalId).eq("branch_id",branchId).eq("id",appointmentId).maybeSingle();
+ if(error)throw new Error("Não foi possível consultar o agendamento.");
+ return data||null;
 }

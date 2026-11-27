@@ -11,13 +11,16 @@ self.addEventListener("activate",event=>event.waitUntil((async()=>{
 
 /** Avisos genéricos, sem dados de cliente ou valores financeiros. */
 self.addEventListener("notificationclick",event=>{
- if(event.notification.tag!=="sp-professional-alert")return;
+ if(!String(event.notification.tag||"").startsWith("sp-professional-alert"))return;
  event.notification.close();
  event.waitUntil((async()=>{
-  const url=new URL("./",self.registration.scope).href;
+  const target=new URL("./",self.registration.scope);
+  const id=event.notification.data?.notificationId;
+  if(typeof id==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))target.searchParams.set("notification",id);
+  const url=target.href;
   const windows=await self.clients.matchAll({type:"window",includeUncontrolled:true});
-  const existing=windows.find(client=>client.url.startsWith(url));
-  if(existing){await existing.focus();return;}
+  const existing=windows.find(client=>client.url.startsWith(self.registration.scope));
+  if(existing){try{const updated=await existing.navigate(url);if(updated){await updated.focus();return;}}catch{/* abre a rota em nova janela se necessário */}}
   await self.clients.openWindow(url);
  })());
 });
@@ -26,8 +29,12 @@ try{
  if(config&&config.apiKey&&config.projectId&&config.messagingSenderId&&config.appId){
   importScripts("https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js","https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging-compat.js");
   firebase.initializeApp(config);
-  firebase.messaging().onBackgroundMessage(()=>self.registration.showNotification("SALÃO PREMIUM",{
-   body:"Você tem uma atualização. Abra o aplicativo para conferir.",tag:"sp-professional-alert"
-  }));
+  firebase.messaging().onBackgroundMessage(payload=>{
+   const raw=payload.data?.notification_id;
+   const id=typeof raw==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw)?raw:null;
+   return self.registration.showNotification("SALÃO PREMIUM",{
+    body:"Você tem uma atualização. Abra o aplicativo para conferir.",tag:id?"sp-professional-alert-"+id:"sp-professional-alert",data:{notificationId:id}
+   });
+  });
  }
 }catch{/* central interna continua independente de FCM */}

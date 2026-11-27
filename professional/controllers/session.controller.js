@@ -9,7 +9,7 @@ import {escapeHtml as esc} from "../utils/formatters.js";
 import {registerProfessionalWorker} from "../push.service.js";
 import {renderPlatformMark} from "../../src/components/platform-mark.js";
 /** Coordena acesso com geração injetada e expõe somente operações do ciclo de sessão. */
-export function createSessionController({state,root,supabase,getEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled,explicitBranchEnabled=false,beforeExit=async()=>{}}){
+export function createSessionController({state,root,supabase,getEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled,explicitBranchEnabled=false,beforeExit=async()=>{},afterReady=async()=>{}}){
  let recheckingSession=false,endingSession=false,loginPending=false,contextPending=false;
  /** Limpa a interface imediatamente; encerra apenas a sessão profissional local. */
  async function endSession(notice=""){
@@ -67,6 +67,8 @@ export function createSessionController({state,root,supabase,getEpoch,clearPriva
   state.notice="";render();
   // Contador de avisos é independente da primeira renderização; não bloqueia Agenda.
   if(allowedProfessionalPages(state).includes("Notificações"))void loadNotifications();
+  // A navegação por aviso só ocorre após a sessão e unidade estarem autorizadas.
+  await afterReady();
   }catch(error){
    // O carregamento criou sua própria geração: só ela pode alterar a interface.
    if(loadEpoch!==getEpoch())return;

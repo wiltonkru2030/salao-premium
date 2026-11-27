@@ -64,7 +64,7 @@
     "test:commission-payout-summary": "node src/modules/commissions/commission-payout-summary.test.js",
     "test:sql-commission-reversals-v2": "node docs/sql/commission-refund-reversals-v2.draft.test.mjs",
     "test:sql-agenda-order-link": "node docs/sql/agenda-order-branch-idempotency.draft.test.mjs",
-    "test:professional-notifications": "node professional/notifications.service.test.js",
+    "test:professional-notifications": "node professional/notifications.service.test.js && node professional/controllers/notification-navigation.controller.test.js",
     "test:professional-profile-preferences": "node professional/profile-preferences.service.test.js",
     "test:professional-commission-filters": "node professional/commissions.rules.test.js",
     "test:professional-order-management": "node professional/order-management.service.test.js",

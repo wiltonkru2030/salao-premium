@@ -32,7 +32,9 @@ import {createAttendanceController} from "./controllers/attendance.controller.js
 import {createAgendaWorkspaceViews} from "./views/agenda-workspace.views.js";
 import {syncAppointmentDialog} from "./appointment-dialog.js";
 import { handleAgendaClick } from "./agenda.controller.js";
-import {fetchProfessionalAppointments} from "./appointments.service.js";
+import {fetchProfessionalAppointments,fetchNotificationAppointment} from "./appointments.service.js";
+import {fetchProfessionalNotifications} from "./notifications.service.js";
+import {createNotificationNavigation,readNotificationLink} from "./controllers/notification-navigation.controller.js";
 import {allowedProfessionalPages} from "./access.rules.js";
 
 // Aplicação PWA do profissional: autenticação, navegação, Agenda, Comandas e Comissões.
@@ -76,7 +78,16 @@ const {loadProfilePreferences,submitProfilePreferences}=createProfileController(
 const {loadOrders,loadCommissions,chooseOrder}=createFinancialController({state,supabase,getEpoch:()=>sessionEpoch,render,reportError});
 const {applyAppointmentStatus,applyAttendance,openAttendanceOrder,applyAppointmentReschedule,applyNewAppointment}=createAttendanceController({state,supabase,getEpoch:()=>sessionEpoch,showNotice,loadAppointments,loadOrders,chooseOrder,appointmentStatusActions,appointmentStatusEnabled,attendanceEnabled,rescheduleEnabled,bookingEnabled,unitBookingEnabled,customerRegistrationEnabled});
 const push=createProfessionalPush({client:supabase,onMessage:()=>{if(state.user&&state.orgId)void loadNotifications();}});
-const session=createSessionController({state,root,supabase,getEpoch:()=>sessionEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled,explicitBranchEnabled,beforeExit:orgId=>push.configured?push.disable(orgId):Promise.resolve()});
+const notificationNavigation=createNotificationNavigation({state,getEpoch:()=>sessionEpoch,fetchAppointment:params=>fetchNotificationAppointment({client:supabase,...params}),fetchInbox:orgId=>fetchProfessionalNotifications({client:supabase,organizationId:orgId}),loadAppointments,render,showNotice});
+let pendingNotification=readNotificationLink(globalThis.location.href);
+/** Só resolve o aviso depois de autenticar e selecionar o contexto; não conserva IDs em armazenamento local. */
+async function resolvePendingNotification(){
+ if(!pendingNotification||!notificationsEnabled||state.role!=="professional")return;
+ const id=pendingNotification;pendingNotification=null;
+ const url=new URL(location.href);url.searchParams.delete("notification");history.replaceState(null,"",url);
+ await notificationNavigation.open(id);
+}
+const session=createSessionController({state,root,supabase,getEpoch:()=>sessionEpoch,clearPrivateState,clearAutocomplete,loginView,changePasswordView,render,reportError,loadAppointments,loadNotifications,notificationsEnabled,explicitBranchEnabled,afterReady:resolvePendingNotification,beforeExit:orgId=>push.configured?push.disable(orgId):Promise.resolve()});
 const {switchContext,endSession,boot}=session;
 const {navigate,refreshOrders}=createNavigationController({state,root,getEpoch:()=>sessionEpoch,render,showNotice,loadOrders,loadServices,loadServiceCatalog,canManageServices,loadCustomers,loadCommissions,loadNotifications,loadProfilePreferences,profilePreferencesEnabled});
 
@@ -209,6 +220,8 @@ root.addEventListener("click",async event=>{
    if(action==="read-all-professional-notifications"){await readNotifications(event.target.closest("[data-action]"));return;}
    const filter=event.target.closest("[data-notification-filter]");
    if(filter){if(state.notificationsStatus==="loading")return;state.notificationsFilter=filter.dataset.notificationFilter==="unread";await loadNotifications();return;}
+   const destination=event.target.closest("[data-notification-open]");
+   if(destination){await notificationNavigation.open(destination.dataset.notificationOpen);return;}
    const mark=event.target.closest("[data-notification-read]");
    if(mark){await readNotifications(mark,mark.dataset.notificationRead);return;}
   }
