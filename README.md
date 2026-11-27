@@ -337,3 +337,5 @@ Segurança de unidades: homologado cenário de gerente, recepção e proprietár
 Validação atual: Chromium aprovado em 90 cenários, e operações por unidade de Caixa, despesas, pacotes e espera aprovadas em QA. [Relatório](docs/PUBLICACAO-APP-PROFISSIONAL.md). Publicação permanece bloqueada.
 
 Integridade financeira: nova migration QA protege repasse por unidade e bloqueia comissões antes da devolução. Teste integrado aprovado com rollback; [relatório](docs/PUBLICACAO-APP-PROFISSIONAL.md). Produção permanece inalterada.
+
+Recebimento idempotente: novo contrato opt-in em QA com testes de repetição aprovados. Formulário ainda utiliza o contrato legado até integração e liberação coordenadas. Consulte [relatório](docs/PUBLICACAO-APP-PROFISSIONAL.md).

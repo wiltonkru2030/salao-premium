@@ -155,3 +155,5 @@ Escopo de funcionários: teste de gerente/recepção/proprietário aprovado em Q
 Homologação: Chromium aprovado nos 90 cenários com dados fictícios, e teste integrado de Caixa, despesas, pacotes e espera aprovado em QA (rollback). [Evidências e limites](../docs/PUBLICACAO-APP-PROFISSIONAL.md). Ainda falta avaliação estética individual e teste real autenticado.
 
 Integridade financeira: proteção de repasse de gerente por unidade e bloqueio coordenado de devolução/repasse implementados em QA; teste sequencial aprovado. Ver [relatório](../docs/PUBLICACAO-APP-PROFISSIONAL.md) para limites e pendências de concorrência.
+
+Recebimentos: novo contrato opt-in no painel em QA; integração de UI e concorrência real pendentes. Ver [relatório](../docs/PUBLICACAO-APP-PROFISSIONAL.md).

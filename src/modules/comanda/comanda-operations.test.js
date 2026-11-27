@@ -24,3 +24,16 @@ await assert.rejects(()=>registerComandaPayment({supabase,orderId:"order-1",amou
 await assert.rejects(()=>cancelComanda({supabase,orderId:""}),/Comanda não identificada/);
 
 process.stdout.write("Testes das operações da Comanda: OK\n");
+
+// Contrato novo é explícito; repetir o mesmo identificador não muda os argumentos.
+const requestId="36af1ae2-f6b5-4cc3-a795-c9e5de1c3b31";
+await registerComandaPayment({supabase,orderId:"order-1",amount:25,paymentMethod:"pix",requestId});
+await registerComandaPayment({supabase,orderId:"order-1",amount:25,paymentMethod:"pix",requestId});
+assert.equal(calls.at(-1).name,"register_service_order_payment_once");
+assert.equal(calls.at(-1).args.p_request_id,requestId);
+assert.deepEqual(calls.at(-1),calls.at(-2));
+await assert.rejects(()=>registerComandaPayment({supabase,orderId:"order-1",amount:25,paymentMethod:"pix",requestId:"invalid"}),/Identificador/);
+let attempts=0;
+const unavailable={rpc:async(name)=>{attempts++;assert.equal(name,"register_service_order_payment_once");return {error:{message:"Falha de conexão"}};}};
+const failed=await registerComandaPayment({supabase:unavailable,orderId:"order-1",amount:25,paymentMethod:"pix",requestId});
+assert.ok(failed.error);assert.equal(attempts,1);
