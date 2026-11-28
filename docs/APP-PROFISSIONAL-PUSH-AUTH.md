@@ -45,3 +45,6 @@ Em 27/11/2026 a execução 46072275323 (nova tentativa) retornou autenticado=tru
 
 ### Ativação do despacho QA — 27/11/2026
 Diagnóstico: dois avisos recentes (Profissional agendou e Profissional confirmou) foram persistidos no QA após a inscrição do dispositivo; fila vazia porque o despacho agendado não estava habilitado. QA passa a processar a fila no workflow de push específico e no cron de cinco minutos, com opt-out PROFESSIONAL_PUSH_QA_ENABLED=false. OIDC aceita evento push para send exclusivamente na URL QA, sem aceitar destinatário informado externamente. Produção mantém envio automático separado; não se trata de garantia de latência, e o recebimento físico deve ser confirmado.
+
+### Identidade visual do push (27/11/2026)
+A notificação usa o símbolo oficial preto e dourado já utilizado nos cabeçalhos (WebP original) e um badge PNG 72×72 com quatro estrelas brancas sobre transparência para a máscara monocromática do Android. Ambos os caminhos públicos são estáveis e incluídos pelo Vite; os testes de Hosting conferem MIME e bytes. Android/Chrome pode continuar mostrando o nome/ícone do navegador na identificação do emissor. Não há alteração de cadastro, token ou credencial. Atualizar/reabrir o app após a publicação e verificar uma nova notificação em aparelho real.

@@ -47,6 +47,12 @@ const data=await manifest.json();
 assert.ok(data.name&&data.start_url,"Manifesto incompleto.");
 const icon=await get("/professional/icon.svg");
 assert.match(icon.headers.get("content-type")||"",/image\/svg\+xml/);
+// O Hosting não pode substituir os ícones por HTML de fallback.
+for(const [name,mime] of [["notification-icon.webp","image/webp"],["notification-badge.png","image/png"]]){
+ const response=await get("/professional/"+name);
+ assert.ok((response.headers.get("content-type")||"").includes(mime));
+ assert.deepEqual(Buffer.from(await response.arrayBuffer()),readFileSync("dist/professional/"+name));
+}
 const link=new URL("/professional/",origin).href;
 console.log("QA_PREVIEW_VERIFIED="+link);
 if(process.env.GITHUB_STEP_SUMMARY)appendFileSync(process.env.GITHUB_STEP_SUMMARY,"App Profissional QA publicado e assets verificados: "+link+"\n");

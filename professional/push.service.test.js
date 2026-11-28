@@ -38,3 +38,22 @@ assert.equal(foregroundNotice({data:{notification_id:id,title:"Cliente agendou"}
 const safe=foregroundNotice({data:{notification_id:id,title:"Nome privado",body:"Telefone"}});
 assert.equal(safe.title,"SALÃO PREMIUM");assert.doesNotMatch(JSON.stringify(safe),/Nome privado|Telefone/);
 assert.equal(safe.options.data.notificationId,id);
+
+// Identidade visual deve ser idêntica com o app aberto ou em segundo plano.
+assert.equal(safe.options.icon,"/professional/notification-icon.webp");
+assert.equal(safe.options.badge,"/professional/notification-badge.png");
+const {readFileSync}=await import("node:fs");
+const {runInNewContext}=await import("node:vm");
+const read=path=>readFileSync(new URL(path,import.meta.url));
+assert.deepEqual(read("./notification-icon.webp"),read("../brand/identidade-visual/logo/1_20261111_222414_0000.webp"));
+const badge=read("./notification-badge.png");
+assert.equal(badge.subarray(0,8).toString("hex"),"89504e470d0a1a0a");
+assert.equal(badge.readUInt32BE(16),72);assert.equal(badge.readUInt32BE(20),72);assert.equal(badge[25],6);
+let background,shown;
+const firebase={initializeApp(){},messaging(){return {onBackgroundMessage(fn){background=fn;}};}};
+runInNewContext(read("./sw.js").toString(),{URL,firebase,importScripts(){},self:{location:{href:"https://example.test/professional/sw.js?fcm="+encodeURIComponent(JSON.stringify(config))},addEventListener(){},registration:{showNotification(title,options){shown={title,options};return Promise.resolve();}}}});
+assert.equal(typeof background,"function");
+await background({data:{notification_id:id,title:"Cliente agendou"}});
+assert.equal(shown.options.icon,safe.options.icon);assert.equal(shown.options.badge,safe.options.badge);
+assert.equal(shown.options.data.notificationId,id);assert.equal(shown.title,"Cliente agendou");
+console.log("Marca oficial e badge Android nos dois modos de push: OK");

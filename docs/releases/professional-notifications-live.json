@@ -7,6 +7,6 @@
     "profilePreferences": true,
     "push": true
   },
-  "sourceCommit": "f45763e275ff8d865ebd72e77ea9972b156d981d",
-  "notes": "Credencial FCM de produção validada por OIDC/OAuth e FCM validate_only na execução 46072275323. Habilita inscrição voluntária; envio automático continua bloqueado. Corrige preflight do Hosting para usar o par público versionado se as variáveis estiverem ausentes."
+  "sourceCommit": "6d8adf14e90c7fc9acc78e23af2441c1766a5416",
+  "notes": "Marca oficial nas notificações em primeiro e segundo plano. Badge Android monocromático de quatro estrelas. Nenhuma mudança no transporte, credenciais ou dados."
 }

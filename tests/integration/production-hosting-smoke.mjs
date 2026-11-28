@@ -5,10 +5,12 @@ import {setTimeout as delay} from "node:timers/promises";
 const origin=new URL(process.env.LIVE_URL||"");
 assert.equal(origin.origin,"https://salao-premium.web.app");
 assert.equal(origin.pathname,"/");
-const entries=["/index.html","/cliente/index.html","/professional/index.html","/professional/sw.js","/professional/manifest.webmanifest"];
+const entries=["/index.html","/cliente/index.html","/professional/index.html","/professional/sw.js","/professional/manifest.webmanifest","/professional/notification-icon.webp","/professional/notification-badge.png"];
 async function check(path){
  const response=await fetch(new URL(path,origin),{redirect:"error",signal:AbortSignal.timeout(20000),headers:{"Cache-Control":"no-cache"}});
  assert.ok(response.ok,path+" HTTP "+response.status);
+ if(path.endsWith(".webp"))assert.match(response.headers.get("content-type")||"",/image\/webp/);
+ if(path.endsWith(".png"))assert.match(response.headers.get("content-type")||"",/image\/png/);
  const bytes=Buffer.from(await response.arrayBuffer());
  assert.deepEqual(bytes,readFileSync("dist"+path),"Versão diferente: "+path);
  if(path.endsWith(".html")){

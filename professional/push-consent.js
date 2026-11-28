@@ -13,5 +13,5 @@ const titles=new Set(["Cliente agendou","Cliente cancelou","Cliente confirmou","
 export function foregroundNotice(payload){
  const id=payload?.data?.notification_id;
  if(typeof id!=="string"||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))return null;
- return {title:titles.has(payload.data.title)?payload.data.title:"SALÃO PREMIUM",options:{body:"SALÃO PREMIUM · Abra o aplicativo para conferir os detalhes.",tag:"sp-professional-alert-"+id,data:{notificationId:id}}};
+ return {title:titles.has(payload.data.title)?payload.data.title:"SALÃO PREMIUM",options:{body:"SALÃO PREMIUM · Abra o aplicativo para conferir os detalhes.",tag:"sp-professional-alert-"+id,icon:"/professional/notification-icon.webp",badge:"/professional/notification-badge.png",data:{notificationId:id}}};
 }

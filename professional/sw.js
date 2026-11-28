@@ -34,7 +34,9 @@ try{
    const id=typeof raw==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw)?raw:null;
    const title=["Cliente agendou","Cliente cancelou","Cliente confirmou","Cliente reagendou","Salão agendou","Salão cancelou","Salão confirmou","Salão reagendou","Profissional agendou","Profissional cancelou","Profissional confirmou","Profissional reagendou","Novo agendamento","Agendamento cancelado","Agendamento confirmado","Agendamento alterado","Agendamento transferido","Novo atendimento atribuído","Atendimento próximo","Pagamento de comissão registrado"].includes(payload.data?.title)?payload.data.title:"SALÃO PREMIUM";
    return self.registration.showNotification(title,{
-    body:"SALÃO PREMIUM · Abra o aplicativo para conferir os detalhes.",tag:id?"sp-professional-alert-"+id:"sp-professional-alert",data:{notificationId:id}
+    body:"SALÃO PREMIUM · Abra o aplicativo para conferir os detalhes.",
+    // Marca original colorida e silhueta monocromática para o Android.
+    icon:"/professional/notification-icon.webp",badge:"/professional/notification-badge.png",tag:id?"sp-professional-alert-"+id:"sp-professional-alert",data:{notificationId:id}
    });
   });
  }

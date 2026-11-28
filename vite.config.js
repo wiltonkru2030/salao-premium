@@ -7,7 +7,7 @@ import {readFileSync} from "node:fs";
 /** Mantém a URL do worker e os ícones do manifesto estáveis no build multipágina. */
 function professionalPwaAssets(){
  return {name:"professional-pwa-assets",generateBundle(){
-  for(const name of ["sw.js","manifest.webmanifest","icon.svg"]){
+  for(const name of ["sw.js","manifest.webmanifest","icon.svg","notification-icon.webp","notification-badge.png"]){
    this.emitFile({type:"asset",fileName:"professional/"+name,source:readFileSync(new URL("./professional/"+name,import.meta.url))});
   }
  }};
