@@ -32,11 +32,19 @@ Deno.serve(async(req:Request)=>{
  try{
   const body=await req.json();mode=body?.mode;
   if(!["check","send"].includes(mode))return json({error:"Modo inválido."},400);
+  // Ticket de uso único, emitido pelo cron privado do próprio QA. Nunca aceita destinatário externo.
+  if(body?.wake_ticket!==undefined){
+   if(mode!=="send"||url.replace(/\/$/,"")!=="https://eaiutjqvyesboldcznyr.supabase.co"||!serviceKey||typeof body.wake_ticket!=="string"||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.wake_ticket))return json({error:"Acesso não autorizado."},403);
+   const db=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
+   const result=await db.rpc("consume_professional_dispatch_wake",{target_ticket:body.wake_ticket});
+   if(result.error||result.data!==true)return json({error:"Acesso não autorizado."},403);
+  }else{
   const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"");
   if(!token||token.length>8192)return json({error:"Acesso não autorizado."},401);
   const {payload}=await jwtVerify(token,jwks,{issuer:"https://token.actions.githubusercontent.com",audience:url.replace(/\/$/,"")+"/functions/v1/dispatch-professional-push",algorithms:["RS256"],requiredClaims:["exp","iat","sub"],maxTokenAge:"5m"});
   // Push de código pode drenar apenas a fila de QA; produção continua exigindo disparo manual ou agendado.
   if(!allowedDispatchClaims(payload,mode,{qa:url.replace(/\/$/,"")==="https://eaiutjqvyesboldcznyr.supabase.co"}))return json({error:"Acesso não autorizado."},403);
+  }
  }catch{return json({error:"Acesso não autorizado."},401);}
  let account;
  try{account=JSON.parse(accountJSON||"{}");}catch{account={};}
